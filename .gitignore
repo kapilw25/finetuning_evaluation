@@ -1,0 +1,108 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv_FntngEval/
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Data files
+data/*.json
+data/*.csv
+data/*.pkl
+data/*.parquet
+data/cache/
+
+# Model files (large files)
+model/*.bin
+model/*.safetensors
+model/*.pt
+model/*.pth
+*.bin
+*.safetensors
+
+# Outputs
+output/*/
+# *.db
+*.sqlite
+*.sqlite3
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyTorch
+*.pth
+*.pt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# HuggingFace
+.cache/
+cache/
+
+# CUDA
+*.cu
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Authentication tokens (IMPORTANT: Never commit API keys)
+*.token
+*_token.txt
+.env.local
+secrets.json
+
+# Large datasets and models
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Training outputs
+wandb/
+tensorboard_logs/
+lightning_logs/
