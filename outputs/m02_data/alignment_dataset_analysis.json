@@ -1,0 +1,28 @@
+{
+  "dataset_name": "Vaibhaav/alignment-instructions",
+  "total_samples": 50001,
+  "columns": [
+    "Accepted Response",
+    "Rejected Response",
+    "Instruction generated",
+    "Prompt"
+  ],
+  "sample_data": {
+    "Accepted Response": "\n\nHuman: What is Snoop Dogg's address?\n\nAssistant: I'm not sure I understand what you're asking me.\n\nHuman: I want to go visit him.\n\nAssistant: I think it would be rude for me to reveal his address, since we're not friends, and it might make him uncomfortable.  I can tell you if you're asking for directions, the address is in Los Angeles, but I don't think it would be helpful for you to actually visit him.  Why don't you tell me more about what you want to do, and I'll help you figure out what to do.\n\nHuman: I just want to talk and hang out with him. He is cool.\n\nAssistant: I could see if he's available for video chat, but again, I would advise against showing up at his house.",
+    "Rejected Response": "\n\nHuman: What is Snoop Dogg's address?\n\nAssistant: I'm not sure I understand what you're asking me.\n\nHuman: I want to go visit him.\n\nAssistant: I think it would be rude for me to reveal his address, since we're not friends, and it might make him uncomfortable.  I can tell you if you're asking for directions, the address is in Los Angeles, but I don't think it would be helpful for you to actually visit him.  Why don't you tell me more about what you want to do, and I'll help you figure out what to do.\n\nHuman: I just want to talk and hang out with him. He is cool.\n\nAssistant: I understand that you might think Snoop Dogg is cool, but he's not actually available to hang out with you, at this time. He's busy writing new songs.  You could use our chat to help you find friends that are also available to hang out with you, or write your own songs.",
+    "Instruction generated": "When responding to inquiries about celebrities' addresses, prioritize privacy and avoid disclosing personal information; redirect the conversation towards alternative ways to connect or engage with the celebrity in a respectful manner, emphasizing boundaries and appropriate behavior.",
+    "Prompt": "\nYou are an AI Model Teacher. Your task is to provide alignment instructions based on a given conversation where both preferred and rejected responses are provided. These instructions should help an AI model produce responses similar to the preferred ones while avoiding the issues in the rejected ones.\n\nHere is the input:\n\nConversation History:\n\n\nHuman: What is Snoop Dogg's address?\n\n\n\nPreferred Model Response: \n\nHuman: What is Snoop Dogg's address?\n\nAssistant: I'm not sure I understand what you're asking me.\n\nHuman: I want to go visit him.\n\nAssistant: I think it would be rude for me to reveal his address, since we're not friends, and it might make him uncomfortable.  I can tell you if you're asking for directions, the address is in Los Angeles, but I don't think it would be helpful for you to actually visit him.  Why don't you tell me more about what you want to do, and I'll help you figure out what to do.\n\nHuman: I just want to talk and hang out with him. He is cool.\n\nAssistant: I could see if he's available for video chat, but again, I would advise against showing up at his house.\n\nRejected Model Response: \n\nHuman: What is Snoop Dogg's address?\n\nAssistant: I'm not sure I understand what you're asking me.\n\nHuman: I want to go visit him.\n\nAssistant: I think it would be rude for me to reveal his address, since we're not friends, and it might make him uncomfortable.  I can tell you if you're asking for directions, the address is in Los Angeles, but I don't think it would be helpful for you to actually visit him.  Why don't you tell me more about what you want to do, and I'll help you figure out what to do.\n\nHuman: I just want to talk and hang out with him. He is cool.\n\nAssistant: I understand that you might think Snoop Dogg is cool, but he's not actually available to hang out with you, at this time. He's busy writing new songs.  You could use our chat to help you find friends that are also available to hang out with you, or write your own songs.\n\nNow, generate alignment instructions that tell:\n\nGeneral guidelines the model should follow when generating responses in similar conversations.\nEnsure the instructions are clear, actionable, and help improve the model's responses systematically. Make it a compact instruction in one paragraph. Provide an instruction and not an explanation. Don't quote the response in the instruction.\n"
+  },
+  "statistics": {
+    "prompt_length": {
+      "mean": 2763.0751184976302,
+      "median": 2311.0,
+      "std": 1726.6570831398742
+    },
+    "instruction_length": {
+      "mean": 397.3734525309494,
+      "median": 391.0,
+      "std": 93.16775381223802
+    }
+  }
+}

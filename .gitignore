@@ -106,3 +106,16 @@ secrets.json
 wandb/
 tensorboard_logs/
 lightning_logs/
+
+# Large output files and checkpoints
+outputs/*/checkpoints/
+outputs/*/adapter/
+outputs/*/cache/
+outputs/*/*.arrow
+outputs/*/*.bin
+outputs/*/*.safetensors
+outputs/*/*.pt
+outputs/*/kfac_matrices/
+
+# NVIDIA libraries in virtual environment
+**/nvidia/
