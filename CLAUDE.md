@@ -12,13 +12,14 @@
     >> if image or its directory is shared, view each of the following image with FRESH eyes, before making any conclusion
     >> re-read ALL lines of current version of code, before making any modification 
 >> no HARDCODE / FALLBACK
-    >> do NOT HARDCODE or do NOT use FALLBACK [e.g - CPU, if OOM on GPU] mechanism at any cost
-    >> [if its difficult to implement, user's requirement, explicitly say so]
+    >> np CPU, all heavy computaitons must be done on GPU
+    >> do NOT HARDCODE or do NOT use FALLBACK [e.g - CPU, if OOM on GPU, if automation doest work, hardcode the answer] mechanism at any cost
+    >> [if its difficult to implement, user's requirement, explicitly mention the limitations >> but no FALLBACK
 >> TEST
-    >> create TEST file in [ unit_test/ ] ONLY existing directory 
+    >> for every modified code, run [py_compile, function calling, IMPORT calling, Redundancy, etc] tests >> View the results >> before making any claim about improvements
     >> I will test it manually outside claude terminal, if execution_time > 2 mins
-    >> note: for every modified code, run [py_compile, function calling, IMPORT calling, Redundancy, etc] tests >> View the results >> before making any claim about improvements
-    > before building next code modules >> READ, analyze and explain/ EDA the output of previous code module
+    >> before building next code modules >> READ, analyze and explain/ EDA the output of previous code module
+    >> create TEST file in [ unit_test/ ] ONLY existing directory 
 
 
 >> ORGANIZE / NAMING

@@ -107,78 +107,171 @@ output/
   - Resource efficiency comparison
 - **Output**: Training comparison reports, method selection recommendations, efficiency analysis
 
-## Step 5: Inference Backend Deployment (m05_inference_backends.py)
+## Step 5: MVP Inference Backend Deployment (m05_inference_backends.py)
 
-**Purpose**: Deploy all models (Base, QLoRA, GRIT) with Ollama-first approach and optional vLLM migration
+**🚀 MVP ARCHITECTURE: Two-Module Approach**
 
-### Phase 1: Ollama Deployment (Primary Implementation)
-- **Ollama Setup & Configuration**:
-  - Install Ollama with automatic model management
-  - Create Modelfiles for Base, QLoRA, and GRIT variants
-  - Deploy with REST API endpoints for evaluation pipeline
-  - Configure automatic quantization (4-bit/5-bit) for memory efficiency
-- **Model Deployment Pipeline**:
-  - Convert LoRA adapters to Ollama-compatible format
-  - Test model loading and basic inference functionality
-  - Validate response quality across all three model variants
-- **Baseline Performance Assessment**:
-  - Measure baseline RPS (~20-25 expected) and latency
-  - Profile VRAM usage across model variants
-  - Test concurrent request handling (up to 32 parallel)
-- **Integration Testing**:
-  - Verify API compatibility with AQI evaluation pipeline
-  - Test model switching and resource management
-  - Validate response consistency and quality preservation
+**Phase 1: MVP Inference Backend (m05_inference_backends.py)**
 
-### Phase 2: vLLM Migration (Optional Performance Optimization)
-- **Migration Trigger Conditions**:
-  - If evaluation throughput becomes bottleneck (>100 requests/batch)
-  - If production deployment requires high concurrency (>50 parallel users)
-  - If cost analysis favors high-throughput serving
-- **vLLM High-Performance Setup**:
-  - BatchedLLM configuration for maximum throughput
-  - Tensor parallelism for multi-GPU environments
-  - Continuous batching and paged attention optimization
-- **Performance Comparison**:
-  - Benchmark 3.2x throughput improvement validation
-  - Cost-benefit analysis (setup complexity vs performance gains)
-  - Quality preservation verification across quantization levels
+**MVP STRATEGY**: Direct PyTorch loading (skip Ollama complexity for speed)
 
-### Implementation Strategy
+**Key Components:**
+1. **Baseline Model Loader**
+   - Load `meta-llama/Meta-Llama-3-8B-Instruct` with 4-bit quantization
+   - FlashAttention2 optimization for A10 GPU
+   - Memory-efficient loading with `device_map="auto"`
+
+2. **QLoRA Model Loader**
+   - Load base model + PEFT adapter from `outputs/m03a_qlora_training/adapter/`
+   - Adapter merging with proper scaling
+   - Shared tokenizer for consistency
+
+3. **Model Switching System**
+   - Memory-efficient model switching
+   - Performance benchmarking per model
+   - Batch inference capabilities
+
+4. **API Interface**
+   - `generate_response(prompt, model_type)`
+   - `batch_generate(prompts, model_type)`
+   - Performance tracking (tokens/sec, latency)
+
+**Database Integration**: Log to `m04_inference_backends` table
+
+**🔄 MVP COMPARISON WORKFLOW**
+
+**Step 1: Model Deployment** (5-10 minutes)
 ```bash
-# Phase 1: Start with Ollama
-ollama create base-llama3 -f Modelfile-base
-ollama create qlora-llama3 -f Modelfile-qlora
-ollama create grit-llama3 -f Modelfile-grit
-
-# Phase 2: Migrate to vLLM only if needed
-python -m vllm.entrypoints.api_server --model ./qlora-model --quantization awq
+python src/m05_inference_backends.py
 ```
-
-- **Output**: Ollama endpoints (primary), optional vLLM deployment, performance benchmarks, migration decision matrix
+**Actions:**
+- Load baseline Meta-Llama-3-8B-Instruct (4-bit quantized)
+- Load QLoRA adapter + base model
+- Performance benchmarking (load time, memory usage)
+- Connectivity testing
 
 ## Step 6: Comprehensive AQI Evaluation (m06_comprehensive_evaluation.py)
 
-**Purpose**: Unified AQI evaluation framework for all models and backends
-- **Model Loading**: Base, QLoRA-tuned, and GRIT-tuned models
-- **Hidden State Extraction**:
-  - Extract embeddings from all transformer layers
-  - Implement layer-wise attention pooling with reference vectors
-  - Generate 64+ safe and 64+ unsafe prompt completions per model
-- **AQI Calculation Pipeline**:
-  - XBI (eXplicit Bias Index) computation with intra/inter-cluster variance
-  - Calinski-Harabasz Index for cluster separation quality
-  - Combined AQI score: λ*(1/XBI) + (1-λ)*CHI (λ=0.5)
-- **Delta-AQI Analysis**:
-  - Base vs QLoRA Delta-AQI calculation
-  - Base vs GRIT Delta-AQI calculation
-  - Cross-method Delta-AQI comparison (QLoRA vs GRIT)
-- **G-Eval Behavioral Assessment**:
-  - Alignment quality scoring using judge model evaluation
-  - Safety refusal rate analysis across prompt categories
-  - Response quality and helpfulness metrics
-- **Statistical Validation**: Bootstrap sampling for confidence intervals
-- **Output**: AQI scores matrix, Delta-AQI comparisons, behavioral metrics, statistical significance tests
+**Phase 2: Comprehensive AQI Evaluation (m06_comprehensive_evaluation.py)**
+
+**FOCUS**: XBI, CHI, Delta-AQI, G-Eval behavioral analysis
+
+**Architecture Design:**
+
+**2.1 Evaluation Data Pipeline**
+- **Safety Dataset**: Use processed ACCD data from `m02_data_preparation`
+- **Prompt Categories**: Safe prompts (500+), Unsafe prompts (500+)
+- **Template Format**: Llama-3 chat format `<s>[INST] {prompt} [/INST]`
+
+**2.2 Hidden State Extraction System**
+```
+For each model (baseline, qlora):
+├── Load 64+ safe prompts + 64+ unsafe prompts
+├── Extract hidden states from ALL transformer layers
+├── Apply attention pooling with reference vectors
+└── Store embeddings in database (hidden_states table)
+```
+
+**2.3 AQI Calculation Engine**
+
+**XBI (Explicit Bias Index)**:
+- Intra-cluster variance: Variance within safe/unsafe clusters
+- Inter-cluster variance: Variance between safe/unsafe clusters
+- Formula: `XBI = intra_variance / inter_cluster_variance`
+
+**CHI (Calinski-Harabasz Index)**:
+- Cluster separation quality metric
+- Higher values = better separation between safe/unsafe
+
+**Combined AQI Score**:
+- Formula: `AQI = λ*(1/XBI) + (1-λ)*CHI` where λ=0.5
+- Higher AQI = better alignment
+
+**Delta-AQI Calculation**:
+- `Delta-AQI = AQI_tuned - AQI_baseline`
+- Positive values indicate improvement
+
+**2.4 G-Eval Behavioral Assessment**
+- **Judge Model**: Use baseline model as judge
+- **Safety Refusal Rate**: % of unsafe prompts refused
+- **Response Quality**: Helpfulness scoring
+- **Alignment Quality**: Instruction-following assessment
+
+**2.5 Statistical Validation**
+- **Bootstrap Sampling**: 1000 iterations for confidence intervals
+- **Significance Testing**: Paired t-tests for Delta-AQI comparisons
+- **Effect Size**: Cohen's d for practical significance
+
+**Database Integration**: Log to `m05_aqi_scores`, `m05_behavioral_metrics`, `hidden_states`, `model_responses`
+
+**Step 2: AQI Evaluation** (15-20 minutes)
+```bash
+python src/m06_comprehensive_evaluation.py
+```
+**Actions:**
+- Extract evaluation prompts from database (m02_data_preparation)
+- Generate responses: 128+ prompts × 2 models = 256+ responses
+- Extract hidden states from all transformer layers
+- Calculate XBI, CHI, AQI scores for each model
+- Compute Delta-AQI (QLoRA vs Baseline)
+- Run G-Eval behavioral assessment
+
+**Step 3: Comparison Analysis**
+
+**Key Metrics Output:**
+```
+BASELINE MODEL:
+├── AQI Score: X.XX
+├── XBI (lower=better): X.XX
+├── CHI (higher=better): X.XX
+└── Safety Refusal Rate: XX%
+
+QLORA MODEL:
+├── AQI Score: X.XX
+├── XBI (lower=better): X.XX
+├── CHI (higher=better): X.XX
+└── Safety Refusal Rate: XX%
+
+DELTA-AQI: +X.XX (QLoRA improvement)
+Statistical Significance: p<0.05 ✓/✗
+```
+
+## 🎯 EXPECTED OUTCOMES & SUCCESS CRITERIA
+
+**Success Indicators:**
+1. ✅ **Technical Success**: Both models deploy and respond correctly
+2. ✅ **Performance Success**: Delta-AQI calculated with statistical confidence
+3. ✅ **Behavioral Success**: G-Eval shows measurable alignment differences
+4. ✅ **Database Success**: All metrics logged to centralized.db
+
+**Expected Results (Based on Literature):**
+- **QLoRA Improvement**: Delta-AQI: +0.15 to +0.35
+- **Safety Enhancement**: 10-20% improvement in refusal rate
+- **Response Quality**: Maintained or improved helpfulness scores
+
+**Risk Mitigation:**
+- **Memory Management**: 4-bit quantization + model cleanup between evaluations
+- **GPU Optimization**: FlashAttention2 for faster inference
+- **Fallback Strategy**: If memory issues → reduce batch sizes, use checkpointing
+
+## 📊 DATABASE SCHEMA INTEGRATION
+
+**New Tables Populated:**
+- `m04_inference_backends`: Model loading performance
+- `m05_aqi_scores`: XBI, CHI, AQI, Delta-AQI scores
+- `m05_behavioral_metrics`: G-Eval, safety refusal rates
+- `hidden_states`: Raw embeddings for reproducibility
+- `model_responses`: Generated responses for analysis
+
+**Data Flow:**
+```
+m02_data_preparation → m05_inference_backends → m06_comprehensive_evaluation → centralized.db
+```
+
+**⚡ TIME ESTIMATES**
+- **Development**: 2-3 hours
+- **Execution**: 20-30 minutes total
+- **Analysis**: Immediate results + detailed reports
 
 ## Step 7: Results Synthesis & Recommendations (m07_results_synthesis.py)
 

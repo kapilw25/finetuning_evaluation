@@ -24,6 +24,10 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+import time
+from transformers.integrations import TensorBoardCallback
+from transformers import EarlyStoppingCallback
 
 # Core ML libraries
 from transformers import (
@@ -94,6 +98,11 @@ class QLoRATrainer:
             "memory_usage_mb": 0.0
         }
 
+        # TensorBoard logging
+        self.tensorboard_writer = None
+        self.current_step = 0
+        self.experiment_id = None
+
     def load_environment_variables(self):
         """Load environment variables from .env file"""
         env_file = self.project_root / ".env"
@@ -131,12 +140,15 @@ class QLoRATrainer:
                 torch.cuda.empty_cache()
                 gc.collect()
 
-            # Define quantization config for memory efficiency
+            # Define enhanced quantization config with QAT optimizations
             bnb_config = BitsAndBytesConfig(
                 load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
+                bnb_4bit_quant_type="nf4",  # Already using NF4!
                 bnb_4bit_compute_dtype=torch.bfloat16,
-                bnb_4bit_use_double_quant=True
+                bnb_4bit_use_double_quant=True,  # Already using double quantization!
+                # NEW: Add QAT-specific optimizations
+                bnb_4bit_quant_storage=torch.uint8,
+                llm_int8_skip_modules=["lm_head"]  # Skip output layer quantization
             )
 
             # Load tokenizer
@@ -171,18 +183,22 @@ class QLoRATrainer:
             # Prepare model for training
             self.model = prepare_model_for_kbit_training(self.model)
 
-            # Define LoRA configuration (exact specifications from plan1.md)
+            # Define enhanced LoRA configuration with 2024 optimizations
             lora_config = LoraConfig(
                 r=16,  # Rank
                 lora_alpha=32,  # Alpha parameter
                 lora_dropout=0.05,  # Dropout probability
                 bias="none",
                 task_type="CAUSAL_LM",
-                # Target modules as specified in plan1.md
+                # NEW: Target ALL linear layers as per 2024 research
                 target_modules=[
                     "q_proj", "k_proj", "v_proj", "o_proj",
-                    "gate_proj", "up_proj", "down_proj"
+                    "gate_proj", "up_proj", "down_proj",
+                    "embed_tokens", "lm_head"  # Additional targets
                 ],
+                # NEW: QAT-specific parameters
+                use_rslora=True,  # Rank-stabilized LoRA
+                use_dora=False,   # Weight-decomposed LoRA (memory intensive)
             )
 
             # Apply LoRA
@@ -209,7 +225,7 @@ class QLoRATrainer:
         return setup_info
 
     def load_training_data(self) -> Dict[str, Any]:
-        """Load processed training data from centralized database"""
+        """Load processed training data from cached alignment-instructions dataset"""
         data_info = {
             "data_loaded": False,
             "train_samples": 0,
@@ -219,133 +235,271 @@ class QLoRATrainer:
         }
 
         try:
-            self.logger.info("Loading training data from centralized database...")
+            self.logger.info("Loading training data from cached alignment-instructions dataset...")
 
-            # Get the most recent data preparation results
-            recent_data = self.db.get_latest_results('data', limit=1)
-            if not recent_data:
-                raise ValueError("No processed data found in database. Run m02_data_preparation.py first.")
+            # Load cached dataset from m02_data_preparation (same method as EDA)
+            from datasets import load_dataset
+            cache_dir = self.project_root / "outputs" / "m02_data" / "cache"
 
-            latest_data = recent_data[0]
-            self.logger.info(f"Found processed data: {latest_data.get('dataset_name', 'Unknown')}")
+            # Load alignment dataset from cache
+            dataset = load_dataset(
+                "Vaibhaav/alignment-instructions",
+                cache_dir=str(cache_dir),
+                split="train"
+            )
+            self.logger.info(f"✅ Loaded alignment dataset from cache: {len(dataset):,} samples")
 
-            # For now, we'll create sample data that matches our expected format
-            # In a full implementation, you'd load from the actual database tables
-            # This is a simplified version for demonstration
+            # Process the alignment dataset for training
+            processed_samples = []
 
-            # Create sample training data (representing the 45K processed samples)
-            train_samples = []
-            val_samples = []
+            for i, example in enumerate(dataset):
+                # Extract instruction and accepted response
+                instruction = example.get('Instruction generated', '').strip()
+                accepted_response = example.get('Accepted Response', '').strip()
+                prompt = example.get('Prompt', '').strip()
 
-            # Generate representative training examples with Llama-3 template
-            sample_training_data = [
-                {
-                    "instruction": "Explain the concept of artificial intelligence",
-                    "response": "Artificial intelligence (AI) refers to the simulation of human intelligence in machines that are programmed to think and learn like humans."
-                },
-                {
-                    "instruction": "How do you make a good first impression?",
-                    "response": "Making a good first impression involves being punctual, dressing appropriately, maintaining eye contact, offering a firm handshake, and showing genuine interest in others."
-                },
-                {
-                    "instruction": "What are the benefits of renewable energy?",
-                    "response": "Renewable energy sources like solar and wind power offer numerous benefits including reduced greenhouse gas emissions, lower long-term costs, energy independence, and job creation in green industries."
-                }
-            ]
+                # Skip if missing essential data
+                if not instruction or not accepted_response:
+                    continue
 
-            # Apply Llama-3 chat template
-            for i, example in enumerate(sample_training_data * 15000):  # Simulate 45K samples
-                formatted_text = f"<s>[INST] {example['instruction']} [/INST] {example['response']}</s>"
+                # Clean and extract meaningful instruction
+                if instruction.startswith(("When responding to", "Ensure that when", "Provide", "Always")):
+                    # Extract human question from conversation in Prompt
+                    if "H:" in prompt and "A:" in prompt:
+                        try:
+                            # Find the last human question
+                            human_parts = prompt.split("H:")
+                            if len(human_parts) > 1:
+                                last_human = human_parts[-1].split("A:")[0].strip()
+                                if len(last_human) > 10 and not last_human.startswith("You are"):
+                                    instruction = last_human
+                        except:
+                            pass
+
+                # Clean up accepted response
+                response = accepted_response
+                if "\nH:" in response or response.startswith("H:"):
+                    # Extract assistant response from conversation format
+                    try:
+                        if "\nA:" in response:
+                            assistant_parts = response.split("\nA:")
+                            if len(assistant_parts) > 1:
+                                response = assistant_parts[-1].strip()
+                        elif "A:" in response and not response.startswith("A:"):
+                            response = response.split("A:")[-1].strip()
+                    except:
+                        pass
+
+                # Skip if processed text is too short or invalid
+                if len(instruction) < 10 or len(response) < 10:
+                    continue
+
+                # Apply Llama-3.1 Instruct chat template (correct format)
+                formatted_text = f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{instruction}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n{response}<|eot_id|>"
 
                 sample = {
                     "text": formatted_text,
-                    "input": example['instruction'],
-                    "output": example['response']
+                    "input": instruction,
+                    "output": response
                 }
+                processed_samples.append(sample)
 
-                # 90/10 split as per m02 processing
-                if i < len(sample_training_data) * 13500:  # 90%
-                    train_samples.append(sample)
-                else:
-                    val_samples.append(sample)
+                # Progress logging every 5000 samples
+                if (i + 1) % 5000 == 0:
+                    self.logger.info(f"Processed {i + 1:,}/{len(dataset):,} samples -> {len(processed_samples):,} valid")
+
+            self.logger.info(f"📊 Successfully processed {len(processed_samples):,} valid samples from {len(dataset):,} raw samples")
+
+            if len(processed_samples) < 1000:
+                raise ValueError(f"Too few valid samples: {len(processed_samples)}. Check data processing logic.")
+
+            # 90/10 train/validation split (same as m02 processing)
+            import random
+            random.seed(42)  # Reproducible split
+            random.shuffle(processed_samples)
+
+            split_idx = int(0.9 * len(processed_samples))
+            train_samples = processed_samples[:split_idx]
+            val_samples = processed_samples[split_idx:]
 
             # Convert to Hugging Face datasets
-            self.training_data = Dataset.from_list(train_samples[:1000])  # Limit for testing
-            self.validation_data = Dataset.from_list(val_samples[:100])   # Limit for testing
+            self.training_data = Dataset.from_list(train_samples)
+            self.validation_data = Dataset.from_list(val_samples)
 
             data_info["data_loaded"] = True
             data_info["train_samples"] = len(self.training_data)
             data_info["val_samples"] = len(self.validation_data)
             data_info["total_samples"] = data_info["train_samples"] + data_info["val_samples"]
 
-            self.logger.info(f"Loaded {data_info['train_samples']} training samples and {data_info['val_samples']} validation samples")
+            self.logger.info(f"🎯 REAL ALIGNMENT DATA LOADED:")
+            self.logger.info(f"   ├── Training samples: {data_info['train_samples']:,}")
+            self.logger.info(f"   ├── Validation samples: {data_info['val_samples']:,}")
+            self.logger.info(f"   └── Total samples: {data_info['total_samples']:,}")
+            self.logger.info(f"📈 Data source: High-quality Vaibhaav/alignment-instructions dataset")
 
         except Exception as e:
             data_info["error"] = str(e)
-            self.logger.error(f"Failed to load training data: {e}")
+            self.logger.error(f"❌ Failed to load training data: {e}")
 
         return data_info
+
+    def setup_tensorboard(self):
+        """Setup TensorBoard logging"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_dir = self.output_dir / "tensorboard_logs" / f"run_{timestamp}"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            self.tensorboard_writer = SummaryWriter(log_dir=str(log_dir))
+            self.logger.info(f"TensorBoard logs: {log_dir}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to setup TensorBoard: {e}")
+            return False
+
+    def monitor_memory_usage(self) -> Dict[str, float]:
+        """Monitor GPU memory usage"""
+        if torch.cuda.is_available():
+            memory_allocated = torch.cuda.memory_allocated() / 1024**3
+            memory_reserved = torch.cuda.memory_reserved() / 1024**3
+            return {
+                "allocated_gb": memory_allocated,
+                "reserved_gb": memory_reserved,
+                "utilization_pct": (memory_allocated / memory_reserved * 100) if memory_reserved > 0 else 0
+            }
+        return {"allocated_gb": 0.0, "reserved_gb": 0.0, "utilization_pct": 0.0}
+
+    def log_training_step(self, step: int, train_loss: float,
+                         learning_rate: float, memory_usage: float = None):
+        """Log detailed metrics per training step"""
+        try:
+            step_data = {
+                "experiment_id": self.experiment_id,
+                "training_step": step,
+                "epoch": step // len(self.training_data) if self.training_data else 0,
+                "train_loss": train_loss,
+                "learning_rate": learning_rate,
+                "memory_usage_mb": memory_usage or 0.0,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            # Log to database
+            self.db.log_module_data("m03a_qlora_training", step_data)
+
+            # Log to TensorBoard
+            if self.tensorboard_writer:
+                self.tensorboard_writer.add_scalar("Loss/Train", train_loss, step)
+                self.tensorboard_writer.add_scalar("Learning_Rate", learning_rate, step)
+                if memory_usage:
+                    self.tensorboard_writer.add_scalar("Memory/GPU_MB", memory_usage, step)
+
+        except Exception as e:
+            self.logger.error(f"Step logging failed: {e}")
+
+    def get_latest_checkpoint(self) -> Optional[str]:
+        """Find the latest checkpoint in the checkpoint directory"""
+        checkpoint_dir = self.output_dir / "checkpoints"
+        if not checkpoint_dir.exists():
+            return None
+
+        # Find all checkpoint directories
+        checkpoints = [d for d in checkpoint_dir.iterdir() if d.is_dir() and d.name.startswith("checkpoint-")]
+        if not checkpoints:
+            return None
+
+        # Sort by step number and get the latest
+        checkpoints.sort(key=lambda x: int(x.name.split("-")[1]))
+        latest_checkpoint = str(checkpoints[-1])
+
+        self.logger.info(f"Found latest checkpoint: {checkpoints[-1].name}")
+        return latest_checkpoint
 
     def setup_trainer(self) -> Dict[str, Any]:
         """Setup SFTTrainer with optimized hyperparameters"""
         trainer_info = {
             "trainer_setup": False,
             "training_args_created": False,
+            "checkpoint_found": False,
             "error": None
         }
 
         try:
             self.logger.info("Setting up SFTTrainer...")
 
-            # Training arguments (exact specifications from plan1.md)
+            # Check for existing checkpoints
+            latest_checkpoint = self.get_latest_checkpoint()
+            if latest_checkpoint:
+                trainer_info["checkpoint_found"] = True
+
+            # Enhanced training arguments with 2024 optimizations
             training_args = SFTConfig(
                 output_dir=str(self.output_dir / "checkpoints"),
-                per_device_train_batch_size=4,          # batch size: 4
-                per_device_eval_batch_size=2,           # smaller eval batch for memory
-                gradient_accumulation_steps=2,          # gradient accumulation: 2
-                learning_rate=2e-4,                     # learning rate: 2e-4
+                per_device_train_batch_size=1,          # Much smaller for stability
+                per_device_eval_batch_size=1,           # Back to original working configuration
+                gradient_accumulation_steps=8,          # Maintain effective batch size
+                learning_rate=5e-5,                     # Lower LR for quantized training
                 lr_scheduler_type="cosine",             # cosine LR scheduler
+                warmup_ratio=0.03,                      # NEW: Proper warmup
+                weight_decay=0.01,                      # NEW: Regularization
+                adam_beta2=0.95,                        # NEW: Adjusted for small batch
                 num_train_epochs=3,                     # training epochs: 3
-                max_steps=250,                          # max steps: 250
+                max_steps=500,                          # Increased steps for smaller batch
                 optim="paged_adamw_8bit",               # memory-efficient optimizer (8bit for stability)
+                max_grad_norm=1.0,                      # Gradient clipping to prevent explosion
                 bf16=True,                              # use bfloat16 instead of fp16 for A10 GPU
                 fp16=False,                             # disable fp16 to prevent gradient scaling issues
                 gradient_checkpointing=True,            # gradient checkpointing
+                gradient_checkpointing_kwargs={"use_reentrant": False},  # 2024 fix
 
-                # Logging and evaluation
-                logging_steps=10,
-                eval_steps=50,
-                save_steps=50,
+                # Logging and evaluation - OPTIMIZED FOR FAST TRAINING/SLOW EVAL
+                logging_steps=5,                        # Keep frequent logging (fast)
+                eval_steps=150,                         # Strategic evaluation: 3 points (150, 300, 450/500)
+                save_steps=150,                         # Aligned checkpointing with evaluation
                 eval_strategy="steps",
                 save_strategy="steps",
+                report_to=["tensorboard"],              # Enable TensorBoard logging
+                logging_dir=str(self.output_dir / "tensorboard_logs"),
 
                 # Data formatting parameters (TRL 0.23.0 API)
                 max_length=1024,                        # max sequence length
                 dataset_text_field="text",              # text field name
                 packing=False,                          # disable packing for stability
 
-                # Output settings
+                # Output settings with early stopping
                 load_best_model_at_end=True,
                 metric_for_best_model="eval_loss",
                 greater_is_better=False,
-                report_to="none",                       # disable wandb/tensorboard
                 save_total_limit=3,                     # keep only 3 checkpoints
 
-                # Memory optimizations
+                # Memory optimizations with 2024 fixes
                 dataloader_pin_memory=False,
+                dataloader_num_workers=0,               # Prevent multiprocessing issues
                 remove_unused_columns=False,
+                eval_accumulation_steps=2,              # Memory-efficient evaluation batching
             )
 
             trainer_info["training_args_created"] = True
 
-            # Initialize SFTTrainer
+            # Setup TensorBoard logging
+            self.setup_tensorboard()
+
+            # Initialize SFTTrainer with enhanced callbacks
+            callbacks = [
+                EarlyStoppingCallback(early_stopping_patience=3, early_stopping_threshold=0.01)
+            ]
+
             self.trainer = SFTTrainer(
                 model=self.model,
                 train_dataset=self.training_data,
                 eval_dataset=self.validation_data,
                 args=training_args,
                 processing_class=self.tokenizer,        # Updated from 'tokenizer' to 'processing_class' in TRL 0.23.0
+                callbacks=callbacks                     # NEW: Add callbacks for early stopping
             )
+
+            # Set checkpoint path for resumption if checkpoint exists
+            if latest_checkpoint:
+                self.trainer.resume_from_checkpoint = latest_checkpoint
+                self.logger.info(f"Will resume training from: {latest_checkpoint}")
 
             trainer_info["trainer_setup"] = True
             self.logger.info("SFTTrainer setup completed successfully")
@@ -382,8 +536,14 @@ class QLoRATrainer:
                 torch.cuda.empty_cache()
                 gc.collect()
 
-            # Start training
-            train_result = self.trainer.train()
+            # Start training (with checkpoint resumption if available)
+            resume_checkpoint = getattr(self.trainer, 'resume_from_checkpoint', None)
+            if resume_checkpoint:
+                self.logger.info(f"Resuming training from checkpoint: {resume_checkpoint}")
+                train_result = self.trainer.train(resume_from_checkpoint=resume_checkpoint)
+            else:
+                self.logger.info("Starting fresh training (no checkpoints found)")
+                train_result = self.trainer.train()
 
             self.training_stats["end_time"] = datetime.now()
             training_time = (self.training_stats["end_time"] - self.training_stats["start_time"]).total_seconds() / 60
@@ -491,7 +651,7 @@ class QLoRATrainer:
 
             for prompt in test_prompts:
                 try:
-                    # Apply chat template
+                    # Apply chat template (following successful legacy pattern)
                     messages = [{"role": "user", "content": prompt}]
                     inputs = self.tokenizer.apply_chat_template(
                         messages,
@@ -499,21 +659,26 @@ class QLoRATrainer:
                         return_tensors="pt"
                     ).to(self.model.device)
 
-                    # Generate response
+                    # Generate response with proper configuration
                     with torch.no_grad():
                         outputs = self.model.generate(
                             inputs,
                             max_new_tokens=100,
                             temperature=0.7,
                             top_p=0.9,
-                            pad_token_id=self.tokenizer.pad_token_id
+                            do_sample=True,
+                            pad_token_id=self.tokenizer.pad_token_id,
+                            eos_token_id=self.tokenizer.eos_token_id
                         )
 
                     # Decode response
                     response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-                    # Extract just the assistant's response
-                    if "[/INST]" in response:
-                        response = response.split("[/INST]")[-1].strip()
+                    # Extract just the assistant's response (Llama-3 format)
+                    if "<|start_header_id|>assistant<|end_header_id|>" in response:
+                        response = response.split("<|start_header_id|>assistant<|end_header_id|>")[-1].strip()
+                        # Remove any trailing tokens
+                        if "<|eot_id|>" in response:
+                            response = response.split("<|eot_id|>")[0].strip()
 
                     responses.append(response[:200])  # Limit response length for logging
                     self.logger.info(f"Prompt: {prompt}")
@@ -537,37 +702,44 @@ class QLoRATrainer:
         try:
             self.logger.info("Logging training metrics to database...")
 
-            # Prepare metrics for database
+            # Prepare enhanced metrics for database
+            memory_stats = self.monitor_memory_usage()
             metrics_data = {
                 "experiment_id": None,  # Will be set by create_experiment
                 "epoch": self.training_stats.get("total_epochs", 0),
                 "step": self.training_stats.get("total_steps", 0),
                 "training_loss": self.training_stats.get("final_train_loss", 0.0),
                 "eval_loss": self.training_stats.get("final_eval_loss", 0.0),
-                "learning_rate": 2e-4,  # As per configuration
-                "gradient_norm": 1.0,   # Placeholder
-                "memory_usage_mb": self.training_stats.get("memory_usage_mb", 0.0),
+                "learning_rate": 5e-5,  # Updated configuration
+                "gradient_norm": self.trainer.state.log_history[-1].get('grad_norm', 0.0) if self.trainer and self.trainer.state.log_history else 0.0,
+                "memory_usage_mb": memory_stats.get("allocated_gb", 0.0) * 1024,
                 "lora_r": 16,
                 "lora_alpha": 32,
                 "dropout": 0.05,
+                "batch_size": 1,
+                "gradient_accumulation_steps": 8,
                 "training_time_minutes": (self.training_stats["end_time"] - self.training_stats["start_time"]).total_seconds() / 60 if self.training_stats["start_time"] else 0.0,
                 "adapter_size_mb": self.training_stats.get("adapter_size_mb", 0.0)
             }
 
-            # Create experiment entry
+            # Create enhanced experiment entry
             experiment_id = self.db.create_experiment(
-                name=f"qlora_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                method="qlora",
+                name=f"qlora_enhanced_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                method="qlora_enhanced_2024",
                 config={
                     "model": self.model_id,
                     "lora_r": 16,
                     "lora_alpha": 32,
-                    "learning_rate": 2e-4,
-                    "batch_size": 4,
+                    "learning_rate": 5e-5,
+                    "batch_size": 1,
+                    "gradient_accumulation_steps": 8,
                     "epochs": 3,
-                    "max_steps": 250
+                    "max_steps": 500,
+                    "quantization": "nf4_double_quant",
+                    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj", "embed_tokens", "lm_head"]
                 }
             )
+            self.experiment_id = experiment_id
 
             metrics_data["experiment_id"] = experiment_id
 
@@ -618,10 +790,20 @@ class QLoRATrainer:
             "model_saving": {},
             "inference_test": {},
             "database_logging": False,
+            "checkpoint_resumed": False,
             "error": None
         }
 
         try:
+            # Step 0: Check for existing checkpoints FIRST
+            latest_checkpoint = self.get_latest_checkpoint()
+            if latest_checkpoint:
+                results["checkpoint_resumed"] = True
+                self.logger.info(f"🔄 RESUMING from checkpoint: {Path(latest_checkpoint).name}")
+                self.logger.info("Skipping data reprocessing for checkpoint resumption...")
+            else:
+                self.logger.info("🆕 Starting fresh training (no checkpoints found)")
+
             # Step 1: Setup model and tokenizer
             self.logger.info("Step 1: Setting up model and tokenizer...")
             results["model_setup"] = self.setup_model_and_tokenizer()
@@ -629,9 +811,11 @@ class QLoRATrainer:
                 results["error"] = f"Model setup failed: {results['model_setup'].get('error')}"
                 return results
 
-            # Step 2: Load training data
-            self.logger.info("Step 2: Loading training data...")
+            # Step 2: Load training data (always needed for proper training)
+            self.logger.info("Step 2: Loading and processing training data...")
             results["data_loading"] = self.load_training_data()
+            # Note: Checkpoints will resume training state, but we need real data for continued training
+
             if not results["data_loading"]["data_loaded"]:
                 results["error"] = f"Data loading failed: {results['data_loading'].get('error')}"
                 return results
@@ -671,6 +855,10 @@ class QLoRATrainer:
             self.logger.error(f"Training pipeline failed: {e}")
 
         finally:
+            # Close TensorBoard writer
+            if self.tensorboard_writer:
+                self.tensorboard_writer.close()
+
             # Always cleanup resources
             self.cleanup_resources()
 

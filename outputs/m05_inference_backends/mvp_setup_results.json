@@ -1,0 +1,30 @@
+{
+  "setup_start": "2025-09-26T09:12:43.624863",
+  "baseline_loaded": true,
+  "qlora_loaded": true,
+  "setup_success": true,
+  "performance_metrics": {
+    "baseline": {
+      "load_time_seconds": 14.916654348373413,
+      "model_size_mb": 5332.508056640625,
+      "gpu_memory_mb": 5441.57177734375,
+      "quantization": "4bit_aggressive",
+      "memory_limit_gb": 18,
+      "test_successful": true,
+      "loaded_at": "2025-09-26T09:13:00.658985"
+    },
+    "qlora": {
+      "load_time_seconds": 27.58305835723877,
+      "model_size_mb": 5508.664306640625,
+      "adapter_path": "/lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/m03a_qlora_training/adapter",
+      "test_successful": true,
+      "loaded_at": "2025-09-26T09:13:29.322267"
+    }
+  },
+  "next_steps": [
+    "Run python src/m06_comprehensive_evaluation.py",
+    "Models ready for AQI evaluation",
+    "Both baseline and QLoRA models loaded successfully"
+  ],
+  "setup_end": "2025-09-26T09:13:29.428524"
+}

@@ -10,6 +10,10 @@ datasets>=2.10.0
 unsloth>=2024.5.8
 trl>=0.7.0
 
+# Enhanced logging and monitoring (Phase 2 & 3)
+tensorboard>=2.15.0
+tensorboardX>=2.6.0
+
 # Evaluation metrics (small packages only)
 rouge-score>=0.1.2
 evaluate>=0.4.0
