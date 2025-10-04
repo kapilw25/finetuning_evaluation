@@ -22,24 +22,17 @@ wheels/
 MANIFEST
 
 #UnSloth
-unsloth/_unsloth_sentencepiece_temp
+*_unsloth_sentencepiece_temp
 
-unsloth/llama.cpp
-unsloth_2_Hybrid_Grit/llama.cpp
+*llama.cpp
+*lora_model
+*model
+*outputs
 
-unsloth/lora_model
-unsloth_2_Hybrid_Grit/lora_model
 
+*unsloth_compiled_cache
 
-unsloth/model
-
-unsloth/outputs
-unsloth_2_Hybrid_Grit/outputs
-
-unsloth/unsloth_compiled_cache
-unsloth_2_Hybrid_Grit/unsloth_compiled_cache
-
-unsloth/venv_unsloth
+*/venv_unsloth
 
 # unsloth_2_Hybrid_Grit
 venv_unsloth_2_Hybrid_Grit
@@ -47,6 +40,7 @@ venv_3_Pure_Grit
 
 # Virtual Environment
 venv_FntngEval/
+venv*
 .env
 .venv
 env/

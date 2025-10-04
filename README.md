@@ -482,8 +482,8 @@ finetuning_evaluation/
 │       ├── trainer.py                    # GritTrainer class
 │       └── optim.py                      # Optimizer wrapper
 ├── tensorboard_logs/                     # Centralized TensorBoard logs
-│   ├── unsloth_ft_20251002_044038/       # Baseline run
-│   └── pure_grit_20251002_072335/        # GRIT run
+│   ├── QLoRA_Baseline_20251002_044038/   # Baseline run
+│   └── QLoRA_GRIT_20251002_072335/       # GRIT run
 └── readme_files/
     ├── tensorboard_log1.png              # Loss curves comparison
     └── tensorboard_log2.png              # Detailed metrics

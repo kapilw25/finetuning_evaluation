@@ -6,7 +6,9 @@
       "Bash(python3 view_responses.py:*)",
       "Bash(python3 unit_test/view_responses.py:*)",
       "WebFetch(domain:anonymous.4open.science)",
-      "WebFetch(domain:docs.unsloth.ai)"
+      "WebFetch(domain:docs.unsloth.ai)",
+      "WebFetch(domain:github.com)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
