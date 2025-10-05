@@ -33,4 +33,5 @@
     >> so that next python files can use the output of previous python file directly from [outputs/centralized.db] single datasource
     >> avoid creating txt/json file for logs >> so we  wont have to do text matching  
     >> keep all python files in [ src/ ] directory
-
+- do not add CLAUDE in git commit
+- in notebook, I will do all the modificaitons MANUALLY

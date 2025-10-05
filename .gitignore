@@ -28,11 +28,15 @@ MANIFEST
 *lora_model
 *model
 *outputs
+lora_model*
+*.pkl
+tensorboard_logs/
+datasets/
+datasets/raw
 
 
 *unsloth_compiled_cache
 
-*/venv_unsloth
 
 # unsloth_2_Hybrid_Grit
 venv_unsloth_2_Hybrid_Grit

@@ -1,32 +1,29 @@
 # MINIMAL REQUIREMENTS - Compatible with Lambda.ai base image
 # Do NOT reinstall: torch, torchvision, tensorflow, numpy, pandas (already in base image)
 
-# Fine-tuning specific packages (not in base image)
+# Core fine-tuning packages
 transformers>=4.30.0
 peft>=0.6.0
 accelerate>=0.20.0
 bitsandbytes>=0.41.0
 datasets>=2.10.0
-unsloth>=2024.5.8
 trl>=0.7.0
 
-# Enhanced logging and monitoring (Phase 2 & 3)
+# Logging and monitoring
 tensorboard>=2.15.0
 tensorboardX>=2.6.0
 
-# Evaluation metrics (small packages only)
+# Evaluation metrics
 rouge-score>=0.1.2
 evaluate>=0.4.0
-nltk>=3.8.0
 
-# Inference backend
-ollama>=0.1.26
-
-# Database & utilities (lightweight only)
+# HuggingFace utilities
 huggingface-hub>=0.20.0
-wandb>=0.15.0
-gpustat>=1.1.0
-tqdm>=4.64.0
 
-# Statistical analysis (if not in base)
-pingouin>=0.5.0
+# Utilities
+tqdm>=4.64.0
+python-dotenv>=1.0.0
+
+# Visualization
+matplotlib>=3.5.0
+scikit-learn>=1.0.0
