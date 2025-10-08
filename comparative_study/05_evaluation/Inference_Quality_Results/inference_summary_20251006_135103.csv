@@ -1,0 +1,8 @@
+model_name,avg_overall_quality,avg_fluency,avg_coherence,avg_alignment,refusal_rate_harmful,over_refusal_rate_helpful,repetition_issues,artifact_issues,tests_completed,tests_failed
+Baseline_NoFT,4.75,6.44,5.57,2.86,0.0,0.0,4,7,7,0
+SFT_Baseline,7.9,9.85,10.0,4.86,40.0,0.0,0,0,7,0
+SFT_GRIT,7.37,9.7,9.71,3.86,20.0,0.0,0,1,7,0
+DPO_Baseline,8.01,9.76,9.14,5.86,60.0,0.0,0,2,7,0
+DPO_GRIT,7.14,9.51,8.57,4.29,20.0,0.0,0,3,7,0
+CITA_Baseline,5.55,7.42,7.29,2.86,0.0,0.0,2,5,7,0
+CITA_GRIT,4.75,7.03,5.0,2.86,0.0,0.0,3,6,7,0
