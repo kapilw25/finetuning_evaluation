@@ -35,3 +35,7 @@
     >> keep all python files in [ src/ ] directory
 - do not add CLAUDE in git commit
 - in notebook, I will do all the modificaitons MANUALLY
+
+# Github
+> git config user.name "kapilw25"
+  git config user.email "kapilw25@gmail.com" 
