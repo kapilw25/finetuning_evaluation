@@ -1,8 +1,9 @@
 # MINIMAL REQUIREMENTS - For CITA Training on Lambda.ai
 # System packages used: torch, torchvision, scipy, matplotlib
 
-# NumPy compatibility fix (scipy requires <1.27.0)
-numpy>=1.19.5,<1.27.0
+# NumPy compatibility - use SYSTEM numpy (1.26.4) to match system PyTorch 2.7.0
+# numpy>=1.23.0,<1.27.0  # DO NOT install - use system version via --system-site-packages
+networkx  # Override system networkx 2.4 to avoid np.int errors
 matplotlib
 seaborn
 scikit-learn
@@ -12,9 +13,11 @@ transformers==4.55.4
 trl==0.22.2
 peft
 accelerate
-# bitsandbytes
+# bitsandbytes  # Not needed - using adamw_torch instead of adamw_8bit
 datasets
 # unsloth
+tf-keras  # Keras 2 compatibility for transformers
+jinja2>=3.1.0  # Chat template support for transformers
 
 # Jupyter kernel support
 ipykernel
@@ -24,5 +27,26 @@ debugpy
 wandb
 
 # authentication
-dotenv
+python-dotenv
 huggingface_hub
+
+# Solution: Use Python 3.10 with System Packages
+
+# # 1. Create venv with --system-site-packages to use pre-installed PyTorch,
+# etc.
+# python3 -m venv --system-site-packages venv_CITA
+
+# # 2. Activate the environment
+# source venv_CITA/bin/activate
+
+# # 3. Install requirements (will use system torch/CUDA and only install 
+# missing packages)
+# pip install -r finetuning_evaluation/requirements.txt
+
+# Why --system-site-packages is Important
+
+# Your GH200 instance has pre-installed system packages like:
+# - torch (with CUDA support)
+# - torchvision
+# - scipy
+# - matplotlib
