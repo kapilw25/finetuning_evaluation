@@ -12,9 +12,9 @@ transformers==4.55.4
 trl==0.22.2
 peft
 accelerate
-bitsandbytes
+# bitsandbytes
 datasets
-unsloth
+# unsloth
 
 # Jupyter kernel support
 ipykernel
@@ -22,3 +22,7 @@ debugpy
 
 # board
 wandb
+
+# authentication
+dotenv
+huggingface_hub

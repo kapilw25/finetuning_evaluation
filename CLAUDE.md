@@ -39,3 +39,11 @@
 # Github
 > git config user.name "kapilw25"
   git config user.email "kapilw25@gmail.com" 
+
+#   Simple solution to overwrite everything:
+```
+git fetch && git reset --hard origin/main
+```
+What it does:
+- git fetch - downloads remote changes
+- git reset --hard origin/main - throws away ALL local changes and matches remote exactly
