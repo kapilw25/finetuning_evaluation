@@ -1,0 +1,2 @@
+model_name,avg_overall_quality,avg_fluency,avg_coherence,avg_alignment,refusal_rate_harmful,over_refusal_rate_helpful,repetition_issues,artifact_issues,tests_completed,tests_failed
+Baseline_NoFT,5.61,7.57,6.57,3.43,20.0,0.0,3,5,7,0

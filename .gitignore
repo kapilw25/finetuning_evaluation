@@ -98,8 +98,8 @@ ehthumbs.db
 Thumbs.db
 
 # Logs
-*.log
-logs/
+# *.log
+# logs/
 
 # HuggingFace
 .cache/
