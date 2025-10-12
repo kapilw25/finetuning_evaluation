@@ -34,12 +34,25 @@ BASE_MODEL_NAME = "meta-llama/Meta-Llama-3.1-8B"  # Updated to 3.1
 
 # BF16 Models to evaluate (all trained in BFloat16, loaded from HuggingFace)
 MODELS = {
-    "Baseline_NoFT": None,  # Base Llama-3.1 without finetuning (control)
+    # ===================================================================
+    # A/B Testing: Base model with BOTH formats (to prove Alpaca works better)
+    # ===================================================================
+    "Baseline_NoFT_Alpaca": None,  # Base Llama-3.1 with Alpaca format (EXPECTED: coherent)
+    "Baseline_NoFT_ChatTemplate": None,  # Base Llama-3.1 with chat template (EXPECTED: may produce gibberish)
+
+    # ===================================================================
+    # SFT/DPO Models (trained with Alpaca format)
+    # ===================================================================
     "SFT_Baseline_BF16": "kapilw25/llama3-8b-pku-sft-baseline-bf16",
     "SFT_GRIT_BF16": "kapilw25/llama3-8b-pku-sft-grit-bf16",
     "DPO_Baseline_BF16": "kapilw25/llama3-8b-pku-dpo-baseline-bf16",
     "DPO_GRIT_BF16": "kapilw25/llama3-8b-pku-dpo-grit-bf16",
-    "CITA_Baseline_BF16": "kapilw25/llama3-8b-pku-cita-baseline-bf16",
+
+    # ===================================================================
+    # CITA Models - A/B Comparison
+    # ===================================================================
+    "CITA_Baseline_BF16_OLD": "kapilw25/llama3-8b-pku-cita-baseline-bf16",  # OLD: Trained with chat template (produces gibberish)
+    "CITA_Baseline_BF16_Alpaca": None,  # NEW: Will be trained with Alpaca format (placeholder until training completes)
     "CITA_GRIT_BF16": "kapilw25/llama3-8b-pku-cita-grit-bf16",
 }
 
@@ -310,9 +323,11 @@ def generate_inference(model, tokenizer, prompt: str, model_name: str, max_new_t
     """
     Generate inference using correct format based on model type.
 
-    Format mapping:
-    - SFT/DPO models (Baseline, GRIT) → Alpaca format
-    - CITA models (Baseline, GRIT) → Llama-3 chat template
+    Format mapping (A/B testing):
+    - "ChatTemplate" in name → Llama-3 chat template (for base model A/B test)
+    - "CITA" + "OLD" in name → Llama-3 chat template (old broken CITA models)
+    - "CITA" + "Alpaca" in name → Alpaca format (new CITA models trained with Alpaca)
+    - Everything else → Alpaca format (SFT/DPO/baseline)
 
     Args:
         model: The model to generate from
@@ -325,10 +340,17 @@ def generate_inference(model, tokenizer, prompt: str, model_name: str, max_new_t
         Generated response text
     """
     # Determine format based on model name
-    use_chat_template = "CITA" in model_name
+    # Use chat template ONLY if explicitly requested or for OLD CITA models
+    use_chat_template = (
+        "ChatTemplate" in model_name or
+        ("CITA" in model_name and "OLD" in model_name)
+    )
+
+    # All other models (including new CITA_Alpaca) use Alpaca format
+    use_alpaca = not use_chat_template
 
     if use_chat_template:
-        # CITA models: Use Llama-3 chat template
+        # OLD CITA models or ChatTemplate base model: Use Llama-3 chat template
         messages = [{"role": "user", "content": prompt}]
         full_prompt = tokenizer.apply_chat_template(
             messages,
@@ -336,7 +358,7 @@ def generate_inference(model, tokenizer, prompt: str, model_name: str, max_new_t
             add_generation_prompt=True
         )
     else:
-        # SFT/DPO models: Use Alpaca format
+        # ✅ UNIFIED ALPACA FORMAT for: SFT/DPO/new CITA_Alpaca/baseline models
         full_prompt = f"""Below are some instructions that describe some tasks. Write responses that appropriately complete each request.
 
 ### Instruction:
@@ -373,6 +395,14 @@ def evaluate_model(model_name: str, adapter_repo) -> Dict:
     """Evaluate a single model on all test cases"""
     print(f"\n{'='*80}")
     print(f"🔍 Evaluating: {model_name}")
+
+    # Show which format will be used (matches generate_inference logic)
+    use_chat_template = (
+        "ChatTemplate" in model_name or
+        ("CITA" in model_name and "OLD" in model_name)
+    )
+    format_type = "Llama-3 Chat Template" if use_chat_template else "Alpaca Format"
+    print(f"📋 Format: {format_type}")
     print(f"{'='*80}")
 
     # Load model from HuggingFace
@@ -539,13 +569,21 @@ def create_quality_comparison_plot(all_results: Dict, timestamp: str):
 def main():
     """Main evaluation pipeline"""
     print("\n" + "="*80)
-    print("🎯 Inference Quality Evaluation - BF16 Models")
+    print("🎯 Inference Quality Evaluation - BF16 Models (A/B Testing)")
     print("="*80)
     print(f"Base Model: {BASE_MODEL_NAME}")
-    print(f"Models to evaluate: {len(MODELS)} (1 baseline + 6 finetuned)")
+    print(f"Models to evaluate: {len(MODELS)} total")
+    print(f"  - 2 baseline formats (A/B test)")
+    print(f"  - 4 SFT/DPO models")
+    print(f"  - 3 CITA models (1 OLD + 1 NEW + 1 GRIT)")
     print(f"Source: HuggingFace (kapilw25/*-bf16)")
     print(f"Precision: BFloat16 (no quantization)")
     print(f"Test cases: {len(TEST_CASES)} ({sum(1 for t in TEST_CASES if t['category'] == 'harmful')} harmful + {sum(1 for t in TEST_CASES if t['category'] == 'helpful')} helpful)")
+    print("\n⚠️  A/B Testing:")
+    print("   1. Baseline_NoFT_Alpaca (EXPECTED: coherent)")
+    print("   2. Baseline_NoFT_ChatTemplate (EXPECTED: may produce gibberish)")
+    print("   3. CITA_Baseline_BF16_OLD (chat template - produces gibberish)")
+    print("   4. CITA_Baseline_BF16_Alpaca (NEW - will be trained with Alpaca)")
     print("="*80)
 
     # Create output directory
