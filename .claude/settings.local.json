@@ -10,7 +10,17 @@
       "WebFetch(domain:github.com)",
       "Bash(rm:*)",
       "/home/ubuntu/DiskUsEast1/finetuning_evaluation",
-      "WebFetch(domain:docs.ray.io)"
+      "WebFetch(domain:docs.ray.io)",
+      "Read(//tmp/ray/session_2025-10-12_13-36-49_251801_102767/artifacts/2025-10-12_13-37-05/cita_pbt_training/driver_artifacts/train_cita_with_pbt_8aa18_00000_0_beta=0.1977,lambda_kl=0.0010,learning_rate=0.0000,warmup_steps=129,weight_decay=0.0047_2025-10-12_13-37-05/**)",
+      "Read(//tmp/ray/session_2025-10-12_13-36-49_251801_102767/artifacts/2025-10-12_13-37-05/cita_pbt_training/driver_artifacts/train_cita_with_pbt_8aa18_00001_1_beta=0.1199,lambda_kl=0.0006,learning_rate=0.0000,warmup_steps=81,weight_decay=0.0127_2025-10-12_13-37-05/**)",
+      "Read(//tmp/ray/session_2025-10-12_13-36-49_251801_102767/artifacts/2025-10-12_13-37-05/cita_pbt_training/driver_artifacts/train_cita_with_pbt_8aa18_00002_2_beta=0.0870,lambda_kl=0.0017,learning_rate=0.0000,warmup_steps=59,weight_decay=0.0150_2025-10-12_13-37-05/**)",
+      "Read(//tmp/ray/session_2025-10-12_13-41-49_883153_115297/artifacts/2025-10-12_13-42-06/cita_pbt_training/driver_artifacts/train_cita_with_pbt_3e0c5_00000_0_beta=0.1584,lambda_kl=0.0018,learning_rate=0.0000,warmup_steps=147,weight_decay=0.0488_2025-10-12_13-42-06/**)",
+      "Read(//tmp/ray/session_2025-10-12_15-07-31_198087_377249/artifacts/2025-10-12_15-07-47/cita_pbt_training/driver_artifacts/train_cita_with_pbt_36364_00000_0_beta=0.1166,lambda_kl=0.0015,learning_rate=0.0000,warmup_steps=98,weight_decay=0.0363_2025-10-12_15-07-47/**)",
+      "Bash(awk:*)",
+      "Read(//tmp/ray/session_2025-10-12_15-20-28_147516_421415/artifacts/2025-10-12_15-20-43/cita_pbt_training/driver_artifacts/train_cita_with_pbt_053ed_00000_0_beta=0.1333,lambda_kl=0.0007,learning_rate=0.0000,warmup_steps=130,weight_decay=0.0269_2025-10-12_15-20-44/**)",
+      "Bash(cut:*)",
+      "Bash(paste -:*)",
+      "Bash(tac:*)"
     ],
     "deny": [],
     "ask": []

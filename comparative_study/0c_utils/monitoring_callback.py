@@ -44,8 +44,14 @@ class GibberishDetectionCallback(TrainerCallback):
 
         self.last_good_step = 0
 
-    def on_step_end(self, args, state, control, model, tokenizer, **kwargs):
+    def on_step_end(self, args, state, control, model=None, tokenizer=None, **kwargs):
         """Called at the end of each training step"""
+        # Handle both 'tokenizer' and 'processing_class' (new API)
+        if tokenizer is None:
+            tokenizer = kwargs.get('processing_class')
+
+        if tokenizer is None or model is None:
+            return control
 
         if state.global_step % self.check_every_n_steps != 0:
             return control

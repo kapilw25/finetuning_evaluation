@@ -42,10 +42,10 @@ def create_pbt_scheduler(
     - Then mutate hyperparameters ±20%
     """
     scheduler = PopulationBasedTraining(
-        time_attr="step",  # Use training steps (not epochs)
+        time_attr="training_iteration",  # HuggingFace reports training_iteration, not step
         metric=metric,
         mode=mode,
-        perturbation_interval=mutation_interval,
+        perturbation_interval=1,  # 1 iteration = save_steps (e.g., 100 steps)
         hyperparam_mutations=hyperparam_mutations,
         quantile_fraction=0.5,  # Top 50% vs bottom 50%
     )
@@ -80,6 +80,8 @@ def run_pbt_training(
     ray.init(ignore_reinit_error=True)
 
     # Run hyperparameter search with PBT
+    # IMPORTANT: Must explicitly set stop condition to prevent training beyond max_iterations
+    # Without stop condition, Trainer.train() continues past max_steps causing waste
     analysis = tune.run(
         trainable,
         name=name,
@@ -87,11 +89,9 @@ def run_pbt_training(
         scheduler=scheduler,
         num_samples=num_workers,
         resources_per_trial={"gpu": 1},  # Each worker uses 1 GPU
-        stop={"training_iteration": max_iterations},
-        checkpoint_freq=1,
-        checkpoint_at_end=True,
+        stop={"training_iteration": max_iterations},  # ✅ FIX: Stop after max_iterations
         keep_checkpoints_num=2,
-        local_dir=output_dir,
+        storage_path=output_dir,  # Updated from local_dir (Ray 2.x API)
         verbose=1,
     )
 
