@@ -9,7 +9,8 @@
       "WebFetch(domain:docs.unsloth.ai)",
       "WebFetch(domain:github.com)",
       "Bash(rm:*)",
-      "/home/ubuntu/DiskUsEast1/finetuning_evaluation"
+      "/home/ubuntu/DiskUsEast1/finetuning_evaluation",
+      "WebFetch(domain:docs.ray.io)"
     ],
     "deny": [],
     "ask": []
