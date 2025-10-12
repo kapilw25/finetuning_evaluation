@@ -76,6 +76,16 @@ class Tee:
     def isatty(self):
         return self.terminal.isatty()
 
+    def fileno(self):
+        """Return file descriptor of terminal (required by Ray's faulthandler)"""
+        return self.terminal.fileno()
+
+    def close(self):
+        """Close method (required by logging shutdown)"""
+        # Don't close terminal, just close log file
+        if hasattr(self.log_file, 'close'):
+            self.log_file.close()
+
 # Create logs directory
 logs_dir = project_root / "logs"
 logs_dir.mkdir(exist_ok=True)
@@ -162,6 +172,9 @@ from pbt_trainer import (
     save_best_config
 )
 
+# Ray Train integration for HuggingFace Transformers
+from ray.train.huggingface.transformers import RayTrainReportCallback
+
 
 # ===== CITA-SPECIFIC HYPERPARAMETER SPACE =====
 
@@ -174,15 +187,15 @@ def get_cita_hp_space():
     """
     return {
         # ===== STATIC TRAINING CONFIG =====
-        "per_device_train_batch_size": 1,  # ⚠️ CHANGED: 1 vs notebook's 2 (for 3 workers)
-        "gradient_accumulation_steps": 8,  # ⚠️ CHANGED: 8 vs notebook's 4 (keep effective batch=8)
+        # ✅ OPTIMIZED: Max GPU utilization (96GB GH200) with max_length=1024 (saves ~25GB)
+        "per_device_train_batch_size": 8,  # ⚠️ CHANGED: 8 vs 1 (utilize memory saved from max_length 131K→1K)
+        "gradient_accumulation_steps": 1,  # ⚠️ CHANGED: 1 vs 8 (effective batch=8)
         "max_steps": 1000,  # ✅ SAME as notebook
         "lr_scheduler_type": "cosine",  # ⚠️ CHANGED: cosine vs notebook's linear (better for alignment)
         "save_steps": 100,  # ⚠️ CHANGED: 100 vs notebook's 50 (match mutation_interval for PBT)
         "save_total_limit": 5,  # ✅ SAME as notebook
         "logging_steps": 1,  # ✅ SAME as notebook
-        "evaluation_strategy": "steps",  # ⚠️ NEW: Required for PBT (needs eval_loss metric)
-        "eval_steps": 100,  # ⚠️ NEW: Required for PBT (match mutation_interval)
+        "eval_strategy": "no",  # ⚠️ CHANGED: no eval dataset available
         "gradient_checkpointing": True,  # ✅ SAME as notebook (via prepare_model_for_kbit_training)
         "bf16": True,  # ✅ SAME as notebook
         "optim": "adamw_torch",  # ✅ SAME as notebook
@@ -234,16 +247,34 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
         config: Hyperparameters from Ray Tune
         checkpoint_dir: Path to checkpoint (if resuming)
     """
+    # ===== SETUP PYTHON PATH FOR RAY WORKERS =====
+    # Each Ray worker needs to set up its own path to import custom modules
+    import sys
+    from pathlib import Path
+    worker_project_root = Path(__file__).parent.parent.parent
+    utils_path = str(worker_project_root / "comparative_study" / "0c_utils")
+    if utils_path not in sys.path:
+        sys.path.insert(0, utils_path)
+
+    # Import custom modules (after path setup)
+    from data_prep import load_pku_filtered, format_dataset
+    from cita_trainer import CITATrainer
+    from monitoring_callback import GibberishDetectionCallback
+    from ray.train.huggingface.transformers import RayTrainReportCallback
+
     # ===== LOAD MODEL & TOKENIZER =====
     model_id = "meta-llama/Llama-3.1-8B"
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.model_max_length = 1024  # ✅ Optimize: Reduce from 131K to 1K (data max=518)
 
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         torch_dtype=torch.bfloat16,
         device_map="auto",
+        # NOTE: Flash Attention 2 disabled - causes dtype errors with CITA trainer
+        # attn_implementation="flash_attention_2",  # ❌ Disabled: dtype incompatibility
     )
 
     # ===== APPLY LORA ADAPTERS =====
@@ -281,15 +312,18 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
     # Print trainable parameters
     model.print_trainable_parameters()
 
+    # NOTE: torch.compile() is INCOMPATIBLE with gradient_checkpointing
+    # Cannot use both together - keeping gradient_checkpointing for memory efficiency
+
     # Final memory check
     gc.collect()
     torch.cuda.empty_cache()
 
     # ===== LOAD DATASET =====
+    # load_pku_filtered() automatically loads PKU-SafeRLHF and filters for safety contrast
     dataset_raw = load_pku_filtered(
-        dataset_name="PKU-Alignment/PKU-SafeRLHF",
-        split="train",  # ✅ SAME as notebook: loads all 10,813 samples
-        filter_criteria={"is_response_0_safe": True, "is_response_1_safe": True}
+        split="train",  # ✅ Loads train split (filters for clear safety contrast)
+        max_samples=None  # ✅ Use all samples (~10,813 after filtering)
     )
 
     # Step 1: Format as CITA messages (system/user/assistant)
@@ -353,6 +387,12 @@ appropriately complete each request.
         desc="Converting to Alpaca text format"
     )
 
+    # Rename columns to match DPOTrainer expectations
+    # DPOTrainer expects 'chosen' and 'rejected', but we have 'text_chosen' and 'text_rejected'
+    dataset = dataset.rename_column('text_chosen', 'chosen')
+    dataset = dataset.rename_column('text_rejected', 'rejected')
+    dataset = dataset.rename_column('text_prompt', 'prompt')
+
     # ===== TEST PROMPTS FOR GIBBERISH MONITORING =====
     # ✅ SAME as inference_bf16.py (Lines 60-110) - All 7 test cases
     test_prompts = [
@@ -370,8 +410,16 @@ appropriately complete each request.
     beta = config.pop("beta")
 
     # ===== CREATE TRAINING ARGS =====
+    # Get trial ID for unique output directory
+    from ray import train as ray_train
+    try:
+        trial_id = ray_train.get_context().get_trial_id()
+    except:
+        import uuid
+        trial_id = str(uuid.uuid4())[:8]  # Fallback to random ID
+
     training_args = DPOConfig(
-        output_dir=f"./outputs/pbt_worker_{tune.get_trial_id()}",
+        output_dir=f"./outputs/pbt_worker_{trial_id}",
         beta=beta,
         **config  # Remaining hyperparams
     )
@@ -384,6 +432,10 @@ appropriately complete each request.
         stop_on_gibberish=False  # Don't stop, let PBT handle it
     )
 
+    # ===== RAY TUNE INTEGRATION CALLBACK =====
+    # Reports metrics to Ray Tune for PBT (every eval_steps=100)
+    ray_callback = RayTrainReportCallback()
+
     # ===== CREATE CITA TRAINER =====
     trainer = CITATrainer(
         model=model,
@@ -392,7 +444,7 @@ appropriately complete each request.
         lambda_kl=lambda_kl,
         train_dataset=dataset,
         processing_class=tokenizer,
-        callbacks=[gibberish_monitor]
+        callbacks=[gibberish_monitor, ray_callback]  # Both callbacks
     )
 
     # ===== RESUME FROM CHECKPOINT (if provided by PBT) =====
@@ -432,7 +484,7 @@ def main():
         pbt_scheduler = create_pbt_scheduler(
             hyperparam_mutations=get_cita_hyperparam_mutations(),
             mutation_interval=100,
-            metric="eval_loss",
+            metric="loss",  # HuggingFace Trainer reports training loss as "loss"
             mode="min"
         )
 
@@ -443,12 +495,12 @@ def main():
             scheduler=pbt_scheduler,
             num_workers=3,
             max_iterations=10,  # 10 checkpoints (1000 steps / 100)
-            output_dir="./outputs/ray_results",
+            output_dir=str(project_root / "outputs" / "ray_results"),  # Absolute path required
             name="cita_pbt_training"
         )
 
         # Print best hyperparameters
-        best_trial = print_best_hyperparameters(analysis, metric="eval_loss", mode="min")
+        best_trial = print_best_hyperparameters(analysis, metric="loss", mode="min")
 
         # Save best hyperparameters to file
         config_path = save_best_config(best_trial, "./outputs/best_pbt_config.json")
@@ -522,7 +574,7 @@ def main():
                         "warmup_steps": best_config.get("warmup_steps", "N/A"),
                         "lr_scheduler_type": "cosine",
                     },
-                    "final_eval_loss": best_trial.last_result.get("eval_loss", "N/A"),
+                    "final_loss": best_trial.last_result.get("loss", "N/A"),
                 })
 
                 # Save LoRA adapter locally (backup)
@@ -544,7 +596,7 @@ def main():
 
 Training completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Method: Population-Based Training (3 workers)
-Steps: 1000 | Eval Loss: {best_trial.last_result.get('eval_loss', 'N/A'):.4f}
+Steps: 1000 | Final Loss: {best_trial.last_result.get('loss', 'N/A'):.4f}
 
 Best Hyperparameters (found by PBT):
 - lambda_kl: {best_config.get('lambda_kl', 'N/A')}
@@ -619,6 +671,15 @@ This push REPLACES the previous model version.
         sys.stderr = original_stderr
         log_file.close()
         print(f"📝 Log file saved: {log_filename}")
+
+        # ===================================================================
+        # Auto-Shutdown Lambda Cloud Instance (Optional)
+        # ===================================================================
+        # UNCOMMENT the line below to automatically shutdown this GH200 instance
+        # after training completes (saves ~$1.50/hour)
+        #
+        os.system("sudo shutdown -h now")
+        # ===================================================================
 
 
 if __name__ == "__main__":

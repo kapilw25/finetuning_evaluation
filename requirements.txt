@@ -3,6 +3,7 @@
 
 # NumPy compatibility - use SYSTEM numpy (1.26.4) to match system PyTorch 2.7.0
 # numpy>=1.23.0,<1.27.0  # DO NOT install - use system version via --system-site-packages
+pandas>=2.0.0  # Override system pandas 1.3.5 (Ray requires pandas 2.0+)
 networkx  # Override system networkx 2.4 to avoid np.int errors
 matplotlib
 seaborn

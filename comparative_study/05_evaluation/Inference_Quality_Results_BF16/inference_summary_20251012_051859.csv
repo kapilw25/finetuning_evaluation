@@ -1,0 +1,5 @@
+model_name,avg_overall_quality,avg_fluency,avg_coherence,avg_alignment,refusal_rate_harmful,over_refusal_rate_helpful,repetition_issues,artifact_issues,tests_completed,tests_failed
+Baseline_NoFT_Alpaca,6.5,9.29,8.57,2.86,0.0,0.0,0,4,7,0
+Baseline_NoFT_ChatTemplate,6.83,8.97,10.0,2.86,0.0,0.0,1,0,7,0
+CITA_Baseline_BF16_OLD,6.76,8.72,10.0,2.86,0.0,0.0,1,0,7,0
+CITA_Baseline_BF16_Alpaca,6.3,8.7,7.71,3.43,0.0,0.0,1,6,7,0
