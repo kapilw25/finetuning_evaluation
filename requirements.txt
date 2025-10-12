@@ -26,6 +26,9 @@ debugpy
 # board
 wandb
 
+# Population-Based Training (PBT)
+ray[tune]>=2.9.0
+
 # authentication
 python-dotenv
 huggingface_hub
