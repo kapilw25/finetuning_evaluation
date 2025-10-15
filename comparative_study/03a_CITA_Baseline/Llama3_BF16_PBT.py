@@ -1,14 +1,22 @@
 """
-PBT Training Script for CITA
+PBT Training Script for CITA (with Safeguards)
 Population-Based Training with 3 workers
 
 Configuration:
 - 3 workers (parallel training)
 - 5 hyperparameters: λ_kl, LR, β, weight_decay, warmup_steps
-- mutation_interval=100 steps (exploit/explore every 100 steps)
-- Total training: 1000 steps per worker
+- mutation_interval=50 steps (exploit/explore every 50 steps, aligned with checkpoints)
+- checkpoint_interval=50 steps (aligned with safety checks for faster recovery)
+- Total training: 1000 steps per worker (20 checkpoints)
 - Expected time: ~60 minutes on GH200 96GB
 - Expected cost: ~$1.50 (60 min × $1.5/hr)
+
+Safeguards (prevents mode collapse from PBT Experiment Report):
+- ✅ PBT metric: cita/margin (maximize positive margin)
+- ✅ Margin safety: Stops training if margin becomes negative (model prefers unsafe)
+- ✅ Gibberish monitoring: Every 50 steps (aligned with checkpoints)
+- ✅ Early stopping: Enabled (stops on gibberish OR negative margin)
+- ✅ Global abort: Stops experiment if ALL workers fail (prevents pushing unsafe models)
 
 Usage:
     # Standard (with line buffering):
@@ -176,6 +184,11 @@ from pbt_trainer import (
 from ray.train.huggingface.transformers import RayTrainReportCallback
 
 
+# ===== PBT CONFIGURATION CONSTANTS =====
+# Single source of truth for checkpoint/safety check alignment
+CHECK_EVERY_N_STEPS = 50  # Checkpoint interval = Safety check interval (faster iteration for research)
+
+
 # ===== CITA-SPECIFIC HYPERPARAMETER SPACE =====
 
 def get_cita_hp_space():
@@ -192,7 +205,7 @@ def get_cita_hp_space():
         "gradient_accumulation_steps": 1,  # ⚠️ CHANGED: 1 vs 8 (effective batch=8)
         "max_steps": 1000,  # ✅ SAME as notebook
         "lr_scheduler_type": "cosine",  # ⚠️ CHANGED: cosine vs notebook's linear (better for alignment)
-        "save_steps": 100,  # ⚠️ CHANGED: 100 vs notebook's 50 (match mutation_interval for PBT)
+        "save_steps": CHECK_EVERY_N_STEPS,  # ✅ ALIGNED: checkpoint = safety check interval
         "save_total_limit": 5,  # ✅ SAME as notebook
         "logging_steps": 1,  # ✅ SAME as notebook
         "eval_strategy": "no",  # ⚠️ CHANGED: no eval dataset available
@@ -421,19 +434,32 @@ appropriately complete each request.
     training_args = DPOConfig(
         output_dir=f"./outputs/pbt_worker_{trial_id}",
         beta=beta,
-        **config  # Remaining hyperparams
+        **config  # Remaining hyperparams (includes max_steps=1000)
     )
 
-    # ===== GIBBERISH MONITORING CALLBACK =====
+    # ===== SAFEGUARD: Verify max_steps to prevent off-by-one bug =====
+    # This ensures Trainer stops at exactly max_steps (e.g., 1000)
+    # Even if Ray Tune's stop condition has off-by-one bug
+    expected_max_steps = config.get("max_steps", 1000)
+    if training_args.max_steps != expected_max_steps:
+        raise ValueError(f"max_steps mismatch! Expected {expected_max_steps}, got {training_args.max_steps}")
+
+    # ===== SAFETY MONITORING CALLBACK =====
+    # Note: CHECK_EVERY_N_STEPS is defined in parent module scope
+    # Must extract from config since workers can't access parent constants directly
+    check_interval = config.get("save_steps", 50)  # Aligned with checkpoint interval
+
     gibberish_monitor = GibberishDetectionCallback(
         test_prompts=test_prompts,
-        check_every_n_steps=100,  # Match mutation_interval
+        check_every_n_steps=check_interval,  # ✅ ALIGNED: same as save_steps (checkpoint boundary)
         use_alpaca_format=True,
-        stop_on_gibberish=False  # Don't stop, let PBT handle it
+        stop_on_gibberish=True,  # ✅ SAFEGUARD: Stop training if gibberish detected (prevent mode collapse)
+        stop_on_negative_margin=True,  # ✅ SAFEGUARD: Stop if margin becomes negative (model prefers unsafe responses)
+        margin_tolerance=0.0  # ✅ SAFEGUARD: Margin must be > 0 (positive = model prefers safe responses)
     )
 
     # ===== RAY TUNE INTEGRATION CALLBACK =====
-    # Reports metrics to Ray Tune for PBT (every eval_steps=100)
+    # Reports metrics to Ray Tune for PBT (every save_steps=50, aligned with checkpoints)
     ray_callback = RayTrainReportCallback()
 
     # ===== CREATE CITA TRAINER =====
@@ -464,43 +490,62 @@ def main():
     1. Create PBT scheduler with CITA hyperparameters
     2. Launch 3 parallel workers
     3. Each worker trains with different hyperparameters
-    4. Every 100 steps: bottom workers copy from top workers + mutate
-    5. After 1000 steps: select best hyperparameters
+    4. Every 50 steps: checkpoint + safety check + PBT mutation (if needed)
+    5. After 1000 steps (20 checkpoints): select best hyperparameters
+    6. Global safety check: Abort if ALL workers failed (prevents pushing unsafe models)
+
+    Triple Stop Protection (prevents off-by-one bug):
+    1. Ray Tune: stop={"training_iteration": 20, "timesteps_total": 1000}
+    2. DPOConfig: max_steps=1000 (Trainer.train() respects this)
+    3. Assertion: Verifies max_steps matches expected value
     """
     print("\n" + "="*80)
     print("🚀 Starting PBT Training for CITA")
     print("="*80)
     print(f"Configuration:")
     print(f"  - Workers: 3")
-    print(f"  - Mutation interval: 100 steps")
-    print(f"  - Total steps: 1000")
+    print(f"  - Checkpoint interval: {CHECK_EVERY_N_STEPS} steps (aligned with safety checks)")
+    print(f"  - Mutation interval: {CHECK_EVERY_N_STEPS} steps (PBT acts at each checkpoint)")
+    print(f"  - Total steps: 1000 (20 checkpoints)")
     print(f"  - Hyperparameters tuned: λ_kl, LR, β, weight_decay, warmup_steps")
     print(f"  - Expected time: ~60 minutes")
     print(f"  - Expected cost: ~$1.50")
     print("="*80 + "\n")
 
     try:
+        # Get hyperparameter space for dynamic calculations
+        hp_space = get_cita_hp_space()
+        max_steps = hp_space["max_steps"]  # 1000
+        save_steps = hp_space["save_steps"]  # CHECK_EVERY_N_STEPS (50)
+        max_iterations_expected = max_steps // save_steps  # 1000 / 50 = 20 iterations
+
         # Create PBT scheduler
         pbt_scheduler = create_pbt_scheduler(
             hyperparam_mutations=get_cita_hyperparam_mutations(),
-            mutation_interval=100,
-            metric="loss",  # HuggingFace Trainer reports training loss as "loss"
-            mode="min"
+            mutation_interval=CHECK_EVERY_N_STEPS,  # ✅ ALIGNED: mutation = checkpoint = safety check (50 steps)
+            metric="cita/margin",  # ✅ SAFEGUARD: Use margin (should be positive) instead of loss
+            mode="max"  # ✅ SAFEGUARD: Maximize margin (chosen_logps - rejected_logps > 0)
         )
 
         # Run PBT training
         analysis = run_pbt_training(
             trainable=train_cita_with_pbt,
-            hp_space=get_cita_hp_space(),
+            hp_space=hp_space,
             scheduler=pbt_scheduler,
             num_workers=3,
-            max_iterations=10,  # 10 checkpoints (1000 steps / 100)
+            max_iterations=max_iterations_expected,  # Dynamic: 1000 / 50 = 20 iterations
             output_dir=str(project_root / "outputs" / "ray_results"),  # Absolute path required
             name="cita_pbt_training"
         )
 
+        # ===================================================================
+        # NOTE: Global safety check handled by AllWorkersSafetyStopper during training
+        # If all workers fail, experiment aborts immediately (no need to check here)
+        # This prevents GPU waste (old approach waited until max_steps before checking)
+        # ===================================================================
+
         # Print best hyperparameters
-        best_trial = print_best_hyperparameters(analysis, metric="loss", mode="min")
+        best_trial = print_best_hyperparameters(analysis, metric="cita/margin", mode="max")
 
         # Save best hyperparameters to file
         config_path = save_best_config(best_trial, "./outputs/best_pbt_config.json")
@@ -559,7 +604,7 @@ def main():
                     "training_date": datetime.now().strftime("%Y%m%d_%H%M%S"),
                     "training_method": "CITA_PBT",
                     "pbt_workers": 3,
-                    "pbt_mutation_interval": 100,
+                    "pbt_mutation_interval": CHECK_EVERY_N_STEPS,  # 50 steps (aligned with checkpoints)
                     "dataset": "PKU-SafeRLHF",
                     "filtered_samples": 10813,
                     "max_steps": 1000,
@@ -575,6 +620,7 @@ def main():
                         "lr_scheduler_type": "cosine",
                     },
                     "final_loss": best_trial.last_result.get("loss", "N/A"),
+                    "final_margin": best_trial.last_result.get("cita/margin", "N/A"),  # ✅ SAFEGUARD: Track margin metric
                 })
 
                 # Save LoRA adapter locally (backup)
@@ -592,11 +638,12 @@ def main():
                 print("   (This will overwrite/replace any existing model at this repo)")
 
                 # Create commit message with PBT results
+                final_margin = best_trial.last_result.get('cita/margin', 'N/A')
                 commit_msg = f"""CITA PBT BF16 Training (LoRA Adapter)
 
 Training completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Method: Population-Based Training (3 workers)
-Steps: 1000 | Final Loss: {best_trial.last_result.get('loss', 'N/A'):.4f}
+Steps: 1000 | Final Margin: {final_margin if final_margin == 'N/A' else f'{final_margin:.4f}'}
 
 Best Hyperparameters (found by PBT):
 - lambda_kl: {best_config.get('lambda_kl', 'N/A')}
@@ -609,6 +656,7 @@ Best Hyperparameters (found by PBT):
 LoRA adapter (r=16, 41.9M trainable params)
 Compatible with inference_bf16.py evaluation script.
 
+Safeguards: margin-based PBT, gibberish detection (every 50 steps), early stopping enabled.
 This push REPLACES the previous model version.
 """
 
