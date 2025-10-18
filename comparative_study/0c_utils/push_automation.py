@@ -151,40 +151,52 @@ class PushAutomation:
             print(f"   Assuming this is first training run")
             return None
 
-    def should_push_to_hf(self, current_margin: float, hf_repo: str) -> bool:
+    def should_push_to_hf(self, current_metric: float, hf_repo: str, metric_mode: str = "max") -> bool:
         """
         Check if current training performance is better than previous
 
         Args:
-            current_margin: Current training's final margin
+            current_metric: Current training's final metric value
             hf_repo: HuggingFace repository ID
+            metric_mode: "max" (higher is better) or "min" (lower is better)
 
         Returns:
             True if should push (current > previous OR first successful run), False otherwise
         """
-        if current_margin == "N/A":
-            print("❌ Current margin is N/A (training may have failed)")
+        if current_metric == "N/A":
+            print("❌ Current metric is N/A (training may have failed)")
             print("   Skipping HuggingFace push (only successful runs are pushed)")
             return False
 
-        previous_margin = self._get_previous_best_margin(hf_repo)
+        previous_metric = self._get_previous_best_margin(hf_repo)  # Still reads 'final_margin' from config
 
         # First successful training run - ALWAYS push
-        # (No previous margin found = either first run OR repo doesn't exist yet)
-        if previous_margin is None:
-            print("✅ First successful training run detected (no previous margin on HF)")
-            print(f"   Current margin: {current_margin:.4f}")
+        # (No previous metric found = either first run OR repo doesn't exist yet)
+        if previous_metric is None:
+            print("✅ First successful training run detected (no previous metric on HF)")
+            print(f"   Current metric: {current_metric:.4f}")
             print(f"   Will push to HuggingFace (establishing baseline)")
             return True
 
         # Subsequent runs - only push if improved
-        # Compare margins (higher is better for CITA)
-        if current_margin > previous_margin:
-            print(f"✅ Performance improved: {current_margin:.4f} > {previous_margin:.4f}")
+        # Compare metrics based on mode
+        if metric_mode == "max":
+            # Higher is better (margin, accuracy, etc.)
+            improved = current_metric > previous_metric
+            comparison = f"{current_metric:.4f} > {previous_metric:.4f}"
+            no_improvement = f"{current_metric:.4f} <= {previous_metric:.4f}"
+        else:  # metric_mode == "min"
+            # Lower is better (loss, error, etc.)
+            improved = current_metric < previous_metric
+            comparison = f"{current_metric:.4f} < {previous_metric:.4f}"
+            no_improvement = f"{current_metric:.4f} >= {previous_metric:.4f}"
+
+        if improved:
+            print(f"✅ Performance improved: {comparison}")
             print(f"   Will push to HuggingFace (better than previous best)")
             return True
         else:
-            print(f"⚠️  Performance did not improve: {current_margin:.4f} <= {previous_margin:.4f}")
+            print(f"⚠️  Performance did not improve: {no_improvement}")
             print(f"   Skipping HuggingFace push (keeping previous best model)")
             return False
 
@@ -279,25 +291,34 @@ class PushAutomation:
         best_checkpoint: str,
         hf_repo: str,
         config_path: str,
-        run_name: str = "CITA_Baseline"
+        run_name: str = "CITA_Baseline",
+        metric_name: str = "cita/margin",
+        metric_mode: str = "max"
     ):
         """
         Push best model to HuggingFace (only if performance improved)
 
         Args:
-            best_trial: Ray Tune best trial object
+            best_trial: Ray Tune best trial object OR SimpleNamespace for non-PBT
             best_checkpoint: Path to best checkpoint
             hf_repo: HuggingFace repository ID
             config_path: Path to best_pbt_config.json
             run_name: Training run name (for commit message)
+            metric_name: Metric to compare (default: "cita/margin")
+            metric_mode: "max" (higher is better) or "min" (lower is better)
         """
         if not self.hf_token:
             print("⚠️  No HF_TOKEN - skipping HuggingFace push")
             return
 
         # Check if should push (performance comparison)
-        current_margin = best_trial.last_result.get('cita/margin', 'N/A')
-        if not self.should_push_to_hf(current_margin, hf_repo):
+        # Handle both Ray Tune trial objects and SimpleNamespace (for SFT/DPO)
+        if hasattr(best_trial, 'last_result'):
+            current_metric = best_trial.last_result.get(metric_name, 'N/A')
+        else:
+            current_metric = getattr(best_trial, 'final_metric', 'N/A')
+
+        if not self.should_push_to_hf(current_metric, hf_repo, metric_mode=metric_mode):
             return
 
         try:
@@ -359,12 +380,13 @@ class PushAutomation:
                     "warmup_steps": best_config.get("warmup_steps", "N/A"),
                     "lr_scheduler_type": "cosine",
                 },
-                "final_loss": best_trial.last_result.get("loss", "N/A"),
-                "final_margin": current_margin,
+                "final_loss": best_trial.last_result.get("loss", "N/A") if hasattr(best_trial, 'last_result') else "N/A",
+                "final_margin": current_metric,  # Generic metric (margin for CITA, loss for SFT/DPO)
             })
 
             # Create commit message
-            final_margin = best_trial.last_result.get('cita/margin', 'N/A')
+            # Use current_metric (already extracted earlier)
+            final_margin = current_metric
             commit_msg = f"""CITA PBT BF16 Training (LoRA Adapter)
 
 Training completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -669,7 +691,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         hf_repo: str,
         config_path: str,
         run_name: str = "CITA_Baseline",
-        github_commit_message: Optional[str] = None
+        github_commit_message: Optional[str] = None,
+        metric_name: str = "cita/margin",
+        metric_mode: str = "max"
     ):
         """
         Push to both HuggingFace and GitHub (with local backup)
@@ -680,12 +704,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         3. Push to GitHub (ALWAYS - especially logs/ for analysis)
 
         Args:
-            best_trial: Ray Tune best trial object
+            best_trial: Ray Tune best trial object OR SimpleNamespace for non-PBT
             best_checkpoint: Path to best checkpoint
             hf_repo: HuggingFace repository ID
-            config_path: Path to best_pbt_config.json
+            config_path: Path to best config (best_pbt_config.json or training_config.json)
             run_name: Training run name
             github_commit_message: Custom git commit message (optional)
+            metric_name: Metric name for comparison (default: "cita/margin")
+            metric_mode: "max" or "min" (default: "max")
         """
         print(f"\n{'='*80}")
         print("🚀 Starting Automated Push")
@@ -704,7 +730,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             best_checkpoint=best_checkpoint,
             hf_repo=hf_repo,
             config_path=config_path,
-            run_name=run_name
+            run_name=run_name,
+            metric_name=metric_name,
+            metric_mode=metric_mode
         )
 
         # Step 3: Push to GitHub (always - especially logs/)
