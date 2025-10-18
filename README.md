@@ -1,4 +1,7 @@
+# CITA = DPO + Instruction-Awareness + Mandatory KL, NOT SFT-based.
+
 # Fine-Tuning Llama-3 8B: QLoRA vs Natural Gradient (GRIT)
+
 
 A comparative study of two fine-tuning approaches for Llama-3 8B on the Alpaca-GPT4 dataset:
 1. **Baseline QLoRA** - Standard first-order optimization with Unsloth

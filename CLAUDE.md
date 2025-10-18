@@ -16,7 +16,7 @@
     >> do NOT HARDCODE or do NOT use FALLBACK [e.g - CPU, if OOM on GPU, if automation doest work, hardcode the answer] mechanism at any cost
     >> [if its difficult to implement, user's requirement, explicitly mention the limitations >> but no FALLBACK
 >> TEST
-    >> for every modified code, run [py_compile, function calling, IMPORT calling, Redundancy, etc] tests >> View the results >> before making any claim about improvements
+    >> for every modified code, run [py_compile, Import check, AST based syntax check, function calling, IMPORT calling, Redundancy, etc] tests >> View the results >> before making any claim about improvements
     >> I will test it manually outside claude terminal, if execution_time > 2 mins
     >> before building next code modules >> READ, analyze and explain/ EDA the output of previous code module
     >> create TEST file in [ unit_test/ ] ONLY existing directory 
@@ -47,3 +47,7 @@ git fetch && git reset --hard origin/main
 What it does:
 - git fetch - downloads remote changes
 - git reset --hard origin/main - throws away ALL local changes and matches remote exactly
+
+>> note: be brutally honest. You do not have to agree with me, unless I am correct. But do not LIE/ Halluciante too
+>> WEBSEARCH [not always] : if needed to find the universal practices in Ai/ML research world
+>> note: being Devil's advocate doesnt mean, hallucinate/fake-produce the mistakes which dont exist. If the code is correct , then accept it and move on

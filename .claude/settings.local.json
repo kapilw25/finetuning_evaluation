@@ -20,7 +20,8 @@
       "Read(//tmp/ray/session_2025-10-12_15-20-28_147516_421415/artifacts/2025-10-12_15-20-43/cita_pbt_training/driver_artifacts/train_cita_with_pbt_053ed_00000_0_beta=0.1333,lambda_kl=0.0007,learning_rate=0.0000,warmup_steps=130,weight_decay=0.0269_2025-10-12_15-20-44/**)",
       "Bash(cut:*)",
       "Bash(paste -:*)",
-      "Bash(tac:*)"
+      "Bash(tac:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []

@@ -180,12 +180,18 @@ def create_pbt_scheduler(
         mode: "min" or "max" (default: "min")
 
     Returns:
-        PopulationBasedTraining scheduler
+        PopulationBasedTraining scheduler (synchronous mode)
 
-    How it works:
-    - Every mutation_interval steps: compare all workers
-    - Bottom 50% copy weights from top 50%
-    - Then mutate hyperparameters ±20%
+    How it works (synchronous PBT with synch=True):
+    - Every mutation_interval iterations: ALL workers pause and wait
+    - Once all workers sync at same iteration: compare all workers fairly
+    - Bottom 50% copy weights from top 50% (exploit)
+    - Then mutate hyperparameters ±20% (explore)
+
+    Why synchronous (synch=True) vs asynchronous (synch=False, default):
+    - synch=True: Fair comparison (all workers at same iteration)
+    - synch=False: Faster but unfair (worker A at iter 5 vs worker B at iter 4)
+    - Trade-off: Slower but scientifically correct (prevents apples-to-oranges comparison)
     """
     scheduler = PopulationBasedTraining(
         time_attr="training_iteration",  # HuggingFace reports training_iteration, not step
@@ -194,6 +200,7 @@ def create_pbt_scheduler(
         perturbation_interval=1,  # 1 iteration = save_steps (e.g., 100 steps)
         hyperparam_mutations=hyperparam_mutations,
         quantile_fraction=0.5,  # Top 50% vs bottom 50%
+        synch=True,  # ✅ SYNCHRONOUS: All workers sync at same iteration before comparison (fair exploit/explore)
     )
     return scheduler
 
@@ -205,7 +212,8 @@ def run_pbt_training(
     num_workers=3,
     max_iterations=10,
     output_dir="./outputs/ray_results",
-    name="pbt_training"
+    name="pbt_training",
+    gpu_fraction=1.0
 ):
     """
     Run PBT training with specified configuration
@@ -218,6 +226,11 @@ def run_pbt_training(
         max_iterations: Number of checkpoints (default: 10)
         output_dir: Directory for Ray Tune results
         name: Experiment name
+        gpu_fraction: GPU fraction per worker (default: 1.0)
+            Examples:
+            - 1.0 = 1 worker uses 1 full GPU (sequential)
+            - 0.5 = 2 workers share 1 GPU (parallel)
+            - 0.167 = 6 workers share 1 GPU (parallel, for A100-80GB)
 
     Returns:
         analysis: Ray Tune analysis object with best hyperparameters
@@ -241,7 +254,7 @@ def run_pbt_training(
         config=hp_space,
         scheduler=scheduler,
         num_samples=num_workers,
-        resources_per_trial={"gpu": 1},  # Each worker uses 1 GPU
+        resources_per_trial={"gpu": gpu_fraction},  # ✅ Configurable GPU allocation per worker
         stop={
             "training_iteration": max_iterations,  # Primary: Stop after N checkpoints
             "timesteps_total": max_steps,  # Secondary: Stop after N training steps (safety net)
