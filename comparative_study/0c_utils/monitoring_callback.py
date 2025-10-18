@@ -46,7 +46,9 @@ class GibberishDetectionCallback(TrainerCallback):
         stop_on_gibberish=True,
         use_alpaca_format=True,  # ← Use Alpaca format
         stop_on_negative_margin=True,  # ✅ NEW: Stop if margin becomes negative
-        margin_tolerance=0.0  # ✅ NEW: Margin must be > this value (default: 0 = must be positive)
+        margin_tolerance=0.0,  # ✅ NEW: Margin must be > this value (default: 0 = must be positive)
+        stop_on_high_kl=True,  # ✅ NEW: Stop if KL divergence too high (drift from reference)
+        kl_threshold=0.5  # ✅ NEW: KL must be < this value (default: 0.5)
     ):
         self.test_prompts = test_prompts
         self.check_every_n_steps = check_every_n_steps
@@ -56,9 +58,12 @@ class GibberishDetectionCallback(TrainerCallback):
         self.use_alpaca_format = use_alpaca_format
         self.stop_on_negative_margin = stop_on_negative_margin
         self.margin_tolerance = margin_tolerance
+        self.stop_on_high_kl = stop_on_high_kl
+        self.kl_threshold = kl_threshold
 
         self.last_good_step = 0
         self.negative_margin_violations = 0  # ✅ Track total negative margin detections (for logging)
+        self.kl_violations = 0  # ✅ Track KL divergence violations
 
     def on_step_end(self, args, state, control, model=None, tokenizer=None, **kwargs):
         """Called at the end of each training step"""
@@ -100,7 +105,30 @@ class GibberishDetectionCallback(TrainerCallback):
             else:
                 print(f"✅ SAFE: Margin > {self.margin_tolerance} (model prefers chosen/safe responses)")
 
-        # ===== CHECK 2: Gibberish Detection =====
+        # ===== CHECK 2: KL Divergence (Drift Detection) =====
+        kl_drift_detected = False
+        current_kl = None
+
+        # Extract current KL divergence from trainer logs
+        if hasattr(state, 'log_history') and len(state.log_history) > 0:
+            for log_entry in reversed(state.log_history):
+                if 'cita/loss_kl' in log_entry:
+                    current_kl = log_entry['cita/loss_kl']
+                    break
+
+        if current_kl is not None:
+            print(f"📊 Current KL: {current_kl:.4f} (must be < {self.kl_threshold})")
+
+            if current_kl >= self.kl_threshold:
+                self.kl_violations += 1
+                print(f"⚠️  DRIFT: KL ≥ {self.kl_threshold} (violation #{self.kl_violations})")
+                print(f"   Model drifting from reference (mode collapse risk)!")
+                print(f"   🛑 STOPPING IMMEDIATELY (preventive)")
+                kl_drift_detected = True
+            else:
+                print(f"✅ STABLE: KL < {self.kl_threshold} (model aligned with reference)")
+
+        # ===== CHECK 3: Gibberish Detection =====
         gibberish_detected = False
 
         for prompt in self.test_prompts:
@@ -133,7 +161,11 @@ class GibberishDetectionCallback(TrainerCallback):
         if unsafe_behavior_detected and self.stop_on_negative_margin:
             failure_reasons.append(f"NEGATIVE MARGIN (model prefers unsafe responses)")
 
-        # Check 2: Gibberish (mode collapse)
+        # Check 2: KL drift (preventive)
+        if kl_drift_detected and self.stop_on_high_kl:
+            failure_reasons.append(f"KL DIVERGENCE TOO HIGH (drift from reference)")
+
+        # Check 3: Gibberish (mode collapse)
         if gibberish_detected and self.stop_on_gibberish:
             failure_reasons.append(f"GIBBERISH DETECTED (mode collapse)")
 
@@ -162,7 +194,8 @@ class GibberishDetectionCallback(TrainerCallback):
                 try:
                     tune.report(
                         gibberish_detected=gibberish_detected,
-                        unsafe_behavior_detected=unsafe_behavior_detected
+                        unsafe_behavior_detected=unsafe_behavior_detected,
+                        kl_drift_detected=kl_drift_detected
                     )
                 except Exception:
                     pass  # Not running under Ray Tune, skip reporting
@@ -178,7 +211,8 @@ class GibberishDetectionCallback(TrainerCallback):
                 try:
                     tune.report(
                         gibberish_detected=False,
-                        unsafe_behavior_detected=False
+                        unsafe_behavior_detected=False,
+                        kl_drift_detected=False
                     )
                 except Exception:
                     pass
