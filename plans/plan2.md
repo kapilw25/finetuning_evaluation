@@ -52,11 +52,11 @@ From `plan1_true_cita_tier1_conference.md`, the current implementation has **MUL
 - ✅ SFT baseline (standard SFTTrainer)
 - ✅ DPO baseline (standard DPOTrainer)
 - ✅ CITA with standard DPO format (L_SFT + L_DPO + L_KL, role-based separation)
-- ✅ Dual-metric evaluation (1,000+ prompts, custom LLM-as-judge)
+- ⏳ Dual-metric evaluation (1,000+ prompts, custom LLM-as-judge)
 
-**What we're NOT building (deferred research hypotheses):**
-- ❌ Text-label instruction format
-- ❌ Contrastive single-sequence format
+**What we're ~~NOT building~~ (deferred research hypotheses):**
+- ~~Text-label instruction format~~
+- ~~Contrastive single-sequence format~~
 
 ---
 
@@ -64,30 +64,30 @@ From `plan1_true_cita_tier1_conference.md`, the current implementation has **MUL
 
 ```
 comparative_study/
-├── 01_SFT_Baseline/
-│   └── Llama3_BF16.py          # ← Separate script
-├── 02_DPO_Baseline/
-│   └── Llama3_BF16.py          # ← Separate script
+├── 01a_SFT_Baseline/
+│   └── Llama3_BF16.py          # ✅ Separate script
+├── 02a_DPO_Baseline/
+│   └── Llama3_BF16.py          # ✅ Separate script
 ├── 03a_CITA_Baseline/
-│   └── Llama3_BF16_PBT.py      # ← Separate script
+│   └── Llama3_BF16_PBT.py      # ✅ Separate script
 └── 0c_utils/                   # ← Shared utilities
     ├── data_prep.py            # ✅ ALREADY EXISTS
     ├── cita_trainer_2.py       # ✅ ALREADY EXISTS
     ├── monitoring_callback.py  # ✅ ALREADY EXISTS
-    └── model_utils.py          # ← ADD: Shared model loading
+    └── model_utils.py          # ✅ DONE: 7 utility functions (load_hf_token, load_model_bf16, setup_lora, apply_torch_compile, load_training_dataset, get_test_prompts, get_model_repo_name)
 ```
 
 ---
 
-1. **Build SFT trainer** (`comparative_study/01_SFT_Baseline/Llama3_BF16.py`)
-   - Standard SFTTrainer from TRL
-   - Format 4.1 (ITA) - chosen only
-   - Verify loss matches theory
+1. ✅ **Build SFT trainer** (`comparative_study/01a_SFT_Baseline/Llama3_BF16.py`)
+   - ✅ Standard SFTTrainer from TRL
+   - ✅ Format 4.1 (ITA) - chosen only
+   - ✅ Verify loss matches theory
 
-2. **Build DPO trainer** (`comparative_study/02_DPO_Baseline/Llama3_BF16.py`)
-   - Standard DPOTrainer from TRL
-   - Format 4.3 (EBA) - separate chosen/rejected
-   - Verify loss matches Rafailov 2023
+2. ✅ **Build DPO trainer** (`comparative_study/02a_DPO_Baseline/Llama3_BF16.py`)
+   - ✅ Standard DPOTrainer from TRL
+   - ✅ Format 4.3 (EBA) - separate chosen/rejected
+   - ✅ Verify loss matches Rafailov 2023
 
 3. **CITA trainer** (`comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py`)
    - ✅ Has L_DPO fix (standard DPO with reference model)
@@ -96,10 +96,10 @@ comparative_study/
    - ~~Add contrastive single-sequence format~~ (no precedent - not implementing)
 
    **Add Standard Monitoring (fixes PBT failures):**
-   - ~~✅ KL divergence early stopping in `monitoring_callback.py` (stops at iter 1 vs iter 8, saves 77 min)~~
-   - ~~✅ Reward metrics (`rewards/chosen`, `rewards/rejected`, `rewards/accuracies`) in `cita_trainer_2.py`~~
-   - ~~✅ Perplexity tracking (`torch.exp(loss_sft)`) in `cita_trainer_2.py`~~
-   - ~~✅ Gradient norm monitoring (`clip_grad_norm_`) in `cita_trainer_2.py`~~
+   - ✅ KL divergence early stopping in `monitoring_callback.py` (stops at iter 1 vs iter 8, saves 77 min)
+   - ✅ Reward metrics (`rewards/chosen`, `rewards/rejected`, `rewards/accuracies`) in `cita_trainer_2.py`
+   - ✅ Perplexity tracking (`torch.exp(loss_sft)`) in `cita_trainer_2.py`
+   - ✅ Gradient norm monitoring (`clip_grad_norm_`) in `cita_trainer_2.py`
 
 4. **Build evaluation** (`comparative_study/05_evaluation/dual_metric_eval.py`)
    - Dual-metric (harmlessness + helpfulness)
@@ -173,10 +173,10 @@ Report as 2D Pareto frontier:
 
    ```bash
    # SFT sanity (100 steps, 1 worker)
-   python comparative_study/01_SFT_Baseline/Llama3_BF16.py --mode sanity
+   python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
    # DPO sanity (100 steps, 1 worker)
-   python comparative_study/02_DPO_Baseline/Llama3_BF16.py --mode sanity
+   python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
 
    # CITA sanity (100 steps, 1 worker) - Standard DPO + L_SFT + L_KL
    python comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py --mode sanity

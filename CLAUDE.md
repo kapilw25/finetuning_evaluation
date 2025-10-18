@@ -8,9 +8,6 @@
         >> then [source venv_<project_name>/bin/activate] && [ pip install -r requirements ]
         >> dont stop untill you resolve all errors
         >> but dont install packages individually at any cost , do you understand? 
->> FRESH MEMORY 
-    >> if image or its directory is shared, view each of the following image with FRESH eyes, before making any conclusion
-    >> re-read ALL lines of current version of code, before making any modification 
 >> no HARDCODE / FALLBACK
     >> np CPU, all heavy computaitons must be done on GPU
     >> do NOT HARDCODE or do NOT use FALLBACK [e.g - CPU, if OOM on GPU, if automation doest work, hardcode the answer] mechanism at any cost
