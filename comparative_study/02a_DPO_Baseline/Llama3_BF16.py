@@ -113,6 +113,47 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     print(f"  - Precision: BF16 + Flash Attention 2")
     print("="*80 + "\n")
 
+    # ===== CHECKPOINT DETECTION (BEFORE LOADING MODEL) =====
+    print("\n" + "="*80)
+    print("🔍 Checking for existing checkpoints...")
+    print("="*80 + "\n")
+
+    training_skipped = False
+    latest_checkpoint = None
+
+    # Priority 1: Check HuggingFace for existing LoRA adapters
+    print("1️⃣ Checking HuggingFace for existing model...")
+    try:
+        from huggingface_hub import repo_exists
+        if repo_exists(HF_REPO, token=HF_TOKEN, repo_type="model"):
+            print(f"✅ Found model on HuggingFace: {HF_REPO}")
+            print(f"   Skipping training...\n")
+            training_skipped = True
+        else:
+            print(f"❌ Model not found on HuggingFace: {HF_REPO}")
+            print(f"   Will check local checkpoints...\n")
+    except Exception as e:
+        print(f"❌ Model not found on HuggingFace: {HF_REPO}")
+        print(f"   Error: {type(e).__name__}")
+        print(f"   Will check local checkpoints...\n")
+
+    # Priority 2: Check local checkpoints
+    if not training_skipped:
+        print("2️⃣ Checking local checkpoints...")
+        latest_checkpoint = get_latest_checkpoint(output_dir)
+
+        if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
+            print(f"✅ Training already completed at: {latest_checkpoint}")
+            print(f"   Max steps: {max_steps}")
+            print(f"   Skipping training, loading final model...\n")
+            training_skipped = True
+        elif latest_checkpoint:
+            print(f"📂 Found checkpoint: {latest_checkpoint}")
+            print(f"   Resuming training from this checkpoint...\n")
+        else:
+            print(f"🆕 No checkpoint found, starting fresh training...\n")
+            latest_checkpoint = None
+
     # ===== LOAD MODEL & TOKENIZER =====
     print("Loading model...")
     model, tokenizer = load_model_bf16(
@@ -221,50 +262,6 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
     print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
     print(f"{start_gpu_memory} GB of memory reserved before training.")
-
-    # ===== CHECKPOINT DETECTION =====
-    print("\n" + "="*80)
-    print("🔍 Checking for existing checkpoints...")
-    print("="*80 + "\n")
-
-    # Priority 1: Check HuggingFace for existing LoRA adapters
-    print("1️⃣ Checking HuggingFace for existing model...")
-    try:
-        from huggingface_hub import hf_hub_download
-        # Try to download adapter_config.json to check if model exists
-        hf_hub_download(
-            repo_id=HF_REPO,
-            filename="adapter_config.json",
-            token=HF_TOKEN,
-            local_dir=output_dir / "lora_model_DPO_Baseline",
-            local_dir_use_symlinks=False
-        )
-        print(f"✅ Found model on HuggingFace: {HF_REPO}")
-        print(f"   Downloaded to: {output_dir / 'lora_model_DPO_Baseline'}")
-        print(f"   Skipping training...\n")
-        training_skipped = True
-        latest_checkpoint = None
-    except Exception as e:
-        print(f"❌ Model not found on HuggingFace: {HF_REPO}")
-        print(f"   Will check local checkpoints...\n")
-
-        # Priority 2: Check local checkpoints
-        print("2️⃣ Checking local checkpoints...")
-        latest_checkpoint = get_latest_checkpoint(output_dir)
-
-        if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
-            print(f"✅ Training already completed at: {latest_checkpoint}")
-            print(f"   Max steps: {max_steps}")
-            print(f"   Skipping training, loading final model...\n")
-            training_skipped = True
-        elif latest_checkpoint:
-            print(f"📂 Found checkpoint: {latest_checkpoint}")
-            print(f"   Resuming training from this checkpoint...\n")
-            training_skipped = False
-        else:
-            print(f"🆕 No checkpoint found, starting fresh training...\n")
-            latest_checkpoint = None
-            training_skipped = False
 
     # ===== TRAIN =====
     if not training_skipped:
