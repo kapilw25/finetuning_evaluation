@@ -29,16 +29,18 @@ Outputs:
 
 import sys
 from pathlib import Path
-import torch
 import os
 import argparse
 from datetime import datetime
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import DPOTrainer, DPOConfig
 
 # ===== FIX CUDA OOM: Enable expandable segments for memory fragmentation =====
 # DPO requires both trainable model + reference model, causing fragmentation
+# MUST be set BEFORE importing torch/transformers
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import DPOTrainer, DPOConfig
 
 # Add utils to path
 project_root = Path(__file__).parent.parent.parent
@@ -466,8 +468,9 @@ Examples:
         if not training_skipped and trainer.state.log_history:
             final_log = trainer.state.log_history[-1]
             # Check eval metrics first, then training metrics
-            final_margin = final_log.get('eval_rewards/margin',
-                                         final_log.get('rewards/margin',
+            # Note: DPO uses 'margins' (plural) not 'margin'
+            final_margin = final_log.get('eval_rewards/margins',
+                                         final_log.get('rewards/margins',
                                                       final_log.get('eval_loss',
                                                                    final_log.get('loss', 'N/A'))))
         else:
@@ -483,8 +486,9 @@ Examples:
                         if trainer_state.get('log_history'):
                             # Get last entry, prefer eval metrics over training metrics
                             last_entry = trainer_state['log_history'][-1]
-                            final_margin = last_entry.get('eval_rewards/margin',
-                                                         last_entry.get('rewards/margin',
+                            # Note: DPO uses 'margins' (plural) not 'margin'
+                            final_margin = last_entry.get('eval_rewards/margins',
+                                                         last_entry.get('rewards/margins',
                                                                       last_entry.get('eval_loss',
                                                                                    last_entry.get('loss', 'N/A'))))
                         else:
