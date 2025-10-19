@@ -1,176 +1,0 @@
-📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251019_115520.log
-📝 All terminal output will be saved to this log file
-📝 For guaranteed unbuffered output, run with: python -u <script.py>
-================================================================================
-
-✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
-✅ HuggingFace authenticated
-📦 Model will be pushed to: kapilw25/llama3-8b-pku-sft-baseline-bf16
-================================================================================
-
-✅ Sanity check mode: 200 steps (~8 minutes)
-
-================================================================================
-💰 Auto-Shutdown Configuration
-================================================================================
-Training will take approximately: ~8 minutes
-After training completes, do you want to automatically shutdown the GPU instance?
-================================================================================
-Auto-shutdown after training? (yes/no): ================================================================================
-
-
-================================================================================
-🚀 Starting SFT Baseline Training
-================================================================================
-Configuration:
-  - Model: Llama-3.1-8B (BF16)
-  - Method: Standard SFT (supervised learning)
-  - Loss: L_SFT only
-  - Training steps: 200
-  - Batch size: 2 (per device)
-  - Gradient accumulation: 4 (effective batch=8)
-  - Learning rate: 2e-4 (QLoRA recommendation)
-  - Warmup steps: 100 (10% of total steps)
-  - LR scheduler: cosine
-  - Optimizer: adamw_torch
-  - Precision: BF16 + Flash Attention 2
-================================================================================
-
-
-================================================================================
-🔍 Checking for existing checkpoints...
-================================================================================
-
-1️⃣ Checking HuggingFace for existing model...
-✅ Found model on HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
-   Skipping training...
-
-
-🏁 SFT Baseline Training Complete!
-📝 Log file: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251019_115520.log
-📊 Saved training config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/sft_baseline_config.json
-✅ Git already configured: kapilw25@gmail.com
-
-================================================================================
-🚀 Starting Automated Push
-================================================================================
-
-
-================================================================================
-💾 Saving Best Model Locally (Backup Before Shutdown)
-================================================================================
-Checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/lora_model_SFT_Baseline
-⚠️  Instance will shutdown - this backup is critical!
-================================================================================
-
-📦 Loading base model...
-Loading checkpoint shards:   0%|                                                      | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|###########5                                  | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|#######################                       | 2/4 [00:01<00:01,  1.14it/s]Loading checkpoint shards:  75%|##################################5           | 3/4 [00:02<00:00,  1.15it/s]Loading checkpoint shards: 100%|##############################################| 4/4 [00:02<00:00,  1.64it/s]Loading checkpoint shards: 100%|##############################################| 4/4 [00:02<00:00,  1.42it/s]
-🔧 Loading LoRA adapter from best checkpoint...
-📋 Loading tokenizer...
-
-💾 Saving LoRA adapter locally: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16/
-✅ Saved LoRA adapter (~165MB): /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16/
-✅ Saved best config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16/best_pbt_config.json
-================================================================================
-
-⚠️  Could not fetch previous model: 404 Client Error. (Request ID: Root=1-68f4d1c5-3917e3ce0c09c4505d7c749b;22a96e26-b8ee-4c44-8986-90ccaadd607d)
-
-Entry Not Found for url: https://huggingface.co/kapilw25/llama3-8b-pku-sft-baseline-bf16/resolve/main/config.json.
-   Assuming this is first training run
-✅ First successful training run detected (no previous metric on HF)
-   Current metric: 1.5844
-   Will push to HuggingFace (establishing baseline)
-
-================================================================================
-📤 Pushing Best Model to HuggingFace
-================================================================================
-Repository: kapilw25/llama3-8b-pku-sft-baseline-bf16
-Checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/lora_model_SFT_Baseline
-This will REPLACE the existing model (performance improved)
-================================================================================
-
-📦 Loading base model...
-Loading checkpoint shards:   0%|                                                      | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|###########5                                  | 1/4 [00:01<00:03,  1.10s/it]Loading checkpoint shards:  50%|#######################                       | 2/4 [00:01<00:01,  1.02it/s]Loading checkpoint shards:  75%|##################################5           | 3/4 [00:02<00:00,  1.08it/s]Loading checkpoint shards: 100%|##############################################| 4/4 [00:03<00:00,  1.55it/s]Loading checkpoint shards: 100%|##############################################| 4/4 [00:03<00:00,  1.30it/s]
-🔧 Loading LoRA adapter from best checkpoint...
-📋 Loading tokenizer...
-
-📤 Pushing LoRA adapter to HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
-   (Pushing adapter only - 165MB, compatible with inference script)
-   (This will overwrite/replace the existing model)
-Processing Files (0 / 0)      : |                                              |  0.00B /  0.00B            
-New Data Upload               : |                                              |  0.00B /  0.00B            [A
-
-  ...adapter_model.safetensors:  40%|################7                         | 67.0MB /  168MB            [A[A
-
-  ...adapter_model.safetensors:  40%|################7                         | 67.0MB /  168MB            [A[AProcessing Files (0 / 1)      :  40%|################7                         | 67.0MB /  168MB,   ???B/s  
-
-  ...adapter_model.safetensors:  80%|#################################5        |  134MB /  168MB            [A[AProcessing Files (0 / 1)      :  80%|#################################5        |  134MB /  168MB,  335MB/s  
-
-  ...adapter_model.safetensors: 100%|##########################################|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|##########################################|  168MB /  168MB,  252MB/s  
-
-  ...adapter_model.safetensors: 100%|##########################################|  168MB /  168MB            [A[A
-
-  ...adapter_model.safetensors: 100%|##########################################|  168MB /  168MB            [A[A
-
-  ...adapter_model.safetensors: 100%|##########################################|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|##########################################|  168MB /  168MB,  126MB/s  
-New Data Upload               : |                                              |  0.00B /  0.00B,  0.00B/s  
-  ...adapter_model.safetensors: 100%|##########################################|  168MB /  168MB            
-Processing Files (0 / 0)      : |                                              |  0.00B /  0.00B            
-New Data Upload               : |                                              |  0.00B /  0.00B            [A
-
-  ...mpag2s89t7/tokenizer.json: 100%|##########################################| 17.2MB / 17.2MB            [A[A
-
-  ...mpag2s89t7/tokenizer.json: 100%|##########################################| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|##########################################| 17.2MB / 17.2MB,   ???B/s  
-
-  ...mpag2s89t7/tokenizer.json: 100%|##########################################| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|##########################################| 17.2MB / 17.2MB,  0.00B/s  
-New Data Upload               : |                                              |  0.00B /  0.00B,  0.00B/s  
-  ...mpag2s89t7/tokenizer.json: 100%|##########################################| 17.2MB / 17.2MB            
-
-================================================================================
-✅ LoRA adapter successfully pushed to HuggingFace!
-================================================================================
-🔗 View at: https://huggingface.co/kapilw25/llama3-8b-pku-sft-baseline-bf16
-📊 Best hyperparameters: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/sft_baseline_config.json
-📏 Upload size: ~165MB (adapter only, not merged model)
-✅ Compatible with inference_bf16.py
-================================================================================
-
-
-================================================================================
-📤 Pushing Codebase to GitHub
-================================================================================
-✅ No large log files (all < 100MB)
-
-📊 Changes to commit:
- M comparative_study/01a_SFT_Baseline/Llama3_BF16.py
- M logs/SFT_Baseline_training_20251019_114521.log
-?? logs/SFT_Baseline_training_20251019_115520.log
-
-✅ Staged all changes (including logs/)
-✅ Created git commit
-
-📤 Pushing to GitHub...
-✅ Successfully pushed to GitHub!
-
-
-================================================================================
-
-
-================================================================================
-✅ Automated Push Complete!
-================================================================================
-💾 Local backup: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16
-📊 Config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/sft_baseline_config.json
-================================================================================
-
-
-================================================================================
-💰 Auto-Shutdown: All results saved!
-================================================================================
-All results saved to:
-  - Local: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/lora_model_SFT_Baseline
-  - HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16 (if performance improved)
-  - GitHub: Logs and code pushed
-================================================================================
-
-✅ GPU instance will remain running (as requested at start)

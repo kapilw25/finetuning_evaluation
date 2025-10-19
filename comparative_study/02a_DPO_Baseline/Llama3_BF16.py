@@ -36,6 +36,10 @@ from datetime import datetime
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOTrainer, DPOConfig
 
+# ===== FIX CUDA OOM: Enable expandable segments for memory fragmentation =====
+# DPO requires both trainable model + reference model, causing fragmentation
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+
 # Add utils to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "comparative_study" / "0c_utils"))
@@ -103,8 +107,8 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     print(f"  - Method: Standard DPO (Rafailov 2023)")
     print(f"  - Loss: L_DPO only")
     print(f"  - Training steps: {max_steps}")
-    print(f"  - Batch size: 2 (per device)")
-    print(f"  - Gradient accumulation: 4 (effective batch=8)")
+    print(f"  - Batch size: 1 (per device, reduced for DPO ref model)")
+    print(f"  - Gradient accumulation: 8 (effective batch=8)")
     print(f"  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)")
     print(f"  - Beta: 0.1 (Meta's Llama 3 DPO setting)")
     print(f"  - Warmup steps: 100 (10% of total steps)")
@@ -171,7 +175,20 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
 
         # Merge adapters into base model
         print("🔄 Merging LoRA adapters into base model...")
-        model = model.merge_and_unload()
+        merged_model = model.merge_and_unload()
+
+        # Clear PEFT config to avoid "Already found peft_config" warning
+        # merge_and_unload() leaves peft_config and _hf_peft_config_loaded attributes
+        try:
+            delattr(merged_model, 'peft_config')
+        except AttributeError:
+            pass
+        try:
+            delattr(merged_model, '_hf_peft_config_loaded')
+        except AttributeError:
+            pass
+
+        model = merged_model
         print("✅ LoRA adapters merged (ready for new training stage)")
 
     # ===== APPLY LORA ADAPTERS =====
@@ -217,8 +234,8 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     # Match hyperparameters from 4bit notebook for consistency
     training_args = DPOConfig(
         output_dir=str(output_dir),
-        per_device_train_batch_size=2,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=1,  # ✅ FIXED: Reduced from 2 to avoid OOM (DPO needs ref model copy)
+        gradient_accumulation_steps=8,  # ✅ FIXED: Doubled to maintain effective batch=8
         warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice for DPO)
         max_steps=max_steps,
         learning_rate=1e-5,  # ✅ FIXED: Meta's official Llama 3 DPO setting (was 2e-4, 20× too high)
@@ -239,21 +256,23 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         # ✅ ADDED: Validation to detect overfitting
         eval_strategy="steps",
         eval_steps=50,  # Aligned with save_steps
-        per_device_eval_batch_size=2,  # Match training batch size
+        per_device_eval_batch_size=1,  # ✅ FIXED: Match training batch size
+        # ✅ DPO-specific parameters (TRL 0.22.2+)
+        beta=0.1,  # Contrastive temperature (standard DPO value)
+        max_length=2048,  # Match max_seq_length
+        max_prompt_length=1024,  # Half of max_length
     )
 
     # ===== CREATE DPO TRAINER =====
     print("\nInitializing DPOTrainer...")
+    # TRL 0.22.2: DPO params go in DPOConfig, only base params in DPOTrainer
     trainer = DPOTrainer(
         model=model,
         ref_model=None,  # DPOTrainer creates reference model automatically
-        tokenizer=tokenizer,
+        processing_class=tokenizer,  # TRL 0.22.2 parameter name
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=val_dataset,  # ✅ ADDED: Validation dataset
-        beta=0.1,  # Contrastive temperature (standard DPO value)
-        max_length=2048,  # Match max_seq_length
-        max_prompt_length=1024,  # Half of max_length
+        eval_dataset=val_dataset,
     )
 
     # ===== SHOW GPU MEMORY =====
@@ -294,11 +313,16 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         tokenizer.save_pretrained(str(lora_output_dir))
         print(f"✅ LoRA adapters saved!")
     else:
-        # Load from existing checkpoint for inference/push
-        print(f"📂 Loading model from existing checkpoint: {lora_output_dir}")
+        # Training skipped - download model from HF for inference
+        print(f"📥 Downloading model from HuggingFace for inference: {HF_REPO}")
+        model, tokenizer = load_model_bf16(
+            model_id="meta-llama/Llama-3.1-8B",
+            max_seq_length=2048,
+            use_flash_attention=True
+        )
         from peft import PeftModel
-        model = PeftModel.from_pretrained(model, str(lora_output_dir))
-        print(f"✅ Model loaded from checkpoint!")
+        model = PeftModel.from_pretrained(model, HF_REPO, token=HF_TOKEN)
+        print(f"✅ Model downloaded from HuggingFace")
 
     # ===== INFERENCE TEST =====
     print("\n" + "="*80)
