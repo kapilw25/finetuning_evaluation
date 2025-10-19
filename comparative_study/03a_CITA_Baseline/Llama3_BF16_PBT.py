@@ -75,69 +75,15 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "comparative_study" / "0c_utils"))
 
 # ===================================================================
-# Logging Setup - Tee output to both terminal and log file
+# Advanced Logging Setup (Tee System)
 # ===================================================================
-class Tee:
-    """
-    Tee class to write output to both terminal and log file
-    Like Unix 'tee' command: captures everything to log file
+from logging_utils import setup_training_logger, restore_logging
 
-    Usage:
-        python comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py
-
-    Or for guaranteed unbuffered output:
-        python -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py
-    """
-    def __init__(self, terminal, log_file):
-        self.terminal = terminal
-        self.log_file = log_file
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.terminal.flush()  # Ensure immediate display on terminal
-        self.log_file.write(message)
-        self.log_file.flush()  # Ensure immediate write to disk
-
-    def flush(self):
-        self.terminal.flush()
-        self.log_file.flush()
-
-    def isatty(self):
-        return self.terminal.isatty()
-
-    def fileno(self):
-        """Return file descriptor of terminal (required by Ray's faulthandler)"""
-        return self.terminal.fileno()
-
-    def close(self):
-        """Close method (required by logging shutdown)"""
-        # Don't close terminal, just close log file
-        if hasattr(self.log_file, 'close'):
-            self.log_file.close()
-
-# Create logs directory
-logs_dir = project_root / "logs"
-logs_dir.mkdir(exist_ok=True)
-
-# Generate timestamped log filename
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_filename = logs_dir / f"CITA_PBT_training_{timestamp}.log"
-
-# Open log file with line buffering (buffering=1) for real-time logging
-log_file = open(log_filename, 'w', buffering=1)
-
-# Save original stdout/stderr
-original_stdout = sys.stdout
-original_stderr = sys.stderr
-
-# Redirect stdout and stderr to Tee
-sys.stdout = Tee(original_stdout, log_file)
-sys.stderr = Tee(original_stderr, log_file)
-
-print(f"📝 Logging initialized: {log_filename}")
-print(f"📝 All terminal output will be saved to this log file")
-print(f"📝 For guaranteed unbuffered output, run with: python -u {Path(__file__).name}")
-print("="*80 + "\n")
+# Setup logging to capture ALL terminal output (stdout + stderr)
+log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+    run_name="CITA_Baseline",
+    project_root=project_root
+)
 
 # ===================================================================
 # HuggingFace Configuration (for auto-push after PBT)
@@ -173,17 +119,18 @@ CHECK_EVERY_N_STEPS = 50  # Checkpoint interval = Safety check interval (faster 
 
 # ===== CITA-SPECIFIC HYPERPARAMETER SPACE =====
 
-def get_cita_hp_space(max_steps=1000):
+def get_cita_hp_space(max_steps=1000, base_model=None):
     """
     Hyperparameter search space for CITA training
 
     Args:
         max_steps: Maximum training steps (default: 1000 for full PBT, 100 for sanity check)
+        base_model: HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)
 
     Returns:
         Dict with static config + PBT-tuned hyperparameters
     """
-    return {
+    config = {
         # ===== STATIC TRAINING CONFIG =====
         # ✅ SAFEGUARD: Batch=1 for max stability (prevents mode collapse per PBT_Experiment_Report.md)
         "per_device_train_batch_size": 1,  # ✅ SAFEST: 1 (max stability, user confirmed)
@@ -193,7 +140,9 @@ def get_cita_hp_space(max_steps=1000):
         "save_steps": CHECK_EVERY_N_STEPS,  # ✅ ALIGNED: checkpoint = safety check interval
         "save_total_limit": 5,  # ✅ SAME as notebook
         "logging_steps": 1,  # ✅ SAME as notebook
-        "eval_strategy": "no",  # ⚠️ CHANGED: no eval dataset available
+        "eval_strategy": "steps",  # ✅ ADDED: Validation to detect overfitting
+        "eval_steps": CHECK_EVERY_N_STEPS,  # ✅ ALIGNED: eval = checkpoint = safety check (50 steps)
+        "per_device_eval_batch_size": 1,  # ✅ Match training batch size
         "gradient_checkpointing": True,  # ✅ SAME as notebook (via prepare_model_for_kbit_training)
         "bf16": True,  # ✅ SAME as notebook
         "optim": "adamw_torch",  # ✅ SAME as notebook
@@ -226,11 +175,11 @@ def get_cita_hp_space(max_steps=1000):
         # λ_kl: Floor=baseline (prevent too-low values)
         "lambda_kl": tune.uniform(0.001, 0.0015),  # ✅ [0.001, 0.0015] (baseline=0.001, +0% to +50%)
 
-        # LR: ±10% around baseline 2e-5
-        "learning_rate": tune.uniform(1.8e-5, 2.2e-5),  # ✅ [1.8e-5, 2.2e-5] (±10%)
+        # LR: ±20% around Meta's 1e-5 DPO baseline
+        "learning_rate": tune.uniform(8e-6, 1.2e-5),  # ✅ FIXED: [8e-6, 1.2e-5] (±20% around Meta's 1e-5)
 
-        # β: ±20% around baseline 0.1
-        "beta": tune.uniform(0.08, 0.12),  # ✅ [0.08, 0.12] (±20%)
+        # β: ±20% around Meta's 0.1 baseline
+        "beta": tune.uniform(0.08, 0.12),  # ✅ [0.08, 0.12] (±20% around 0.1, matches Meta)
 
         # weight_decay: ±20% around baseline 0.01
         "weight_decay": tune.uniform(0.008, 0.012),  # ✅ [0.008, 0.012] (±20%)
@@ -238,6 +187,12 @@ def get_cita_hp_space(max_steps=1000):
         # warmup_steps: Min=100 (prevent too-short warmup)
         "warmup_steps": tune.randint(100, 120),  # ✅ [100, 120) (baseline=100, min enforced)
     }
+
+    # Add base_model if provided (for stacking SFT→DPO→CITA)
+    if base_model:
+        config["base_model"] = base_model
+
+    return config
 
 
 def get_cita_hyperparam_mutations():
@@ -253,8 +208,8 @@ def get_cita_hyperparam_mutations():
     """
     return {
         "lambda_kl": tune.uniform(0.001, 0.0015),  # ✅ Constrained (baseline floor)
-        "learning_rate": tune.uniform(1.8e-5, 2.2e-5),  # ✅ Constrained (±10%)
-        "beta": tune.uniform(0.08, 0.12),  # ✅ Constrained (±20%)
+        "learning_rate": tune.uniform(8e-6, 1.2e-5),  # ✅ FIXED: Constrained (±20% around Meta's 1e-5)
+        "beta": tune.uniform(0.08, 0.12),  # ✅ Constrained (±20% around Meta's 0.1)
         "weight_decay": tune.uniform(0.008, 0.012),  # ✅ Constrained (±20%)
         "warmup_steps": tune.randint(100, 120),  # ✅ Constrained (min=100)
     }
@@ -296,6 +251,24 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
         use_flash_attention=True  # ✅ Saves ~2.5GB/worker memory
     )
 
+    # ===== LOAD BASE MODEL LORA (IF STACKING) =====
+    base_model = config.get("base_model", None)
+    if base_model:
+        print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
+        from peft import PeftModel
+        from model_utils import load_hf_token
+
+        # Load HF token for authentication
+        hf_token = load_hf_token(worker_project_root)
+
+        model = PeftModel.from_pretrained(model, base_model, token=hf_token)
+        print("✅ LoRA adapters loaded")
+
+        # Merge adapters into base model
+        print("🔄 Merging LoRA adapters into base model...")
+        model = model.merge_and_unload()
+        print("✅ LoRA adapters merged (ready for new training stage)")
+
     # ===== APPLY LORA ADAPTERS =====
     # (CRITICAL: Without LoRA, training 8B params would take DAYS!)
     from model_utils import setup_lora
@@ -316,16 +289,24 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
 
     # ===== LOAD DATASET =====
     # load_pku_filtered() automatically loads PKU-SafeRLHF and filters for safety contrast
-    dataset_raw = load_pku_filtered(
+    dataset_raw_train = load_pku_filtered(
         split="train",  # ✅ Loads train split (filters for clear safety contrast)
-        max_samples=None  # ✅ Use all samples (~10,813 after filtering)
+        max_samples=None,  # ✅ Use all samples (~10,813 after filtering)
+        return_val=False  # Training split
+    )
+
+    dataset_raw_val = load_pku_filtered(
+        split="train",
+        max_samples=None,
+        return_val=True  # Validation split (10% by default)
     )
 
     # ===== FORMAT DATASET =====
     # Format dataset in DPO format (Format 4.3 EBA from proposal)
     # CRITICAL: DPOTrainer REQUIRES separate prompt/chosen/rejected fields
     # DO NOT convert to contrastive text (Format 4.2) - that's for SFTTrainer only
-    dataset = format_dataset(dataset_raw, method="cita")
+    train_dataset = format_dataset(dataset_raw_train, method="cita")
+    val_dataset = format_dataset(dataset_raw_val, method="cita")
 
     # Dataset structure after formatting:
     # {
@@ -430,10 +411,11 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
         model=model,
         tokenizer=tokenizer,
         args=training_args,
-        train_dataset=dataset,
-        lambda_sft=1.0,      # Unified loss: L_SFT weight
-        lambda_dpo=1.0,      # Unified loss: L_DPO weight
-        lambda_kl=lambda_kl, # Unified loss: L_KL weight (PBT-tuned)
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,  # ✅ ADDED: Validation dataset
+        lambda_sft=0.0,      # ✅ STACKED TRAINING: L_SFT already optimized in Stage 1 (SFT baseline)
+        lambda_dpo=1.0,      # ✅ Continue preference learning from Stage 2 (DPO baseline)
+        lambda_kl=lambda_kl, # ✅ Add KL regularization (CITA's contribution) - PBT-tuned
         beta=beta,           # Contrastive temperature (PBT-tuned)
         callbacks=[gibberish_monitor, ray_callback]
     )
@@ -447,13 +429,14 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
 
 # ===== MAIN EXECUTION =====
 
-def main(num_workers=4, max_steps=1000):
+def main(num_workers=4, max_steps=1000, base_model=None):
     """
     Run PBT training for CITA
 
     Args:
         num_workers: Number of PBT workers (default: 4 for full PBT, 1 for sanity check)
         max_steps: Maximum training steps (default: 1000 for full PBT, 100 for sanity check)
+        base_model: HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)
 
     Steps:
     1. Create PBT scheduler with CITA hyperparameters
@@ -500,8 +483,8 @@ def main(num_workers=4, max_steps=1000):
     print("="*80 + "\n")
 
     try:
-        # Get hyperparameter space with custom max_steps
-        hp_space = get_cita_hp_space(max_steps=max_steps)
+        # Get hyperparameter space with custom max_steps and base_model
+        hp_space = get_cita_hp_space(max_steps=max_steps, base_model=base_model)
         save_steps = hp_space["save_steps"]  # CHECK_EVERY_N_STEPS (50)
 
         # Create PBT scheduler
@@ -587,58 +570,28 @@ def main(num_workers=4, max_steps=1000):
         print("\n🏁 PBT Training Complete!\n")
 
         # Restore original stdout/stderr and close log file
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
-        log_file.close()
-        print(f"📝 Log file saved: {log_filename}")
+        restore_logging(log_file, original_stdout, original_stderr)
+        print(f"📝 Complete log file saved: {log_filename}")
 
         # ===================================================================
-        # Auto-Shutdown Lambda Cloud Instance
+        # Auto-Shutdown Lambda Cloud Instance (with user confirmation)
         # ===================================================================
-        # 💰 COST-SAVING FEATURE (Response to Devil's Advocate Issue #4)
-        # Devil's Advocate: "Auto-shutdown is ENABLED. This WILL shutdown the machine after training.
-        #                    If you're SSH'd in, you lose access immediately. No confirmation, no safety check."
-        #
-        # Our Justification (INTENTIONAL DESIGN for Overnight Training):
-        #
-        # 1. PURPOSE: Cost savings for overnight/unattended training
-        #    - Lambda A100-40GB costs ~$1.50/hour
-        #    - Training takes ~120 minutes
-        #    - Without auto-shutdown: Instance runs overnight → +$12/night wasted
-        #    - With auto-shutdown: Instance stops immediately → $0 wasted
-        #
-        # 2. SAFETY MECHANISMS (Already executed BEFORE shutdown):
-        #    - Local backup saved to ./outputs/lora_model_* (~165MB)
-        #    - HuggingFace push completed (if performance improved)
-        #    - GitHub push completed (logs/ and all code)
-        #    - Large log files handled (Git LFS or chunked)
-        #    - All critical data preserved before shutdown
-        #
-        # 3. EXECUTION ORDER (Shutdown is LAST step):
-        #    Step 1: Train PBT → complete
-        #    Step 2: Save best config → complete
-        #    Step 3: Save local backup → complete (CRITICAL for data recovery)
-        #    Step 4: Push to HuggingFace → complete (if better)
-        #    Step 5: Push to GitHub → complete (logs preserved)
-        #    Step 6: Ray shutdown → complete
-        #    Step 7: Log file closed → complete
-        #    Step 8: Auto-shutdown → NOW safe to execute
-        #
-        # 4. SSH ACCESS: Not needed after training
-        #    - All results available on HuggingFace (model weights)
-        #    - All logs available on GitHub (for analysis)
-        #    - Local backup in outputs/ (can download before next boot)
-        #    → No need to keep instance running (just costs money)
-        #
-        # 5. ALTERNATIVE (if you want manual shutdown):
-        #    - Comment out the line below
-        #    - Manually run: sudo shutdown -h now
-        #    - Or manually stop instance from Lambda dashboard
-        #
-        # ✅ This is a FEATURE for cost optimization (not a bug)
-        # Trade-off: Cost savings > Keeping SSH access after training
-        #
-        os.system("sudo shutdown -h now")
+        print(f"\n{'='*80}")
+        print("💰 Auto-Shutdown: All results saved!")
+        print(f"{'='*80}")
+        print("All results saved to:")
+        print(f"  - Local: ./outputs/ray_results/cita_pbt_training/")
+        print(f"  - HuggingFace: {HF_REPO} (if performance improved)")
+        print(f"  - GitHub: Logs and code pushed")
+        print(f"{'='*80}\n")
+
+        # Ask user for confirmation before auto-shutdown
+        shutdown_confirm = input("Auto-shutdown GPU instance to save costs? (yes/no): ").strip().lower()
+        if shutdown_confirm == "yes":
+            print("🛑 Shutting down GPU instance...")
+            os.system("sudo shutdown -h now")
+        else:
+            print("✅ GPU instance will remain running for monitoring")
         # ===================================================================
 
 
@@ -682,6 +635,13 @@ Examples:
         help="Maximum training steps (overrides --mode, e.g., 100 for sanity check, 1000 for full PBT)"
     )
 
+    parser.add_argument(
+        "--base_model",
+        type=str,
+        default=None,
+        help="HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)"
+    )
+
     args = parser.parse_args()
 
     # Determine configuration based on mode or custom arguments
@@ -693,8 +653,8 @@ Examples:
     elif args.mode == "sanity":
         # Sanity check mode
         num_workers = 1
-        max_steps = 100
-        print(f"✅ Sanity check mode: {num_workers} worker, {max_steps} steps (~3 minutes)")
+        max_steps = 200  # 100 warmup + 100 training (see actual LR schedule)
+        print(f"✅ Sanity check mode: {num_workers} worker, {max_steps} steps (~6 minutes)")
     else:
         # Full PBT mode (default)
         num_workers = 4
@@ -702,4 +662,4 @@ Examples:
         print(f"✅ Full PBT mode: {num_workers} workers, {max_steps} steps (~120 minutes)")
 
     # Run main with configured parameters
-    main(num_workers=num_workers, max_steps=max_steps)
+    main(num_workers=num_workers, max_steps=max_steps, base_model=args.base_model)
