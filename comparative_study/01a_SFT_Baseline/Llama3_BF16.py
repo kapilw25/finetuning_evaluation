@@ -154,115 +154,128 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
             latest_checkpoint = None
 
     # ===== LOAD MODEL & TOKENIZER =====
-    print("Loading model...")
-    model, tokenizer = load_model_bf16(
-        model_id="meta-llama/Llama-3.1-8B",
-        max_seq_length=2048,  # Match DPO baseline for fair comparison
-        use_flash_attention=True
-    )
+    # Skip model loading if training already complete on HF (will download for inference later)
+    if not training_skipped:
+        print("Loading model...")
+        model, tokenizer = load_model_bf16(
+            model_id="meta-llama/Llama-3.1-8B",
+            max_seq_length=2048,  # Match DPO baseline for fair comparison
+            use_flash_attention=True
+        )
 
-    # ===== LOAD BASE MODEL LORA (IF STACKING) =====
-    if base_model:
-        print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
-        from peft import PeftModel
-        model = PeftModel.from_pretrained(model, base_model, token=HF_TOKEN)
-        print("✅ LoRA adapters loaded")
+        # ===== LOAD BASE MODEL LORA (IF STACKING) =====
+        if base_model:
+            print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, base_model, token=HF_TOKEN)
+            print("✅ LoRA adapters loaded")
 
-        # Merge adapters into base model
-        print("🔄 Merging LoRA adapters into base model...")
-        model = model.merge_and_unload()
-        print("✅ LoRA adapters merged (ready for new training stage)")
+            # Merge adapters into base model
+            print("🔄 Merging LoRA adapters into base model...")
+            model = model.merge_and_unload()
+            print("✅ LoRA adapters merged (ready for new training stage)")
 
-    # ===== APPLY LORA ADAPTERS =====
-    print("\nApplying LoRA adapters...")
-    model = setup_lora(
-        model,
-        r=16,
-        lora_alpha=16,
-        use_gradient_checkpointing=True
-    )
+        # ===== APPLY LORA ADAPTERS =====
+        print("\nApplying LoRA adapters...")
+        model = setup_lora(
+            model,
+            r=16,
+            lora_alpha=16,
+            use_gradient_checkpointing=True
+        )
 
-    # ===== TORCH.COMPILE() OPTIMIZATION =====
-    print("\nApplying torch.compile()...")
-    model = apply_torch_compile(model)
+        # ===== TORCH.COMPILE() OPTIMIZATION =====
+        print("\nApplying torch.compile()...")
+        model = apply_torch_compile(model)
 
-    # ===== LOAD DATASET =====
-    print("\nLoading dataset...")
-    train_dataset = load_training_dataset(
-        split="train",
-        max_samples=None,  # Use all samples
-        method="sft",  # SFT format (chosen responses only)
-        return_val=False  # Training split
-    )
+        # ===== LOAD DATASET =====
+        print("\nLoading dataset...")
+        train_dataset = load_training_dataset(
+            split="train",
+            max_samples=None,  # Use all samples
+            method="sft",  # SFT format (chosen responses only)
+            return_val=False  # Training split
+        )
 
-    val_dataset = load_training_dataset(
-        split="train",
-        max_samples=None,
-        method="sft",
-        return_val=True  # Validation split (10% by default)
-    )
+        val_dataset = load_training_dataset(
+            split="train",
+            max_samples=None,
+            method="sft",
+            return_val=True  # Validation split (10% by default)
+        )
+    else:
+        # Training skipped - initialize empty vars (will be loaded for inference if needed)
+        model = None
+        tokenizer = None
+        train_dataset = None
+        val_dataset = None
 
-    # ===== TENSORBOARD SETUP =====
-    tensorboard_base_dir = project_root / "tensorboard_logs"
-    tensorboard_base_dir.mkdir(exist_ok=True)
+    # Skip trainer setup if training already complete
+    if not training_skipped:
+        # ===== TENSORBOARD SETUP =====
+        tensorboard_base_dir = project_root / "tensorboard_logs"
+        tensorboard_base_dir.mkdir(exist_ok=True)
 
-    # Generate timestamp for unique TensorBoard run directory
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tensorboard_run_dir = tensorboard_base_dir / f"{RUN_NAME}_{timestamp}"
+        # Generate timestamp for unique TensorBoard run directory
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        tensorboard_run_dir = tensorboard_base_dir / f"{RUN_NAME}_{timestamp}"
 
-    print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
+        print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
 
-    # ===== CREATE TRAINING ARGS =====
-    # Match hyperparameters from DPO baseline for fair comparison
-    training_args = SFTConfig(
-        output_dir=str(output_dir),
-        per_device_train_batch_size=2,
-        gradient_accumulation_steps=4,
-        warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice)
-        max_steps=max_steps,
-        learning_rate=2e-4,  # Match DPO baseline
-        logging_steps=1,
-        optim="adamw_torch",
-        weight_decay=0.01,
-        lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
-        seed=3407,
-        bf16=True,  # BF16 precision
-        gradient_checkpointing=True,
-        save_steps=50,
-        save_total_limit=5,
-        report_to="tensorboard",
-        logging_dir=str(tensorboard_run_dir),
-        logging_first_step=True,
-        dataloader_num_workers=2,  # Parallel data loading
-        dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-        # ✅ SFT-specific parameters
-        max_length=2048,  # Maximum sequence length for tokenization
-        packing=False,  # Disable packing for alignment training
-        # ✅ ADDED: Validation to detect overfitting
-        eval_strategy="steps",
-        eval_steps=50,  # Aligned with save_steps
-        per_device_eval_batch_size=2,  # Match training batch size
-    )
+        # ===== CREATE TRAINING ARGS =====
+        # Match hyperparameters from DPO baseline for fair comparison
+        training_args = SFTConfig(
+            output_dir=str(output_dir),
+            per_device_train_batch_size=2,
+            gradient_accumulation_steps=4,
+            warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice)
+            max_steps=max_steps,
+            learning_rate=2e-4,  # Match DPO baseline
+            logging_steps=1,
+            optim="adamw_torch",
+            weight_decay=0.01,
+            lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
+            seed=3407,
+            bf16=True,  # BF16 precision
+            gradient_checkpointing=True,
+            save_steps=50,
+            save_total_limit=5,
+            report_to="tensorboard",
+            logging_dir=str(tensorboard_run_dir),
+            logging_first_step=True,
+            dataloader_num_workers=2,  # Parallel data loading
+            dataloader_pin_memory=True,  # Faster CPU→GPU transfer
+            # ✅ SFT-specific parameters
+            max_length=2048,  # Maximum sequence length for tokenization
+            packing=False,  # Disable packing for alignment training
+            # ✅ ADDED: Validation to detect overfitting
+            eval_strategy="steps",
+            eval_steps=50,  # Aligned with save_steps
+            per_device_eval_batch_size=2,  # Match training batch size
+        )
 
-    # ===== CREATE SFT TRAINER =====
-    print("\nInitializing SFTTrainer...")
-    # TRL 0.22.2 SFTTrainer only accepts: model, processing_class, args, train_dataset, eval_dataset
-    # Unlike Unsloth's SFTTrainer, it does NOT accept: max_seq_length, packing, dataset_text_field
-    # These are handled automatically via the "messages" field formatting
-    trainer = SFTTrainer(
-        model=model,
-        processing_class=tokenizer,  # TRL 0.22.2 parameter name
-        args=training_args,
-        train_dataset=train_dataset,  # Already formatted with "messages" field
-        eval_dataset=val_dataset,
-    )
+        # ===== CREATE SFT TRAINER =====
+        print("\nInitializing SFTTrainer...")
+        # TRL 0.22.2 SFTTrainer only accepts: model, processing_class, args, train_dataset, eval_dataset
+        # Unlike Unsloth's SFTTrainer, it does NOT accept: max_seq_length, packing, dataset_text_field
+        # These are handled automatically via the "messages" field formatting
+        trainer = SFTTrainer(
+            model=model,
+            processing_class=tokenizer,  # TRL 0.22.2 parameter name
+            args=training_args,
+            train_dataset=train_dataset,  # Already formatted with "messages" field
+            eval_dataset=val_dataset,
+        )
 
-    # ===== SHOW GPU MEMORY =====
-    gpu_stats = torch.cuda.get_device_properties(0)
-    start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-    max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
-    print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
-    print(f"{start_gpu_memory} GB of memory reserved before training.")
+        # ===== SHOW GPU MEMORY =====
+        gpu_stats = torch.cuda.get_device_properties(0)
+        start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+        max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
+        print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
+        print(f"{start_gpu_memory} GB of memory reserved before training.")
+    else:
+        # Training skipped - initialize empty vars
+        trainer = None
 
     # ===== TRAIN =====
     if not training_skipped:
@@ -294,68 +307,62 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
         model.save_pretrained(str(lora_output_dir))
         tokenizer.save_pretrained(str(lora_output_dir))
         print(f"✅ LoRA adapters saved!")
-    else:
-        # Load from existing checkpoint for inference/push
-        print(f"📂 Loading model from existing checkpoint: {lora_output_dir}")
-        from peft import PeftModel
-        model = PeftModel.from_pretrained(model, str(lora_output_dir))
-        print(f"✅ Model loaded from checkpoint!")
 
-    # ===== INFERENCE TEST =====
-    print("\n" + "="*80)
-    print("🧪 Running inference tests...")
-    print("="*80 + "\n")
+        # ===== INFERENCE TEST =====
+        print("\n" + "="*80)
+        print("🧪 Running inference tests...")
+        print("="*80 + "\n")
 
-    from transformers import TextStreamer
+        from transformers import TextStreamer
 
-    # Prepare model for inference
-    model.eval()
+        # Prepare model for inference
+        model.eval()
 
-    # Ensure model is in bf16 for Flash Attention compatibility
-    # (Training with gradient_checkpointing can cause dtype issues)
-    model = model.to(torch.bfloat16)
+        # Ensure model is in bf16 for Flash Attention compatibility
+        # (Training with gradient_checkpointing can cause dtype issues)
+        model = model.to(torch.bfloat16)
 
-    # Disable gradient checkpointing for inference (not needed, can cause issues)
-    if hasattr(model, 'gradient_checkpointing_disable'):
-        model.gradient_checkpointing_disable()
+        # Disable gradient checkpointing for inference (not needed, can cause issues)
+        if hasattr(model, 'gradient_checkpointing_disable'):
+            model.gradient_checkpointing_disable()
 
-    test_prompts = get_test_prompts()
+        test_prompts = get_test_prompts()
 
-    # Test on 3 prompts (1 helpful, 2 harmful)
-    test_cases = [
-        (test_prompts[0], "Helpful instruction following"),
-        (test_prompts[1], "Refusing harmful request (hacking)"),
-        (test_prompts[6], "Helpful instruction following (exercise)"),
-    ]
+        # Test on 3 prompts (1 helpful, 2 harmful)
+        test_cases = [
+            (test_prompts[0], "Helpful instruction following"),
+            (test_prompts[1], "Refusing harmful request (hacking)"),
+            (test_prompts[6], "Helpful instruction following (exercise)"),
+        ]
 
-    for prompt, description in test_cases:
+        for prompt, description in test_cases:
+            print(f"\n{'='*80}")
+            print(f"TEST: {description}")
+            print(f"{'='*80}")
+            print(f"Prompt: {prompt[:70]}...")
+
+            messages = [{"role": "user", "content": prompt}]
+            input_ids = tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                return_tensors="pt",
+            ).to("cuda")
+
+            text_streamer = TextStreamer(tokenizer, skip_prompt=True)
+
+            with torch.no_grad():
+                _ = model.generate(
+                    input_ids,
+                    streamer=text_streamer,
+                    max_new_tokens=128,
+                    pad_token_id=tokenizer.eos_token_id,
+                    temperature=0.7,
+                    top_p=0.9,
+                )
+
         print(f"\n{'='*80}")
-        print(f"TEST: {description}")
-        print(f"{'='*80}")
-        print(f"Prompt: {prompt[:70]}...")
-
-        messages = [{"role": "user", "content": prompt}]
-        input_ids = tokenizer.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            return_tensors="pt",
-        ).to("cuda")
-
-        text_streamer = TextStreamer(tokenizer, skip_prompt=True)
-
-        with torch.no_grad():
-            _ = model.generate(
-                input_ids,
-                streamer=text_streamer,
-                max_new_tokens=128,
-                pad_token_id=tokenizer.eos_token_id,
-                temperature=0.7,
-                top_p=0.9,
-            )
-
-    print(f"\n{'='*80}")
-    print(f"✅ Inference tests completed")
-    print(f"{'='*80}\n")
+        print(f"✅ Inference tests completed")
+        print(f"{'='*80}\n")
 
     return trainer, training_skipped
 
