@@ -1,4 +1,4 @@
-📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251019_110009.log
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251019_111428.log
 📝 All terminal output will be saved to this log file
 📝 For guaranteed unbuffered output, run with: python -u <script.py>
 ================================================================================
@@ -39,7 +39,7 @@ Configuration:
 Loading model...
 ✅ Llama-3.1 chat template set (required by SFTTrainer)
 ✅ Flash Attention 2 enabled (saves ~2.5GB memory)
-Loading checkpoint shards:   0%|                                                                | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##############                                          | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|############################                            | 2/4 [00:01<00:01,  1.14it/s]Loading checkpoint shards:  75%|##########################################              | 3/4 [00:02<00:00,  1.15it/s]Loading checkpoint shards: 100%|########################################################| 4/4 [00:02<00:00,  1.65it/s]Loading checkpoint shards: 100%|########################################################| 4/4 [00:02<00:00,  1.42it/s]
+Loading checkpoint shards:   0%|                                                               | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|#############7                                         | 1/4 [00:00<00:02,  1.14it/s]Loading checkpoint shards:  50%|###########################5                           | 2/4 [00:01<00:01,  1.13it/s]Loading checkpoint shards:  75%|#########################################2             | 3/4 [00:02<00:00,  1.15it/s]Loading checkpoint shards: 100%|#######################################################| 4/4 [00:02<00:00,  1.64it/s]Loading checkpoint shards: 100%|#######################################################| 4/4 [00:02<00:00,  1.41it/s]
 ✅ Model loaded: meta-llama/Llama-3.1-8B
    - Precision: BF16
    - Max sequence length: 2048
@@ -64,7 +64,7 @@ Original dataset size: 73,907
 Filtered dataset size: 10,813 (clear safety contrast)
 Validation split size: 1,082 (10% of training data)
 ✅ Loaded 1082 samples for SFT validation
-📊 TensorBoard logs: /lambda/nfs/DiskUsEast1/finetuning_evaluation/tensorboard_logs/SFT_Baseline_20251019_110052
+📊 TensorBoard logs: /lambda/nfs/DiskUsEast1/finetuning_evaluation/tensorboard_logs/SFT_Baseline_20251019_111446
 
 Initializing SFTTrainer...
 
@@ -75,6 +75,11 @@ GPU = NVIDIA A100-SXM4-40GB. Max memory = 39.495 GB.
 🔍 Checking for existing checkpoints...
 ================================================================================
 
+1️⃣ Checking HuggingFace for existing model...
+❌ Model not found on HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
+   Will check local checkpoints...
+
+2️⃣ Checking local checkpoints...
 ✅ Training already completed at: outputs/SFT_Baseline/checkpoint-200
    Max steps: 200
    Skipping training, loading final model...
@@ -143,7 +148,7 @@ The benefits of regular exercise are many and varied. Regular exercise can help 
 
 
 🏁 SFT Baseline Training Complete!
-📝 Log file: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251019_110009.log
+📝 Log file: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251019_111428.log
 📊 Saved training config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/sft_baseline_config.json
 ✅ Git already configured: kapilw25@gmail.com
 
@@ -160,7 +165,7 @@ Checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/l
 ================================================================================
 
 📦 Loading base model...
-Loading checkpoint shards:   0%|                                                                | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##############                                          | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|############################                            | 2/4 [00:01<00:01,  1.14it/s]Loading checkpoint shards:  75%|##########################################              | 3/4 [00:02<00:00,  1.15it/s]Loading checkpoint shards: 100%|########################################################| 4/4 [00:02<00:00,  1.64it/s]Loading checkpoint shards: 100%|########################################################| 4/4 [00:02<00:00,  1.42it/s]
+Loading checkpoint shards:   0%|                                                               | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|#############7                                         | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|###########################5                           | 2/4 [00:01<00:01,  1.14it/s]Loading checkpoint shards:  75%|#########################################2             | 3/4 [00:02<00:00,  1.15it/s]Loading checkpoint shards: 100%|#######################################################| 4/4 [00:02<00:00,  1.64it/s]Loading checkpoint shards: 100%|#######################################################| 4/4 [00:02<00:00,  1.42it/s]
 🔧 Loading LoRA adapter from best checkpoint...
 📋 Loading tokenizer...
 
@@ -169,7 +174,9 @@ Checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/l
 ✅ Saved best config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16/best_pbt_config.json
 ================================================================================
 
-⚠️  Could not fetch previous model: Force download failed due to the above error.
+⚠️  Could not fetch previous model: 404 Client Error. (Request ID: Root=1-68f4c847-1b595a232520c2711d75c01b;333a5fbf-8af1-47c6-88c3-01b99a2223a6)
+
+Entry Not Found for url: https://huggingface.co/kapilw25/llama3-8b-pku-sft-baseline-bf16/resolve/main/config.json.
    Assuming this is first training run
 ✅ First successful training run detected (no previous metric on HF)
    Current metric: 1.5844
@@ -184,56 +191,43 @@ This will REPLACE the existing model (performance improved)
 ================================================================================
 
 📦 Loading base model...
-Loading checkpoint shards:   0%|                                                                | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##############                                          | 1/4 [00:00<00:02,  1.08it/s]Loading checkpoint shards:  50%|############################                            | 2/4 [00:01<00:01,  1.10it/s]Loading checkpoint shards:  75%|##########################################              | 3/4 [00:02<00:00,  1.12it/s]Loading checkpoint shards: 100%|########################################################| 4/4 [00:02<00:00,  1.61it/s]Loading checkpoint shards: 100%|########################################################| 4/4 [00:02<00:00,  1.38it/s]
+Loading checkpoint shards:   0%|                                                               | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|#############7                                         | 1/4 [00:00<00:02,  1.10it/s]Loading checkpoint shards:  50%|###########################5                           | 2/4 [00:01<00:01,  1.12it/s]Loading checkpoint shards:  75%|#########################################2             | 3/4 [00:02<00:00,  1.13it/s]Loading checkpoint shards: 100%|#######################################################| 4/4 [00:02<00:00,  1.62it/s]Loading checkpoint shards: 100%|#######################################################| 4/4 [00:02<00:00,  1.39it/s]
 🔧 Loading LoRA adapter from best checkpoint...
 📋 Loading tokenizer...
 
 📤 Pushing LoRA adapter to HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
    (Pushing adapter only - 165MB, compatible with inference script)
    (This will overwrite/replace the existing model)
-Processing Files (0 / 0)      : |                                                        |  0.00B /  0.00B            
-New Data Upload               : |                                                        |  0.00B /  0.00B            [A
+Processing Files (0 / 0)      : |                                                       |  0.00B /  0.00B            
+New Data Upload               : |                                                       |  0.00B /  0.00B            [A
 
-  ...adapter_model.safetensors:  40%|####################7                               | 66.9MB /  168MB            [A[A
+  ...adapter_model.safetensors:  40%|####################3                              | 67.0MB /  168MB            [A[A
 
-  ...adapter_model.safetensors:  40%|####################7                               | 66.9MB /  168MB            [A[AProcessing Files (0 / 1)      :  40%|####################7                               | 66.9MB /  168MB,  167MB/s  
-New Data Upload               :  50%|#########################9                          | 66.9MB /  134MB,  167MB/s  [A
+  ...adapter_model.safetensors:  40%|####################3                              | 67.0MB /  168MB            [A[AProcessing Files (0 / 1)      :  40%|####################3                              | 67.0MB /  168MB,   ???B/s  
 
-  ...adapter_model.safetensors:  50%|#########################9                          | 83.7MB /  168MB            [A[AProcessing Files (0 / 1)      :  50%|#########################9                          | 83.7MB /  168MB,  139MB/s  
-New Data Upload               :  62%|################################4                   | 83.7MB /  134MB,  139MB/s  [A
+  ...adapter_model.safetensors:  80%|########################################7          |  134MB /  168MB            [A[AProcessing Files (0 / 1)      :  80%|########################################7          |  134MB /  168MB,  336MB/s  
 
-  ...adapter_model.safetensors:  97%|##################################################4 |  163MB /  168MB            [A[AProcessing Files (0 / 1)      :  97%|##################################################4 |  163MB /  168MB,  203MB/s  
-New Data Upload               :  97%|##################################################4 |  163MB /  168MB,  203MB/s  [A
+  ...adapter_model.safetensors: 100%|###################################################|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|###################################################|  168MB /  168MB,  252MB/s  
 
-  ...adapter_model.safetensors: 100%|###################################################7|  167MB /  168MB            [A[AProcessing Files (0 / 1)      : 100%|###################################################7|  167MB /  168MB,  167MB/s  
-New Data Upload               : 100%|###################################################7|  167MB /  168MB,  167MB/s  [A
+  ...adapter_model.safetensors: 100%|###################################################|  168MB /  168MB            [A[A
 
-  ...adapter_model.safetensors: 100%|###################################################8|  167MB /  168MB            [A[AProcessing Files (0 / 1)      : 100%|###################################################8|  167MB /  168MB,  139MB/s  
-New Data Upload               : 100%|###################################################8|  167MB /  168MB,  139MB/s  [A
+  ...adapter_model.safetensors: 100%|###################################################|  168MB /  168MB            [A[A
 
-  ...adapter_model.safetensors: 100%|###################################################8|  167MB /  168MB            [A[A
+  ...adapter_model.safetensors: 100%|###################################################|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|###################################################|  168MB /  168MB,  126MB/s  
+New Data Upload               : |                                                       |  0.00B /  0.00B,  0.00B/s  
+  ...adapter_model.safetensors: 100%|###################################################|  168MB /  168MB            
+Processing Files (0 / 0)      : |                                                       |  0.00B /  0.00B            
+New Data Upload               : |                                                       |  0.00B /  0.00B            [A
 
-  ...adapter_model.safetensors: 100%|####################################################|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|####################################################|  168MB /  168MB,  105MB/s  
-New Data Upload               : 100%|####################################################|  168MB /  168MB,  105MB/s  [A
+  ...mpctixzpbv/tokenizer.json: 100%|###################################################| 17.2MB / 17.2MB            [A[A
 
-  ...adapter_model.safetensors: 100%|####################################################|  168MB /  168MB            [A[A
+  ...mpctixzpbv/tokenizer.json: 100%|###################################################| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|###################################################| 17.2MB / 17.2MB,   ???B/s  
 
-  ...adapter_model.safetensors: 100%|####################################################|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|####################################################|  168MB /  168MB, 93.3MB/s  
-New Data Upload               : 100%|####################################################|  168MB /  168MB, 93.3MB/s  
-  ...adapter_model.safetensors: 100%|####################################################|  168MB /  168MB            
-README.md:   0%|                                                                          | 0.00/5.17k [00:00<?, ?B/s]README.md: 100%|#################################################################| 5.17k/5.17k [00:00<00:00, 30.0MB/s]
-Processing Files (0 / 0)      : |                                                        |  0.00B /  0.00B            
-New Data Upload               : |                                                        |  0.00B /  0.00B            [A
+  ...mpctixzpbv/tokenizer.json: 100%|###################################################| 17.2MB / 17.2MB            [A[A
 
-  ...mphg3_5vaf/tokenizer.json: 100%|####################################################| 17.2MB / 17.2MB            [A[A
-
-  ...mphg3_5vaf/tokenizer.json: 100%|####################################################| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|####################################################| 17.2MB / 17.2MB,   ???B/s  
-
-  ...mphg3_5vaf/tokenizer.json: 100%|####################################################| 17.2MB / 17.2MB            [A[A
-
-  ...mphg3_5vaf/tokenizer.json: 100%|####################################################| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|####################################################| 17.2MB / 17.2MB,  0.00B/s  
-New Data Upload               : |                                                        |  0.00B /  0.00B,  0.00B/s  
-  ...mphg3_5vaf/tokenizer.json: 100%|####################################################| 17.2MB / 17.2MB            
+  ...mpctixzpbv/tokenizer.json: 100%|###################################################| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|###################################################| 17.2MB / 17.2MB,  0.00B/s  
+New Data Upload               : |                                                       |  0.00B /  0.00B,  0.00B/s  
+  ...mpctixzpbv/tokenizer.json: 100%|###################################################| 17.2MB / 17.2MB            
 
 ================================================================================
 ✅ LoRA adapter successfully pushed to HuggingFace!
@@ -253,34 +247,7 @@ This will REPLACE the existing model (performance improved)
 📊 Changes to commit:
  M comparative_study/01a_SFT_Baseline/Llama3_BF16.py
  M comparative_study/02a_DPO_Baseline/Llama3_BF16.py
- M logs/SFT_Baseline_training_20251019_104049.log
-?? logs/SFT_Baseline_training_20251019_110009.log
+ M comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py
+ M logs/SFT_Baseline_training_20251019_110009.log
+?? logs/SFT_Baseline_training_20251019_111428.log
 
-✅ Staged all changes (including logs/)
-✅ Created git commit
-
-📤 Pushing to GitHub...
-✅ Successfully pushed to GitHub!
-
-
-================================================================================
-
-
-================================================================================
-✅ Automated Push Complete!
-================================================================================
-💾 Local backup: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16
-📊 Config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/sft_baseline_config.json
-================================================================================
-
-
-================================================================================
-💰 Auto-Shutdown: All results saved!
-================================================================================
-All results saved to:
-  - Local: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/lora_model_SFT_Baseline
-  - HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16 (if performance improved)
-  - GitHub: Logs and code pushed
-================================================================================
-
-✅ GPU instance will remain running (as requested at start)
