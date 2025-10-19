@@ -12,8 +12,9 @@ sudo apt install -y nodejs && \
 # 3. Install Claude Code globally
 sudo npm install -g @anthropic-ai/claude-code && \
 
-# Navigate to your project directory.
-# cd /path/to/your/project
+$echo "After CLAUDE LOGIN setup # Navigate to your project directory."
+$echo "# cd /path/to/your/project"
+$echo "git config user.name 'kapilw25' && git config user.email 'kapilw25@gmail.com'" 
 
 # Launch Claude Code.
 claude

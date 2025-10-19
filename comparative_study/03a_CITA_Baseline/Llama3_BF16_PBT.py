@@ -88,7 +88,7 @@ log_file, log_filename, original_stdout, original_stderr = setup_training_logger
 # ===================================================================
 # HuggingFace Configuration (for auto-push after PBT)
 # ===================================================================
-from model_utils import load_hf_token, get_model_repo_name
+from model_utils import load_hf_token, get_model_repo_name, check_ray_tune_experiment
 
 # Load HuggingFace token and authenticate
 HF_TOKEN = load_hf_token(project_root)
@@ -429,7 +429,7 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
 
 # ===== MAIN EXECUTION =====
 
-def main(num_workers=4, max_steps=1000, base_model=None):
+def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
     """
     Run PBT training for CITA
 
@@ -437,6 +437,7 @@ def main(num_workers=4, max_steps=1000, base_model=None):
         num_workers: Number of PBT workers (default: 4 for full PBT, 1 for sanity check)
         max_steps: Maximum training steps (default: 1000 for full PBT, 100 for sanity check)
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)
+        shutdown_confirm: User's choice for auto-shutdown (captured at start)
 
     Steps:
     1. Create PBT scheduler with CITA hyperparameters
@@ -487,6 +488,34 @@ def main(num_workers=4, max_steps=1000, base_model=None):
         hp_space = get_cita_hp_space(max_steps=max_steps, base_model=base_model)
         save_steps = hp_space["save_steps"]  # CHECK_EVERY_N_STEPS (50)
 
+        # ===================================================================
+        # CHECKPOINT DETECTION
+        # ===================================================================
+        print("\n" + "="*80)
+        print("🔍 Checking for existing Ray Tune experiments...")
+        print("="*80 + "\n")
+
+        experiment_path = str(project_root / "outputs" / "ray_results" / "cita_pbt_training")
+        exp_exists, exp_complete, resume_mode = check_ray_tune_experiment(
+            experiment_path,
+            max_iterations=max_iterations_expected
+        )
+
+        if exp_complete:
+            print(f"✅ Training already completed!")
+            print(f"   Experiment: {experiment_path}")
+            print(f"   Max iterations: {max_iterations_expected}")
+            print(f"   Skipping training, loading results...\n")
+            training_skipped = True
+        elif exp_exists:
+            print(f"📂 Found incomplete experiment: {experiment_path}")
+            print(f"   Resuming training from checkpoint...")
+            print(f"   Resume mode: {resume_mode}\n")
+            training_skipped = False
+        else:
+            print(f"🆕 No experiment found, starting fresh training...\n")
+            training_skipped = False
+
         # Create PBT scheduler
         pbt_scheduler = create_pbt_scheduler(
             hyperparam_mutations=get_cita_hyperparam_mutations(),
@@ -495,30 +524,38 @@ def main(num_workers=4, max_steps=1000, base_model=None):
             mode="max"  # ✅ SAFEGUARD: Maximize margin (chosen_logps - rejected_logps > 0)
         )
 
-        # Run PBT training
-        # ✅ PARALLELIZATION: 4 workers with gpu_fraction=0.5 (Response to Devil's Advocate)
-        #
-        # Memory validation (Web search confirmed):
-        # - ref_model=None with PEFT: Memory-efficient (toggles adapters, no deepcopy)
-        # - Per worker: Base 16GB + LoRA 0.2GB + Gradients 2GB = ~18GB
-        # - 2 workers parallel: 2 × 18GB = 36GB < 40GB ✅ SAFE!
-        #
-        # Ray Tune execution pattern:
-        # - num_workers=4: Total workers in PBT population
-        # - gpu_fraction=0.5: Each worker allocated 50% GPU (2 workers fit in parallel)
-        # - At any time: 2 workers RUNNING (using 36GB) + 2 workers PAUSED (saved at checkpoint)
-        # - PBT compares ALL 4 workers at each checkpoint (exploit/explore works correctly)
-        #
-        analysis = run_pbt_training(
-            trainable=train_cita_with_pbt,
-            hp_space=hp_space,
-            scheduler=pbt_scheduler,
-            num_workers=num_workers,  # ✅ Configurable: 1 for sanity check, 4 for full PBT
-            max_iterations=max_iterations_expected,  # Dynamic based on max_steps
-            output_dir=str(project_root / "outputs" / "ray_results"),  # Absolute path required
-            name="cita_pbt_training",
-            gpu_fraction=0.5 if num_workers > 1 else 1.0  # ✅ 1.0 for single worker, 0.5 for multi-worker
-        )
+        # Run PBT training (or load existing results)
+        if not training_skipped:
+            # ✅ PARALLELIZATION: 4 workers with gpu_fraction=0.5 (Response to Devil's Advocate)
+            #
+            # Memory validation (Web search confirmed):
+            # - ref_model=None with PEFT: Memory-efficient (toggles adapters, no deepcopy)
+            # - Per worker: Base 16GB + LoRA 0.2GB + Gradients 2GB = ~18GB
+            # - 2 workers parallel: 2 × 18GB = 36GB < 40GB ✅ SAFE!
+            #
+            # Ray Tune execution pattern:
+            # - num_workers=4: Total workers in PBT population
+            # - gpu_fraction=0.5: Each worker allocated 50% GPU (2 workers fit in parallel)
+            # - At any time: 2 workers RUNNING (using 36GB) + 2 workers PAUSED (saved at checkpoint)
+            # - PBT compares ALL 4 workers at each checkpoint (exploit/explore works correctly)
+            #
+            analysis = run_pbt_training(
+                trainable=train_cita_with_pbt,
+                hp_space=hp_space,
+                scheduler=pbt_scheduler,
+                num_workers=num_workers,  # ✅ Configurable: 1 for sanity check, 4 for full PBT
+                max_iterations=max_iterations_expected,  # Dynamic based on max_steps
+                output_dir=str(project_root / "outputs" / "ray_results"),  # Absolute path required
+                name="cita_pbt_training",
+                gpu_fraction=0.5 if num_workers > 1 else 1.0,  # ✅ 1.0 for single worker, 0.5 for multi-worker
+                resume=resume_mode  # ✅ Enable checkpoint resumption
+            )
+        else:
+            # Load existing results
+            print(f"📂 Loading existing experiment results...")
+            from ray import tune
+            analysis = tune.ExperimentAnalysis(experiment_path)
+            print(f"✅ Loaded experiment with {len(analysis.trials)} trials")
 
         # ===================================================================
         # NOTE: Global safety check handled by AllWorkersSafetyStopper during training
@@ -585,13 +622,12 @@ def main(num_workers=4, max_steps=1000, base_model=None):
         print(f"  - GitHub: Logs and code pushed")
         print(f"{'='*80}\n")
 
-        # Ask user for confirmation before auto-shutdown
-        shutdown_confirm = input("Auto-shutdown GPU instance to save costs? (yes/no): ").strip().lower()
+        # Execute auto-shutdown based on user's choice at the start
         if shutdown_confirm == "yes":
-            print("🛑 Shutting down GPU instance...")
+            print("🛑 Shutting down GPU instance (as requested at start)...")
             os.system("sudo shutdown -h now")
         else:
-            print("✅ GPU instance will remain running for monitoring")
+            print("✅ GPU instance will remain running (as requested at start)")
         # ===================================================================
 
 
@@ -661,5 +697,25 @@ Examples:
         max_steps = 1000
         print(f"✅ Full PBT mode: {num_workers} workers, {max_steps} steps (~120 minutes)")
 
+    # ===================================================================
+    # Ask about auto-shutdown BEFORE training (for unattended runs)
+    # ===================================================================
+    # Estimate time based on configuration
+    if max_steps == 200 and num_workers == 1:
+        estimated_time = "~6 minutes"
+    elif max_steps == 1000 and num_workers == 4:
+        estimated_time = "~120 minutes (2 hours)"
+    else:
+        estimated_time = f"~{int(max_steps * num_workers * 0.12)} minutes"
+
+    print(f"\n{'='*80}")
+    print("💰 Auto-Shutdown Configuration")
+    print(f"{'='*80}")
+    print(f"Training will take approximately: {estimated_time}")
+    print(f"After training completes, do you want to automatically shutdown the GPU instance?")
+    print(f"{'='*80}")
+    shutdown_confirm = input("Auto-shutdown after training? (yes/no): ").strip().lower()
+    print(f"{'='*80}\n")
+
     # Run main with configured parameters
-    main(num_workers=num_workers, max_steps=max_steps, base_model=args.base_model)
+    main(num_workers=num_workers, max_steps=max_steps, base_model=args.base_model, shutdown_confirm=shutdown_confirm)
