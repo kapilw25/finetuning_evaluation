@@ -499,23 +499,18 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         print("1️⃣ Checking HuggingFace for existing model...")
         hf_model_found = False
         try:
-            from huggingface_hub import hf_hub_download
-            # Try to download adapter_config.json to check if model exists
-            download_dir = project_root / "outputs" / "lora_model_CITA_Baseline_PBT_BF16"
-            hf_hub_download(
-                repo_id=HF_REPO,
-                filename="adapter_config.json",
-                token=HF_TOKEN,
-                local_dir=download_dir,
-                local_dir_use_symlinks=False
-            )
-            print(f"✅ Found model on HuggingFace: {HF_REPO}")
-            print(f"   Downloaded to: {download_dir}")
-            print(f"   Skipping training...\n")
-            training_skipped = True
-            hf_model_found = True
+            from huggingface_hub import repo_exists
+            if repo_exists(HF_REPO, token=HF_TOKEN, repo_type="model"):
+                print(f"✅ Found model on HuggingFace: {HF_REPO}")
+                print(f"   Skipping training...\n")
+                training_skipped = True
+                hf_model_found = True
+            else:
+                print(f"❌ Model not found on HuggingFace: {HF_REPO}")
+                print(f"   Will check local Ray Tune experiments...\n")
         except Exception as e:
             print(f"❌ Model not found on HuggingFace: {HF_REPO}")
+            print(f"   Error: {type(e).__name__}")
             print(f"   Will check local Ray Tune experiments...\n")
 
         # Priority 2: Check local Ray Tune experiments
