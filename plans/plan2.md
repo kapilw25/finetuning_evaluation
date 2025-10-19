@@ -71,10 +71,12 @@ comparative_study/
 ├── 03a_CITA_Baseline/
 │   └── Llama3_BF16_PBT.py      # ✅ Separate script
 └── 0c_utils/                   # ← Shared utilities
-    ├── data_prep.py            # ✅ ALREADY EXISTS
-    ├── cita_trainer_2.py       # ✅ ALREADY EXISTS
-    ├── monitoring_callback.py  # ✅ ALREADY EXISTS
-    └── model_utils.py          # ✅ DONE: 7 utility functions (load_hf_token, load_model_bf16, setup_lora, apply_torch_compile, load_training_dataset, get_test_prompts, get_model_repo_name)
+    ├── data_prep/              # ✅ Package (loader.py, formatters.py)
+    ├── cita_trainer.py         # ✅ Unified loss (L_SFT + L_DPO + L_KL)
+    ├── monitoring_callback.py  # ✅ KL early stopping, perplexity tracking
+    ├── pbt_trainer.py          # ✅ Ray Tune PBT wrapper
+    ├── push_automation.py      # ✅ Conditional HF push + GitHub automation
+    └── model_utils.py          # ✅ 7 utility functions (load_hf_token, load_model_bf16, setup_lora, apply_torch_compile, load_training_dataset, get_test_prompts, get_model_repo_name)
 ```
 
 ---
@@ -82,29 +84,51 @@ comparative_study/
 1. ✅ **Build SFT trainer** (`comparative_study/01a_SFT_Baseline/Llama3_BF16.py`)
    - ✅ Standard SFTTrainer from TRL
    - ✅ Format 4.1 (ITA) - chosen only
+   - ✅ Unified data loading (via `model_utils.load_training_dataset()`)
+   - ✅ Push automation (conditional HF + GitHub push)
+   - ✅ Auto-shutdown
    - ✅ Verify loss matches theory
 
 2. ✅ **Build DPO trainer** (`comparative_study/02a_DPO_Baseline/Llama3_BF16.py`)
    - ✅ Standard DPOTrainer from TRL
    - ✅ Format 4.3 (EBA) - separate chosen/rejected
+   - ✅ Unified data loading (via `model_utils.load_training_dataset()`)
+   - ✅ Push automation (conditional HF + GitHub push)
+   - ✅ Auto-shutdown
    - ✅ Verify loss matches Rafailov 2023
 
-3. **CITA trainer** (`comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py`)
+3. ✅ **CITA trainer** (`comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py`)
    - ✅ Has L_DPO fix (standard DPO with reference model)
    - ✅ Uses role-based instruction separation (system/user tokens)
+   - ✅ Unified data loading (via `model_utils.load_training_dataset()`)
+   - ✅ Push automation (conditional HF + GitHub push)
+   - ✅ Auto-shutdown (`os.system("sudo shutdown -h now")`)
    - ~~Add text-label instruction-awareness~~ (research hypothesis - not implementing)
    - ~~Add contrastive single-sequence format~~ (no precedent - not implementing)
 
-   **Add Standard Monitoring (fixes PBT failures):**
+   **Standard Monitoring (fixes PBT failures):**
    - ✅ KL divergence early stopping in `monitoring_callback.py` (stops at iter 1 vs iter 8, saves 77 min)
-   - ✅ Reward metrics (`rewards/chosen`, `rewards/rejected`, `rewards/accuracies`) in `cita_trainer_2.py`
-   - ✅ Perplexity tracking (`torch.exp(loss_sft)`) in `cita_trainer_2.py`
-   - ✅ Gradient norm monitoring (`clip_grad_norm_`) in `cita_trainer_2.py`
+   - ✅ Reward metrics (`rewards/chosen`, `rewards/rejected`, `rewards/accuracies`) in `cita_trainer.py`
+   - ✅ Perplexity tracking (`torch.exp(loss_sft)`) in `cita_trainer.py`
+   - ✅ Gradient norm monitoring (`clip_grad_norm_`) in `cita_trainer.py`
 
-4. **Build evaluation** (`comparative_study/05_evaluation/dual_metric_eval.py`)
-   - Dual-metric (harmlessness + helpfulness)
-   - Large test sets (1,000+ prompts)
-   - LLM-as-judge (Llama-3-70B via Fireworks)
+4. ✅ **Build evaluation** (`comparative_study/05_evaluation/dual_metric_eval.py`)
+   - ✅ Dual-metric (harmlessness + helpfulness)
+   - ✅ Large test sets (1,000+ prompts)
+   - ✅ LLM-as-judge (Llama-3-70B via Fireworks)
+
+   **Implementation Checklist (Phase 1.4):**
+   1. ✅ Research datasets (AlpacaEval, PKU-SafeRLHF, AIR-Bench)
+   2. ✅ Research Fireworks API (litellm wrapper, Llama-3.3-70B)
+   3. ✅ Research LLM-as-judge prompts (Constitutional AI, HH-RLHF)
+   4. ✅ Create `llm_judge_prompts.py` - Custom prompts for harmlessness/helpfulness
+   5. ✅ Create `fireworks_client.py` - Fireworks API wrapper with retry logic
+   6. ✅ Create `dual_metric_eval.py` - Main evaluation script (loads from HF)
+   7. ✅ Create `statistical_analysis.py` - Pareto plots, bootstrap CI, t-tests
+   8. ✅ Create `test_dual_metric_eval.py` - Compilation test with dummy endpoints
+   9. 🔄 Run compilation test (currently running - datasets downloading)
+   10. ✅ Get Fireworks API key - Added to .env (not committed to git)
+   11. ⏳ Run full evaluation - After all 3 baselines trained
 
 ### Evaluation Plan Details
 
