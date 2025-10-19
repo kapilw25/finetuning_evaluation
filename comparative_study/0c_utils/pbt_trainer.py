@@ -13,11 +13,12 @@ import ray
 from ray import tune
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune import Stopper
+from ray.tune import Callback
 
 
-class AllWorkersSafetyStopper(Stopper):
+class AllWorkersSafetyStopper(Callback):
     """
-    Custom Ray Tune Stopper that aborts experiment if ALL workers fail safety checks
+    Custom Ray Tune Callback that aborts experiment if ALL workers fail safety checks
 
     Features:
     - Checks every checkpoint (every 50 steps) if ALL workers failed
@@ -26,12 +27,17 @@ class AllWorkersSafetyStopper(Stopper):
     - Does NOT stop individual workers (PBT rescues failed workers)
 
     How it works:
-    1. __call__(trial_id, result): Stores latest result for each worker
-    2. stop_all(): Checks if ALL workers failed → Abort if True
+    1. on_trial_result(trial, result): Stores latest result for each worker
+    2. on_step_end(trials): Checks if ALL workers failed → Stop all trials if True
 
     GPU Efficiency:
     - OLD: If all workers fail at step 250, train until step 1000 (waste: 2,250 GPU-steps)
     - NEW: If all workers fail at step 250, abort at step 250 (waste: 0 GPU-steps)
+
+    Ray 2.x Callback API:
+    - Inherits from ray.tune.Callback (not Stopper)
+    - Uses on_trial_result() instead of __call__()
+    - Uses on_step_end() instead of stop_all()
     """
 
     def __init__(self, margin_tolerance=0.0):
@@ -43,37 +49,35 @@ class AllWorkersSafetyStopper(Stopper):
         self.margin_tolerance = margin_tolerance
         self.all_workers_failed = False  # Flag for logging (print abort message once)
 
-    def __call__(self, trial_id: str, result: dict) -> bool:
+    def on_trial_result(self, iteration, trials, trial, result, **info):
         """
         Called after each trial reports results (every 50 steps)
 
         Args:
-            trial_id: Unique trial identifier
+            iteration: Current iteration
+            trials: List of all trials
+            trial: The trial that reported
             result: Training metrics from this trial
+            **info: Additional info
 
         Returns:
-            False: Never stop individual trials (PBT rescues them)
+            None (callbacks don't return stop decisions for individual trials)
         """
         # Store latest result for this trial
-        self.trial_results[trial_id] = result
+        self.trial_results[trial.trial_id] = result
 
-        # Never stop individual trials - let PBT handle recovery
-        return False
-
-    def stop_all(self) -> bool:
+    def on_step_end(self, iteration, trials, **info):
         """
         Called periodically to check if entire experiment should be aborted
 
         Checks if ALL workers failed using OR logic:
         - Worker failed if: (margin <= 0) OR (gibberish detected) OR (unsafe behavior)
 
-        Returns:
-            True if ALL workers failed (experiment aborted)
-            False otherwise (experiment continues)
+        If all failed, stop all trials to abort experiment.
         """
         # Need at least 1 trial to check
         if not self.trial_results:
-            return False
+            return
 
         # Check if ALL workers failed (OR logic for failure conditions)
         all_failed = all(
@@ -86,7 +90,9 @@ class AllWorkersSafetyStopper(Stopper):
             self.all_workers_failed = True
             self._print_abort_message()
 
-        return all_failed
+            # Stop all trials to abort the experiment
+            for trial in trials:
+                trial.stop()
 
     def _is_worker_failed(self, result: dict) -> bool:
         """
@@ -266,7 +272,8 @@ def run_pbt_training(
         },
         # ✅ GPU-EFFICIENT: Abort if ALL workers fail (OR logic: negative margin OR gibberish)
         # Prevents wasting GPU time training failed models until max_steps
-        stopper=safety_stopper,
+        # Ray 2.x uses 'callbacks' instead of 'stopper'
+        callbacks=[safety_stopper],
         keep_checkpoints_num=2,
         storage_path=output_dir,  # Updated from local_dir (Ray 2.x API)
         verbose=1,

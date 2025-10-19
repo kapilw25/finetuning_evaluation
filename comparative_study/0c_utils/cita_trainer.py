@@ -72,10 +72,9 @@ class CITATrainer(DPOTrainer):
         """
         super().__init__(
             model=model,
-            tokenizer=tokenizer,
-            args=args,
+            processing_class=tokenizer,  # TRL 0.8+ uses processing_class instead of tokenizer
+            args=args,  # DPOConfig already contains beta
             train_dataset=train_dataset,
-            beta=beta,
             **kwargs
         )
 
@@ -116,14 +115,36 @@ class CITATrainer(DPOTrainer):
         # Math: L_SFT = (1/N_SFT) ∑_{(x,y^chosen)} ∑_{t=1}^T log P_π(y_t^chosen | x, y_{<t}^chosen)
         # Code: PyTorch CrossEntropyLoss over chosen responses (model's forward pass with labels)
         # ========================================================================
-        labels = inputs["labels"]
-        concatenated_batch_size = labels.shape[0]
-        chosen_batch_size = concatenated_batch_size // 2
+        # Handle different TRL data formats
+        if "chosen_input_ids" in inputs:
+            # Newest TRL format: separate chosen/rejected keys
+            chosen_input_ids = inputs["chosen_input_ids"]
+            chosen_attention_mask = inputs["chosen_attention_mask"]
+        elif "concatenated_input_ids" in inputs:
+            # Older TRL format: concatenated batches [chosen, rejected]
+            concatenated_input_ids = inputs["concatenated_input_ids"]
+            concatenated_batch_size = concatenated_input_ids.shape[0]
+            chosen_batch_size = concatenated_batch_size // 2
+            chosen_input_ids = concatenated_input_ids[:chosen_batch_size]
+            chosen_attention_mask = inputs["concatenated_attention_mask"][:chosen_batch_size]
+        elif "input_ids" in inputs:
+            # Legacy fallback: use input_ids
+            concatenated_input_ids = inputs["input_ids"]
+            concatenated_batch_size = concatenated_input_ids.shape[0]
+            chosen_batch_size = concatenated_batch_size // 2
+            chosen_input_ids = concatenated_input_ids[:chosen_batch_size]
+            chosen_attention_mask = inputs["attention_mask"][:chosen_batch_size]
+        else:
+            raise KeyError(f"Expected DPO format keys in inputs, got: {inputs.keys()}")
+
+        # Create labels for causal LM (mask padding tokens)
+        chosen_labels = chosen_input_ids.clone()
+        chosen_labels[chosen_attention_mask == 0] = -100
 
         outputs_chosen = model(
-            input_ids=inputs["input_ids"][:chosen_batch_size],
-            attention_mask=inputs["attention_mask"][:chosen_batch_size],
-            labels=labels[:chosen_batch_size]
+            input_ids=chosen_input_ids,
+            attention_mask=chosen_attention_mask,
+            labels=chosen_labels
         )
         loss_sft = outputs_chosen.loss
 
@@ -339,13 +360,18 @@ class CITATrainer(DPOTrainer):
 
         return loss, metrics
 
-    def training_step(self, model, inputs):
+    def training_step(self, model, inputs, num_items_in_batch=None):
         """
         Override training_step to add gradient norm monitoring
         Detects training instability early (before mode collapse)
+
+        Args:
+            model: The model to train
+            inputs: The input batch
+            num_items_in_batch: Number of items in the batch (Transformers 4.46+)
         """
         # Standard training step from parent class
-        loss = super().training_step(model, inputs)
+        loss = super().training_step(model, inputs, num_items_in_batch)
 
         # Compute and log gradient norm (after backward pass)
         if self.state.global_step % self.args.logging_steps == 0:

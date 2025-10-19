@@ -331,6 +331,10 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
     lambda_kl = config.pop("lambda_kl")
     beta = config.pop("beta")
 
+    # ===== EXTRACT NON-DPOCONFIG PARAMS =====
+    # Remove parameters that shouldn't be passed to DPOConfig
+    base_model = config.pop("base_model", None)  # This is used earlier, not needed in DPOConfig
+
     # ===== CREATE TRAINING ARGS =====
     # Get trial ID for unique output directory
     from ray import train as ray_train
@@ -583,11 +587,13 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
                 # HF model found - create dummy analysis object for push automation
                 print(f"📂 Using HuggingFace model (no Ray Tune experiment)...")
                 from types import SimpleNamespace
+                # Use local output directory (model already on HF, no need to push)
+                local_output = project_root / "outputs" / "lora_model_CITA_Baseline_PBT_BF16"
                 # Create a minimal best_trial object for push automation
                 best_trial = SimpleNamespace(
                     final_metric='N/A (loaded from HF)',
                     checkpoint=SimpleNamespace(
-                        dir_or_data=str(download_dir)
+                        dir_or_data=str(local_output)
                     )
                 )
                 analysis = None
@@ -607,8 +613,9 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         # Print best hyperparameters and get checkpoint
         if hf_model_found:
             # Already set best_trial above when HF model was found
-            config_path = str(download_dir / "best_pbt_config.json")
-            best_checkpoint = str(download_dir)
+            local_output = project_root / "outputs" / "lora_model_CITA_Baseline_PBT_BF16"
+            config_path = str(local_output / "best_pbt_config.json")
+            best_checkpoint = str(local_output)
             print(f"\n✅ Best model checkpoint: {best_checkpoint}\n")
         else:
             # Analyze Ray Tune results

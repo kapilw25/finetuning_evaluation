@@ -225,3 +225,31 @@ This will REPLACE the existing model (performance improved)
 ?? logs/DPO_Baseline_training_20251019_153848.log
 ?? logs/DPO_Baseline_training_20251019_155142.log
 
+✅ Staged all changes (including logs/)
+✅ Created git commit
+
+📤 Pushing to GitHub...
+✅ Successfully pushed to GitHub!
+
+
+================================================================================
+
+
+================================================================================
+✅ Automated Push Complete!
+================================================================================
+💾 Local backup: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_DPO_Baseline_PBT_BF16
+📊 Config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/dpo_baseline_config.json
+================================================================================
+
+
+================================================================================
+💰 Auto-Shutdown: All results saved!
+================================================================================
+All results saved to:
+  - Local: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/DPO_Baseline/lora_model_DPO_Baseline
+  - HuggingFace: kapilw25/llama3-8b-pku-dpo-baseline-bf16 (if performance improved)
+  - GitHub: Logs and code pushed
+================================================================================
+
+✅ GPU instance will remain running (as requested at start)
