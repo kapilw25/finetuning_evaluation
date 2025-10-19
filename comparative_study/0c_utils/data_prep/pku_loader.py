@@ -9,16 +9,20 @@ from datasets import load_dataset
 from typing import Dict, Optional
 
 
-def load_pku_filtered(split: str = "train", max_samples: Optional[int] = None) -> Dict:
+def load_pku_filtered(split: str = "train", max_samples: Optional[int] = None,
+                      val_split: float = 0.1, return_val: bool = False) -> Dict:
     """
     Load PKU-SafeRLHF dataset and filter for clear safety contrast.
 
     Args:
         split: Dataset split to load ('train' or 'test')
         max_samples: Optional limit on number of samples to return
+        val_split: Fraction of training data to use for validation (default: 0.1)
+        return_val: If True, return validation split instead of train split
 
     Returns:
         Filtered dataset with clear safe vs unsafe contrast
+        If return_val=True, returns validation split (90/10 by default)
     """
     print(f"Loading PKU-Alignment/PKU-SafeRLHF (split={split})...")
     dataset = load_dataset("PKU-Alignment/PKU-SafeRLHF", split=split)
@@ -31,6 +35,21 @@ def load_pku_filtered(split: str = "train", max_samples: Optional[int] = None) -
     )
 
     print(f"Filtered dataset size: {len(filtered_dataset):,} (clear safety contrast)")
+
+    # Split into train/val if needed
+    if split == "train" and val_split > 0:
+        # Use train_test_split from datasets
+        split_dataset = filtered_dataset.train_test_split(
+            test_size=val_split,
+            seed=3407  # Match training seed for reproducibility
+        )
+
+        if return_val:
+            filtered_dataset = split_dataset['test']  # Validation split
+            print(f"Validation split size: {len(filtered_dataset):,} ({val_split*100:.0f}% of training data)")
+        else:
+            filtered_dataset = split_dataset['train']  # Training split
+            print(f"Training split size: {len(filtered_dataset):,} ({(1-val_split)*100:.0f}% of training data)")
 
     if max_samples:
         filtered_dataset = filtered_dataset.select(range(min(max_samples, len(filtered_dataset))))

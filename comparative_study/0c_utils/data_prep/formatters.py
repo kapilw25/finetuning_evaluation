@@ -14,68 +14,63 @@ def format_sft(example: Dict) -> Dict:
 
     Matches format from comparative_study/01a_SFT_Baseline/Llama3_alignmentDB.ipynb
 
-    Output: ShareGPT format with NO system role
-    {"conversations": [{"from": "human", "value": ...}, {"from": "gpt", "value": ...}]}
+    Output: Llama-3 messages with explicit system role (fair comparison with DPO/CITA)
+    {"messages": [{"role": "system", "content": ...}, {"role": "user", "content": ...}, {"role": "assistant", "content": ...}]}
 
     Args:
         example: Single example from PKU-SafeRLHF dataset
 
     Returns:
-        Dictionary with 'conversations' field in ShareGPT format
+        Dictionary with 'messages' field in Llama-3 format (SFTTrainer auto-detects)
     """
     safe_response, _, harmful_categories = get_safe_unsafe_responses(example)
 
     # Synthesize instruction from harm categories
     instruction = synthesize_system_instruction(harmful_categories)
 
-    # Combine instruction + user prompt (NO system role, merge into user message)
-    combined_user = f"{instruction}\n\n{example['prompt']}"
-
-    # ShareGPT format
-    conversations = [
-        {"from": "human", "value": combined_user},
-        {"from": "gpt", "value": safe_response}
+    # ✅ Llama-3 format with explicit system role (matches DPO/CITA for fair comparison)
+    messages = [
+        {"role": "system", "content": instruction},
+        {"role": "user", "content": example['prompt']},
+        {"role": "assistant", "content": safe_response}
     ]
 
-    return {"conversations": conversations}
+    return {"messages": messages}  # SFTTrainer auto-detects "messages" field
 
 
 def format_dpo(example: Dict) -> Dict:
     """
     Format PKU-SafeRLHF example for DPO training.
 
-    Matches format from comparative_study/02a_DPO_Baseline/Llama3_alignmentDB.ipynb
+    ✅ UPDATED: Now uses Llama-3 message format (fair comparison with SFT/CITA)
 
-    Output: Flat structure with string values
-    {"prompt": str, "chosen": str, "rejected": str}
+    Output: Message lists (DPOTrainer supports this since TRL 0.8+)
+    {"prompt": [messages], "chosen": [messages], "rejected": [messages]}
 
     Args:
         example: Single example from PKU-SafeRLHF dataset
 
     Returns:
-        Dictionary with 'prompt', 'chosen', 'rejected' as strings
+        Dictionary with 'prompt', 'chosen', 'rejected' as message lists
     """
     safe_response, unsafe_response, harmful_categories = get_safe_unsafe_responses(example)
 
     # Synthesize instruction from harm categories
     instruction = synthesize_system_instruction(harmful_categories)
 
-    # Create formatted prompt (matches notebook template)
-    prompt = f"""Below are some instructions that describe some tasks. Write responses that appropriately complete
-each request.
+    # ✅ Llama-3 format with explicit system role (matches SFT/CITA)
+    prompt_messages = [
+        {"role": "system", "content": instruction},
+        {"role": "user", "content": example['prompt']}
+    ]
 
-### Instruction:
-{instruction}
-
-{example['prompt']}
-
-### Response:
-"""
+    chosen_messages = [{"role": "assistant", "content": safe_response}]
+    rejected_messages = [{"role": "assistant", "content": unsafe_response}]
 
     return {
-        "prompt": prompt,
-        "chosen": safe_response,
-        "rejected": unsafe_response,
+        "prompt": prompt_messages,
+        "chosen": chosen_messages,
+        "rejected": rejected_messages,
     }
 
 

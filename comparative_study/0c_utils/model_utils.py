@@ -283,7 +283,9 @@ def apply_torch_compile(model):
 def load_training_dataset(
     split: str = "train",
     max_samples: Optional[int] = None,
-    method: str = "sft"
+    method: str = "sft",
+    return_val: bool = False,
+    val_split: float = 0.1
 ):
     """
     Load and format PKU-SafeRLHF dataset for training
@@ -292,6 +294,8 @@ def load_training_dataset(
         split: Dataset split ("train" or "test")
         max_samples: Maximum number of samples (None = use all)
         method: Formatting method ("sft", "dpo", or "cita")
+        return_val: If True, return validation split instead of train split
+        val_split: Fraction of training data for validation (default: 0.1)
 
     Returns:
         Formatted dataset ready for training
@@ -300,23 +304,32 @@ def load_training_dataset(
         from model_utils import load_training_dataset
 
         # For SFT training
-        dataset = load_training_dataset(method="sft")
+        train_dataset = load_training_dataset(method="sft")
+        val_dataset = load_training_dataset(method="sft", return_val=True)
 
         # For DPO training
-        dataset = load_training_dataset(method="dpo")
+        train_dataset = load_training_dataset(method="dpo")
+        val_dataset = load_training_dataset(method="dpo", return_val=True)
 
         # For CITA training
-        dataset = load_training_dataset(method="cita")
+        train_dataset = load_training_dataset(method="cita")
+        val_dataset = load_training_dataset(method="cita", return_val=True)
     """
     from data_prep import load_pku_filtered, format_dataset
 
-    # Load raw dataset
-    dataset_raw = load_pku_filtered(split=split, max_samples=max_samples)
+    # Load raw dataset (with train/val split if needed)
+    dataset_raw = load_pku_filtered(
+        split=split,
+        max_samples=max_samples,
+        val_split=val_split,
+        return_val=return_val
+    )
 
     # Format dataset
     dataset = format_dataset(dataset_raw, method=method)
 
-    print(f"✅ Loaded {len(dataset)} samples for {method.upper()} training")
+    split_name = "validation" if return_val else "training"
+    print(f"✅ Loaded {len(dataset)} samples for {method.upper()} {split_name}")
 
     return dataset
 

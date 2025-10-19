@@ -14,7 +14,7 @@ Configuration:
 - Expected cost: ~$1.00 (40 min × $1.5/hr)
 
 Usage:
-    # Sanity check (100 steps, ~4 minutes)
+    # Sanity check (200 steps, ~8 minutes)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
     # Full training (1000 steps, ~40 minutes)
@@ -53,18 +53,16 @@ from model_utils import (
     get_model_repo_name
 )
 from push_automation import PushAutomation
+from logging_utils import setup_training_logger, restore_logging
 
 # ===================================================================
-# Logging Setup
+# Advanced Logging Setup (Tee System)
 # ===================================================================
-logs_dir = project_root / "logs"
-logs_dir.mkdir(exist_ok=True)
-
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_filename = logs_dir / f"SFT_Baseline_training_{timestamp}.log"
-
-# Simple logging (no Tee class needed for baseline)
-print(f"📝 Logging to: {log_filename}")
+# Setup logging to capture ALL terminal output (stdout + stderr)
+log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+    run_name="SFT_Baseline",
+    project_root=project_root
+)
 
 # ===================================================================
 # HuggingFace Authentication
@@ -83,13 +81,14 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
+def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_model=None):
     """
     Train SFT baseline with fixed hyperparameters
 
     Args:
         max_steps: Maximum training steps (default: 300 for full, 100 for sanity)
         output_dir: Output directory for checkpoints
+        base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
 
     Returns:
         trainer: Trained SFTTrainer instance
@@ -104,8 +103,9 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
     print(f"  - Training steps: {max_steps}")
     print(f"  - Batch size: 2 (per device)")
     print(f"  - Gradient accumulation: 4 (effective batch=8)")
-    print(f"  - Learning rate: 2e-4")
-    print(f"  - Warmup steps: 5")
+    print(f"  - Learning rate: 2e-4 (QLoRA recommendation)")
+    print(f"  - Warmup steps: 100 (10% of total steps)")
+    print(f"  - LR scheduler: cosine")
     print(f"  - Optimizer: adamw_torch")
     print(f"  - Precision: BF16 + Flash Attention 2")
     print("="*80 + "\n")
@@ -117,6 +117,18 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
         max_seq_length=2048,  # Match DPO baseline for fair comparison
         use_flash_attention=True
     )
+
+    # ===== LOAD BASE MODEL LORA (IF STACKING) =====
+    if base_model:
+        print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, base_model, token=HF_TOKEN)
+        print("✅ LoRA adapters loaded")
+
+        # Merge adapters into base model
+        print("🔄 Merging LoRA adapters into base model...")
+        model = model.merge_and_unload()
+        print("✅ LoRA adapters merged (ready for new training stage)")
 
     # ===== APPLY LORA ADAPTERS =====
     print("\nApplying LoRA adapters...")
@@ -133,10 +145,18 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
 
     # ===== LOAD DATASET =====
     print("\nLoading dataset...")
-    dataset = load_training_dataset(
+    train_dataset = load_training_dataset(
         split="train",
         max_samples=None,  # Use all samples
-        method="sft"  # SFT format (chosen responses only)
+        method="sft",  # SFT format (chosen responses only)
+        return_val=False  # Training split
+    )
+
+    val_dataset = load_training_dataset(
+        split="train",
+        max_samples=None,
+        method="sft",
+        return_val=True  # Validation split (10% by default)
     )
 
     # ===== TENSORBOARD SETUP =====
@@ -153,13 +173,13 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
         output_dir=str(output_dir),
         per_device_train_batch_size=2,
         gradient_accumulation_steps=4,
-        warmup_steps=5,
+        warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice)
         max_steps=max_steps,
         learning_rate=2e-4,  # Match DPO baseline
         logging_steps=1,
         optim="adamw_torch",
         weight_decay=0.01,
-        lr_scheduler_type="linear",
+        lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
         seed=3407,
         bf16=True,  # BF16 precision
         gradient_checkpointing=True,
@@ -170,9 +190,13 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
         logging_first_step=True,
         dataloader_num_workers=2,  # Parallel data loading
         dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-        dataset_text_field="text",  # SFT expects text field
+        # ✅ REMOVED: dataset_text_field (auto-detects "messages" format)
         max_seq_length=2048,  # Match model's max_seq_length
         packing=False,  # Disable packing for alignment training
+        # ✅ ADDED: Validation to detect overfitting
+        eval_strategy="steps",
+        eval_steps=50,  # Aligned with save_steps
+        per_device_eval_batch_size=2,  # Match training batch size
     )
 
     # ===== CREATE SFT TRAINER =====
@@ -181,7 +205,8 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline"):
         model=model,
         tokenizer=tokenizer,
         args=training_args,
-        train_dataset=dataset,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,  # ✅ ADDED: Validation dataset
     )
 
     # ===== SHOW GPU MEMORY =====
@@ -280,7 +305,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Sanity check (100 steps, ~4 minutes)
+  # Sanity check (200 steps, ~8 minutes)
   python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
   # Full training (1000 steps, ~40 minutes)
@@ -296,7 +321,7 @@ Examples:
         type=str,
         choices=["sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (100 steps) or 'full' (1000 steps)"
+        help="Training mode: 'sanity' (200 steps) or 'full' (1000 steps)"
     )
 
     parser.add_argument(
@@ -306,6 +331,13 @@ Examples:
         help="Maximum training steps (overrides --mode)"
     )
 
+    parser.add_argument(
+        "--base_model",
+        type=str,
+        default=None,
+        help="HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)"
+    )
+
     args = parser.parse_args()
 
     # Determine configuration
@@ -313,15 +345,15 @@ Examples:
         max_steps = args.steps
         print(f"✅ Custom configuration: {max_steps} steps")
     elif args.mode == "sanity":
-        max_steps = 100
-        print(f"✅ Sanity check mode: {max_steps} steps (~4 minutes)")
+        max_steps = 200  # 100 warmup + 100 training (see actual LR schedule)
+        print(f"✅ Sanity check mode: {max_steps} steps (~8 minutes)")
     else:
         max_steps = 1000
         print(f"✅ Full training mode: {max_steps} steps (~40 minutes)")
 
     # Run training
     try:
-        trainer = train_sft_baseline(max_steps=max_steps)
+        trainer = train_sft_baseline(max_steps=max_steps, base_model=args.base_model)
         print(f"\n🏁 SFT Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
@@ -341,11 +373,11 @@ Examples:
         training_config = {
             "method": "SFT",
             "max_steps": max_steps,
-            "learning_rate": 2e-4,
-            "warmup_steps": 5,
+            "learning_rate": 2e-4,  # QLoRA recommendation for small models
+            "warmup_steps": 100,  # 10% warmup (2024 best practice)
             "optimizer": "adamw_torch",
             "weight_decay": 0.01,
-            "lr_scheduler_type": "linear",
+            "lr_scheduler_type": "cosine",  # Cosine for smoother convergence
             "batch_size": 2,
             "gradient_accumulation_steps": 4,
             "max_seq_length": 2048,
@@ -387,7 +419,7 @@ Examples:
 
         # Auto-shutdown GPU instance (cost savings)
         print(f"\n{'='*80}")
-        print("💰 Auto-Shutdown: Stopping GPU instance to save costs")
+        print("💰 Auto-Shutdown: All results saved!")
         print(f"{'='*80}")
         print("All results saved to:")
         print(f"  - Local: {lora_checkpoint}")
@@ -395,10 +427,21 @@ Examples:
         print(f"  - GitHub: Logs and code pushed")
         print(f"{'='*80}\n")
 
-        os.system("sudo shutdown -h now")
+        # Ask user for confirmation before auto-shutdown
+        shutdown_confirm = input("Auto-shutdown GPU instance to save costs? (yes/no): ").strip().lower()
+        if shutdown_confirm == "yes":
+            print("🛑 Shutting down GPU instance...")
+            os.system("sudo shutdown -h now")
+        else:
+            print("✅ GPU instance will remain running for monitoring")
 
     except Exception as e:
         print(f"\n❌ Error during training: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
+    finally:
+        # Restore original stdout/stderr and close log file
+        restore_logging(log_file, original_stdout, original_stderr)
+        print(f"📝 Complete log file saved: {log_filename}")

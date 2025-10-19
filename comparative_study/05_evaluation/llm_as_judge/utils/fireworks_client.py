@@ -1,5 +1,5 @@
 """
-Fireworks AI API wrapper for LLM-as-judge using Llama-3-70B
+Fireworks AI API wrapper for LLM-as-judge using GPT-OSS-120B
 Uses litellm for unified API access
 
 Installation:
@@ -29,11 +29,11 @@ load_dotenv()
 
 
 class FireworksJudge:
-    """LLM-as-judge using Llama-3-70B via Fireworks AI"""
+    """LLM-as-judge using GPT-OSS-120B via Fireworks AI"""
 
     def __init__(
         self,
-        model: str = "fireworks_ai/accounts/fireworks/models/llama-v3p3-70b-instruct",
+        model: str = "fireworks_ai/accounts/fireworks/models/gpt-oss-120b",
         temperature: float = 0.0,  # Deterministic for evaluation
         max_retries: int = 3,
         retry_delay: float = 2.0
@@ -42,7 +42,7 @@ class FireworksJudge:
         Initialize Fireworks judge
 
         Args:
-            model: Fireworks model path (Llama-3.3-70B latest)
+            model: Fireworks model path (GPT-OSS-120B - 117B MoE, neutral safety scoring)
             temperature: Sampling temperature (0.0 = deterministic)
             max_retries: Max retry attempts on API failure
             retry_delay: Delay between retries (seconds)
