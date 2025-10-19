@@ -161,128 +161,141 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
             latest_checkpoint = None
 
     # ===== LOAD MODEL & TOKENIZER =====
-    print("Loading model...")
-    model, tokenizer = load_model_bf16(
-        model_id="meta-llama/Llama-3.1-8B",
-        max_seq_length=2048,  # Match SFT baseline for fair comparison
-        use_flash_attention=True
-    )
+    # Skip model loading if training already complete (will load local checkpoint for inference later)
+    if not training_skipped:
+        print("Loading model...")
+        model, tokenizer = load_model_bf16(
+            model_id="meta-llama/Llama-3.1-8B",
+            max_seq_length=2048,  # Match SFT baseline for fair comparison
+            use_flash_attention=True
+        )
 
-    # ===== LOAD BASE MODEL LORA (IF STACKING) =====
-    if base_model:
-        print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
-        from peft import PeftModel
-        model = PeftModel.from_pretrained(model, base_model, token=HF_TOKEN)
-        print("✅ LoRA adapters loaded")
+        # ===== LOAD BASE MODEL LORA (IF STACKING) =====
+        if base_model:
+            print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, base_model, token=HF_TOKEN)
+            print("✅ LoRA adapters loaded")
 
-        # Merge adapters into base model
-        print("🔄 Merging LoRA adapters into base model...")
-        merged_model = model.merge_and_unload()
+            # Merge adapters into base model
+            print("🔄 Merging LoRA adapters into base model...")
+            merged_model = model.merge_and_unload()
 
-        # Clear PEFT config to avoid "Already found peft_config" warning
-        # merge_and_unload() leaves peft_config and _hf_peft_config_loaded attributes
-        try:
-            delattr(merged_model, 'peft_config')
-        except AttributeError:
-            pass
-        try:
-            delattr(merged_model, '_hf_peft_config_loaded')
-        except AttributeError:
-            pass
+            # Clear PEFT config to avoid "Already found peft_config" warning
+            # merge_and_unload() leaves peft_config and _hf_peft_config_loaded attributes
+            try:
+                delattr(merged_model, 'peft_config')
+            except AttributeError:
+                pass
+            try:
+                delattr(merged_model, '_hf_peft_config_loaded')
+            except AttributeError:
+                pass
 
-        model = merged_model
-        print("✅ LoRA adapters merged (ready for new training stage)")
+            model = merged_model
+            print("✅ LoRA adapters merged (ready for new training stage)")
 
-    # ===== APPLY LORA ADAPTERS =====
-    print("\nApplying LoRA adapters...")
-    model = setup_lora(
-        model,
-        r=16,
-        lora_alpha=16,
-        use_gradient_checkpointing=True
-    )
+        # ===== APPLY LORA ADAPTERS =====
+        print("\nApplying LoRA adapters...")
+        model = setup_lora(
+            model,
+            r=16,
+            lora_alpha=16,
+            use_gradient_checkpointing=True
+        )
 
-    # ===== TORCH.COMPILE() OPTIMIZATION =====
-    print("\nApplying torch.compile()...")
-    model = apply_torch_compile(model)
+        # ===== TORCH.COMPILE() OPTIMIZATION =====
+        print("\nApplying torch.compile()...")
+        model = apply_torch_compile(model)
 
-    # ===== LOAD DATASET =====
-    print("\nLoading dataset...")
-    train_dataset = load_training_dataset(
-        split="train",
-        max_samples=None,  # Use all samples
-        method="dpo",  # DPO format (prompt, chosen, rejected)
-        return_val=False  # Training split
-    )
+        # ===== LOAD DATASET =====
+        print("\nLoading dataset...")
+        train_dataset = load_training_dataset(
+            split="train",
+            max_samples=None,  # Use all samples
+            method="dpo",  # DPO format (prompt, chosen, rejected)
+            return_val=False  # Training split
+        )
 
-    val_dataset = load_training_dataset(
-        split="train",
-        max_samples=None,
-        method="dpo",
-        return_val=True  # Validation split (10% by default)
-    )
+        val_dataset = load_training_dataset(
+            split="train",
+            max_samples=None,
+            method="dpo",
+            return_val=True  # Validation split (10% by default)
+        )
+    else:
+        # Training skipped - initialize empty vars (will be loaded for inference if needed)
+        model = None
+        tokenizer = None
+        train_dataset = None
+        val_dataset = None
 
-    # ===== TENSORBOARD SETUP =====
-    tensorboard_base_dir = project_root / "tensorboard_logs"
-    tensorboard_base_dir.mkdir(exist_ok=True)
+    # Skip trainer setup if training already complete
+    if not training_skipped:
+        # ===== TENSORBOARD SETUP =====
+        tensorboard_base_dir = project_root / "tensorboard_logs"
+        tensorboard_base_dir.mkdir(exist_ok=True)
 
-    # Generate timestamp for unique TensorBoard run directory
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tensorboard_run_dir = tensorboard_base_dir / f"{RUN_NAME}_{timestamp}"
+        # Generate timestamp for unique TensorBoard run directory
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        tensorboard_run_dir = tensorboard_base_dir / f"{RUN_NAME}_{timestamp}"
 
-    print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
+        print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
 
-    # ===== CREATE TRAINING ARGS =====
-    # Match hyperparameters from 4bit notebook for consistency
-    training_args = DPOConfig(
-        output_dir=str(output_dir),
-        per_device_train_batch_size=1,  # ✅ FIXED: Reduced from 2 to avoid OOM (DPO needs ref model copy)
-        gradient_accumulation_steps=8,  # ✅ FIXED: Doubled to maintain effective batch=8
-        warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice for DPO)
-        max_steps=max_steps,
-        learning_rate=1e-5,  # ✅ FIXED: Meta's official Llama 3 DPO setting (was 2e-4, 20× too high)
-        logging_steps=1,
-        optim="adamw_torch",
-        weight_decay=0.01,
-        lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
-        seed=3407,
-        bf16=True,  # BF16 precision
-        gradient_checkpointing=True,
-        save_steps=50,
-        save_total_limit=5,
-        report_to="tensorboard",
-        logging_dir=str(tensorboard_run_dir),
-        logging_first_step=True,
-        dataloader_num_workers=2,  # Parallel data loading
-        dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-        # ✅ ADDED: Validation to detect overfitting
-        eval_strategy="steps",
-        eval_steps=50,  # Aligned with save_steps
-        per_device_eval_batch_size=1,  # ✅ FIXED: Match training batch size
-        # ✅ DPO-specific parameters (TRL 0.22.2+)
-        beta=0.1,  # Contrastive temperature (standard DPO value)
-        max_length=2048,  # Match max_seq_length
-        max_prompt_length=1024,  # Half of max_length
-    )
+        # ===== CREATE TRAINING ARGS =====
+        # Match hyperparameters from 4bit notebook for consistency
+        training_args = DPOConfig(
+            output_dir=str(output_dir),
+            per_device_train_batch_size=1,  # ✅ FIXED: Reduced from 2 to avoid OOM (DPO needs ref model copy)
+            gradient_accumulation_steps=8,  # ✅ FIXED: Doubled to maintain effective batch=8
+            warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice for DPO)
+            max_steps=max_steps,
+            learning_rate=1e-5,  # ✅ FIXED: Meta's official Llama 3 DPO setting (was 2e-4, 20× too high)
+            logging_steps=1,
+            optim="adamw_torch",
+            weight_decay=0.01,
+            lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
+            seed=3407,
+            bf16=True,  # BF16 precision
+            gradient_checkpointing=True,
+            save_steps=50,
+            save_total_limit=5,
+            report_to="tensorboard",
+            logging_dir=str(tensorboard_run_dir),
+            logging_first_step=True,
+            dataloader_num_workers=2,  # Parallel data loading
+            dataloader_pin_memory=True,  # Faster CPU→GPU transfer
+            # ✅ ADDED: Validation to detect overfitting
+            eval_strategy="steps",
+            eval_steps=50,  # Aligned with save_steps
+            per_device_eval_batch_size=1,  # ✅ FIXED: Match training batch size
+            # ✅ DPO-specific parameters (TRL 0.22.2+)
+            beta=0.1,  # Contrastive temperature (standard DPO value)
+            max_length=2048,  # Match max_seq_length
+            max_prompt_length=1024,  # Half of max_length
+        )
 
-    # ===== CREATE DPO TRAINER =====
-    print("\nInitializing DPOTrainer...")
-    # TRL 0.22.2: DPO params go in DPOConfig, only base params in DPOTrainer
-    trainer = DPOTrainer(
-        model=model,
-        ref_model=None,  # DPOTrainer creates reference model automatically
-        processing_class=tokenizer,  # TRL 0.22.2 parameter name
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset,
-    )
+        # ===== CREATE DPO TRAINER =====
+        print("\nInitializing DPOTrainer...")
+        # TRL 0.22.2: DPO params go in DPOConfig, only base params in DPOTrainer
+        trainer = DPOTrainer(
+            model=model,
+            ref_model=None,  # DPOTrainer creates reference model automatically
+            processing_class=tokenizer,  # TRL 0.22.2 parameter name
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+        )
 
-    # ===== SHOW GPU MEMORY =====
-    gpu_stats = torch.cuda.get_device_properties(0)
-    start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-    max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
-    print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
-    print(f"{start_gpu_memory} GB of memory reserved before training.")
+        # ===== SHOW GPU MEMORY =====
+        gpu_stats = torch.cuda.get_device_properties(0)
+        start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+        max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
+        print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
+        print(f"{start_gpu_memory} GB of memory reserved before training.")
+    else:
+        # Training skipped - initialize empty vars
+        trainer = None
 
     # ===== TRAIN =====
     if not training_skipped:
@@ -315,16 +328,25 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         tokenizer.save_pretrained(str(lora_output_dir))
         print(f"✅ LoRA adapters saved!")
     else:
-        # Training skipped - download model from HF for inference
-        print(f"📥 Downloading model from HuggingFace for inference: {HF_REPO}")
+        # Training skipped - try HF first, fallback to local checkpoint
         model, tokenizer = load_model_bf16(
             model_id="meta-llama/Llama-3.1-8B",
             max_seq_length=2048,
             use_flash_attention=True
         )
         from peft import PeftModel
-        model = PeftModel.from_pretrained(model, HF_REPO, token=HF_TOKEN)
-        print(f"✅ Model downloaded from HuggingFace")
+
+        # Try downloading from HuggingFace first
+        try:
+            print(f"📥 Downloading model from HuggingFace for inference: {HF_REPO}")
+            model = PeftModel.from_pretrained(model, HF_REPO, token=HF_TOKEN)
+            print(f"✅ Model downloaded from HuggingFace")
+        except Exception as e:
+            # HF repo not available, load from local checkpoint
+            print(f"❌ HuggingFace download failed: {type(e).__name__}")
+            print(f"📥 Loading model from local checkpoint: {lora_output_dir}")
+            model = PeftModel.from_pretrained(model, str(lora_output_dir))
+            print(f"✅ Model loaded from local checkpoint")
 
     # ===== INFERENCE TEST =====
     print("\n" + "="*80)
@@ -465,14 +487,32 @@ Examples:
 
         # Extract final rewards/margin from training or checkpoint
         # DPO logs: rewards/chosen, rewards/rejected, rewards/margin
-        if not training_skipped and trainer.state.log_history:
-            final_log = trainer.state.log_history[-1]
-            # Check eval metrics first, then training metrics
-            # Note: DPO uses 'margins' (plural) not 'margin'
-            final_margin = final_log.get('eval_rewards/margins',
-                                         final_log.get('rewards/margins',
-                                                      final_log.get('eval_loss',
-                                                                   final_log.get('loss', 'N/A'))))
+        # NOTE: trainer.state.log_history[-1] might be train_runtime (no metrics)
+        #       Better to read from checkpoint's trainer_state.json (saved before train_runtime added)
+        if not training_skipped:
+            # Load metric from checkpoint's trainer_state.json (most reliable)
+            import json
+            from model_utils import get_latest_checkpoint
+            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
+            if latest_checkpoint:
+                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
+                if trainer_state_path.exists():
+                    with open(trainer_state_path, 'r') as f:
+                        trainer_state = json.load(f)
+                        if trainer_state.get('log_history'):
+                            # Get last entry (checkpoint saved before train_runtime added)
+                            last_entry = trainer_state['log_history'][-1]
+                            # Note: DPO uses 'margins' (plural) not 'margin'
+                            final_margin = last_entry.get('eval_rewards/margins',
+                                                         last_entry.get('rewards/margins',
+                                                                      last_entry.get('eval_loss',
+                                                                                   last_entry.get('loss', 'N/A'))))
+                        else:
+                            final_margin = 'N/A'
+                else:
+                    final_margin = 'N/A'
+            else:
+                final_margin = 'N/A'
         else:
             # Training was skipped - load metric from checkpoint's trainer_state.json
             import json
