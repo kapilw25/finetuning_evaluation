@@ -34,11 +34,14 @@ ray[tune]>=2.9.0
 python-dotenv
 huggingface_hub
 
+# LLM-as-judge evaluation (Fireworks API)
+litellm
+
 # Solution: Use Python 3.10 with System Packages
 
 # # 1. Create venv with --system-site-packages to use pre-installed PyTorch,
 # etc.
-# python3 -m venv --system-site-packages venv_CITA
+# python3 -m venv --system-site-packages venv_CITA [only for GH200]
 
 # # 2. Activate the environment
 # source venv_CITA/bin/activate

@@ -21,7 +21,10 @@
       "Bash(cut:*)",
       "Bash(paste -:*)",
       "Bash(tac:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python3:*)",
+      "Bash(for f in comparative_study/05_evaluation/llm_as_judge/utils/*.py)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
