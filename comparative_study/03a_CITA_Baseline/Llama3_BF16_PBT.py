@@ -492,29 +492,55 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         # CHECKPOINT DETECTION
         # ===================================================================
         print("\n" + "="*80)
-        print("🔍 Checking for existing Ray Tune experiments...")
+        print("🔍 Checking for existing checkpoints...")
         print("="*80 + "\n")
 
-        experiment_path = str(project_root / "outputs" / "ray_results" / "cita_pbt_training")
-        exp_exists, exp_complete, resume_mode = check_ray_tune_experiment(
-            experiment_path,
-            max_iterations=max_iterations_expected
-        )
-
-        if exp_complete:
-            print(f"✅ Training already completed!")
-            print(f"   Experiment: {experiment_path}")
-            print(f"   Max iterations: {max_iterations_expected}")
-            print(f"   Skipping training, loading results...\n")
+        # Priority 1: Check HuggingFace for existing LoRA adapters
+        print("1️⃣ Checking HuggingFace for existing model...")
+        hf_model_found = False
+        try:
+            from huggingface_hub import hf_hub_download
+            # Try to download adapter_config.json to check if model exists
+            download_dir = project_root / "outputs" / "lora_model_CITA_Baseline_PBT_BF16"
+            hf_hub_download(
+                repo_id=HF_REPO,
+                filename="adapter_config.json",
+                token=HF_TOKEN,
+                local_dir=download_dir,
+                local_dir_use_symlinks=False
+            )
+            print(f"✅ Found model on HuggingFace: {HF_REPO}")
+            print(f"   Downloaded to: {download_dir}")
+            print(f"   Skipping training...\n")
             training_skipped = True
-        elif exp_exists:
-            print(f"📂 Found incomplete experiment: {experiment_path}")
-            print(f"   Resuming training from checkpoint...")
-            print(f"   Resume mode: {resume_mode}\n")
-            training_skipped = False
-        else:
-            print(f"🆕 No experiment found, starting fresh training...\n")
-            training_skipped = False
+            hf_model_found = True
+        except Exception as e:
+            print(f"❌ Model not found on HuggingFace: {HF_REPO}")
+            print(f"   Will check local Ray Tune experiments...\n")
+
+        # Priority 2: Check local Ray Tune experiments
+        if not hf_model_found:
+            print("2️⃣ Checking local Ray Tune experiments...")
+            experiment_path = str(project_root / "outputs" / "ray_results" / "cita_pbt_training")
+            exp_exists, exp_complete, resume_mode = check_ray_tune_experiment(
+                experiment_path,
+                max_iterations=max_iterations_expected
+            )
+
+            if exp_complete:
+                print(f"✅ Training already completed!")
+                print(f"   Experiment: {experiment_path}")
+                print(f"   Max iterations: {max_iterations_expected}")
+                print(f"   Skipping training, loading results...\n")
+                training_skipped = True
+            elif exp_exists:
+                print(f"📂 Found incomplete experiment: {experiment_path}")
+                print(f"   Resuming training from checkpoint...")
+                print(f"   Resume mode: {resume_mode}\n")
+                training_skipped = False
+            else:
+                print(f"🆕 No experiment found, starting fresh training...\n")
+                training_skipped = False
 
         # Create PBT scheduler
         pbt_scheduler = create_pbt_scheduler(
@@ -552,10 +578,24 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
             )
         else:
             # Load existing results
-            print(f"📂 Loading existing experiment results...")
-            from ray import tune
-            analysis = tune.ExperimentAnalysis(experiment_path)
-            print(f"✅ Loaded experiment with {len(analysis.trials)} trials")
+            if hf_model_found:
+                # HF model found - create dummy analysis object for push automation
+                print(f"📂 Using HuggingFace model (no Ray Tune experiment)...")
+                from types import SimpleNamespace
+                # Create a minimal best_trial object for push automation
+                best_trial = SimpleNamespace(
+                    final_metric='N/A (loaded from HF)',
+                    checkpoint=SimpleNamespace(
+                        dir_or_data=str(download_dir)
+                    )
+                )
+                analysis = None
+            else:
+                # Local experiment found
+                print(f"📂 Loading existing experiment results...")
+                from ray import tune
+                analysis = tune.ExperimentAnalysis(experiment_path)
+                print(f"✅ Loaded experiment with {len(analysis.trials)} trials")
 
         # ===================================================================
         # NOTE: Global safety check handled by AllWorkersSafetyStopper during training
@@ -563,14 +603,21 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         # This prevents GPU waste (old approach waited until max_steps before checking)
         # ===================================================================
 
-        # Print best hyperparameters
-        best_trial = print_best_hyperparameters(analysis, metric="cita/margin", mode="max")
+        # Print best hyperparameters and get checkpoint
+        if hf_model_found:
+            # Already set best_trial above when HF model was found
+            config_path = str(download_dir / "best_pbt_config.json")
+            best_checkpoint = str(download_dir)
+            print(f"\n✅ Best model checkpoint: {best_checkpoint}\n")
+        else:
+            # Analyze Ray Tune results
+            best_trial = print_best_hyperparameters(analysis, metric="cita/margin", mode="max")
 
-        # Save best hyperparameters to file
-        config_path = save_best_config(best_trial, "./outputs/best_pbt_config.json")
+            # Save best hyperparameters to file
+            config_path = save_best_config(best_trial, "./outputs/best_pbt_config.json")
 
-        best_checkpoint = best_trial.checkpoint.dir_or_data
-        print(f"\n✅ Best model checkpoint: {best_checkpoint}\n")
+            best_checkpoint = best_trial.checkpoint.dir_or_data
+            print(f"\n✅ Best model checkpoint: {best_checkpoint}\n")
 
         # ===================================================================
         # Automated Push to HuggingFace and GitHub

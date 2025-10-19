@@ -228,21 +228,44 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
     print("🔍 Checking for existing checkpoints...")
     print("="*80 + "\n")
 
-    latest_checkpoint = get_latest_checkpoint(output_dir)
-
-    if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
-        print(f"✅ Training already completed at: {latest_checkpoint}")
-        print(f"   Max steps: {max_steps}")
-        print(f"   Skipping training, loading final model...\n")
+    # Priority 1: Check HuggingFace for existing LoRA adapters
+    print("1️⃣ Checking HuggingFace for existing model...")
+    try:
+        from huggingface_hub import hf_hub_download
+        # Try to download adapter_config.json to check if model exists
+        hf_hub_download(
+            repo_id=HF_REPO,
+            filename="adapter_config.json",
+            token=HF_TOKEN,
+            local_dir=output_dir / "lora_model_SFT_Baseline",
+            local_dir_use_symlinks=False
+        )
+        print(f"✅ Found model on HuggingFace: {HF_REPO}")
+        print(f"   Downloaded to: {output_dir / 'lora_model_SFT_Baseline'}")
+        print(f"   Skipping training...\n")
         training_skipped = True
-    elif latest_checkpoint:
-        print(f"📂 Found checkpoint: {latest_checkpoint}")
-        print(f"   Resuming training from this checkpoint...\n")
-        training_skipped = False
-    else:
-        print(f"🆕 No checkpoint found, starting fresh training...\n")
         latest_checkpoint = None
-        training_skipped = False
+    except Exception as e:
+        print(f"❌ Model not found on HuggingFace: {HF_REPO}")
+        print(f"   Will check local checkpoints...\n")
+
+        # Priority 2: Check local checkpoints
+        print("2️⃣ Checking local checkpoints...")
+        latest_checkpoint = get_latest_checkpoint(output_dir)
+
+        if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
+            print(f"✅ Training already completed at: {latest_checkpoint}")
+            print(f"   Max steps: {max_steps}")
+            print(f"   Skipping training, loading final model...\n")
+            training_skipped = True
+        elif latest_checkpoint:
+            print(f"📂 Found checkpoint: {latest_checkpoint}")
+            print(f"   Resuming training from this checkpoint...\n")
+            training_skipped = False
+        else:
+            print(f"🆕 No checkpoint found, starting fresh training...\n")
+            latest_checkpoint = None
+            training_skipped = False
 
     # ===== TRAIN =====
     if not training_skipped:
