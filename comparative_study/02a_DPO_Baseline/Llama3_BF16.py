@@ -421,7 +421,11 @@ Examples:
         # DPO logs: rewards/chosen, rewards/rejected, rewards/margin
         if not training_skipped and trainer.state.log_history:
             final_log = trainer.state.log_history[-1]
-            final_margin = final_log.get('rewards/margin', final_log.get('loss', 'N/A'))
+            # Check eval metrics first, then training metrics
+            final_margin = final_log.get('eval_rewards/margin',
+                                         final_log.get('rewards/margin',
+                                                      final_log.get('eval_loss',
+                                                                   final_log.get('loss', 'N/A'))))
         else:
             final_margin = 'N/A (training skipped or no logs)'
 
