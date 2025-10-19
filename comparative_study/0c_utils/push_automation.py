@@ -170,6 +170,12 @@ class PushAutomation:
 
         previous_metric = self._get_previous_best_margin(hf_repo)  # Still reads 'final_margin' from config
 
+        # Handle cases where metric is not available (training skipped)
+        if isinstance(current_metric, str):
+            print(f"⚠️  Metric not available: {current_metric}")
+            print(f"   Skipping HuggingFace push")
+            return False
+
         # First successful training run - ALWAYS push
         # (No previous metric found = either first run OR repo doesn't exist yet)
         if previous_metric is None:

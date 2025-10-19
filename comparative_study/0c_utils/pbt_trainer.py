@@ -213,7 +213,8 @@ def run_pbt_training(
     max_iterations=10,
     output_dir="./outputs/ray_results",
     name="pbt_training",
-    gpu_fraction=1.0
+    gpu_fraction=1.0,
+    resume="AUTO"
 ):
     """
     Run PBT training with specified configuration
@@ -231,6 +232,10 @@ def run_pbt_training(
             - 1.0 = 1 worker uses 1 full GPU (sequential)
             - 0.5 = 2 workers share 1 GPU (parallel)
             - 0.167 = 6 workers share 1 GPU (parallel, for A100-80GB)
+        resume: Resume mode for Ray Tune (default: "AUTO")
+            - "AUTO": Resume from checkpoint if exists, else start fresh
+            - True: Resume from checkpoint (error if not found)
+            - False: Start fresh (ignore existing checkpoints)
 
     Returns:
         analysis: Ray Tune analysis object with best hyperparameters
@@ -265,6 +270,7 @@ def run_pbt_training(
         keep_checkpoints_num=2,
         storage_path=output_dir,  # Updated from local_dir (Ray 2.x API)
         verbose=1,
+        resume=resume,  # ✅ Enable checkpoint resumption
     )
 
     return analysis

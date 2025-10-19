@@ -19,17 +19,6 @@ Harmlessness ↑
 
 ---
 
-## Phases 1-2 Complete ✅
-
-**Infrastructure built:**
-- ✅ SFT/DPO/CITA trainers (standard TRL + PBT)
-- ✅ Dual-metric evaluation (GPT-OSS-120B judge, 1,800+ prompts)
-- ✅ Fairness fixes (unified hyperparameters, Meta's lr=1e-5 for DPO)
-- ✅ Validation sets (90/10 train/val split)
-- ✅ Dataset quality verified (subtle unsafe responses, not trivial)
-
----
-
 ## Phase 3: Industry Standard Training (NEW STRATEGY)
 
 ### **Critical Research Finding**
@@ -43,63 +32,6 @@ Harmlessness ↑
 - ✅ **SFT → DPO → CITA stacking**: 85% (proven, industry standard)
 - ⚠️ **All from base model (current)**: 45% (DPO may fail without SFT first)
 
----
-
-## Required Modifications
-
-### **1. Add `--base_model` Argument to All 3 Scripts**
-
-**Files to modify**:
-- `comparative_study/01a_SFT_Baseline/Llama3_BF16.py`
-- `comparative_study/02a_DPO_Baseline/Llama3_BF16.py`
-- `comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py`
-
-**Implementation**:
-```python
-parser.add_argument(
-    "--base_model",
-    type=str,
-    default=None,
-    help="HuggingFace model ID to load before training (for stacking SFT→DPO→CITA)"
-)
-
-# In training function:
-if args.base_model:
-    print(f"Loading LoRA adapters from HuggingFace: {args.base_model}")
-    from peft import PeftModel
-    model = PeftModel.from_pretrained(model, args.base_model, token=HF_TOKEN)
-    # Merge adapters into base model, then re-apply new LoRA for this stage
-    model = model.merge_and_unload()
-```
-
-### **2. Update Evaluation Judge to GPT-OSS-120B**
-
-**File**: `comparative_study/05_evaluation/fireworks_client.py`
-
-**Change**:
-```python
-# OLD: EVALUATION_MODEL = "accounts/fireworks/models/llama-v3p1-70b-instruct"
-# NEW:
-EVALUATION_MODEL = "accounts/fireworks/models/gpt-oss-120b"
-```
-
-**Reason**:
-- GPT-OSS-120B: Better safety scoring, neutral to Meta methods, chain-of-thought reasoning
-- Llama-3.1-70B: May favor Meta's alignment style (circular reasoning)
-
-### **3. Uniform Sanity Checks (200 Steps Each)**
-
-**Rationale**: Validate each stage before committing to full training
-
-**Approach**:
-- SFT sanity: **200 steps** → verify → SFT full (1000 steps)
-- DPO(SFT) sanity: **200 steps** → verify → DPO(SFT) full (1000 steps)
-- CITA[DPO(SFT)] sanity: **200 steps** → verify → CITA[DPO(SFT)] full (1000 steps)
-
-**Built-in Safety Checks** (no test set contamination):
-1. **Inference tests**: Printed at end of each training (helpful/harmful prompts)
-2. **Validation metrics**: Logged to TensorBoard (eval_loss, rewards/margin)
-3. **Training logs**: Saved to `logs/<method>_training_<timestamp>.log`
 
 ---
 
@@ -113,17 +45,17 @@ EVALUATION_MODEL = "accounts/fireworks/models/gpt-oss-120b"
 ```bash
 # 1. SFT baseline (base → SFT: 200 steps, ~8 min, ~$0.20)
 source venv_CITA/bin/activate
-python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
+python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 # Pushes to: kapilw25/llama3-8b-pku-sft-baseline-bf16
 
 # 2. DPO baseline (SFT → DPO: 200 steps, ~8 min, ~$0.20)
-python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
+python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 # Pushes to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
 
 # 3. CITA with PBT (DPO → CITA: 200 steps × 4 workers = 800 steps, ~32 min, ~$0.80)
-python comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
 # Pushes to: kapilw25/llama3-8b-pku-cita-baseline-bf16
@@ -196,15 +128,15 @@ tail -n 50 logs/CITA_Baseline_training_<timestamp>.log
 
 ```bash
 # 1. SFT baseline (1000 steps, ~40 min, ~$1)
-python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
+python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
 # 2. DPO baseline (1000 steps, ~40 min, ~$1)
-python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
+python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode full \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 
 # 3. CITA with PBT (1000 steps × 4 workers = 4000 steps, ~160 min, ~$4)
-python comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
     --mode full \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
 ```
@@ -220,7 +152,7 @@ python comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
 
 **Command**:
 ```bash
-python comparative_study/05_evaluation/dual_metric_eval.py \
+python3 -u comparative_study/05_evaluation/dual_metric_eval.py \
     --models \
         meta-llama/Llama-3.1-8B \
         kapilw25/llama3-8b-pku-sft-baseline-bf16 \
@@ -254,40 +186,14 @@ python comparative_study/05_evaluation/dual_metric_eval.py \
 
 ---
 
-## Key Differences from Original Plan
-
-| Aspect | Original Plan | New Plan (Industry Standard) |
-|--------|--------------|------------------------------|
-| **Training order** | All from base (parallel) | SFT → DPO → CITA (sequential stacking) |
-| **DPO baseline** | Base model | SFT model (industry standard) |
-| **CITA baseline** | Base model | DPO model (builds on aligned foundation) |
-| **Success probability** | 45% (DPO may fail) | 85% (proven pipeline) |
-| **Evaluation judge** | Llama-3.1-70B | GPT-OSS-120B (neutral, better safety) |
-| **Sanity steps** | 200 (all 3) | 150/150/500 (more PBT exploration) |
-| **Checkpoint storage** | Local paths | HuggingFace repos (GPU-loss resilient) |
+**Key Change**: Switched from parallel training (all from base) to industry-standard stacking (SFT → DPO → CITA), increasing success probability from 45% to 85%.
 
 ---
 
-## Potential Risks & Mitigations
+## Next Steps
 
-1. **CITA PBT insufficient steps**: 500 steps may not beat Meta's hyperparameters
-   - Mitigation: PBT explores around Meta's lr=1e-5, beta=0.1
-
-2. **Loss term interference**: L_SFT + L_DPO + L_KL might conflict
-   - Mitigation: Monitor TensorBoard (expect all 3 to decrease)
-
-3. **Evaluation bias**: GPT-OSS-120B might favor certain alignment styles
-   - Mitigation: Add rule-based metrics (refusal rate on harmful/helpful prompts)
-
-4. **Dataset quality**: Unsafe responses might be too obvious
-   - Status: ✅ Verified subtle (not trivial refusals)
-
----
-
-## Next Immediate Steps
-
-1. ⏳ Modify 3 training scripts to add `--base_model` argument
-2. ⏳ Update evaluation judge to GPT-OSS-120B
-3. ⏳ Run Phase 3A sanity checks (stacked pipeline)
-4. ⏳ Run Phase 3B quick evaluation (100 samples)
-5. ⏳ Decision: Proceed to Phase 4 if CITA > DPO > SFT confirmed
+1. ✅ All Phase 3 modifications complete
+2. ⏳ **Run Phase 3A**: Sanity checks (200 steps each)
+3. ⏳ **Validate**: Check logs + inference tests (no test set!)
+4. ⏳ **Run Phase 4**: Full training if sanity passes (1000 steps each)
+5. ⏳ **Run Phase 5**: Dual-metric evaluation ONCE (1800 prompts)

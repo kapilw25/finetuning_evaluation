@@ -50,7 +50,9 @@ from model_utils import (
     apply_torch_compile,
     load_training_dataset,
     get_test_prompts,
-    get_model_repo_name
+    get_model_repo_name,
+    get_latest_checkpoint,
+    is_training_complete
 )
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
@@ -164,6 +166,8 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     tensorboard_base_dir = project_root / "tensorboard_logs"
     tensorboard_base_dir.mkdir(exist_ok=True)
 
+    # Generate timestamp for unique TensorBoard run directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     tensorboard_run_dir = tensorboard_base_dir / f"{RUN_NAME}_{timestamp}"
 
     print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
@@ -218,33 +222,63 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
     print(f"{start_gpu_memory} GB of memory reserved before training.")
 
-    # ===== TRAIN =====
+    # ===== CHECKPOINT DETECTION =====
     print("\n" + "="*80)
-    print("🏋️  Training DPO Baseline...")
+    print("🔍 Checking for existing checkpoints...")
     print("="*80 + "\n")
 
-    trainer.train()
+    latest_checkpoint = get_latest_checkpoint(output_dir)
+
+    if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
+        print(f"✅ Training already completed at: {latest_checkpoint}")
+        print(f"   Max steps: {max_steps}")
+        print(f"   Skipping training, loading final model...\n")
+        training_skipped = True
+    elif latest_checkpoint:
+        print(f"📂 Found checkpoint: {latest_checkpoint}")
+        print(f"   Resuming training from this checkpoint...\n")
+        training_skipped = False
+    else:
+        print(f"🆕 No checkpoint found, starting fresh training...\n")
+        latest_checkpoint = None
+        training_skipped = False
+
+    # ===== TRAIN =====
+    if not training_skipped:
+        print("\n" + "="*80)
+        print("🏋️  Training DPO Baseline...")
+        print("="*80 + "\n")
+
+        trainer.train(resume_from_checkpoint=latest_checkpoint)
 
     # ===== SHOW FINAL MEMORY =====
-    used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-    used_memory_for_training = round(used_memory - start_gpu_memory, 3)
-    used_percentage = round(used_memory / max_memory * 100, 3)
+    if not training_skipped:
+        used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+        used_memory_for_training = round(used_memory - start_gpu_memory, 3)
+        used_percentage = round(used_memory / max_memory * 100, 3)
 
-    print(f"\n{'='*80}")
-    print(f"✅ Training complete!")
-    print(f"Peak reserved memory = {used_memory} GB")
-    print(f"Peak reserved memory for training = {used_memory_for_training} GB")
-    print(f"Peak reserved memory % of max memory = {used_percentage}%")
-    print(f"{'='*80}\n")
+        print(f"\n{'='*80}")
+        print(f"✅ Training complete!")
+        print(f"Peak reserved memory = {used_memory} GB")
+        print(f"Peak reserved memory for training = {used_memory_for_training} GB")
+        print(f"Peak reserved memory % of max memory = {used_percentage}%")
+        print(f"{'='*80}\n")
 
     # ===== SAVE LORA ADAPTERS =====
     lora_output_dir = Path(output_dir) / "lora_model_DPO_Baseline"
-    lora_output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"💾 Saving LoRA adapters to: {lora_output_dir}")
-    model.save_pretrained(str(lora_output_dir))
-    tokenizer.save_pretrained(str(lora_output_dir))
-    print(f"✅ LoRA adapters saved!")
+    if not training_skipped:
+        lora_output_dir.mkdir(parents=True, exist_ok=True)
+        print(f"💾 Saving LoRA adapters to: {lora_output_dir}")
+        model.save_pretrained(str(lora_output_dir))
+        tokenizer.save_pretrained(str(lora_output_dir))
+        print(f"✅ LoRA adapters saved!")
+    else:
+        # Load from existing checkpoint for inference/push
+        print(f"📂 Loading model from existing checkpoint: {lora_output_dir}")
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, str(lora_output_dir))
+        print(f"✅ Model loaded from checkpoint!")
 
     # ===== INFERENCE TEST =====
     print("\n" + "="*80)
@@ -253,8 +287,16 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
 
     from transformers import TextStreamer
 
-    # Enable inference mode
+    # Prepare model for inference
     model.eval()
+
+    # Ensure model is in bf16 for Flash Attention compatibility
+    # (Training with gradient_checkpointing can cause dtype issues)
+    model = model.to(torch.bfloat16)
+
+    # Disable gradient checkpointing for inference (not needed, can cause issues)
+    if hasattr(model, 'gradient_checkpointing_disable'):
+        model.gradient_checkpointing_disable()
 
     test_prompts = get_test_prompts()
 
@@ -294,7 +336,7 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     print(f"✅ Inference tests completed")
     print(f"{'='*80}\n")
 
-    return trainer
+    return trainer, training_skipped
 
 
 # ===================================================================
@@ -353,9 +395,21 @@ Examples:
         max_steps = 1000
         print(f"✅ Full training mode: {max_steps} steps (~40 minutes)")
 
+    # ===================================================================
+    # Ask about auto-shutdown BEFORE training (for unattended runs)
+    # ===================================================================
+    print(f"\n{'='*80}")
+    print("💰 Auto-Shutdown Configuration")
+    print(f"{'='*80}")
+    print(f"Training will take approximately: {'~8 minutes' if max_steps == 200 else '~40 minutes'}")
+    print(f"After training completes, do you want to automatically shutdown the GPU instance?")
+    print(f"{'='*80}")
+    shutdown_confirm = input("Auto-shutdown after training? (yes/no): ").strip().lower()
+    print(f"{'='*80}\n")
+
     # Run training
     try:
-        trainer = train_dpo_baseline(max_steps=max_steps, base_model=args.base_model)
+        trainer, training_skipped = train_dpo_baseline(max_steps=max_steps, base_model=args.base_model)
         print(f"\n🏁 DPO Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
@@ -365,8 +419,11 @@ Examples:
 
         # Extract final rewards/margin from training (DPO-specific metrics)
         # DPO logs: rewards/chosen, rewards/rejected, rewards/margin
-        final_log = trainer.state.log_history[-1]
-        final_margin = final_log.get('rewards/margin', final_log.get('loss', 'N/A'))
+        if not training_skipped and trainer.state.log_history:
+            final_log = trainer.state.log_history[-1]
+            final_margin = final_log.get('rewards/margin', final_log.get('loss', 'N/A'))
+        else:
+            final_margin = 'N/A (training skipped or no logs)'
 
         # Save training config
         import json
@@ -432,13 +489,12 @@ Examples:
         print(f"  - GitHub: Logs and code pushed")
         print(f"{'='*80}\n")
 
-        # Ask user for confirmation before auto-shutdown
-        shutdown_confirm = input("Auto-shutdown GPU instance to save costs? (yes/no): ").strip().lower()
+        # Execute auto-shutdown based on user's choice at the start
         if shutdown_confirm == "yes":
-            print("🛑 Shutting down GPU instance...")
+            print("🛑 Shutting down GPU instance (as requested at start)...")
             os.system("sudo shutdown -h now")
         else:
-            print("✅ GPU instance will remain running for monitoring")
+            print("✅ GPU instance will remain running (as requested at start)")
 
     except Exception as e:
         print(f"\n❌ Error during training: {e}")
