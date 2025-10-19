@@ -418,11 +418,31 @@ Examples:
         # Automated Push to HuggingFace & GitHub + Auto-Shutdown
         # ===================================================================
 
-        # Extract final loss from training (only if training actually happened)
+        # Extract final loss from training or checkpoint
         if not training_skipped and trainer.state.log_history:
-            final_loss = trainer.state.log_history[-1].get('loss', 'N/A')
+            # Last entry might be eval_loss (from final evaluation) or loss (from training)
+            last_entry = trainer.state.log_history[-1]
+            final_loss = last_entry.get('eval_loss', last_entry.get('loss', 'N/A'))
         else:
-            final_loss = 'N/A (training skipped or no logs)'
+            # Training was skipped - load loss from checkpoint's trainer_state.json
+            import json
+            from model_utils import get_latest_checkpoint
+            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "SFT_Baseline"))
+            if latest_checkpoint:
+                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
+                if trainer_state_path.exists():
+                    with open(trainer_state_path, 'r') as f:
+                        trainer_state = json.load(f)
+                        if trainer_state.get('log_history'):
+                            # Get last entry, prefer eval_loss over loss
+                            last_entry = trainer_state['log_history'][-1]
+                            final_loss = last_entry.get('eval_loss', last_entry.get('loss', 'N/A'))
+                        else:
+                            final_loss = 'N/A'
+                else:
+                    final_loss = 'N/A'
+            else:
+                final_loss = 'N/A'
 
         # Save training config
         import json
