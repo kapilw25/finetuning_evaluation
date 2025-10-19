@@ -30,7 +30,8 @@
       "WebFetch(domain:arxiv.org)",
       "WebFetch(domain:openreview.net)",
       "WebFetch(domain:ai.stackexchange.com)",
-      "WebFetch(domain:chenhuiyu.github.io)"
+      "WebFetch(domain:chenhuiyu.github.io)",
+      "WebFetch(domain:docs.pytorch.org)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,147 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/DPO_Baseline_training_20251019_145453.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
+================================================================================
+
+✅ Sanity check mode: 200 steps (~8 minutes)
+
+================================================================================
+💰 Auto-Shutdown Configuration
+================================================================================
+Training will take approximately: ~8 minutes
+After training completes, do you want to automatically shutdown the GPU instance?
+================================================================================
+Auto-shutdown after training? (yes/no): ================================================================================
+
+
+================================================================================
+🚀 Starting DPO Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: Standard DPO (Rafailov 2023)
+  - Loss: L_DPO only
+  - Training steps: 200
+  - Batch size: 1 (per device, reduced for DPO ref model)
+  - Gradient accumulation: 8 (effective batch=8)
+  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)
+  - Beta: 0.1 (Meta's Llama 3 DPO setting)
+  - Warmup steps: 100 (10% of total steps)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+1️⃣ Checking HuggingFace for existing model...
+❌ Model not found on HuggingFace: kapilw25/llama3-8b-pku-dpo-baseline-bf16
+   Will check local checkpoints...
+
+2️⃣ Checking local checkpoints...
+📂 Found checkpoint: outputs/DPO_Baseline/checkpoint-150
+   Resuming training from this checkpoint...
+
+Loading model...
+✅ Llama-3.1 chat template set (required by SFTTrainer)
+✅ Flash Attention 2 enabled (saves ~2.5GB memory)
+Loading checkpoint shards:   0%|                                                                  | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##############5                                           | 1/4 [00:00<00:02,  1.10it/s]Loading checkpoint shards:  50%|#############################                             | 2/4 [00:01<00:01,  1.06it/s]Loading checkpoint shards:  75%|###########################################5              | 3/4 [00:02<00:00,  1.08it/s]Loading checkpoint shards: 100%|##########################################################| 4/4 [00:02<00:00,  1.55it/s]Loading checkpoint shards: 100%|##########################################################| 4/4 [00:02<00:00,  1.33it/s]
+✅ Model loaded: meta-llama/Llama-3.1-8B
+   - Precision: BF16
+   - Max sequence length: 2048
+   - Flash Attention 2: True
+
+🔗 Loading LoRA adapters from HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
+✅ LoRA adapters loaded
+🔄 Merging LoRA adapters into base model...
+✅ LoRA adapters merged (ready for new training stage)
+
+Applying LoRA adapters...
+trainable params: 41,943,040 || all params: 8,072,204,288 || trainable%: 0.5196
+✅ LoRA adapters applied (r=16, alpha=16)
+
+Applying torch.compile()...
+⚠️  torch.compile() failed: local variable 'torch' referenced before assignment
+   Continuing without compilation (training will be slower)
+
+Loading dataset...
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Training split size: 9,731 (90% of training data)
+✅ Loaded 9731 samples for DPO training
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Validation split size: 1,082 (10% of training data)
+✅ Loaded 1082 samples for DPO validation
+📊 TensorBoard logs: /lambda/nfs/DiskUsEast1/finetuning_evaluation/tensorboard_logs/DPO_Baseline_20251019_145522
+
+Initializing DPOTrainer...
+
+GPU = NVIDIA A100-SXM4-40GB. Max memory = 39.495 GB.
+34.018 GB of memory reserved before training.
+
+================================================================================
+🏋️  Training DPO Baseline...
+================================================================================
+
+  0%|                                                                                           | 0/200 [00:00<?, ?it/s]/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/utils/checkpoint.py:85: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+  warnings.warn(
+ 76%|#############################################################1                   | 151/200 [00:06<00:02, 24.08it/s]                                                                                                                        {'loss': 0.3892, 'grad_norm': 3.2979862689971924, 'learning_rate': 5e-06, 'rewards/chosen': -3.0038034915924072, 'rewards/rejected': -4.896215438842773, 'rewards/accuracies': 0.875, 'rewards/margins': 1.8924118280410767, 'logps/chosen': -188.1107177734375, 'logps/rejected': -220.69761657714844, 'logits/chosen': -1.127620816230774, 'logits/rejected': -1.0432772636413574, 'epoch': 0.25}
+ 76%|#############################################################1                   | 151/200 [00:06<00:02, 24.08it/s]                                                                                                                        {'loss': 0.3078, 'grad_norm': 2.891341209411621, 'learning_rate': 4.842946204609359e-06, 'rewards/chosen': -2.3576226234436035, 'rewards/rejected': -5.342178821563721, 'rewards/accuracies': 0.875, 'rewards/margins': 2.984555959701538, 'logps/chosen': -189.2112274169922, 'logps/rejected': -237.617919921875, 'logits/chosen': -1.1978527307510376, 'logits/rejected': -1.104689598083496, 'epoch': 0.25}
+ 76%|#############################################################5                   | 152/200 [00:11<00:01, 24.08it/s]                                                                                                                        {'loss': 0.283, 'grad_norm': 3.711354970932007, 'learning_rate': 4.686047402353433e-06, 'rewards/chosen': -4.189856052398682, 'rewards/rejected': -7.105173587799072, 'rewards/accuracies': 0.875, 'rewards/margins': 2.9153175354003906, 'logps/chosen': -271.2054138183594, 'logps/rejected': -281.03729248046875, 'logits/chosen': -1.1843481063842773, 'logits/rejected': -1.1863349676132202, 'epoch': 0.25}
+ 76%|#############################################################9                   | 153/200 [00:17<00:01, 24.08it/s] 76%|#############################################################9                   | 153/200 [00:20<00:01, 24.08it/s] 77%|##############################################################3                  | 154/200 [00:23<00:09,  5.05it/s]                                                                                                                        {'loss': 0.1377, 'grad_norm': 1.586863398551941, 'learning_rate': 4.529458433407429e-06, 'rewards/chosen': -2.250943183898926, 'rewards/rejected': -6.126441955566406, 'rewards/accuracies': 1.0, 'rewards/margins': 3.8754990100860596, 'logps/chosen': -184.03030395507812, 'logps/rejected': -291.9902648925781, 'logits/chosen': -1.0912878513336182, 'logits/rejected': -1.1303694248199463, 'epoch': 0.25}
+ 77%|##############################################################3                  | 154/200 [00:23<00:09,  5.05it/s] 78%|##############################################################7                  | 155/200 [00:28<00:11,  3.81it/s]                                                                                                                        {'loss': 0.489, 'grad_norm': 4.111724853515625, 'learning_rate': 4.373333832178478e-06, 'rewards/chosen': -2.9345805644989014, 'rewards/rejected': -5.874831199645996, 'rewards/accuracies': 0.75, 'rewards/margins': 2.9402503967285156, 'logps/chosen': -181.99960327148438, 'logps/rejected': -230.80123901367188, 'logits/chosen': -1.073805809020996, 'logits/rejected': -1.089726209640503, 'epoch': 0.25}
+ 78%|##############################################################7                  | 155/200 [00:28<00:11,  3.81it/s]                                                                                                                        {'loss': 0.1751, 'grad_norm': 1.747360110282898, 'learning_rate': 4.217827674798845e-06, 'rewards/chosen': -2.1864676475524902, 'rewards/rejected': -5.778785228729248, 'rewards/accuracies': 1.0, 'rewards/margins': 3.592317581176758, 'logps/chosen': -160.47557067871094, 'logps/rejected': -267.1651611328125, 'logits/chosen': -1.11316978931427, 'logits/rejected': -1.152422308921814, 'epoch': 0.26}
+ 78%|###############################################################1                 | 156/200 [00:34<00:11,  3.81it/s] 78%|###############################################################5                 | 157/200 [00:40<00:20,  2.13it/s]                                                                                                                        {'loss': 0.2153, 'grad_norm': 1.7217601537704468, 'learning_rate': 4.063093427071376e-06, 'rewards/chosen': -2.8958663940429688, 'rewards/rejected': -5.460902214050293, 'rewards/accuracies': 0.875, 'rewards/margins': 2.565035820007324, 'logps/chosen': -193.4055633544922, 'logps/rejected': -269.43841552734375, 'logits/chosen': -1.0194133520126343, 'logits/rejected': -1.1059331893920898, 'epoch': 0.26}
+ 78%|###############################################################5                 | 157/200 [00:40<00:20,  2.13it/s] 79%|###############################################################9                 | 158/200 [00:46<00:25,  1.66it/s]                                                                                                                        {'loss': 0.3485, 'grad_norm': 4.503576278686523, 'learning_rate': 3.909283793017289e-06, 'rewards/chosen': -2.8128182888031006, 'rewards/rejected': -5.107456684112549, 'rewards/accuracies': 0.875, 'rewards/margins': 2.2946383953094482, 'logps/chosen': -225.95938110351562, 'logps/rejected': -207.7779083251953, 'logits/chosen': -1.1508957147598267, 'logits/rejected': -1.055590033531189, 'epoch': 0.26}
+ 79%|###############################################################9                 | 158/200 [00:46<00:25,  1.66it/s] 80%|################################################################3                | 159/200 [00:51<00:31,  1.31it/s]                                                                                                                        {'loss': 0.3045, 'grad_norm': 4.399031162261963, 'learning_rate': 3.756550564175727e-06, 'rewards/chosen': -2.985769271850586, 'rewards/rejected': -5.881682395935059, 'rewards/accuracies': 0.875, 'rewards/margins': 2.89591383934021, 'logps/chosen': -212.29226684570312, 'logps/rejected': -209.8233642578125, 'logits/chosen': -1.160383701324463, 'logits/rejected': -1.0878257751464844, 'epoch': 0.26}
+ 80%|################################################################3                | 159/200 [00:51<00:31,  1.31it/s] 80%|################################################################8                | 160/200 [00:57<00:39,  1.00it/s]                                                                                                                        {'loss': 0.1349, 'grad_norm': 1.433353066444397, 'learning_rate': 3.6050444698038547e-06, 'rewards/chosen': -1.7728908061981201, 'rewards/rejected': -5.998337745666504, 'rewards/accuracies': 0.9375, 'rewards/margins': 4.225447177886963, 'logps/chosen': -149.22174072265625, 'logps/rejected': -304.782470703125, 'logits/chosen': -1.0787925720214844, 'logits/rejected': -1.1752405166625977, 'epoch': 0.26}
+ 80%|################################################################8                | 160/200 [00:57<00:39,  1.00it/s] 80%|#################################################################2               | 161/200 [01:02<00:49,  1.26s/it]                                                                                                                        {'loss': 0.3395, 'grad_norm': 3.067369222640991, 'learning_rate': 3.4549150281252635e-06, 'rewards/chosen': -2.125086784362793, 'rewards/rejected': -4.372200965881348, 'rewards/accuracies': 0.8125, 'rewards/margins': 2.2471141815185547, 'logps/chosen': -176.85836791992188, 'logps/rejected': -225.26416015625, 'logits/chosen': -1.1555266380310059, 'logits/rejected': -1.121694803237915, 'epoch': 0.26}
+ 80%|#################################################################2               | 161/200 [01:02<00:49,  1.26s/it] 81%|#################################################################6               | 162/200 [01:08<01:00,  1.60s/it]                                                                                                                        {'loss': 0.1846, 'grad_norm': 2.5251219272613525, 'learning_rate': 3.3063103987735433e-06, 'rewards/chosen': -2.023207902908325, 'rewards/rejected': -6.864095687866211, 'rewards/accuracies': 0.9375, 'rewards/margins': 4.840888023376465, 'logps/chosen': -178.55503845214844, 'logps/rejected': -282.4819641113281, 'logits/chosen': -1.0816181898117065, 'logits/rejected': -1.1127597093582153, 'epoch': 0.27}
+ 81%|#################################################################6               | 162/200 [01:08<01:00,  1.60s/it] 82%|##################################################################               | 163/200 [01:13<01:14,  2.00s/it]                                                                                                                        {'loss': 0.2526, 'grad_norm': 3.343240976333618, 'learning_rate': 3.1593772365766107e-06, 'rewards/chosen': -3.144076108932495, 'rewards/rejected': -5.708771705627441, 'rewards/accuracies': 0.9375, 'rewards/margins': 2.5646958351135254, 'logps/chosen': -203.57911682128906, 'logps/rejected': -237.2704620361328, 'logits/chosen': -1.1129591464996338, 'logits/rejected': -1.0940314531326294, 'epoch': 0.27}
+ 82%|##################################################################               | 163/200 [01:13<01:14,  2.00s/it] 82%|##################################################################4              | 164/200 [01:19<01:31,  2.54s/it]                                                                                                                        {'loss': 0.3856, 'grad_norm': 3.678727865219116, 'learning_rate': 3.0142605468260976e-06, 'rewards/chosen': -3.767880439758301, 'rewards/rejected': -6.17655086517334, 'rewards/accuracies': 0.875, 'rewards/margins': 2.408670663833618, 'logps/chosen': -347.4939880371094, 'logps/rejected': -249.66448974609375, 'logits/chosen': -1.0656225681304932, 'logits/rejected': -1.0593013763427734, 'epoch': 0.27}
+ 82%|##################################################################4              | 164/200 [01:19<01:31,  2.54s/it] 82%|##################################################################8              | 165/200 [01:25<01:45,  3.01s/it]                                                                                                                        {'loss': 0.2438, 'grad_norm': 2.348978042602539, 'learning_rate': 2.871103542174637e-06, 'rewards/chosen': -2.8067102432250977, 'rewards/rejected': -4.870629787445068, 'rewards/accuracies': 0.9375, 'rewards/margins': 2.0639195442199707, 'logps/chosen': -202.9882049560547, 'logps/rejected': -222.5703582763672, 'logits/chosen': -1.134181261062622, 'logits/rejected': -1.1171780824661255, 'epoch': 0.27}
+ 82%|##################################################################8              | 165/200 [01:25<01:45,  3.01s/it] 83%|###################################################################2             | 166/200 [01:31<01:59,  3.52s/it]                                                                                                                        {'loss': 0.3389, 'grad_norm': 3.6130709648132324, 'learning_rate': 2.7300475013022666e-06, 'rewards/chosen': -3.455841541290283, 'rewards/rejected': -5.545140266418457, 'rewards/accuracies': 0.8125, 'rewards/margins': 2.0892984867095947, 'logps/chosen': -211.0911407470703, 'logps/rejected': -276.77667236328125, 'logits/chosen': -1.1593363285064697, 'logits/rejected': -1.1894115209579468, 'epoch': 0.27}
+ 83%|###################################################################2             | 166/200 [01:31<01:59,  3.52s/it] 84%|###################################################################6             | 167/200 [01:36<02:09,  3.93s/it]                                                                                                                        {'loss': 0.1074, 'grad_norm': 1.4638562202453613, 'learning_rate': 2.5912316294914232e-06, 'rewards/chosen': -1.7772722244262695, 'rewards/rejected': -5.635786533355713, 'rewards/accuracies': 1.0, 'rewards/margins': 3.8585140705108643, 'logps/chosen': -154.53726196289062, 'logps/rejected': -227.79747009277344, 'logits/chosen': -1.1258529424667358, 'logits/rejected': -1.089269995689392, 'epoch': 0.27}
+ 84%|###################################################################6             | 167/200 [01:36<02:09,  3.93s/it] 84%|####################################################################             | 168/200 [01:41<02:14,  4.21s/it]                                                                                                                        {'loss': 0.1117, 'grad_norm': 1.2110586166381836, 'learning_rate': 2.4547929212481436e-06, 'rewards/chosen': -1.7849501371383667, 'rewards/rejected': -5.5455002784729, 'rewards/accuracies': 1.0, 'rewards/margins': 3.760549783706665, 'logps/chosen': -161.45809936523438, 'logps/rejected': -217.02618408203125, 'logits/chosen': -1.0782577991485596, 'logits/rejected': -1.0325901508331299, 'epoch': 0.28}
+ 84%|####################################################################             | 168/200 [01:41<02:14,  4.21s/it] 84%|####################################################################4            | 169/200 [01:47<02:20,  4.53s/it]                                                                                                                        {'loss': 0.2173, 'grad_norm': 3.01400089263916, 'learning_rate': 2.320866025105016e-06, 'rewards/chosen': -2.585538625717163, 'rewards/rejected': -5.845738887786865, 'rewards/accuracies': 0.8125, 'rewards/margins': 3.2602005004882812, 'logps/chosen': -187.4097442626953, 'logps/rejected': -263.67156982421875, 'logits/chosen': -1.125157356262207, 'logits/rejected': -1.0843380689620972, 'epoch': 0.28}
+ 84%|####################################################################4            | 169/200 [01:47<02:20,  4.53s/it] 85%|####################################################################8            | 170/200 [01:52<02:21,  4.71s/it]                                                                                                                        {'loss': 0.1859, 'grad_norm': 1.904144525527954, 'learning_rate': 2.1895831107393485e-06, 'rewards/chosen': -2.8482627868652344, 'rewards/rejected': -5.473427772521973, 'rewards/accuracies': 1.0, 'rewards/margins': 2.62516450881958, 'logps/chosen': -174.29159545898438, 'logps/rejected': -244.07611083984375, 'logits/chosen': -1.122733235359192, 'logits/rejected': -1.1562007665634155, 'epoch': 0.28}
+ 85%|####################################################################8            | 170/200 [01:52<02:21,  4.71s/it] 86%|#####################################################################2           | 171/200 [01:57<02:21,  4.86s/it]                                                                                                                        {'loss': 0.4275, 'grad_norm': 3.1581881046295166, 'learning_rate': 2.061073738537635e-06, 'rewards/chosen': -2.3880414962768555, 'rewards/rejected': -4.058006286621094, 'rewards/accuracies': 0.625, 'rewards/margins': 1.6699646711349487, 'logps/chosen': -158.66477966308594, 'logps/rejected': -219.84652709960938, 'logits/chosen': -1.0049220323562622, 'logits/rejected': -1.0292811393737793, 'epoch': 0.28}
+ 86%|#####################################################################2           | 171/200 [01:57<02:21,  4.86s/it] 86%|#####################################################################6           | 172/200 [02:03<02:19,  5.00s/it]                                                                                                                        {'loss': 0.2365, 'grad_norm': 2.42573881149292, 'learning_rate': 1.9354647317351187e-06, 'rewards/chosen': -2.7308568954467773, 'rewards/rejected': -4.784530162811279, 'rewards/accuracies': 0.9375, 'rewards/margins': 2.053673267364502, 'logps/chosen': -207.01165771484375, 'logps/rejected': -233.3681640625, 'logits/chosen': -1.1689231395721436, 'logits/rejected': -1.076690435409546, 'epoch': 0.28}
+ 86%|#####################################################################6           | 172/200 [02:03<02:19,  5.00s/it] 86%|######################################################################           | 173/200 [02:08<02:18,  5.13s/it]                                                                                                                        {'loss': 0.1259, 'grad_norm': 1.560197353363037, 'learning_rate': 1.8128800512565514e-06, 'rewards/chosen': -2.4089739322662354, 'rewards/rejected': -6.0445098876953125, 'rewards/accuracies': 0.9375, 'rewards/margins': 3.635535717010498, 'logps/chosen': -221.15359497070312, 'logps/rejected': -286.2242431640625, 'logits/chosen': -1.1662824153900146, 'logits/rejected': -1.2231342792510986, 'epoch': 0.28}
+ 86%|######################################################################           | 173/200 [02:08<02:18,  5.13s/it] 87%|######################################################################4          | 174/200 [02:14<02:21,  5.44s/it]                                                                                                                        {'loss': 0.132, 'grad_norm': 2.0553066730499268, 'learning_rate': 1.6934406733817417e-06, 'rewards/chosen': -2.3368594646453857, 'rewards/rejected': -5.83989143371582, 'rewards/accuracies': 0.9375, 'rewards/margins': 3.5030319690704346, 'logps/chosen': -204.20050048828125, 'logps/rejected': -364.9252624511719, 'logits/chosen': -1.0536400079727173, 'logits/rejected': -1.1204540729522705, 'epoch': 0.29}
+ 87%|######################################################################4          | 174/200 [02:14<02:21,  5.44s/it] 88%|######################################################################8          | 175/200 [02:20<02:21,  5.66s/it]                                                                                                                        {'loss': 0.3394, 'grad_norm': 3.559568166732788, 'learning_rate': 1.5772644703565564e-06, 'rewards/chosen': -3.0139174461364746, 'rewards/rejected': -5.637766361236572, 'rewards/accuracies': 0.8125, 'rewards/margins': 2.6238489151000977, 'logps/chosen': -211.44227600097656, 'logps/rejected': -294.9486389160156, 'logits/chosen': -1.1734919548034668, 'logits/rejected': -1.1813948154449463, 'epoch': 0.29}
+ 88%|######################################################################8          | 175/200 [02:20<02:21,  5.66s/it] 88%|#######################################################################2         | 176/200 [02:27<02:19,  5.79s/it]                                                                                                                        {'loss': 0.1834, 'grad_norm': 2.0954039096832275, 'learning_rate': 1.4644660940672628e-06, 'rewards/chosen': -3.1045217514038086, 'rewards/rejected': -6.522657871246338, 'rewards/accuracies': 0.9375, 'rewards/margins': 3.418135643005371, 'logps/chosen': -206.62649536132812, 'logps/rejected': -317.1172180175781, 'logits/chosen': -1.2114744186401367, 'logits/rejected': -1.2162991762161255, 'epoch': 0.29}
+ 88%|#######################################################################2         | 176/200 [02:27<02:19,  5.79s/it] 88%|#######################################################################6         | 177/200 [02:32<02:10,  5.65s/it]                                                                                                                        {'loss': 0.3656, 'grad_norm': 3.0288147926330566, 'learning_rate': 1.3551568628929434e-06, 'rewards/chosen': -2.3003041744232178, 'rewards/rejected': -5.8241987228393555, 'rewards/accuracies': 0.75, 'rewards/margins': 3.523894786834717, 'logps/chosen': -152.02105712890625, 'logps/rejected': -240.43157958984375, 'logits/chosen': -1.1009716987609863, 'logits/rejected': -1.0957062244415283, 'epoch': 0.29}
+ 88%|#######################################################################6         | 177/200 [02:32<02:10,  5.65s/it]
+❌ Error during training: CUDA out of memory. Tried to allocate 1.04 GiB. GPU 0 has a total capacity of 39.49 GiB of which 691.56 MiB is free. Including non-PyTorch memory, this process has 38.81 GiB memory in use. Of the allocated memory 34.70 GiB is allocated by PyTorch, and 3.61 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+Traceback (most recent call last):
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 458, in <module>
+    trainer, training_skipped = train_dpo_baseline(max_steps=max_steps, base_model=args.base_model)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 293, in train_dpo_baseline
+    trainer.train(resume_from_checkpoint=latest_checkpoint)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 2238, in train
+    return inner_training_loop(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 2582, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 3845, in training_step
+    self.accelerator.backward(loss, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/accelerate/accelerator.py", line 2734, in backward
+    loss.backward(**kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/_tensor.py", line 625, in backward
+    torch.autograd.backward(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/autograd/__init__.py", line 354, in backward
+    _engine_run_backward(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.04 GiB. GPU 0 has a total capacity of 39.49 GiB of which 691.56 MiB is free. Including non-PyTorch memory, this process has 38.81 GiB memory in use. Of the allocated memory 34.70 GiB is allocated by PyTorch, and 3.61 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

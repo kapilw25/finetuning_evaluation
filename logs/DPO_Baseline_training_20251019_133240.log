@@ -1,155 +1,0 @@
-📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/DPO_Baseline_training_20251019_133240.log
-📝 All terminal output will be saved to this log file
-📝 For guaranteed unbuffered output, run with: python -u <script.py>
-================================================================================
-
-✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
-✅ HuggingFace authenticated
-📦 Model will be pushed to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
-================================================================================
-
-✅ Sanity check mode: 200 steps (~8 minutes)
-
-================================================================================
-💰 Auto-Shutdown Configuration
-================================================================================
-Training will take approximately: ~8 minutes
-After training completes, do you want to automatically shutdown the GPU instance?
-================================================================================
-Auto-shutdown after training? (yes/no): ================================================================================
-
-
-================================================================================
-🚀 Starting DPO Baseline Training
-================================================================================
-Configuration:
-  - Model: Llama-3.1-8B (BF16)
-  - Method: Standard DPO (Rafailov 2023)
-  - Loss: L_DPO only
-  - Training steps: 200
-  - Batch size: 1 (per device, reduced for DPO ref model)
-  - Gradient accumulation: 8 (effective batch=8)
-  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)
-  - Beta: 0.1 (Meta's Llama 3 DPO setting)
-  - Warmup steps: 100 (10% of total steps)
-  - LR scheduler: cosine
-  - Optimizer: adamw_torch
-  - Precision: BF16 + Flash Attention 2
-================================================================================
-
-
-================================================================================
-🔍 Checking for existing checkpoints...
-================================================================================
-
-1️⃣ Checking HuggingFace for existing model...
-❌ Model not found on HuggingFace: kapilw25/llama3-8b-pku-dpo-baseline-bf16
-   Will check local checkpoints...
-
-2️⃣ Checking local checkpoints...
-📂 Found checkpoint: outputs/DPO_Baseline/checkpoint-100
-   Resuming training from this checkpoint...
-
-Loading model...
-✅ Llama-3.1 chat template set (required by SFTTrainer)
-✅ Flash Attention 2 enabled (saves ~2.5GB memory)
-Loading checkpoint shards:   0%|                                                      | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|###########5                                  | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|#######################                       | 2/4 [00:01<00:01,  1.13it/s]Loading checkpoint shards:  75%|##################################5           | 3/4 [00:02<00:00,  1.14it/s]Loading checkpoint shards: 100%|##############################################| 4/4 [00:02<00:00,  1.64it/s]Loading checkpoint shards: 100%|##############################################| 4/4 [00:02<00:00,  1.41it/s]
-✅ Model loaded: meta-llama/Llama-3.1-8B
-   - Precision: BF16
-   - Max sequence length: 2048
-   - Flash Attention 2: True
-
-🔗 Loading LoRA adapters from HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
-✅ LoRA adapters loaded
-🔄 Merging LoRA adapters into base model...
-✅ LoRA adapters merged (ready for new training stage)
-
-Applying LoRA adapters...
-/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/tuners/tuners_utils.py:196: UserWarning: Already found a `peft_config` attribute in the model. This will lead to having multiple adapters in the model. Make sure to know what you are doing!
-  warnings.warn(
-trainable params: 41,943,040 || all params: 8,072,204,288 || trainable%: 0.5196
-✅ LoRA adapters applied (r=16, alpha=16)
-
-Applying torch.compile()...
-⚠️  torch.compile() failed: local variable 'torch' referenced before assignment
-   Continuing without compilation (training will be slower)
-
-Loading dataset...
-Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
-Original dataset size: 73,907
-Filtered dataset size: 10,813 (clear safety contrast)
-Training split size: 9,731 (90% of training data)
-✅ Loaded 9731 samples for DPO training
-Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
-Original dataset size: 73,907
-Filtered dataset size: 10,813 (clear safety contrast)
-Validation split size: 1,082 (10% of training data)
-✅ Loaded 1082 samples for DPO validation
-📊 TensorBoard logs: /lambda/nfs/DiskUsEast1/finetuning_evaluation/tensorboard_logs/DPO_Baseline_20251019_133259
-
-Initializing DPOTrainer...
-
-GPU = NVIDIA A100-SXM4-40GB. Max memory = 39.495 GB.
-34.018 GB of memory reserved before training.
-
-================================================================================
-🏋️  Training DPO Baseline...
-================================================================================
-
-  0%|                                                                               | 0/200 [00:00<?, ?it/s]/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/utils/checkpoint.py:85: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
-  warnings.warn(
- 50%|##################################8                                  | 101/200 [00:06<00:06, 15.92it/s]                                                                                                            {'loss': 0.4218, 'grad_norm': 2.1124722957611084, 'learning_rate': 1e-05, 'rewards/chosen': -0.6053889989852905, 'rewards/rejected': -1.3985958099365234, 'rewards/accuracies': 0.8125, 'rewards/margins': 0.7932069301605225, 'logps/chosen': -197.9588623046875, 'logps/rejected': -219.4835205078125, 'logits/chosen': -0.9550557136535645, 'logits/rejected': -0.9296820163726807, 'epoch': 0.17}
- 50%|##################################8                                  | 101/200 [00:06<00:06, 15.92it/s]                                                                                                            {'loss': 0.3485, 'grad_norm': 1.6469274759292603, 'learning_rate': 9.997532801828659e-06, 'rewards/chosen': -0.33771419525146484, 'rewards/rejected': -1.4500682353973389, 'rewards/accuracies': 0.875, 'rewards/margins': 1.112354040145874, 'logps/chosen': -147.20773315429688, 'logps/rejected': -178.27783203125, 'logits/chosen': -0.9963372945785522, 'logits/rejected': -1.0538450479507446, 'epoch': 0.17}
- 51%|###################################1                                 | 102/200 [00:11<00:06, 15.92it/s] 52%|###################################5                                 | 103/200 [00:16<00:19,  4.88it/s]                                                                                                            {'loss': 0.4054, 'grad_norm': 2.075061559677124, 'learning_rate': 9.990133642141359e-06, 'rewards/chosen': -0.8033775687217712, 'rewards/rejected': -1.7402002811431885, 'rewards/accuracies': 0.75, 'rewards/margins': 0.9368225932121277, 'logps/chosen': -203.85047912597656, 'logps/rejected': -190.23068237304688, 'logits/chosen': -0.9371927976608276, 'logits/rejected': -0.894950807094574, 'epoch': 0.17}
- 52%|###################################5                                 | 103/200 [00:16<00:19,  4.88it/s] 52%|###################################8                                 | 104/200 [00:22<00:29,  3.29it/s]                                                                                                            {'loss': 0.4247, 'grad_norm': 2.0430641174316406, 'learning_rate': 9.9778098230154e-06, 'rewards/chosen': -0.6153616905212402, 'rewards/rejected': -1.5580006837844849, 'rewards/accuracies': 0.8125, 'rewards/margins': 0.9426389932632446, 'logps/chosen': -141.81192016601562, 'logps/rejected': -226.0650177001953, 'logits/chosen': -0.9674635529518127, 'logits/rejected': -1.0057458877563477, 'epoch': 0.17}
- 52%|###################################8                                 | 104/200 [00:22<00:29,  3.29it/s] 52%|####################################2                                | 105/200 [00:27<00:41,  2.28it/s]                                                                                                            {'loss': 0.3533, 'grad_norm': 1.903137445449829, 'learning_rate': 9.960573506572391e-06, 'rewards/chosen': -0.682978630065918, 'rewards/rejected': -1.7928961515426636, 'rewards/accuracies': 0.9375, 'rewards/margins': 1.1099175214767456, 'logps/chosen': -119.22245025634766, 'logps/rejected': -238.29034423828125, 'logits/chosen': -0.9019961357116699, 'logits/rejected': -0.9286998510360718, 'epoch': 0.17}
- 52%|####################################2                                | 105/200 [00:27<00:41,  2.28it/s]
-❌ Error during training: CUDA out of memory. Tried to allocate 682.00 MiB. GPU 0 has a total capacity of 39.49 GiB of which 147.56 MiB is free. Including non-PyTorch memory, this process has 39.34 GiB memory in use. Of the allocated memory 36.67 GiB is allocated by PyTorch, and 2.17 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
-Traceback (most recent call last):
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 439, in <module>
-    trainer, training_skipped = train_dpo_baseline(max_steps=max_steps, base_model=args.base_model)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 274, in train_dpo_baseline
-    trainer.train(resume_from_checkpoint=latest_checkpoint)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 2238, in train
-    return inner_training_loop(
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 2582, in _inner_training_loop
-    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 3796, in training_step
-    loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/trl/trainer/dpo_trainer.py", line 1749, in compute_loss
-    loss, metrics = self.get_batch_loss_metrics(model, inputs, train_eval="train")
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/trl/trainer/dpo_trainer.py", line 1672, in get_batch_loss_metrics
-    ref_chosen_logps, ref_rejected_logps = self.compute_ref_log_probs(batch)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/trl/trainer/dpo_trainer.py", line 915, in compute_ref_log_probs
-    ref_model_output = self.concatenated_forward(self.model, batch, is_ref_model=True)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/trl/trainer/dpo_trainer.py", line 1539, in concatenated_forward
-    outputs = model(input_ids, **model_kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/accelerate/utils/operations.py", line 818, in forward
-    return model_forward(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/accelerate/utils/operations.py", line 806, in __call__
-    return convert_to_fp32(self.model_forward(*args, **kwargs))
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/amp/autocast_mode.py", line 44, in decorate_autocast
-    return func(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/peft_model.py", line 1850, in forward
-    return self.base_model(
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/tuners/tuners_utils.py", line 222, in forward
-    return self.model.forward(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 959, in wrapper
-    output = func(self, *args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 474, in forward
-    logits = self.lm_head(hidden_states[:, slice_indices, :])
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 134, in forward
-    return F.linear(input, self.weight, self.bias)
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 682.00 MiB. GPU 0 has a total capacity of 39.49 GiB of which 147.56 MiB is free. Including non-PyTorch memory, this process has 39.34 GiB memory in use. Of the allocated memory 36.67 GiB is allocated by PyTorch, and 2.17 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

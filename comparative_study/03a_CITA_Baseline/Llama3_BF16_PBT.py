@@ -61,14 +61,20 @@ Logging:
 
 import sys
 from pathlib import Path
+import os
+import argparse  # ✅ For command-line test modes
+from datetime import datetime
+
+# ===== FIX CUDA OOM: Enable expandable segments for memory fragmentation =====
+# CITA (like DPO) requires trainable model + reference model, causing fragmentation
+# MUST be set BEFORE importing torch/transformers/ray
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+
 import torch
 import ray
 from ray import tune
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOConfig
-from datetime import datetime
-import os
-import argparse  # ✅ For command-line test modes
 
 # Add utils to path
 project_root = Path(__file__).parent.parent.parent
