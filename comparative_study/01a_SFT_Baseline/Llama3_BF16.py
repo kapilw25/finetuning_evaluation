@@ -307,62 +307,73 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
         model.save_pretrained(str(lora_output_dir))
         tokenizer.save_pretrained(str(lora_output_dir))
         print(f"✅ LoRA adapters saved!")
+    else:
+        # Training skipped - download model from HF for inference
+        print(f"📥 Downloading model from HuggingFace for inference: {HF_REPO}")
+        model, tokenizer = load_model_bf16(
+            model_id="meta-llama/Llama-3.1-8B",
+            max_seq_length=2048,
+            use_flash_attention=True
+        )
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, HF_REPO, token=HF_TOKEN)
+        print(f"✅ Model downloaded from HuggingFace")
 
-        # ===== INFERENCE TEST =====
-        print("\n" + "="*80)
-        print("🧪 Running inference tests...")
-        print("="*80 + "\n")
+    # ===== INFERENCE TEST =====
+    print("\n" + "="*80)
+    print("🧪 Running inference tests...")
+    print("="*80 + "\n")
 
-        from transformers import TextStreamer
+    from transformers import TextStreamer
 
-        # Prepare model for inference
-        model.eval()
+    # Prepare model for inference
+    model.eval()
 
-        # Ensure model is in bf16 for Flash Attention compatibility
-        # (Training with gradient_checkpointing can cause dtype issues)
-        model = model.to(torch.bfloat16)
+    # Ensure model is in bf16 for Flash Attention compatibility
+    # (Training with gradient_checkpointing can cause dtype issues)
+    model = model.to(torch.bfloat16)
 
-        # Disable gradient checkpointing for inference (not needed, can cause issues)
-        if hasattr(model, 'gradient_checkpointing_disable'):
-            model.gradient_checkpointing_disable()
+    # Disable gradient checkpointing for inference (not needed, can cause issues)
+    if hasattr(model, 'gradient_checkpointing_disable'):
+        model.gradient_checkpointing_disable()
 
-        test_prompts = get_test_prompts()
+    test_prompts = get_test_prompts()
 
-        # Test on 3 prompts (1 helpful, 2 harmful)
-        test_cases = [
-            (test_prompts[0], "Helpful instruction following"),
-            (test_prompts[1], "Refusing harmful request (hacking)"),
-            (test_prompts[6], "Helpful instruction following (exercise)"),
-        ]
+    # Test on 3 prompts (1 helpful, 2 harmful)
+    test_cases = [
+        (test_prompts[0], "Helpful instruction following"),
+        (test_prompts[1], "Refusing harmful request (hacking)"),
+        (test_prompts[6], "Helpful instruction following (exercise)"),
+    ]
 
-        for prompt, description in test_cases:
-            print(f"\n{'='*80}")
-            print(f"TEST: {description}")
-            print(f"{'='*80}")
-            print(f"Prompt: {prompt[:70]}...")
-
-            messages = [{"role": "user", "content": prompt}]
-            input_ids = tokenizer.apply_chat_template(
-                messages,
-                add_generation_prompt=True,
-                return_tensors="pt",
-            ).to("cuda")
-
-            text_streamer = TextStreamer(tokenizer, skip_prompt=True)
-
-            with torch.no_grad():
-                _ = model.generate(
-                    input_ids,
-                    streamer=text_streamer,
-                    max_new_tokens=128,
-                    pad_token_id=tokenizer.eos_token_id,
-                    temperature=0.7,
-                    top_p=0.9,
-                )
-
+    for prompt, description in test_cases:
         print(f"\n{'='*80}")
-        print(f"✅ Inference tests completed")
-        print(f"{'='*80}\n")
+        print(f"TEST: {description}")
+        print(f"{'='*80}")
+        print(f"Prompt: {prompt[:70]}...")
+
+        messages = [{"role": "user", "content": prompt}]
+        input_ids = tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        ).to("cuda")
+
+        text_streamer = TextStreamer(tokenizer, skip_prompt=True)
+
+        with torch.no_grad():
+            _ = model.generate(
+                input_ids,
+                streamer=text_streamer,
+                max_new_tokens=128,
+                pad_token_id=tokenizer.eos_token_id,
+                temperature=0.7,
+                top_p=0.9,
+            )
+
+    print(f"\n{'='*80}")
+    print(f"✅ Inference tests completed")
+    print(f"{'='*80}\n")
 
     return trainer, training_skipped
 
