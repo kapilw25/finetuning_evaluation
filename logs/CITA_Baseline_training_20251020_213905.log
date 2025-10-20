@@ -1,4 +1,4 @@
-📝 Logging initialized: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/logs/CITA_Baseline_training_20251020_212901.log
+📝 Logging initialized: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/logs/CITA_Baseline_training_20251020_213905.log
 📝 All terminal output will be saved to this log file
 📝 For guaranteed unbuffered output, run with: python -u <script.py>
 ================================================================================
@@ -68,10 +68,10 @@ Configuration:
 ╰──────────────────────────────────────────────────────────╯
 
 View detailed results here: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training
-To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2025-10-20_21-29-12_726433_92212/artifacts/2025-10-20_20-18-14/cita_pbt_training/driver_artifacts`
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2025-10-20_21-39-16_995672_96416/artifacts/2025-10-20_20-18-14/cita_pbt_training/driver_artifacts`
 
 Trial status: 1 TERMINATED
-Current time: 2025-10-20 21:29:20. Total running time: 0s
+Current time: 2025-10-20 21:39:25. Total running time: 0s
 Logical resource usage: 0/14 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:RTX)
 ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Trial name                        status         lambda_kl     learning_rate       beta     weight_decay     warmup_steps     iter     total time (s)     cita/loss_total     cita/loss_sft     cita/loss_dpo     cita/loss_kl │
@@ -127,30 +127,15 @@ Checkpoint: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/c
 ================================================================================
 
 📦 Loading base model...
-Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:00<00:02,  1.00it/s]Loading checkpoint shards:  50%|#####     | 2/4 [00:01<00:01,  1.00it/s]Loading checkpoint shards:  75%|#######5  | 3/4 [00:02<00:00,  1.00it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.44it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.24it/s]
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:01<00:03,  1.00s/it]Loading checkpoint shards:  50%|#####     | 2/4 [00:02<00:02,  1.01s/it]Loading checkpoint shards:  75%|#######5  | 3/4 [00:02<00:00,  1.00it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.44it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.24it/s]
 🔧 Loading LoRA adapter from best checkpoint...
+📋 Loading tokenizer...
 
-❌ Local save failed: Can't find 'adapter_config.json' at '/lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003'
-⚠️  WARNING: No backup will be available after instance shutdown!
-Traceback (most recent call last):
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/config.py", line 262, in _get_peft_type
-    config_file = hf_hub_download(
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
-    validate_repo_id(arg_value)
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
-    raise HFValidationError(
-huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003'. Use `repo_type` argument if needed.
+💾 Saving LoRA adapter locally: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/
+✅ Saved LoRA adapter (~165MB): /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/
+✅ Saved best config: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/best_pbt_config.json
+================================================================================
 
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/comparative_study/0c_utils/push_automation.py", line 252, in save_local_backup
-    model_with_adapter = PeftModel.from_pretrained(
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/peft_model.py", line 440, in from_pretrained
-    PeftConfig._get_peft_type(
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/config.py", line 268, in _get_peft_type
-    raise ValueError(f"Can't find '{CONFIG_NAME}' at '{model_id}'")
-ValueError: Can't find 'adapter_config.json' at '/lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003'
 ⚠️  Could not fetch previous model: Force download failed due to the above error.
    Assuming this is first training run
 ✅ First successful training run detected (no previous metric on HF)
@@ -166,36 +151,71 @@ This will REPLACE the existing model (performance improved)
 ================================================================================
 
 📦 Loading base model...
-Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:00<00:02,  1.01it/s]Loading checkpoint shards:  50%|#####     | 2/4 [00:02<00:02,  1.01s/it]Loading checkpoint shards:  75%|#######5  | 3/4 [00:03<00:01,  1.01s/it]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.42it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.23it/s]
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:00<00:02,  1.02it/s]Loading checkpoint shards:  50%|#####     | 2/4 [00:01<00:01,  1.02it/s]Loading checkpoint shards:  75%|#######5  | 3/4 [00:02<00:00,  1.02it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.46it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.26it/s]
 🔧 Loading LoRA adapter from best checkpoint...
+📋 Loading tokenizer...
+
+📤 Pushing LoRA adapter to HuggingFace: kapilw25/llama3-8b-pku-cita-baseline-bf16
+   (Pushing adapter only - 165MB, compatible with inference script)
+   (This will overwrite/replace the existing model)
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...adapter_model.safetensors:   1%|1         | 2.41MB /  168MB            [A[A
+
+  ...adapter_model.safetensors:   1%|1         | 2.41MB /  168MB            [A[AProcessing Files (0 / 1)      :   1%|1         | 2.41MB /  168MB, 4.01MB/s  
+New Data Upload               :   4%|3         | 2.41MB / 67.1MB, 4.01MB/s  [A
+
+  ...adapter_model.safetensors:  15%|#5        | 25.3MB /  168MB            [A[AProcessing Files (0 / 1)      :  15%|#5        | 25.3MB /  168MB, 31.6MB/s  
+New Data Upload               :  38%|###7      | 25.3MB / 67.1MB, 31.6MB/s  [A
+
+  ...adapter_model.safetensors:  39%|###9      | 66.2MB /  168MB            [A[AProcessing Files (0 / 1)      :  39%|###9      | 66.2MB /  168MB, 66.2MB/s  
+New Data Upload               :  49%|####9     | 66.2MB /  134MB, 66.2MB/s  [A
+
+  ...adapter_model.safetensors:  40%|####      | 67.4MB /  168MB            [A[AProcessing Files (0 / 1)      :  40%|####      | 67.4MB /  168MB, 56.2MB/s  
+New Data Upload               :  40%|####      | 67.4MB /  168MB, 56.2MB/s  [A
+
+  ...adapter_model.safetensors:  50%|####9     | 83.1MB /  168MB            [A[AProcessing Files (0 / 1)      :  50%|####9     | 83.1MB /  168MB, 59.3MB/s  
+New Data Upload               :  50%|####9     | 83.1MB /  168MB, 59.3MB/s  [A
+
+  ...adapter_model.safetensors:  83%|########3 |  139MB /  168MB            [A[AProcessing Files (0 / 1)      :  83%|########3 |  139MB /  168MB, 87.1MB/s  
+New Data Upload               :  83%|########3 |  139MB /  168MB, 87.1MB/s  [A
+
+  ...adapter_model.safetensors: 100%|#########9|  167MB /  168MB            [A[AProcessing Files (0 / 1)      : 100%|#########9|  167MB /  168MB, 92.8MB/s  
+New Data Upload               : 100%|#########9|  167MB /  168MB, 92.8MB/s  [A
+
+  ...adapter_model.safetensors: 100%|#########9|  167MB /  168MB            [A[A
+
+  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|##########|  168MB /  168MB, 76.3MB/s  
+New Data Upload               : 100%|##########|  168MB /  168MB, 76.3MB/s  [A
+
+  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            [A[A
+
+  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|##########|  168MB /  168MB, 69.9MB/s  
+New Data Upload               : 100%|##########|  168MB /  168MB, 69.9MB/s  
+  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[A
+
+  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|##########| 17.2MB / 17.2MB,   ???B/s  
+
+  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[A
+
+  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|##########| 17.2MB / 17.2MB,  0.00B/s  
+New Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  
+  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            
 
 ================================================================================
-❌ HuggingFace push failed: Can't find 'adapter_config.json' at '/lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003'
+✅ LoRA adapter successfully pushed to HuggingFace!
 ================================================================================
-⚠️  Model training succeeded but push failed.
-📊 Best hyperparameters saved to: ./outputs/best_pbt_config.json
-💾 Best checkpoint available at: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003
+🔗 View at: https://huggingface.co/kapilw25/llama3-8b-pku-cita-baseline-bf16
+📊 Best hyperparameters: ./outputs/best_pbt_config.json
+📏 Upload size: ~165MB (adapter only, not merged model)
+✅ Compatible with inference_bf16.py
 ================================================================================
 
-Traceback (most recent call last):
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/config.py", line 262, in _get_peft_type
-    config_file = hf_hub_download(
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
-    validate_repo_id(arg_value)
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
-    raise HFValidationError(
-huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003'. Use `repo_type` argument if needed.
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/comparative_study/0c_utils/push_automation.py", line 356, in push_to_huggingface
-    model_with_adapter = PeftModel.from_pretrained(
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/peft_model.py", line 440, in from_pretrained
-    PeftConfig._get_peft_type(
-  File "/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/config.py", line 268, in _get_peft_type
-    raise ValueError(f"Can't find '{CONFIG_NAME}' at '{model_id}'")
-ValueError: Can't find 'adapter_config.json' at '/lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003'
 
 ================================================================================
 📤 Pushing Codebase to GitHub
@@ -203,39 +223,7 @@ ValueError: Can't find 'adapter_config.json' at '/lambda/nfs/DiskUsSouth1/finetu
 ✅ No large log files (all < 100MB)
 
 📊 Changes to commit:
- M .claude/settings.local.json
-M  README.md
- M comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py
-MM comparative_study/0c_utils/monitoring_callback.py
- M comparative_study/0c_utils/pbt_trainer.py
- D logs/CITA_Baseline_training_20251019_173243.log
-AD logs/CITA_Baseline_training_20251020_190629.log
-AD logs/CITA_Baseline_training_20251020_192100.log
-AD logs/CITA_Baseline_training_20251020_192907.log
-AD logs/CITA_Baseline_training_20251020_193107.log
-AD logs/CITA_Baseline_training_20251020_194928.log
- M plans/plan2.md
-M  requirements.txt
-M  setup_claude.sh
-?? logs/CITA_Baseline_training_20251020_201757.log
-?? logs/CITA_Baseline_training_20251020_212901.log
-
-✅ Staged all changes (including logs/)
-✅ Created git commit
-
-📤 Pushing to GitHub...
-✅ Successfully pushed to GitHub!
-
-
-================================================================================
-
-
-================================================================================
-✅ Automated Push Complete!
-================================================================================
-📊 Config: ./outputs/best_pbt_config.json
-================================================================================
-
-
-🏁 PBT Training Complete!
+ M comparative_study/0c_utils/push_automation.py
+ M logs/CITA_Baseline_training_20251020_212901.log
+?? logs/CITA_Baseline_training_20251020_213905.log
 

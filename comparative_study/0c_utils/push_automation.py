@@ -249,9 +249,16 @@ class PushAutomation:
             )
 
             print("🔧 Loading LoRA adapter from best checkpoint...")
+            # Ray Tune checkpoints have structure: checkpoint_XXXXX/checkpoint/adapter_config.json
+            checkpoint_path = Path(best_checkpoint)
+            if (checkpoint_path / "checkpoint").exists():
+                adapter_path = str(checkpoint_path / "checkpoint")
+            else:
+                adapter_path = best_checkpoint
+
             model_with_adapter = PeftModel.from_pretrained(
                 base_model,
-                best_checkpoint,
+                adapter_path,
             )
 
             print("📋 Loading tokenizer...")
@@ -353,9 +360,16 @@ class PushAutomation:
             )
 
             print("🔧 Loading LoRA adapter from best checkpoint...")
+            # Ray Tune checkpoints have structure: checkpoint_XXXXX/checkpoint/adapter_config.json
+            checkpoint_path = Path(best_checkpoint)
+            if (checkpoint_path / "checkpoint").exists():
+                adapter_path = str(checkpoint_path / "checkpoint")
+            else:
+                adapter_path = best_checkpoint
+
             model_with_adapter = PeftModel.from_pretrained(
                 base_model,
-                best_checkpoint,
+                adapter_path,
             )
 
             print("📋 Loading tokenizer...")
