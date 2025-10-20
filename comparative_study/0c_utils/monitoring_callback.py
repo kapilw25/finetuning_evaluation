@@ -243,6 +243,19 @@ appropriately complete each request.
 
         inputs = tokenizer(full_prompt, return_tensors="pt").to(model.device)
 
+        # ✅ FIX: Flash Attention requires BF16 during inference
+        # Solution: Same as SFT/DPO inference - temporarily set model to BF16 + disable gradient checkpointing
+        # Reference: comparative_study/01a_SFT_Baseline/Llama3_BF16.py:332-338
+
+        # Save original training state
+        was_training = model.training
+
+        # Switch to eval mode + BF16 + disable gradient checkpointing
+        model.eval()
+        model = model.to(torch.bfloat16)
+        if hasattr(model, 'gradient_checkpointing_disable'):
+            model.gradient_checkpointing_disable()
+
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -253,6 +266,12 @@ appropriately complete each request.
                 pad_token_id=tokenizer.eos_token_id,
                 eos_token_id=tokenizer.eos_token_id,
             )
+
+        # Restore training state
+        if was_training:
+            model.train()
+            if hasattr(model, 'gradient_checkpointing_enable'):
+                model.gradient_checkpointing_enable()
 
         generated_ids = outputs[0][inputs['input_ids'].shape[1]:]
         response = tokenizer.decode(generated_ids, skip_special_tokens=True)

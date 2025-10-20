@@ -624,7 +624,12 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
             # Save best hyperparameters to file
             config_path = save_best_config(best_trial, "./outputs/best_pbt_config.json")
 
-            best_checkpoint = best_trial.checkpoint.dir_or_data
+            # Handle different Ray Tune versions (dir_or_data vs path)
+            try:
+                best_checkpoint = best_trial.checkpoint.dir_or_data
+            except AttributeError:
+                best_checkpoint = getattr(best_trial.checkpoint, 'path', str(best_trial.checkpoint))
+
             print(f"\n✅ Best model checkpoint: {best_checkpoint}\n")
 
         # ===================================================================
