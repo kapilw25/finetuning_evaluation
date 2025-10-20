@@ -227,3 +227,23 @@ This will REPLACE the existing model (performance improved)
  M logs/CITA_Baseline_training_20251020_212901.log
 ?? logs/CITA_Baseline_training_20251020_213905.log
 
+✅ Staged all changes (including logs/)
+✅ Created git commit
+
+📤 Pushing to GitHub...
+✅ Successfully pushed to GitHub!
+
+
+================================================================================
+
+
+================================================================================
+✅ Automated Push Complete!
+================================================================================
+💾 Local backup: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16
+📊 Config: ./outputs/best_pbt_config.json
+================================================================================
+
+
+🏁 PBT Training Complete!
+
