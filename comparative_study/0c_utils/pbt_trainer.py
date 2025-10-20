@@ -310,7 +310,14 @@ def print_best_hyperparameters(analysis, metric="eval_loss", mode="min"):
             print(f"  {key}: {value}")
 
     print(f"\n  Final {metric}: {best_trial.last_result.get(metric, 'N/A')}")
-    print(f"  Best checkpoint: {best_trial.checkpoint.dir_or_data}")
+
+    # Handle different Ray Tune versions (dir_or_data vs path)
+    try:
+        checkpoint_path = best_trial.checkpoint.dir_or_data
+    except AttributeError:
+        checkpoint_path = getattr(best_trial.checkpoint, 'path', str(best_trial.checkpoint))
+
+    print(f"  Best checkpoint: {checkpoint_path}")
     print(f"{'='*80}\n")
 
     return best_trial

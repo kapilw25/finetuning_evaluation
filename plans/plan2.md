@@ -38,23 +38,23 @@ Harmlessness ↑
 ## Phase 3A: Sanity Checks (Stacked Pipeline)
 
 **Cost**: ~$1.20 total (200 + 200 + 800 steps = 1200 steps)
-**Time**: ~48 minutes total
+**Time**: ~74 minutes total (A6000-48GB)
 
 ### **Commands** (run sequentially):
 
 ```bash
-# 1. SFT baseline (base → SFT: 200 steps, ~8 min, ~$0.20)
+# 1. SFT baseline (base → SFT: 200 steps, ~12 min, ~$0.20) [A6000-48GB]
 source venv_CITA/bin/activate
 python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 # Pushes to: kapilw25/llama3-8b-pku-sft-baseline-bf16
 
-# 2. DPO baseline (SFT → DPO: 200 steps, ~8 min, ~$0.20)
+# 2. DPO baseline (SFT → DPO: 200 steps, ~12 min, ~$0.20) [A6000-48GB]
 python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 # Pushes to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
 
-# 3. CITA with PBT (DPO → CITA: 200 steps × 4 workers = 800 steps, ~32 min, ~$0.80)
+# 3. CITA with PBT (DPO → CITA: 200 steps, ~50 min, ~$0.80) [A6000-48GB]
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
@@ -122,20 +122,20 @@ tail -n 50 logs/CITA_Baseline_training_<timestamp>.log
 ## Phase 4: Full Training (Stacked Pipeline)
 
 **Cost**: ~$6.00 total (1000 + 1000 + 4000 steps)
-**Time**: ~240 minutes total (~4 hours)
+**Time**: ~374 minutes total (~6.2 hours) [A6000-48GB]
 
 ### **Commands** (run sequentially):
 
 ```bash
-# 1. SFT baseline (1000 steps, ~40 min, ~$1)
+# 1. SFT baseline (1000 steps, ~62 min, ~$1) [A6000-48GB]
 python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
-# 2. DPO baseline (1000 steps, ~40 min, ~$1)
+# 2. DPO baseline (1000 steps, ~62 min, ~$1) [A6000-48GB]
 python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode full \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 
-# 3. CITA with PBT (1000 steps × 4 workers = 4000 steps, ~160 min, ~$4)
+# 3. CITA with PBT (1000 steps × 4 workers = 4000 steps, ~250 min, ~$4) [A6000-48GB]
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
     --mode full \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
@@ -148,7 +148,7 @@ python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
 ## Phase 5: Full Evaluation (1,800+ Prompts)
 
 **Cost**: ~$1.80 (1,800 prompts × 4 models × GPT-OSS-120B)
-**Time**: ~30 minutes
+**Time**: ~47 minutes (A6000-48GB)
 
 **Command**:
 ```bash
@@ -173,16 +173,16 @@ python3 -u comparative_study/05_evaluation/dual_metric_eval.py \
 
 | Phase | Task | Steps | Time | Cost |
 |-------|------|-------|------|------|
-| 3A | Sanity (SFT) | 200 | ~8 min | ~$0.20 |
-| 3A | Sanity (DPO) | 200 | ~8 min | ~$0.20 |
-| 3A | Sanity (CITA PBT) | 200 × 4 workers = 800 | ~32 min | ~$0.80 |
-| 4 | Full (SFT) | 1000 | ~40 min | ~$1.00 |
-| 4 | Full (DPO) | 1000 | ~40 min | ~$1.00 |
-| 4 | Full (CITA PBT) | 1000 × 4 workers = 4000 | ~160 min | ~$4.00 |
-| 5 | Full eval (ONCE) | 1800 samples | ~30 min | ~$1.80 |
-| **TOTAL** | | | **~318 min (~5.3 hrs)** | **~$9.00** |
+| 3A | Sanity (SFT) | 200 | ~12 min | ~$0.20 |
+| 3A | Sanity (DPO) | 200 | ~12 min | ~$0.20 |
+| 3A | Sanity (CITA PBT) | 200 | ~50 min | ~$0.80 |
+| 4 | Full (SFT) | 1000 | ~62 min | ~$1.00 |
+| 4 | Full (DPO) | 1000 | ~62 min | ~$1.00 |
+| 4 | Full (CITA PBT) | 1000 | ~250 min | ~$4.00 |
+| 5 | Full eval (ONCE) | 1800 samples | ~47 min | ~$1.80 |
+| **TOTAL** | | | **~495 min (~8.2 hrs)** | **~$9.00** |
 
-**GPU rate**: $1.50/hr (Lambda A100-40GB)
+**GPU rate**: $0.80/hr (Lambda A6000-48GB)
 
 ---
 

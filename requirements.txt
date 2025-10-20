@@ -1,24 +1,34 @@
-# MINIMAL REQUIREMENTS - For CITA Training on Lambda.ai
-# System packages used: torch, torchvision, scipy, matplotlib
+# MINIMAL REQUIREMENTS - For CITA Training
+#
+# INSTALLATION MODES:
+# 1. Lambda A6000 with system packages: python3 -m venv --system-site-packages venv_CITA
+#    (Uses system torch 2.7.0, keras 3.10.0 - faster, saves space)
+# 2. Fresh GPU instance: python3 -m venv venv_CITA && pip install torch --index-url https://download.pytorch.org/whl/cu121
+#    (Installs everything from scratch)
 
-# NumPy compatibility - use SYSTEM numpy (1.26.4) to match system PyTorch 2.7.0
-# numpy>=1.23.0,<1.27.0  # DO NOT install - use system version via --system-site-packages
-pandas>=2.0.0  # Override system pandas 1.3.5 (Ray requires pandas 2.0+)
-networkx  # Override system networkx 2.4 to avoid np.int errors
+# Core dependencies
+numpy<2.0.0  # CRITICAL: System packages (scipy, torch) compiled against NumPy 1.x
+pandas>=2.0.0  # Ray requires pandas 2.0+
+networkx  # Avoid np.int deprecation errors
 matplotlib
 seaborn
 scikit-learn
 
+# Flash-attention (30-40% speedup, ~2.5GB memory savings)
+flash-attn  # Install with: MAX_JOBS=4 pip install flash-attn --no-build-isolation
+ninja  # Build dependency (if compiling from source)
+
 # Core fine-tuning packages (essential)
-transformers==4.55.4
-trl==0.22.2
+transformers>=4.55.0  # Min version with required features
+trl>=0.22.0           # Min version with CITATrainer support (if custom)
+tf-keras              # Required until transformers supports System's Keras 3
+
 peft
 accelerate
 # bitsandbytes  # Not needed - using adamw_torch instead of adamw_8bit
 datasets
 # unsloth
-tf-keras  # Keras 2 compatibility for transformers
-jinja2>=3.1.0  # Chat template support for transformers
+# jinja2>=3.1.0  # SKIP - system provides via dependencies
 
 # Jupyter kernel support
 ipykernel
@@ -36,24 +46,3 @@ huggingface_hub
 
 # LLM-as-judge evaluation (Fireworks API)
 litellm
-
-# Solution: Use Python 3.10 with System Packages
-
-# # 1. Create venv with --system-site-packages to use pre-installed PyTorch,
-# etc.
-# python3 -m venv --system-site-packages venv_CITA [only for GH200]
-
-# # 2. Activate the environment
-# source venv_CITA/bin/activate
-
-# # 3. Install requirements (will use system torch/CUDA and only install 
-# missing packages)
-# pip install -r finetuning_evaluation/requirements.txt
-
-# Why --system-site-packages is Important
-
-# Your GH200 instance has pre-installed system packages like:
-# - torch (with CUDA support)
-# - torchvision
-# - scipy
-# - matplotlib

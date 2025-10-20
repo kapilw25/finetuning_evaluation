@@ -5,20 +5,20 @@
 ## Installation
 
 ```bash
-# 1. Create virtual environment
-python3 -m venv venv_CITA
+# 1. Create venv with system packages access (uses system torch 2.7.0, keras 3.10.0)
+python3 -m venv --system-site-packages venv_CITA
 
 # 2. Activate environment
 source venv_CITA/bin/activate
 
-# 3. Install flash-attn dependencies
-pip install packaging wheel ninja
+# 3. Verify torch is accessible
+python -c "import torch; print(f'Torch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 
-# 4. Install flash-attn (takes 10-40 mins to compile)
-MAX_JOBS=4 pip install flash-attn --no-build-isolation
-
-# 5. Install remaining requirements
+# 4. Install requirements (includes ninja for flash-attn)
 pip install -r requirements.txt
+
+# 5. Install flash-attn (takes 10-40 mins to compile)
+MAX_JOBS=4 pip install flash-attn --no-build-isolation
 ```
 
 ---
