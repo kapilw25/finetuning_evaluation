@@ -44,7 +44,6 @@ Harmlessness ↑
 
 ```bash
 # 1. SFT baseline (base → SFT: 200 steps, ~12 min, ~$0.20) [A6000-48GB]
-source venv_CITA/bin/activate
 python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 # Pushes to: kapilw25/llama3-8b-pku-sft-baseline-bf16
 
@@ -190,10 +189,61 @@ python3 -u comparative_study/05_evaluation/dual_metric_eval.py \
 
 ---
 
+## Contingency Plan: If CITA Underperforms After Full Training
+
+**Decision Point** (after Phase 4 full training):
+- If eval shows CITA ≥ DPO ≥ SFT → Success, proceed to Phase 5
+- If eval shows CITA < DPO → Execute fallback strategy below
+
+### **Fallback Strategy** (if CITA < DPO after 1000 steps)
+
+**Phase 4B: CITA Refinement** (~$8-12, 2-3 iterations)
+
+#### **Iteration 1: Add Early Stopping** (~$4, 160 min)
+```python
+# Modify Llama3_BF16_PBT.py DPOConfig:
+training_args = DPOConfig(
+    ...
+    load_best_model_at_end=True,           # Load best checkpoint
+    metric_for_best_model="eval_rewards/margins",  # Optimize margin
+    greater_is_better=True,                # Higher margin = better
+    save_total_limit=10,                   # Keep more checkpoints
+)
+```
+**Risk**: May break PBT synchronization (workers stop at different steps)
+**Mitigation**: Use `save_total_limit=10` to preserve checkpoints for recovery
+
+#### **Iteration 2: Try IPO (Identity Preference Optimization)** (~$4-8, 160-320 min)
+- Replace standard DPO loss with IPO loss in `cita_trainer.py`
+- IPO adds regularization: enables training to convergence without early stopping
+- **Trade-off**: Major code rewrite (2-3 days debugging)
+
+**Implementation:**
+```python
+# cita_trainer.py:196 - Replace DPO loss with IPO
+# Standard DPO:
+# loss_dpo = -log(softmax([logits_chosen, logits_rejected])[:, 0])
+
+# IPO (root-finding MSE loss):
+# loss_ipo = (logits_chosen - logits_rejected - 1/beta)**2
+```
+
+#### **Iteration 3: Try χPO (Chi-squared Preference Optimization)** (Last Resort)
+- Replace log link function in DPO objective
+- χPO converges faster than standard DPO (proven in research)
+- **Trade-off**: Even more code changes than IPO
+
+**Total Contingency Cost**: $8-12 (2-3 attempts)
+**Total Contingency Time**: 320-640 minutes (5-10 hours)
+
+---
+
 ## Next Steps
 
-1. ✅ All Phase 3 modifications complete
-2. ⏳ **Run Phase 3A**: Sanity checks (200 steps each)
-3. ⏳ **Validate**: Check logs + inference tests (no test set!)
-4. ⏳ **Run Phase 4**: Full training if sanity passes (1000 steps each)
+1. ✅ Phase 3A complete (sanity checks passed - all 3 models trained & pushed to HF)
+2. ✅ **Sanity Results**: SFT (loss=1.58), DPO (margin=3.34), CITA (margin=0.08, acc=65%)
+3. ⏳ **Run Phase 4**: Full training (1000 steps each) - proceed AS-IS without modifications
+4. ⏳ **Decision Point**: After Phase 4, check if CITA ≥ DPO
+   - ✅ If yes → Proceed to Phase 5 (evaluation)
+   - ❌ If no → Execute Fallback Strategy (Phase 4B)
 5. ⏳ **Run Phase 5**: Dual-metric evaluation ONCE (1800 prompts)

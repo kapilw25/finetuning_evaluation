@@ -7,17 +7,20 @@ IMPORTANT: Loads models from HuggingFace (not local paths)
 Since training instances auto-shutdown after pushing to HF, evaluation runs on fresh instances.
 
 Usage:
-    # Evaluate all 3 baselines
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py
+    # Sanity check: 50+50 samples (~5-10 min, ~$0.10)
+    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity
+
+    # Full evaluation: 1000+805 samples (~40-60 min, ~$1.80)
+    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode full
 
     # Evaluate specific models
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --models SFT_Baseline CITA_Baseline
+    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity --models SFT_Baseline CITA_Baseline
 
-    # Use smaller test sets for quick testing
+    # Custom sample counts (overrides --mode)
     python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --harmlessness-samples 100 --helpfulness-samples 100
 
     # Use INT4 quantization for faster inference
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --quantization int4
+    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity --quantization int4
 """
 
 import sys
@@ -32,13 +35,14 @@ from peft import PeftModel
 from datasets import load_dataset
 
 # Add utils to path
-project_root = Path(__file__).parent.parent.parent
+project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root / "comparative_study" / "0c_utils"))
+sys.path.insert(0, str(Path(__file__).parent / "utils"))
 
 from model_utils import load_hf_token, get_model_repo_name
-from utils.prompts import get_harmlessness_prompt, get_helpfulness_prompt
-from utils.fireworks_client import FireworksJudge
-from utils.statistical_analysis import run_statistical_analysis
+from prompts import get_harmlessness_prompt, get_helpfulness_prompt
+from fireworks_client import FireworksJudge
+from statistical_analysis import run_statistical_analysis
 
 # ===================================================================
 # Configuration
@@ -129,18 +133,22 @@ def load_helpfulness_test_set(max_samples: Optional[int] = None) -> pd.DataFrame
     print("Loading AlpacaEval Test Set (Helpfulness)")
     print("="*80)
 
-    dataset = load_dataset("tatsu-lab/alpaca_eval", split="eval")
+    # Download JSON directly from HuggingFace (bypass dataset script)
+    import requests
+    url = "https://huggingface.co/datasets/tatsu-lab/alpaca_eval/resolve/main/alpaca_eval_gpt4_baseline.json"
+
+    print(f"Downloading from: {url}")
+    response = requests.get(url)
+    response.raise_for_status()
+    data = response.json()
+
+    df = pd.DataFrame(data)
 
     if max_samples:
-        dataset = dataset.select(range(min(max_samples, len(dataset))))
-
-    df = pd.DataFrame({
-        "prompt": dataset['instruction'],
-        "reference_output": dataset['output']  # GPT-4 reference (optional)
-    })
+        df = df.head(max_samples)
 
     print(f"✅ Loaded {len(df)} prompts from AlpacaEval")
-    return df
+    return df[['instruction', 'output']].rename(columns={'instruction': 'prompt', 'output': 'reference_output'})
 
 
 def load_air_bench_test_set(max_samples: Optional[int] = None) -> Optional[pd.DataFrame]:
@@ -180,7 +188,7 @@ def load_air_bench_test_set(max_samples: Optional[int] = None) -> Optional[pd.Da
 def load_model_for_eval(
     model_key: str,
     quantization: str = "bf16"  # or "int4" for faster inference
-) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
+    ) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
     """
     Load model with LoRA adapter from HuggingFace for evaluation
 
@@ -263,7 +271,7 @@ def generate_responses(
     chat_template: str,
     max_new_tokens: int = 256,
     batch_size: int = 8
-) -> List[str]:
+    ) -> List[str]:
     """
     Generate responses using correct chat template per model
 
@@ -341,7 +349,7 @@ def evaluate_harmlessness(
     responses: List[str],
     harm_categories: List[List[str]],
     judge: FireworksJudge
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
     Evaluate harmlessness using LLM-as-judge
 
@@ -397,7 +405,7 @@ def evaluate_helpfulness(
     prompts: List[str],
     responses: List[str],
     judge: FireworksJudge
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
     Evaluate helpfulness using LLM-as-judge
 
@@ -458,7 +466,7 @@ def run_dual_metric_evaluation(
     helpfulness_test: pd.DataFrame,
     judge: FireworksJudge,
     quantization: str = "bf16"
-) -> Dict:
+    ) -> Dict:
     """
     Run full dual-metric evaluation for a single model
 
@@ -549,32 +557,64 @@ def main():
         description="Dual-Metric Evaluation (Harmlessness + Helpfulness)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  # Evaluate all 3 baselines (loads from HuggingFace)
-  python dual_metric_eval.py
+        Examples:
+        # Evaluate all 3 baselines (loads from HuggingFace)
+        python dual_metric_eval.py
 
-  # Evaluate specific models
-  python dual_metric_eval.py --models SFT_Baseline CITA_Baseline
+        # Evaluate specific models
+        python dual_metric_eval.py --models SFT_Baseline CITA_Baseline
 
-  # Quick test with small samples
-  python dual_metric_eval.py --harmlessness-samples 100 --helpfulness-samples 100
+        # Quick test with small samples
+        python dual_metric_eval.py --harmlessness-samples 100 --helpfulness-samples 100
 
-  # Use INT4 for faster inference
-  python dual_metric_eval.py --quantization int4
+        # Use INT4 for faster inference
+        python dual_metric_eval.py --quantization int4
 
-Note: Models are loaded from HuggingFace (pushed by training scripts via push_automation.py)
-      """
+        Note: Models are loaded from HuggingFace (pushed by training scripts via push_automation.py)
+        """
     )
+    parser.add_argument("--mode", choices=["sanity", "full"], default="full",
+                       help="Evaluation mode: sanity (50+50 samples) or full (1000+805 samples)")
     parser.add_argument("--models", nargs="+", default=list(MODELS.keys()),
                        help="Models to evaluate (default: all 3)")
-    parser.add_argument("--harmlessness-samples", type=int, default=1000,
-                       help="Max samples for harmlessness test (default: 1000)")
-    parser.add_argument("--helpfulness-samples", type=int, default=805,
-                       help="Max samples for helpfulness test (default: 805, full AlpacaEval)")
+    parser.add_argument("--harmlessness-samples", type=int, default=None,
+                       help="Max samples for harmlessness test (overrides --mode)")
+    parser.add_argument("--helpfulness-samples", type=int, default=None,
+                       help="Max samples for helpfulness test (overrides --mode)")
     parser.add_argument("--quantization", choices=["bf16", "int4"], default="bf16",
                        help="Model quantization (default: bf16)")
 
     args = parser.parse_args()
+
+    # Interactive mode selection if --mode not provided
+    print("\n" + "="*80)
+    print("🎯 DUAL-METRIC EVALUATION: Mode Selection")
+    print("="*80)
+    print("\nChoose evaluation mode:")
+    print("  1) Sanity Check  - 50 harmful + 50 helpful prompts (~5-10 min, ~$0.10)")
+    print("  2) Full Evaluation - 1000 harmful + 805 helpful prompts (~40-60 min, ~$1.80)")
+    print("="*80)
+
+    while True:
+        choice = input("\nEnter choice (1 or 2): ").strip()
+        if choice == "1":
+            args.mode = "sanity"
+            break
+        elif choice == "2":
+            args.mode = "full"
+            break
+        else:
+            print("❌ Invalid choice. Please enter 1 or 2.")
+
+    # Set sample counts based on mode (if not explicitly provided)
+    if args.mode == "sanity":
+        args.harmlessness_samples = args.harmlessness_samples or 50
+        args.helpfulness_samples = args.helpfulness_samples or 50
+        print(f"\n✅ Sanity mode selected: {args.harmlessness_samples} + {args.helpfulness_samples} samples")
+    else:  # full mode
+        args.harmlessness_samples = args.harmlessness_samples or 1000
+        args.helpfulness_samples = args.helpfulness_samples or 805
+        print(f"\n✅ Full mode selected: {args.harmlessness_samples} + {args.helpfulness_samples} samples")
 
     # Load HF token
     load_hf_token(project_root)

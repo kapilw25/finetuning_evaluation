@@ -1,32 +1,46 @@
 # MINIMAL REQUIREMENTS - For CITA Training
 #
-# INSTALLATION MODES:
-# 1. Lambda A6000 with system packages: python3 -m venv --system-site-packages venv_CITA
-#    (Uses system torch 2.7.0, keras 3.10.0 - faster, saves space)
-# 2. Fresh GPU instance: python3 -m venv venv_CITA && pip install torch --index-url https://download.pytorch.org/whl/cu121
-#    (Installs everything from scratch)
+# INSTALLATION:
+# 1. Create venv: python3 -m venv venv_CITA
+# 2. Activate: source venv_CITA/bin/activate
+# 3. Install requirements: pip install -r requirements.txt
+# 4. Install flash-attn separately (30-40 mins, MUST build from source for ABI compatibility):
+#    pip uninstall flash-attn -y
+#    MAX_JOBS=4 pip install flash-attn --no-build-isolation --no-binary flash-attn
 
-# Core dependencies
-numpy<2.0.0  # CRITICAL: System packages (scipy, torch) compiled against NumPy 1.x
-pandas>=2.0.0  # Ray requires pandas 2.0+
-networkx  # Avoid np.int deprecation errors
+# PyTorch (CUDA 12.1) - Install FIRST
+torch==2.5.1  # Latest stable with CUDA 12.1 support
+torchvision==0.20.1
+
+# Build dependencies (needed before flash-attn)
+packaging>=20.0
+setuptools>=49.0.0
+wheel
+ninja
+
+# Core dependencies - PINNED for reproducibility
+numpy==1.24.4
+pandas==2.3.3
+networkx
 matplotlib
 seaborn
 scikit-learn
+Pillow>=10.0.0  # transformers 4.57 requires Pillow with Image.Resampling
 
-# Flash-attention (30-40% speedup, ~2.5GB memory savings)
-flash-attn  # Install with: MAX_JOBS=4 pip install flash-attn --no-build-isolation
-ninja  # Build dependency (if compiling from source)
+# Flash-attention - INSTALL SEPARATELY (see instructions at top)
+# DO NOT include here - causes pip dependency resolution issues
 
-# Core fine-tuning packages (essential)
-transformers>=4.55.0  # Min version with required features
-trl>=0.22.0           # Min version with CITATrainer support (if custom)
-tf-keras              # Required until transformers supports System's Keras 3
+# Core fine-tuning packages - PINNED
+transformers==4.57.1
+trl==0.24.0
+# tf-keras - NOT USED (removed to avoid protobuf conflict: TF 2.20 needs protobuf>=5.28, wandb needs <7)
 
-peft
-accelerate
+peft==0.17.1
+accelerate==1.11.0  # Pin to stop backtracking
+protobuf==3.20.3  # 3.x for wandb+ray+tensorboardX compatibility
 # bitsandbytes  # Not needed - using adamw_torch instead of adamw_8bit
-datasets
+datasets==4.2.0  # Pin to stop backtracking
+fsspec==2025.9.0  # Pin to match datasets requirement
 # unsloth
 # jinja2>=3.1.0  # SKIP - system provides via dependencies
 
@@ -34,11 +48,12 @@ datasets
 ipykernel
 debugpy
 
-# board
-wandb
+# board - Pin to stop pip backtracking
+wandb==0.22.2
 
-# Population-Based Training (PBT)
-ray[tune]>=2.9.0
+# Population-Based Training (PBT) - Pin tensorboardX to avoid backtracking
+ray[tune]==2.50.1
+tensorboardX==2.6.4  # Pin to stop pip backtracking hell
 
 # authentication
 python-dotenv
