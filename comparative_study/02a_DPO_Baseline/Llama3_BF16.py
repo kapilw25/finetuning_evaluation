@@ -627,7 +627,8 @@ Examples:
             config_path=str(config_path),
             run_name=RUN_NAME,
             metric_name="rewards/margin",
-            metric_mode="max"  # Higher margin is better
+            metric_mode="max",  # Higher margin is better
+            skip_local_backup=training_skipped  # Skip if inference-only mode
         )
 
         # Summary
