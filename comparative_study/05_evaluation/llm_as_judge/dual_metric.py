@@ -43,6 +43,7 @@ from model_utils import load_hf_token, get_model_repo_name
 from prompts import get_harmlessness_prompt, get_helpfulness_prompt
 from fireworks_client import FireworksJudge
 from statistical_analysis import run_statistical_analysis
+from logging_utils import setup_training_logger, restore_logging
 
 # ===================================================================
 # Configuration
@@ -213,9 +214,25 @@ def load_model_for_eval(
     print(f"Loading from HuggingFace: {hf_repo}")
     print(f"(Models pushed automatically by push_automation.py after training)")
 
-    # Load tokenizer
+    # Load tokenizer and set Llama-3.1 chat template (required for CITA evaluation)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
     tokenizer.pad_token = tokenizer.eos_token
+
+    # Set chat template (same as training scripts)
+    if not tokenizer.chat_template:
+        tokenizer.chat_template = (
+            "{% set loop_messages = messages %}"
+            "{% for message in loop_messages %}"
+            "{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}"
+            "{% if loop.index0 == 0 %}"
+            "{% set content = bos_token + content %}"
+            "{% endif %}"
+            "{{ content }}"
+            "{% endfor %}"
+            "{% if add_generation_prompt %}"
+            "{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}"
+            "{% endif %}"
+        )
 
     # Load base model
     if quantization == "bf16":
@@ -261,6 +278,58 @@ def load_model_for_eval(
 
 
 # ===================================================================
+# Checkpointing Functions
+# ===================================================================
+
+def get_checkpoint_path(model_key: str, dataset_type: str) -> Path:
+    """Get checkpoint file path for a model and dataset type"""
+    checkpoint_dir = project_root / "comparative_study" / "05_evaluation" / "llm_as_judge" / "checkpoints"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    return checkpoint_dir / f"{model_key}_{dataset_type}_checkpoint.json"
+
+
+def save_checkpoint(
+    model_key: str,
+    dataset_type: str,
+    responses: List[str],
+    prompts: List[str],
+    completed: bool = False
+):
+    """Save checkpoint with responses generated so far"""
+    checkpoint_path = get_checkpoint_path(model_key, dataset_type)
+
+    checkpoint_data = {
+        "model_key": model_key,
+        "dataset_type": dataset_type,
+        "n_prompts_total": len(prompts),
+        "n_responses_completed": len(responses),
+        "completed": completed,
+        "responses": responses,
+        "timestamp": pd.Timestamp.now().isoformat()
+    }
+
+    with open(checkpoint_path, 'w') as f:
+        json.dump(checkpoint_data, f, indent=2)
+
+    status = "✅ COMPLETED" if completed else f"💾 Checkpoint saved ({len(responses)}/{len(prompts)} prompts)"
+    print(f"{status}: {checkpoint_path.name}")
+
+
+def load_checkpoint(model_key: str, dataset_type: str) -> Optional[Dict]:
+    """Load checkpoint if exists"""
+    checkpoint_path = get_checkpoint_path(model_key, dataset_type)
+
+    if not checkpoint_path.exists():
+        return None
+
+    with open(checkpoint_path, 'r') as f:
+        checkpoint = json.load(f)
+
+    print(f"📂 Found checkpoint: {checkpoint['n_responses_completed']}/{checkpoint['n_prompts_total']} prompts")
+    return checkpoint
+
+
+# ===================================================================
 # Response Generation
 # ===================================================================
 
@@ -269,8 +338,11 @@ def generate_responses(
     tokenizer: AutoTokenizer,
     prompts: List[str],
     chat_template: str,
+    model_key: str,
+    dataset_type: str,
     max_new_tokens: int = 256,
-    batch_size: int = 8
+    batch_size: int = 8,
+    checkpoint_interval: int = 100
     ) -> List[str]:
     """
     Generate responses using correct chat template per model
@@ -280,17 +352,34 @@ def generate_responses(
         tokenizer: Tokenizer
         prompts: List of user prompts
         chat_template: "alpaca" (SFT/DPO) or "llama3" (CITA)
+        model_key: Model identifier (for checkpointing)
+        dataset_type: "harmlessness" or "helpfulness" (for checkpointing)
         max_new_tokens: Max tokens to generate
         batch_size: Batch size for generation
+        checkpoint_interval: Save checkpoint every N prompts
 
     Returns:
         List of generated responses
     """
     from tqdm import tqdm
 
-    responses = []
+    # Check for existing checkpoint
+    checkpoint = load_checkpoint(model_key, dataset_type)
 
-    for i in tqdm(range(0, len(prompts), batch_size), desc=f"Generating ({chat_template})"):
+    if checkpoint and checkpoint['completed']:
+        print(f"✅ Inference already completed for {model_key} ({dataset_type})")
+        return checkpoint['responses']
+
+    # Resume from checkpoint if exists
+    if checkpoint and not checkpoint['completed']:
+        responses = checkpoint['responses']
+        start_idx = len(responses)
+        print(f"🔄 Resuming from prompt {start_idx + 1}/{len(prompts)}")
+    else:
+        responses = []
+        start_idx = 0
+
+    for i in tqdm(range(start_idx, len(prompts), batch_size), desc=f"Generating ({chat_template})"):
         batch_prompts = prompts[i:i+batch_size]
 
         # Format prompts based on chat template
@@ -336,6 +425,13 @@ def generate_responses(
             generated_ids = output[prompt_length:]
             response = tokenizer.decode(generated_ids, skip_special_tokens=True)
             responses.append(response.strip())
+
+        # Checkpoint every N prompts
+        if len(responses) % checkpoint_interval == 0:
+            save_checkpoint(model_key, dataset_type, responses, prompts, completed=False)
+
+    # Final checkpoint after all prompts completed
+    save_checkpoint(model_key, dataset_type, responses, prompts, completed=True)
 
     return responses
 
@@ -477,33 +573,77 @@ def run_dual_metric_evaluation(
     print(f"DUAL-METRIC EVALUATION: {model_key}")
     print(f"{'='*80}")
 
-    # Load model from HuggingFace
-    model, tokenizer = load_model_for_eval(model_key, quantization=quantization)
-    chat_template = MODELS[model_key]["chat_template"]
+    # Check if both datasets already completed
+    harm_checkpoint = load_checkpoint(model_key, "harmlessness")
+    help_checkpoint = load_checkpoint(model_key, "helpfulness")
 
-    # Generate responses for harmlessness test
-    print(f"\n--- Harmlessness Test ({len(harmlessness_test)} prompts) ---")
-    harm_responses = generate_responses(
-        model, tokenizer,
-        harmlessness_test['prompt'].tolist(),
-        chat_template=chat_template,
-        max_new_tokens=256
+    both_completed = (
+        harm_checkpoint and harm_checkpoint['completed'] and
+        help_checkpoint and help_checkpoint['completed']
     )
 
-    # Generate responses for helpfulness test
-    print(f"\n--- Helpfulness Test ({len(helpfulness_test)} prompts) ---")
-    help_responses = generate_responses(
-        model, tokenizer,
-        helpfulness_test['prompt'].tolist(),
-        chat_template=chat_template,
-        max_new_tokens=256
-    )
+    if both_completed:
+        print(f"\n{'='*80}")
+        print(f"✅ INFERENCE ALREADY COMPLETED for {model_key}")
+        print(f"{'='*80}")
+        print(f"  Harmlessness: {harm_checkpoint['n_responses_completed']} responses")
+        print(f"  Helpfulness:  {help_checkpoint['n_responses_completed']} responses")
+        print(f"{'='*80}")
+        print("\nChoose action:")
+        print("  1) Evaluate using cached responses (skip inference)")
+        print("  2) Re-run inference (overwrite checkpoints)")
+        print("="*80)
 
-    # Cleanup model
-    del model, tokenizer
-    import gc
-    gc.collect()
-    torch.cuda.empty_cache()
+        while True:
+            choice = input("\nEnter choice (1 or 2): ").strip()
+            if choice == "1":
+                # Use cached responses
+                harm_responses = harm_checkpoint['responses']
+                help_responses = help_checkpoint['responses']
+                # Skip model loading (already returned early)
+                model = None
+                tokenizer = None
+                break
+            elif choice == "2":
+                # Re-run inference - proceed with loading model
+                print("\n🔄 Re-running inference from scratch...")
+                break
+            else:
+                print("❌ Invalid choice. Please enter 1 or 2.")
+
+    # Load model only if needed
+    if not both_completed or (both_completed and choice == "2"):
+        model, tokenizer = load_model_for_eval(model_key, quantization=quantization)
+        chat_template = MODELS[model_key]["chat_template"]
+
+        # Generate responses for harmlessness test
+        print(f"\n--- Harmlessness Test ({len(harmlessness_test)} prompts) ---")
+        harm_responses = generate_responses(
+            model, tokenizer,
+            harmlessness_test['prompt'].tolist(),
+            chat_template=chat_template,
+            model_key=model_key,
+            dataset_type="harmlessness",
+            max_new_tokens=256
+        )
+
+        # Generate responses for helpfulness test
+        print(f"\n--- Helpfulness Test ({len(helpfulness_test)} prompts) ---")
+        help_responses = generate_responses(
+            model, tokenizer,
+            helpfulness_test['prompt'].tolist(),
+            chat_template=chat_template,
+            model_key=model_key,
+            dataset_type="helpfulness",
+            max_new_tokens=256
+        )
+
+    # Cleanup model (if loaded)
+    if model is not None:
+        del model, tokenizer
+        import gc
+        gc.collect()
+        torch.cuda.empty_cache()
 
     # Evaluate harmlessness
     harmlessness_df = evaluate_harmlessness(
@@ -551,6 +691,23 @@ def run_dual_metric_evaluation(
 # ===================================================================
 
 def main():
+    import argparse
+
+    # Setup logging to capture ALL terminal output
+    log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+        run_name="dual_metric_evaluation",
+        project_root=project_root
+    )
+
+    try:
+        main_inner()
+    finally:
+        # Restore logging on exit
+        restore_logging(log_file, original_stdout, original_stderr)
+        print(f"\n✅ Log saved to: {log_filename}")
+
+
+def main_inner():
     import argparse
 
     parser = argparse.ArgumentParser(
