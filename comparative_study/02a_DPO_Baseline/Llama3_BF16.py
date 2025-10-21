@@ -297,6 +297,11 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
 
         trainer.train(resume_from_checkpoint=latest_checkpoint)
 
+        # Set best_metric for push_automation.py (uses min eval_loss)
+        eval_losses = [log['eval_loss'] for log in trainer.state.log_history if 'eval_loss' in log]
+        if eval_losses:
+            trainer.state.best_metric = min(eval_losses)
+
     # ===== SHOW FINAL MEMORY =====
     if not training_skipped:
         used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
