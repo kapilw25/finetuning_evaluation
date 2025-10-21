@@ -439,7 +439,7 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
 
 # ===== MAIN EXECUTION =====
 
-def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
+def main(num_workers=4, max_steps=1000, base_model=None, force_skip=False):
     """
     Run PBT training for CITA
 
@@ -447,7 +447,7 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         num_workers: Number of PBT workers (default: 4 for full PBT, 1 for sanity check)
         max_steps: Maximum training steps (default: 1000 for full PBT, 100 for sanity check)
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)
-        shutdown_confirm: User's choice for auto-shutdown (captured at start)
+        force_skip: If True, skip training and only load existing model (user selected option 1)
 
     Steps:
     1. Create PBT scheduler with CITA hyperparameters
@@ -505,27 +505,19 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         print("🔍 Checking for existing checkpoints...")
         print("="*80 + "\n")
 
-        # Priority 1: Check HuggingFace for existing LoRA adapters
-        print("1️⃣ Checking HuggingFace for existing model...")
         hf_model_found = False
-        try:
-            from huggingface_hub import repo_exists
-            if repo_exists(HF_REPO, token=HF_TOKEN, repo_type="model"):
-                print(f"✅ Found model on HuggingFace: {HF_REPO}")
-                print(f"   Skipping training...\n")
-                training_skipped = True
-                hf_model_found = True
-            else:
-                print(f"❌ Model not found on HuggingFace: {HF_REPO}")
-                print(f"   Will check local Ray Tune experiments...\n")
-        except Exception as e:
-            print(f"❌ Model not found on HuggingFace: {HF_REPO}")
-            print(f"   Error: {type(e).__name__}")
-            print(f"   Will check local Ray Tune experiments...\n")
+        training_skipped = False
 
-        # Priority 2: Check local Ray Tune experiments
-        if not hf_model_found:
-            print("2️⃣ Checking local Ray Tune experiments...")
+        # Force skip if user selected inference-only mode
+        if force_skip:
+            print("🚫 User selected inference-only mode")
+            print("   Skipping training, will load model from HuggingFace...\n")
+            training_skipped = True
+            hf_model_found = True  # Treat as HF model (will load for inference)
+        else:
+            # Priority 1: Check local Ray Tune experiments (CHANGED ORDER - local first)
+            # This allows retraining even if HF repo exists (user chose option 2)
+            print("1️⃣ Checking local Ray Tune experiments...")
             experiment_path = str(project_root / "outputs" / "ray_results" / "cita_pbt_training")
             exp_exists, exp_complete, resume_mode = check_ray_tune_experiment(
                 experiment_path,
@@ -544,7 +536,8 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
                 print(f"   Resume mode: {resume_mode}\n")
                 training_skipped = False
             else:
-                print(f"🆕 No experiment found, starting fresh training...\n")
+                print(f"🆕 No local experiment found")
+                print(f"   Will start fresh training (even if HF repo exists)...\n")
                 training_skipped = False
 
         # Create PBT scheduler
@@ -633,6 +626,100 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
             print(f"\n✅ Best model checkpoint: {best_checkpoint}\n")
 
         # ===================================================================
+        # Inference Tests (only if training was skipped - Option 1 selected)
+        # ===================================================================
+        if training_skipped and hf_model_found:
+            print("\n" + "="*80)
+            print("🧪 Running inference tests...")
+            print("="*80 + "\n")
+
+            try:
+                import torch
+                from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
+                from peft import PeftModel
+
+                # Load base model
+                print("📦 Loading base model for inference...")
+                base_model = AutoModelForCausalLM.from_pretrained(
+                    "meta-llama/Llama-3.1-8B",
+                    torch_dtype=torch.bfloat16,
+                    device_map="auto",
+                    token=HF_TOKEN,
+                )
+
+                # Load LoRA adapter from HuggingFace
+                print(f"🔧 Loading LoRA adapter from HuggingFace: {HF_REPO}")
+                model = PeftModel.from_pretrained(base_model, HF_REPO, token=HF_TOKEN)
+                print("✅ Model loaded from HuggingFace\n")
+
+                # Load tokenizer
+                tokenizer = AutoTokenizer.from_pretrained(
+                    "meta-llama/Llama-3.1-8B",
+                    use_fast=True,
+                    token=HF_TOKEN,
+                )
+                tokenizer.pad_token = tokenizer.eos_token
+
+                # Prepare model for inference
+                model.eval()
+                model = model.to(torch.bfloat16)
+
+                # Disable gradient checkpointing for inference
+                if hasattr(model, 'gradient_checkpointing_disable'):
+                    model.gradient_checkpointing_disable()
+
+                # Get test prompts
+                from model_utils import get_test_prompts
+                test_prompts = get_test_prompts()
+
+                # Test on 3 prompts (1 helpful, 2 harmful)
+                test_cases = [
+                    (test_prompts[0], "Helpful instruction following"),
+                    (test_prompts[1], "Refusing harmful request (hacking)"),
+                    (test_prompts[6], "Helpful instruction following (exercise)"),
+                ]
+
+                for prompt, description in test_cases:
+                    print(f"\n{'='*80}")
+                    print(f"TEST: {description}")
+                    print(f"{'='*80}")
+                    print(f"Prompt: {prompt[:70]}...")
+
+                    messages = [{"role": "user", "content": prompt}]
+                    input_ids = tokenizer.apply_chat_template(
+                        messages,
+                        add_generation_prompt=True,
+                        return_tensors="pt",
+                    ).to("cuda")
+
+                    text_streamer = TextStreamer(tokenizer, skip_prompt=True)
+
+                    with torch.no_grad():
+                        _ = model.generate(
+                            input_ids,
+                            streamer=text_streamer,
+                            max_new_tokens=128,
+                            pad_token_id=tokenizer.eos_token_id,
+                            temperature=0.7,
+                            top_p=0.9,
+                        )
+
+                print(f"\n{'='*80}")
+                print(f"✅ Inference tests completed")
+                print(f"{'='*80}\n")
+
+                # Clean up GPU memory
+                del base_model
+                del model
+                torch.cuda.empty_cache()
+
+            except Exception as e:
+                print(f"\n⚠️  Inference test failed: {e}")
+                print(f"   Continuing with push automation...\n")
+                import traceback
+                traceback.print_exc()
+
+        # ===================================================================
         # Automated Push to HuggingFace and GitHub
         # ===================================================================
         # Initialize push automation
@@ -671,24 +758,16 @@ def main(num_workers=4, max_steps=1000, base_model=None, shutdown_confirm="no"):
         print(f"📝 Complete log file saved: {log_filename}")
 
         # ===================================================================
-        # Auto-Shutdown Lambda Cloud Instance (with user confirmation)
+        # Summary
         # ===================================================================
         print(f"\n{'='*80}")
-        print("💰 Auto-Shutdown: All results saved!")
+        print("✅ All results saved!")
         print(f"{'='*80}")
-        print("All results saved to:")
+        print("Results saved to:")
         print(f"  - Local: ./outputs/ray_results/cita_pbt_training/")
-        print(f"  - HuggingFace: {HF_REPO} (if performance improved)")
+        print(f"  - HuggingFace: {HF_REPO} (only if performance improved)")
         print(f"  - GitHub: Logs and code pushed")
         print(f"{'='*80}\n")
-
-        # Execute auto-shutdown based on user's choice at the start
-        if shutdown_confirm == "yes":
-            print("🛑 Shutting down GPU instance (as requested at start)...")
-            os.system("sudo shutdown -h now")
-        else:
-            print("✅ GPU instance will remain running (as requested at start)")
-        # ===================================================================
 
 
 if __name__ == "__main__":
@@ -758,7 +837,7 @@ Examples:
         print(f"✅ Full PBT mode: {num_workers} workers, {max_steps} steps (~120 minutes)")
 
     # ===================================================================
-    # Ask about auto-shutdown BEFORE training (for unattended runs)
+    # Ask about retraining BEFORE starting (check HF repo first)
     # ===================================================================
     # Estimate time based on configuration
     if max_steps == 200 and num_workers == 1:
@@ -769,13 +848,59 @@ Examples:
         estimated_time = f"~{int(max_steps * num_workers * 0.12)} minutes"
 
     print(f"\n{'='*80}")
-    print("💰 Auto-Shutdown Configuration")
+    print("🔄 Training Mode Selection")
+    print(f"{'='*80}")
+
+    # Check if HF repo exists
+    hf_model_exists = False
+    previous_metric = None
+    try:
+        from huggingface_hub import repo_exists
+        if repo_exists(HF_REPO, token=HF_TOKEN, repo_type="model"):
+            hf_model_exists = True
+            print(f"✅ Found existing model on HuggingFace: {HF_REPO}")
+
+            # Try to get previous metric
+            from push_automation import PushAutomation
+            pusher_temp = PushAutomation(hf_token=HF_TOKEN, project_root=project_root)
+            previous_metric = pusher_temp._get_previous_best_margin(HF_REPO)
+
+            if previous_metric:
+                print(f"   Previous performance: margin={previous_metric:.4f}")
+        else:
+            print(f"❌ No existing model on HuggingFace: {HF_REPO}")
+            print(f"   This will be the first training run")
+    except Exception as e:
+        print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
+
     print(f"{'='*80}")
     print(f"Training will take approximately: {estimated_time}")
-    print(f"After training completes, do you want to automatically shutdown the GPU instance?")
+    print(f"\nOptions:")
+    if hf_model_exists:
+        print(f"  1) Run inference only (use existing HF model)")
+        print(f"  2) Retrain and replace HF model (only if performance improves)")
+    else:
+        print(f"  1) Skip training")
+        print(f"  2) Train and push to HuggingFace")
     print(f"{'='*80}")
-    shutdown_confirm = input("Auto-shutdown after training? (yes/no): ").strip().lower()
+
+    mode_choice = input("Enter choice (1 or 2): ").strip()
     print(f"{'='*80}\n")
 
+    force_skip = False  # Flag to override checkpoint detection
+    if mode_choice == "1":
+        print("✅ Inference-only mode selected")
+        force_skip = True  # Will skip training regardless of checkpoint status
+    elif mode_choice == "2":
+        print("✅ Training mode selected")
+        if hf_model_exists:
+            print("   Will retrain and push ONLY if performance improves")
+        else:
+            print("   Will train and push to HuggingFace")
+        force_skip = False
+    else:
+        print("⚠️  Invalid choice, defaulting to training mode")
+        force_skip = False
+
     # Run main with configured parameters
-    main(num_workers=num_workers, max_steps=max_steps, base_model=args.base_model, shutdown_confirm=shutdown_confirm)
+    main(num_workers=num_workers, max_steps=max_steps, base_model=args.base_model, force_skip=force_skip)

@@ -83,7 +83,7 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_model=None):
+def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_model=None, force_skip=False):
     """
     Train SFT baseline with fixed hyperparameters
 
@@ -91,6 +91,7 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
         max_steps: Maximum training steps (default: 300 for full, 100 for sanity)
         output_dir: Output directory for checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
+        force_skip: If True, skip training and only run inference (user selected option 1)
 
     Returns:
         trainer: Trained SFTTrainer instance
@@ -120,25 +121,15 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
     training_skipped = False
     latest_checkpoint = None
 
-    # Priority 1: Check HuggingFace for existing LoRA adapters
-    print("1️⃣ Checking HuggingFace for existing model...")
-    try:
-        from huggingface_hub import repo_exists
-        if repo_exists(HF_REPO, token=HF_TOKEN, repo_type="model"):
-            print(f"✅ Found model on HuggingFace: {HF_REPO}")
-            print(f"   Skipping training...\n")
-            training_skipped = True
-        else:
-            print(f"❌ Model not found on HuggingFace: {HF_REPO}")
-            print(f"   Will check local checkpoints...\n")
-    except Exception as e:
-        print(f"❌ Model not found on HuggingFace: {HF_REPO}")
-        print(f"   Error: {type(e).__name__}")
-        print(f"   Will check local checkpoints...\n")
-
-    # Priority 2: Check local checkpoints
-    if not training_skipped:
-        print("2️⃣ Checking local checkpoints...")
+    # Force skip if user selected inference-only mode
+    if force_skip:
+        print("🚫 User selected inference-only mode")
+        print("   Skipping training, will load model from HuggingFace for inference...\n")
+        training_skipped = True
+    else:
+        # Priority 1: Check local checkpoints (CHANGED ORDER - local first, HF second)
+        # This allows retraining even if HF repo exists (user chose option 2)
+        print("1️⃣ Checking local checkpoints...")
         latest_checkpoint = get_latest_checkpoint(output_dir)
 
         if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
@@ -150,7 +141,8 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
             print(f"📂 Found checkpoint: {latest_checkpoint}")
             print(f"   Resuming training from this checkpoint...\n")
         else:
-            print(f"🆕 No checkpoint found, starting fresh training...\n")
+            print(f"🆕 No checkpoint found")
+            print(f"   Will start fresh training (even if HF repo exists)...\n")
             latest_checkpoint = None
 
     # ===== LOAD MODEL & TOKENIZER =====
@@ -435,20 +427,66 @@ Examples:
         print(f"✅ Full training mode: {max_steps} steps (~40 minutes)")
 
     # ===================================================================
-    # Ask about auto-shutdown BEFORE training (for unattended runs)
+    # Ask about retraining BEFORE starting (check HF repo first)
     # ===================================================================
     print(f"\n{'='*80}")
-    print("💰 Auto-Shutdown Configuration")
+    print("🔄 Training Mode Selection")
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~8 minutes' if max_steps == 200 else '~40 minutes'}")
-    print(f"After training completes, do you want to automatically shutdown the GPU instance?")
+
+    # Check if HF repo exists
+    hf_model_exists = False
+    previous_metric = None
+    try:
+        from huggingface_hub import repo_exists
+        if repo_exists(HF_REPO, token=HF_TOKEN, repo_type="model"):
+            hf_model_exists = True
+            print(f"✅ Found existing model on HuggingFace: {HF_REPO}")
+
+            # Try to get previous metric
+            from push_automation import PushAutomation
+            pusher_temp = PushAutomation(hf_token=HF_TOKEN, project_root=project_root)
+            previous_metric = pusher_temp._get_previous_best_margin(HF_REPO)
+
+            if previous_metric:
+                print(f"   Previous performance: loss={previous_metric:.4f}")
+        else:
+            print(f"❌ No existing model on HuggingFace: {HF_REPO}")
+            print(f"   This will be the first training run")
+    except Exception as e:
+        print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
+
     print(f"{'='*80}")
-    shutdown_confirm = input("Auto-shutdown after training? (yes/no): ").strip().lower()
+    print(f"Training will take approximately: {'~12 minutes' if max_steps == 200 else '~62 minutes'}")
+    print(f"\nOptions:")
+    if hf_model_exists:
+        print(f"  1) Run inference only (use existing HF model)")
+        print(f"  2) Retrain and replace HF model (only if performance improves)")
+    else:
+        print(f"  1) Skip training")
+        print(f"  2) Train and push to HuggingFace")
+    print(f"{'='*80}")
+
+    mode_choice = input("Enter choice (1 or 2): ").strip()
     print(f"{'='*80}\n")
+
+    force_skip = False  # Flag to override checkpoint detection
+    if mode_choice == "1":
+        print("✅ Inference-only mode selected")
+        force_skip = True  # Will skip training regardless of checkpoint status
+    elif mode_choice == "2":
+        print("✅ Training mode selected")
+        if hf_model_exists:
+            print("   Will retrain and push ONLY if performance improves")
+        else:
+            print("   Will train and push to HuggingFace")
+        force_skip = False
+    else:
+        print("⚠️  Invalid choice, defaulting to training mode")
+        force_skip = False
 
     # Run training
     try:
-        trainer, training_skipped = train_sft_baseline(max_steps=max_steps, base_model=args.base_model)
+        trainer, training_skipped = train_sft_baseline(max_steps=max_steps, base_model=args.base_model, force_skip=force_skip)
         print(f"\n🏁 SFT Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
@@ -524,7 +562,7 @@ Examples:
             project_root=project_root
         )
 
-        # Push to HF (conditional) + GitHub (always) + auto-shutdown
+        # Push to HF (conditional) + GitHub (always)
         pusher.push_all(
             best_trial=pseudo_trial,
             best_checkpoint=lora_checkpoint,
@@ -535,22 +573,15 @@ Examples:
             metric_mode="min"  # Lower loss is better
         )
 
-        # Auto-shutdown GPU instance (cost savings)
+        # Summary
         print(f"\n{'='*80}")
-        print("💰 Auto-Shutdown: All results saved!")
+        print("✅ All results saved!")
         print(f"{'='*80}")
-        print("All results saved to:")
+        print("Results saved to:")
         print(f"  - Local: {lora_checkpoint}")
-        print(f"  - HuggingFace: {HF_REPO} (if performance improved)")
+        print(f"  - HuggingFace: {HF_REPO} (only if performance improved)")
         print(f"  - GitHub: Logs and code pushed")
         print(f"{'='*80}\n")
-
-        # Execute auto-shutdown based on user's choice at the start
-        if shutdown_confirm == "yes":
-            print("🛑 Shutting down GPU instance (as requested at start)...")
-            os.system("sudo shutdown -h now")
-        else:
-            print("✅ GPU instance will remain running (as requested at start)")
 
     except Exception as e:
         print(f"\n❌ Error during training: {e}")
