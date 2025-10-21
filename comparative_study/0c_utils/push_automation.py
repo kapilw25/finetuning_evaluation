@@ -713,13 +713,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         run_name: str = "CITA_Baseline",
         github_commit_message: Optional[str] = None,
         metric_name: str = "cita/margin",
-        metric_mode: str = "max"
+        metric_mode: str = "max",
+        skip_local_backup: bool = False
     ):
         """
         Push to both HuggingFace and GitHub (with local backup)
 
         Order of operations:
-        1. Save local backup (ALWAYS - critical before instance shutdown)
+        1. Save local backup (ONLY if training happened - skip in inference mode)
         2. Push to HuggingFace (conditional - only if performance improved)
         3. Push to GitHub (ALWAYS - especially logs/ for analysis)
 
@@ -732,17 +733,22 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             github_commit_message: Custom git commit message (optional)
             metric_name: Metric name for comparison (default: "cita/margin")
             metric_mode: "max" or "min" (default: "max")
+            skip_local_backup: If True, skip local backup (e.g., inference-only mode)
         """
         print(f"\n{'='*80}")
         print("🚀 Starting Automated Push")
         print(f"{'='*80}\n")
 
-        # Step 1: ALWAYS save local backup (critical before instance shutdown)
-        local_backup_path = self.save_local_backup(
-            best_checkpoint=best_checkpoint,
-            config_path=config_path,
-            run_name=run_name
-        )
+        # Step 1: Save local backup (ONLY if training happened)
+        local_backup_path = None
+        if not skip_local_backup:
+            local_backup_path = self.save_local_backup(
+                best_checkpoint=best_checkpoint,
+                config_path=config_path,
+                run_name=run_name
+            )
+        else:
+            print("⏭️  Skipping local backup (inference-only mode, no training checkpoint)\n")
 
         # Step 2: Push to HuggingFace (conditional: only if performance improved)
         self.push_to_huggingface(

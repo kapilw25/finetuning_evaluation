@@ -570,7 +570,8 @@ Examples:
             config_path=str(config_path),
             run_name=RUN_NAME,
             metric_name="loss",
-            metric_mode="min"  # Lower loss is better
+            metric_mode="min",  # Lower loss is better
+            skip_local_backup=training_skipped  # Skip if inference-only mode
         )
 
         # Summary

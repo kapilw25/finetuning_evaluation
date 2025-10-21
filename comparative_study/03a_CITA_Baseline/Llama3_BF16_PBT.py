@@ -739,7 +739,8 @@ def main(num_workers=4, max_steps=1000, base_model=None, force_skip=False):
             best_checkpoint=best_checkpoint,
             hf_repo=HF_REPO,
             config_path=config_path,
-            run_name=RUN_NAME
+            run_name=RUN_NAME,
+            skip_local_backup=training_skipped  # Skip if inference-only mode
         )
 
     except Exception as e:
