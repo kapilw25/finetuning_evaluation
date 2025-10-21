@@ -159,12 +159,215 @@ def create_pareto_plot(
     plt.close()
 
 
+def create_bootstrap_ci_plot(ci_results: List[Dict], output_path: Path):
+    """Create bar chart with bootstrap confidence intervals"""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+    models = [r['model'].replace('_', ' ') for r in ci_results]
+
+    # Harmlessness
+    harm_means = [r['harmlessness_mean'] for r in ci_results]
+    harm_errors = [(r['harmlessness_mean'] - r['harmlessness_ci_lower'],
+                    r['harmlessness_ci_upper'] - r['harmlessness_mean']) for r in ci_results]
+
+    ax1.bar(models, harm_means, color=['blue', 'green', 'red'], alpha=0.7, edgecolor='black')
+    ax1.errorbar(models, harm_means, yerr=np.array(harm_errors).T, fmt='none',
+                 ecolor='black', capsize=5, capthick=2)
+    ax1.set_ylabel('Harmlessness Score (0-10)', fontsize=12, fontweight='bold')
+    ax1.set_title('Harmlessness with 95% Bootstrap CI', fontsize=14, fontweight='bold')
+    ax1.set_ylim(0, 10)
+    ax1.grid(axis='y', alpha=0.3)
+
+    # Helpfulness
+    help_means = [r['helpfulness_mean'] for r in ci_results]
+    help_errors = [(r['helpfulness_mean'] - r['helpfulness_ci_lower'],
+                    r['helpfulness_ci_upper'] - r['helpfulness_mean']) for r in ci_results]
+
+    ax2.bar(models, help_means, color=['blue', 'green', 'red'], alpha=0.7, edgecolor='black')
+    ax2.errorbar(models, help_means, yerr=np.array(help_errors).T, fmt='none',
+                 ecolor='black', capsize=5, capthick=2)
+    ax2.set_ylabel('Helpfulness Score (0-10)', fontsize=12, fontweight='bold')
+    ax2.set_title('Helpfulness with 95% Bootstrap CI', fontsize=14, fontweight='bold')
+    ax2.set_ylim(0, 10)
+    ax2.grid(axis='y', alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved CI bar chart: {output_path}")
+    plt.close()
+
+
+def create_category_heatmap(category_df: pd.DataFrame, output_path: Path):
+    """Create heatmap of per-category refusal scores"""
+    # Pivot table: categories × models
+    pivot = category_df.pivot_table(
+        index='category', columns='model', values='mean_refusal_score', fill_value=0
+    )
+
+    # Sort by average score across models
+    pivot['avg'] = pivot.mean(axis=1)
+    pivot = pivot.sort_values('avg', ascending=False).drop('avg', axis=1)
+
+    # Rename columns
+    pivot.columns = [c.replace('_', ' ') for c in pivot.columns]
+
+    plt.figure(figsize=(10, 12))
+    sns.heatmap(pivot, annot=True, fmt='.2f', cmap='RdYlGn', vmin=0, vmax=10,
+                cbar_kws={'label': 'Mean Refusal Score'}, linewidths=0.5)
+    plt.title('Per-Category Harmlessness Scores (19 PKU Categories)',
+              fontsize=14, fontweight='bold')
+    plt.xlabel('Model', fontsize=12, fontweight='bold')
+    plt.ylabel('Harm Category', fontsize=12, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved category heatmap: {output_path}")
+    plt.close()
+
+
+def create_distribution_plots(results: Dict, output_path: Path):
+    """Create violin/box plots comparing score distributions"""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+    # Prepare data
+    harm_data = []
+    help_data = []
+    labels = []
+
+    for model_key in results.keys():
+        harm_scores = results[model_key]['harmlessness_df']['refusal_score'].dropna().values
+        help_scores = results[model_key]['helpfulness_df']['helpfulness_score'].dropna().values
+
+        harm_data.append(harm_scores)
+        help_data.append(help_scores)
+        labels.append(model_key.replace('_', ' '))
+
+    # Harmlessness violin plot
+    parts = ax1.violinplot(harm_data, positions=range(len(labels)), showmeans=True, showmedians=True)
+    for pc, color in zip(parts['bodies'], ['blue', 'green', 'red']):
+        pc.set_facecolor(color)
+        pc.set_alpha(0.7)
+    ax1.set_xticks(range(len(labels)))
+    ax1.set_xticklabels(labels)
+    ax1.set_ylabel('Harmlessness Score (0-10)', fontsize=12, fontweight='bold')
+    ax1.set_title('Harmlessness Score Distribution', fontsize=14, fontweight='bold')
+    ax1.set_ylim(-1, 11)
+    ax1.grid(axis='y', alpha=0.3)
+
+    # Helpfulness violin plot
+    parts = ax2.violinplot(help_data, positions=range(len(labels)), showmeans=True, showmedians=True)
+    for pc, color in zip(parts['bodies'], ['blue', 'green', 'red']):
+        pc.set_facecolor(color)
+        pc.set_alpha(0.7)
+    ax2.set_xticks(range(len(labels)))
+    ax2.set_xticklabels(labels)
+    ax2.set_ylabel('Helpfulness Score (0-10)', fontsize=12, fontweight='bold')
+    ax2.set_title('Helpfulness Score Distribution', fontsize=14, fontweight='bold')
+    ax2.set_ylim(-1, 11)
+    ax2.grid(axis='y', alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved distribution plots: {output_path}")
+    plt.close()
+
+
+def create_radar_chart(category_df: pd.DataFrame, output_path: Path):
+    """Create radar chart for top 6 harm categories"""
+    # Get top 6 categories by average score
+    top_cats = category_df.groupby('category')['mean_refusal_score'].mean().nlargest(6).index.tolist()
+
+    # Filter data
+    radar_data = category_df[category_df['category'].isin(top_cats)].pivot_table(
+        index='category', columns='model', values='mean_refusal_score', fill_value=0
+    )
+
+    # Number of variables
+    categories = radar_data.index.tolist()
+    N = len(categories)
+
+    # Compute angle for each axis
+    angles = [n / float(N) * 2 * np.pi for n in range(N)]
+    angles += angles[:1]  # Complete the circle
+
+    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
+
+    colors = {'SFT_Baseline': 'blue', 'DPO_Baseline': 'green', 'CITA_Baseline': 'red'}
+
+    for model in radar_data.columns:
+        values = radar_data[model].tolist()
+        values += values[:1]  # Complete the circle
+        ax.plot(angles, values, 'o-', linewidth=2, label=model.replace('_', ' '),
+                color=colors.get(model, 'gray'), markersize=8)
+        ax.fill(angles, values, alpha=0.15, color=colors.get(model, 'gray'))
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, size=10)
+    ax.set_ylim(0, 10)
+    ax.set_yticks([2, 4, 6, 8, 10])
+    ax.set_yticklabels(['2', '4', '6', '8', '10'])
+    ax.grid(True)
+    ax.legend(loc='upper right', bbox_to_anchor=(1.2, 1.1), fontsize=11)
+    plt.title('Top 6 Harm Categories: Refusal Scores', fontsize=14, fontweight='bold', pad=20)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved radar chart: {output_path}")
+    plt.close()
+
+
+def create_effect_size_plot(results: Dict, output_path: Path):
+    """Create effect size (Cohen's d) comparison plot"""
+    effect_sizes = []
+    comparisons = []
+
+    # Calculate all pairwise Cohen's d for harmlessness
+    model_list = list(results.keys())
+    for i in range(len(model_list)):
+        for j in range(i + 1, len(model_list)):
+            model_a = model_list[i]
+            model_b = model_list[j]
+
+            scores_a = results[model_a]['harmlessness_df']['refusal_score'].dropna().values
+            scores_b = results[model_b]['harmlessness_df']['refusal_score'].dropna().values
+            min_len = min(len(scores_a), len(scores_b))
+
+            ttest_result = paired_t_test(scores_a[:min_len], scores_b[:min_len])
+            effect_sizes.append(abs(ttest_result['cohens_d']))
+            comparisons.append(f"{model_a.replace('_', ' ')}\nvs\n{model_b.replace('_', ' ')}")
+
+    plt.figure(figsize=(10, 6))
+    bars = plt.barh(comparisons, effect_sizes, color=['steelblue', 'seagreen', 'coral'],
+                    edgecolor='black', linewidth=1.5)
+
+    # Add magnitude labels (small/medium/large)
+    for bar, es in zip(bars, effect_sizes):
+        if es < 0.2:
+            label = "negligible"
+        elif es < 0.5:
+            label = "small"
+        elif es < 0.8:
+            label = "medium"
+        else:
+            label = "large"
+        plt.text(bar.get_width() + 0.02, bar.get_y() + bar.get_height()/2,
+                 f"{es:.3f} ({label})", va='center', fontsize=10)
+
+    plt.xlabel("Effect Size (|Cohen's d|)", fontsize=12, fontweight='bold')
+    plt.title("Pairwise Effect Sizes for Harmlessness", fontsize=14, fontweight='bold')
+    plt.xlim(0, max(effect_sizes) * 1.3)
+    plt.grid(axis='x', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✅ Saved effect size plot: {output_path}")
+    plt.close()
+
+
 def run_statistical_analysis(
     results: Dict,
     output_dir: Path
 ):
     """
-    Run full statistical analysis: bootstrap CI, t-tests, per-category breakdown
+    Run full statistical analysis: bootstrap CI, t-tests, per-category breakdown + 6 plots
 
     Args:
         results: Dict of {model_key: {"harmlessness_df": ..., "helpfulness_df": ..., "summary": ...}}
@@ -262,6 +465,14 @@ def run_statistical_analysis(
             print(model_cats.head(3)[['category', 'mean_refusal_score', 'n']].to_string(index=False))
             print(f"\n{model_key} - Top 3 categories (strongest refusal):")
             print(model_cats.tail(3)[['category', 'mean_refusal_score', 'n']].to_string(index=False))
+
+    # 5. Generate additional publication-quality plots
+    print(f"\n--- Generating Publication-Quality Plots ---")
+    create_bootstrap_ci_plot(ci_results, output_dir / "bootstrap_ci_comparison.png")
+    create_category_heatmap(category_df, output_dir / "per_category_heatmap.png")
+    create_distribution_plots(results, output_dir / "score_distributions.png")
+    create_radar_chart(category_df, output_dir / "top_categories_radar.png")
+    create_effect_size_plot(results, output_dir / "effect_sizes.png")
 
     print(f"\n{'='*80}")
     print("STATISTICAL ANALYSIS COMPLETE")

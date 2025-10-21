@@ -110,13 +110,13 @@ class PushAutomation:
 
     def _get_previous_best_margin(self, hf_repo: str) -> Optional[float]:
         """
-        Fetch previous best margin from HuggingFace model metadata
+        Fetch previous best metric from HuggingFace model metadata
 
         Args:
-            hf_repo: HuggingFace repository ID (e.g., "kapilw25/llama3-8b-pku-cita-baseline-bf16")
+            hf_repo: HuggingFace repository ID
 
         Returns:
-            Previous best margin (float) or None if not found
+            Previous best metric (float) or None if not found
         """
         if not self.hf_token:
             print("⚠️  No HF_TOKEN - skipping previous model check")
@@ -125,25 +125,42 @@ class PushAutomation:
         try:
             from huggingface_hub import hf_hub_download
 
-            # Download config.json from HuggingFace
+            # Try trainer_state.json first (SFT/DPO - industry standard)
+            try:
+                state_path = hf_hub_download(
+                    repo_id=hf_repo,
+                    filename="trainer_state.json",
+                    token=self.hf_token,
+                    force_download=True
+                )
+                with open(state_path, 'r') as f:
+                    state = json.load(f)
+
+                # Get last eval_loss from log_history
+                eval_losses = [log['eval_loss'] for log in state.get('log_history', []) if 'eval_loss' in log]
+                if eval_losses:
+                    previous_metric = eval_losses[-1]  # Last eval_loss
+                    print(f"📊 Previous eval_loss: {previous_metric:.4f} (from trainer_state.json)")
+                    return float(previous_metric)
+            except:
+                pass  # trainer_state.json not found, try config.json
+
+            # Fallback: config.json (CITA/PBT)
             config_path = hf_hub_download(
                 repo_id=hf_repo,
                 filename="config.json",
                 token=self.hf_token,
-                force_download=True  # Always get latest
+                force_download=True
             )
-
             with open(config_path, 'r') as f:
                 config = json.load(f)
 
-            # Extract final_margin from previous training
             previous_margin = config.get('final_margin', None)
-
             if previous_margin is not None and previous_margin != "N/A":
-                print(f"📊 Previous best margin: {previous_margin:.4f}")
+                print(f"📊 Previous metric: {previous_margin:.4f} (from config.json)")
                 return float(previous_margin)
             else:
-                print("📊 No previous margin found (first training run)")
+                print("📊 No previous metric found (first training run)")
                 return None
 
         except Exception as e:
@@ -440,6 +457,40 @@ This push REPLACES the previous model version (performance improved).
                 private=True,
             )
             tokenizer.push_to_hub(hf_repo, token=self.hf_token, private=True)
+
+            # Push training metadata for performance comparison
+            from huggingface_hub import HfApi
+            api = HfApi()
+
+            # Find trainer_state.json (all methods use Trainer → save trainer_state.json)
+            checkpoint_path = Path(best_checkpoint)
+
+            # Check multiple possible locations
+            trainer_state_paths = [
+                checkpoint_path / "trainer_state.json",  # SFT/DPO
+                checkpoint_path / "checkpoint" / "trainer_state.json",  # Ray Tune (CITA)
+            ]
+
+            trainer_state_path = None
+            for path in trainer_state_paths:
+                if path.exists():
+                    trainer_state_path = path
+                    break
+
+            if trainer_state_path:
+                # Use full trainer_state.json (industry standard - has all metrics)
+                api.upload_file(
+                    path_or_fileobj=str(trainer_state_path),
+                    path_in_repo="trainer_state.json",
+                    repo_id=hf_repo,
+                    token=self.hf_token,
+                    commit_message=f"Add trainer state (metric: {current_metric:.4f})"
+                )
+                print(f"✅ Uploaded trainer_state.json with full metrics (metric: {current_metric:.4f})")
+            else:
+                # Should never reach here (all methods use Trainer)
+                print(f"⚠️  trainer_state.json not found in checkpoint: {best_checkpoint}")
+                print(f"   Skipping metrics upload")
 
             print(f"\n{'='*80}")
             print(f"✅ LoRA adapter successfully pushed to HuggingFace!")

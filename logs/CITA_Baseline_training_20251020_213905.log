@@ -1,249 +1,0 @@
-📝 Logging initialized: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/logs/CITA_Baseline_training_20251020_213905.log
-📝 All terminal output will be saved to this log file
-📝 For guaranteed unbuffered output, run with: python -u <script.py>
-================================================================================
-
-✅ Loaded .env from: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/.env
-✅ HuggingFace authenticated
-📦 Model will be pushed to: kapilw25/llama3-8b-pku-cita-baseline-bf16
-================================================================================
-
-✅ Sanity check mode: 1 worker, 200 steps (~6 minutes)
-
-================================================================================
-💰 Auto-Shutdown Configuration
-================================================================================
-Training will take approximately: ~6 minutes
-After training completes, do you want to automatically shutdown the GPU instance?
-================================================================================
-Auto-shutdown after training? (yes/no): ================================================================================
-
-
-================================================================================
-🚀 Starting TRUE CITA Training - SANITY CHECK MODE
-================================================================================
-Configuration:
-  - Mode: SANITY CHECK
-  - Workers: 1 total (SEQUENTIAL)
-  - GPU allocation: 1.0 per worker
-  - Memory per worker: ~18GB (Base 16GB + LoRA 0.2GB + Gradients 2GB)
-  - PEFT + ref_model=None: Memory-efficient (toggles adapters, no deepcopy)
-  - Checkpoint interval: 50 steps (aligned with safety checks)
-  - Mutation interval: 50 steps (PBT compares all 1 workers)
-  - Total steps: 200 per worker (4 checkpoints)
-  - Hyperparameters tuned: λ_kl, LR, β, weight_decay, warmup_steps
-  - Expected time: ~6 minutes (1 worker, no PBT overhead)
-================================================================================
-
-
-================================================================================
-🔍 Checking for existing checkpoints...
-================================================================================
-
-1️⃣ Checking HuggingFace for existing model...
-❌ Model not found on HuggingFace: kapilw25/llama3-8b-pku-cita-baseline-bf16
-   Will check local Ray Tune experiments...
-
-2️⃣ Checking local Ray Tune experiments...
-📂 Found incomplete experiment: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training
-   Resuming training from checkpoint...
-   Resume mode: AUTO
-
-/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/ray/_private/worker.py:2052: FutureWarning: Tip: In future versions of Ray, Ray will no longer override accelerator visible devices env var if num_gpus=0 or num_gpus=None (default). To enable this behavior and turn off this error message, set RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO=0
-  warnings.warn(
-/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/ray/tune/tune.py:730: UserWarning: Consider boosting PBT performance by enabling `reuse_actors` as well as implementing `reset_config` for Trainable.
-  warnings.warn(
-/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'repr' attribute with value False was provided to the `Field()` function, which has no effect in the context it was used. 'repr' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
-  warnings.warn(
-/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'frozen' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'frozen' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
-  warnings.warn(
-/lambda/nfs/DiskUsSouth1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/ray/tune/schedulers/pbt.py:492: UserWarning: Using `CheckpointConfig.num_to_keep <= 2` with PBT can lead to restoration problems when checkpoint are deleted too early for other trials to exploit them. If this happens, increase the value of `num_to_keep`.
-  warnings.warn(
-╭──────────────────────────────────────────────────────────╮
-│ Configuration for experiment     cita_pbt_training       │
-├──────────────────────────────────────────────────────────┤
-│ Search algorithm                 BasicVariantGenerator   │
-│ Scheduler                        PopulationBasedTraining │
-│ Number of trials                 1                       │
-╰──────────────────────────────────────────────────────────╯
-
-View detailed results here: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training
-To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2025-10-20_21-39-16_995672_96416/artifacts/2025-10-20_20-18-14/cita_pbt_training/driver_artifacts`
-
-Trial status: 1 TERMINATED
-Current time: 2025-10-20 21:39:25. Total running time: 0s
-Logical resource usage: 0/14 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:RTX)
-╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ Trial name                        status         lambda_kl     learning_rate       beta     weight_decay     warmup_steps     iter     total time (s)     cita/loss_total     cita/loss_sft     cita/loss_dpo     cita/loss_kl │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ train_cita_with_pbt_e822c_00000   TERMINATED    0.00105837       1.04363e-05   0.115345        0.0102406              115        4             3235.1            0.638743           2.76756          0.639566        -0.777718 │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-
-
-================================================================================
-🏆 Best Hyperparameters Found by PBT:
-================================================================================
-  base_model: kapilw25/llama3-8b-pku-dpo-baseline-bf16
-  beta: 0.115345
-  bf16: True
-  eval_steps: 50
-  eval_strategy: steps
-  gradient_accumulation_steps: 8
-  gradient_checkpointing: True
-  lambda_kl: 0.001058
-  learning_rate: 0.000010
-  logging_steps: 1
-  lr_scheduler_type: cosine
-  max_steps: 200
-  optim: adamw_torch
-  per_device_eval_batch_size: 1
-  per_device_train_batch_size: 1
-  report_to: none
-  save_steps: 50
-  save_total_limit: 5
-  warmup_steps: 115
-  weight_decay: 0.010241
-
-  Final cita/margin: 218.95611572265625
-  Best checkpoint: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003
-================================================================================
-
-✅ Best hyperparameters saved to: ./outputs/best_pbt_config.json
-
-✅ Best model checkpoint: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003
-
-✅ Git already configured: kapilw25@gmail.com
-
-================================================================================
-🚀 Starting Automated Push
-================================================================================
-
-
-================================================================================
-💾 Saving Best Model Locally (Backup Before Shutdown)
-================================================================================
-Checkpoint: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003
-⚠️  Instance will shutdown - this backup is critical!
-================================================================================
-
-📦 Loading base model...
-Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:01<00:03,  1.00s/it]Loading checkpoint shards:  50%|#####     | 2/4 [00:02<00:02,  1.01s/it]Loading checkpoint shards:  75%|#######5  | 3/4 [00:02<00:00,  1.00it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.44it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.24it/s]
-🔧 Loading LoRA adapter from best checkpoint...
-📋 Loading tokenizer...
-
-💾 Saving LoRA adapter locally: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/
-✅ Saved LoRA adapter (~165MB): /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/
-✅ Saved best config: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/best_pbt_config.json
-================================================================================
-
-⚠️  Could not fetch previous model: Force download failed due to the above error.
-   Assuming this is first training run
-✅ First successful training run detected (no previous metric on HF)
-   Current metric: 218.9561
-   Will push to HuggingFace (establishing baseline)
-
-================================================================================
-📤 Pushing Best Model to HuggingFace
-================================================================================
-Repository: kapilw25/llama3-8b-pku-cita-baseline-bf16
-Checkpoint: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/ray_results/cita_pbt_training/train_cita_with_pbt_e822c_00000_0_beta=0.1153,lambda_kl=0.0011,learning_rate=0.0000,warmup_steps=115,weight_decay=0.0102_2025-10-20_20-18-17/checkpoint_000003
-This will REPLACE the existing model (performance improved)
-================================================================================
-
-📦 Loading base model...
-Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|##5       | 1/4 [00:00<00:02,  1.02it/s]Loading checkpoint shards:  50%|#####     | 2/4 [00:01<00:01,  1.02it/s]Loading checkpoint shards:  75%|#######5  | 3/4 [00:02<00:00,  1.02it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.46it/s]Loading checkpoint shards: 100%|##########| 4/4 [00:03<00:00,  1.26it/s]
-🔧 Loading LoRA adapter from best checkpoint...
-📋 Loading tokenizer...
-
-📤 Pushing LoRA adapter to HuggingFace: kapilw25/llama3-8b-pku-cita-baseline-bf16
-   (Pushing adapter only - 165MB, compatible with inference script)
-   (This will overwrite/replace the existing model)
-Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
-New Data Upload               : |          |  0.00B /  0.00B            [A
-
-  ...adapter_model.safetensors:   1%|1         | 2.41MB /  168MB            [A[A
-
-  ...adapter_model.safetensors:   1%|1         | 2.41MB /  168MB            [A[AProcessing Files (0 / 1)      :   1%|1         | 2.41MB /  168MB, 4.01MB/s  
-New Data Upload               :   4%|3         | 2.41MB / 67.1MB, 4.01MB/s  [A
-
-  ...adapter_model.safetensors:  15%|#5        | 25.3MB /  168MB            [A[AProcessing Files (0 / 1)      :  15%|#5        | 25.3MB /  168MB, 31.6MB/s  
-New Data Upload               :  38%|###7      | 25.3MB / 67.1MB, 31.6MB/s  [A
-
-  ...adapter_model.safetensors:  39%|###9      | 66.2MB /  168MB            [A[AProcessing Files (0 / 1)      :  39%|###9      | 66.2MB /  168MB, 66.2MB/s  
-New Data Upload               :  49%|####9     | 66.2MB /  134MB, 66.2MB/s  [A
-
-  ...adapter_model.safetensors:  40%|####      | 67.4MB /  168MB            [A[AProcessing Files (0 / 1)      :  40%|####      | 67.4MB /  168MB, 56.2MB/s  
-New Data Upload               :  40%|####      | 67.4MB /  168MB, 56.2MB/s  [A
-
-  ...adapter_model.safetensors:  50%|####9     | 83.1MB /  168MB            [A[AProcessing Files (0 / 1)      :  50%|####9     | 83.1MB /  168MB, 59.3MB/s  
-New Data Upload               :  50%|####9     | 83.1MB /  168MB, 59.3MB/s  [A
-
-  ...adapter_model.safetensors:  83%|########3 |  139MB /  168MB            [A[AProcessing Files (0 / 1)      :  83%|########3 |  139MB /  168MB, 87.1MB/s  
-New Data Upload               :  83%|########3 |  139MB /  168MB, 87.1MB/s  [A
-
-  ...adapter_model.safetensors: 100%|#########9|  167MB /  168MB            [A[AProcessing Files (0 / 1)      : 100%|#########9|  167MB /  168MB, 92.8MB/s  
-New Data Upload               : 100%|#########9|  167MB /  168MB, 92.8MB/s  [A
-
-  ...adapter_model.safetensors: 100%|#########9|  167MB /  168MB            [A[A
-
-  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|##########|  168MB /  168MB, 76.3MB/s  
-New Data Upload               : 100%|##########|  168MB /  168MB, 76.3MB/s  [A
-
-  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            [A[A
-
-  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|##########|  168MB /  168MB, 69.9MB/s  
-New Data Upload               : 100%|##########|  168MB /  168MB, 69.9MB/s  
-  ...adapter_model.safetensors: 100%|##########|  168MB /  168MB            
-Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
-New Data Upload               : |          |  0.00B /  0.00B            [A
-
-  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[A
-
-  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|##########| 17.2MB / 17.2MB,   ???B/s  
-
-  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[A
-
-  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|##########| 17.2MB / 17.2MB,  0.00B/s  
-New Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  
-  ...mpfvmj2pgi/tokenizer.json: 100%|##########| 17.2MB / 17.2MB            
-
-================================================================================
-✅ LoRA adapter successfully pushed to HuggingFace!
-================================================================================
-🔗 View at: https://huggingface.co/kapilw25/llama3-8b-pku-cita-baseline-bf16
-📊 Best hyperparameters: ./outputs/best_pbt_config.json
-📏 Upload size: ~165MB (adapter only, not merged model)
-✅ Compatible with inference_bf16.py
-================================================================================
-
-
-================================================================================
-📤 Pushing Codebase to GitHub
-================================================================================
-✅ No large log files (all < 100MB)
-
-📊 Changes to commit:
- M comparative_study/0c_utils/push_automation.py
- M logs/CITA_Baseline_training_20251020_212901.log
-?? logs/CITA_Baseline_training_20251020_213905.log
-
-✅ Staged all changes (including logs/)
-✅ Created git commit
-
-📤 Pushing to GitHub...
-✅ Successfully pushed to GitHub!
-
-
-================================================================================
-
-
-================================================================================
-✅ Automated Push Complete!
-================================================================================
-💾 Local backup: /lambda/nfs/DiskUsSouth1/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16
-📊 Config: ./outputs/best_pbt_config.json
-================================================================================
-
-
-🏁 PBT Training Complete!
-
