@@ -46,7 +46,9 @@ What it does:
 - git reset --hard origin/main - throws away ALL local changes and matches remote exactly
 
 >> note: be brutally honest. You do not have to agree with me, unless I am correct. But do not LIE/ Halluciante too
->> WEBSEARCH [not always] : if needed to find the universal practices in Ai/ML research world
 >> its NIGHT time: Keep explanation SHORT. My brain is FOGGing. I cant read verbose explanations
+
+
+>> WEBSEARCH [not always] : if needed to find the universal practices in Ai/ML research world
 >> note: being Devil's advocate does NOT mean, hallucinate/fake-produce the mistakes which dont exist. If the code is correct , then accept it and move on
 - never modify @CLAUDE.md
