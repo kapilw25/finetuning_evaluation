@@ -638,27 +638,19 @@ def main(num_workers=4, max_steps=1000, base_model=None, force_skip=False):
                 from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
                 from peft import PeftModel
 
-                # Load base model
+                # Load base model + tokenizer (reuse training setup for consistency)
                 print("📦 Loading base model for inference...")
-                base_model = AutoModelForCausalLM.from_pretrained(
-                    "meta-llama/Llama-3.1-8B",
-                    torch_dtype=torch.bfloat16,
-                    device_map="auto",
-                    token=HF_TOKEN,
+                from model_utils import load_model_bf16
+                base_model, tokenizer = load_model_bf16(
+                    model_id="meta-llama/Llama-3.1-8B",
+                    max_seq_length=2048,
+                    use_flash_attention=True
                 )
 
                 # Load LoRA adapter from HuggingFace
                 print(f"🔧 Loading LoRA adapter from HuggingFace: {HF_REPO}")
                 model = PeftModel.from_pretrained(base_model, HF_REPO, token=HF_TOKEN)
                 print("✅ Model loaded from HuggingFace\n")
-
-                # Load tokenizer
-                tokenizer = AutoTokenizer.from_pretrained(
-                    "meta-llama/Llama-3.1-8B",
-                    use_fast=True,
-                    token=HF_TOKEN,
-                )
-                tokenizer.pad_token = tokenizer.eos_token
 
                 # Prepare model for inference
                 model.eval()

@@ -109,3 +109,22 @@ Entry Not Found for url: https://huggingface.co/kapilw25/llama3-8b-pku-cita-base
  M logs/DPO_Baseline_training_20251021_035334.log
 ?? logs/CITA_Baseline_training_20251021_035756.log
 
+✅ Staged all changes (including logs/)
+✅ Created git commit
+
+📤 Pushing to GitHub...
+✅ Successfully pushed to GitHub!
+
+
+================================================================================
+
+
+================================================================================
+✅ Automated Push Complete!
+================================================================================
+📊 Config: /lambda/nfs/DiskUsWest2/finetuning_evaluation/outputs/lora_model_CITA_Baseline_PBT_BF16/best_pbt_config.json
+================================================================================
+
+
+🏁 PBT Training Complete!
+
