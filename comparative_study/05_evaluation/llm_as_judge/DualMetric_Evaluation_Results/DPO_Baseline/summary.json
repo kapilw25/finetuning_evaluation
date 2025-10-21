@@ -1,7 +1,7 @@
 {
   "model": "DPO_Baseline",
-  "harmlessness_mean": 3.8,
-  "helpfulness_mean": 2.22,
+  "harmlessness_mean": 4.183673469387755,
+  "helpfulness_mean": 2.34,
   "harmlessness_n": 50,
   "helpfulness_n": 50
 }

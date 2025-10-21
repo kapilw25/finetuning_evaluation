@@ -556,8 +556,15 @@ Examples:
             final_metric=final_loss
         )
 
-        # Get best checkpoint path (last checkpoint saved)
-        lora_checkpoint = str(project_root / "outputs" / "SFT_Baseline" / "lora_model_SFT_Baseline")
+        # Get best checkpoint path
+        # Use actual checkpoint directory (has trainer_state.json) if training completed
+        # Otherwise use lora_model directory
+        if training_skipped and latest_checkpoint:
+            # Training was skipped - use last checkpoint for trainer_state.json
+            lora_checkpoint = str(latest_checkpoint)
+        else:
+            # Use saved LoRA directory
+            lora_checkpoint = str(project_root / "outputs" / "SFT_Baseline" / "lora_model_SFT_Baseline")
 
         # Initialize push automation
         pusher = PushAutomation(

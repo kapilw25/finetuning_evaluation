@@ -613,8 +613,12 @@ Examples:
             final_metric=final_margin
         )
 
-        # Get best checkpoint path (last checkpoint saved)
-        lora_checkpoint = str(project_root / "outputs" / "DPO_Baseline" / "lora_model_DPO_Baseline")
+        # Get best checkpoint path
+        # Use actual checkpoint directory (has trainer_state.json) if training completed
+        if training_skipped and latest_checkpoint:
+            lora_checkpoint = str(latest_checkpoint)
+        else:
+            lora_checkpoint = str(project_root / "outputs" / "DPO_Baseline" / "lora_model_DPO_Baseline")
 
         # Initialize push automation
         pusher = PushAutomation(

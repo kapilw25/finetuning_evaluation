@@ -35,7 +35,7 @@ class FireworksJudge:
         self,
         model: str = "fireworks_ai/accounts/fireworks/models/gpt-oss-120b",
         temperature: float = 0.0,  # Deterministic for evaluation
-        max_retries: int = 3,
+        max_retries: int = 5,
         retry_delay: float = 2.0
     ):
         """
