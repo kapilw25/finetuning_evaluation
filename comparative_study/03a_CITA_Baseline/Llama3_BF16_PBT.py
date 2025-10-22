@@ -70,6 +70,12 @@ from datetime import datetime
 # MUST be set BEFORE importing torch/transformers/ray
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
+# ===== FIX TOKENIZER FORK DEADLOCK: Prevents crash-and-restart cycles =====
+# Without this: Training crashes after each checkpoint (step 50, 100, 150...)
+# Result: 4 worker restarts, 7x slower training (44 min instead of 6 min)
+# With this: Single worker completes all steps smoothly
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
 import torch
 import ray
 from ray import tune
