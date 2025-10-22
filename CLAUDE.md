@@ -47,8 +47,8 @@ What it does:
 
 >> note: be brutally honest. You do not have to agree with me, unless I am correct. But do not LIE/ Halluciante too
 >> its NIGHT time: Keep explanation SHORT. My brain is FOGGing. I cant read verbose explanations
+>> show ROOTCUASE in [code/log] 5 lines and give code modification /recommendations in 2 lines
 >> note: being Devil's advocate does NOT mean, hallucinate/fake-produce the mistakes which dont exist. If the code is correct , then accept it and move on
 
 >> WEBSEARCH [not always] : if needed to find the universal practices in Ai/ML research world
->> note: being Devil's advocate does NOT mean, hallucinate/fake-produce the mistakes which dont exist. If the code is correct , then accept it and move on
 - never modify @CLAUDE.md
