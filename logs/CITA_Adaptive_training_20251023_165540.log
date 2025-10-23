@@ -1,0 +1,198 @@
+📝 Logging initialized: /home/ubuntu/finetuning_evaluation/logs/CITA_Adaptive_training_20251023_165540.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /home/ubuntu/finetuning_evaluation/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-cita-adaptive-bf16
+================================================================================
+
+✅ MVP mode: 5 trials × 100 steps (~1.5 hours)
+
+================================================================================
+⏱️  TIME ESTIMATE
+================================================================================
+Time per trial: 17.3 min
+Total (no pruning): 86.5 min (1.4 hours)
+Total (with early stopping): 73.5 min (1.2 hours)
+
+Early stopping:
+  - Checks at steps: 50, 100, 150, 200
+  - Stops immediately on: gibberish OR negative margin OR high KL
+  - Expected pruning: 15-20% of trials
+================================================================================
+
+Proceed with 5 trials? (y/n): 
+================================================================================
+🔬 OPTUNA ADAPTIVE SEARCH FOR CITA
+================================================================================
+Study name: cita_adaptive_100steps
+Storage: /home/ubuntu/finetuning_evaluation/outputs/optuna_cita.db
+Trials: 5
+Steps per trial: 100
+Timeout: 1h
+Sampler: TPE (truly adaptive)
+Pruner: Hyperband (early stopping)
+Safety checks: Steps 50, 100, 150, 200
+================================================================================
+
+/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/_experimental.py:31: ExperimentalWarning: Argument ``multivariate`` is an experimental feature. The interface can change in the future.
+  warnings.warn(
+  0%|          | 0/5 [00:00<?, ?it/s]
+================================================================================
+🔬 Trial 0: Testing hyperparameters
+================================================================================
+  lambda_kl:      0.001187
+  learning_rate:  1.176258e-05
+  beta:           0.1093
+  weight_decay:   0.0104
+  warmup_steps:   103
+
+  Training config:
+  - Max steps: 100
+  - Batch size: 1 (per device)
+  - Gradient accumulation: 8 (effective batch = 8)
+  - Safety checks: Every 50 steps
+  - Early stopping: Enabled (gibberish/negative margin/high KL)
+================================================================================
+
+✅ Llama-3.1 chat template set (required by SFTTrainer)
+✅ Flash Attention 2 enabled (saves ~2.5GB memory)
+
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s][A
+Fetching 4 files:  25%|██▌       | 1/4 [00:23<01:09, 23.14s/it][AFetching 4 files: 100%|██████████| 4/4 [00:23<00:00,  5.78s/it]
+
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s][A
+Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:02,  1.13it/s][A
+Loading checkpoint shards:  50%|█████     | 2/4 [00:01<00:01,  1.11it/s][A
+Loading checkpoint shards:  75%|███████▌  | 3/4 [00:02<00:00,  1.13it/s][A
+Loading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.60it/s][ALoading checkpoint shards: 100%|██████████| 4/4 [00:02<00:00,  1.38it/s]
+✅ Model loaded: meta-llama/Llama-3.1-8B
+   - Precision: BF16
+   - Max sequence length: 2048
+   - Flash Attention 2: True
+
+🔗 Loading LoRA adapters from HuggingFace: kapilw25/llama3-8b-pku-dpo-baseline-bf16
+✅ LoRA adapters loaded
+🔄 Merging LoRA adapters into base model...
+✅ LoRA adapters merged
+
+trainable params: 41,943,040 || all params: 8,072,204,288 || trainable%: 0.5196
+✅ LoRA adapters applied (r=16, alpha=16)
+⚠️  torch.compile() failed: local variable 'torch' referenced before assignment
+   Continuing without compilation (training will be slower)
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+
+Generating train split:   0%|          | 0/73907 [00:00<?, ? examples/s][A
+Generating train split:  20%|██        | 14823/73907 [00:00<00:00, 115243.98 examples/s][A
+Generating train split:  42%|████▏     | 31075/73907 [00:00<00:00, 124909.36 examples/s][A
+Generating train split:  62%|██████▏   | 45853/73907 [00:00<00:00, 129570.28 examples/s][A
+Generating train split:  82%|████████▏ | 60347/73907 [00:00<00:00, 129042.35 examples/s][A
+Generating train split: 100%|██████████| 73907/73907 [00:00<00:00, 129385.98 examples/s][AGenerating train split: 100%|██████████| 73907/73907 [00:00<00:00, 127720.83 examples/s]
+
+Generating test split:   0%|          | 0/8211 [00:00<?, ? examples/s][AGenerating test split: 100%|██████████| 8211/8211 [00:00<00:00, 125105.09 examples/s]
+Original dataset size: 73,907
+
+Filter:   0%|          | 0/73907 [00:00<?, ? examples/s][A
+Filter:   3%|▎         | 2000/73907 [00:00<00:04, 16349.96 examples/s][A
+Filter:   5%|▌         | 4000/73907 [00:00<00:04, 17065.38 examples/s][A
+Filter:   8%|▊         | 6000/73907 [00:00<00:03, 17277.90 examples/s][A
+Filter:  11%|█         | 8000/73907 [00:00<00:03, 17385.43 examples/s][A
+Filter:  14%|█▎        | 10000/73907 [00:00<00:03, 17425.28 examples/s][A
+Filter:  16%|█▌        | 12000/73907 [00:00<00:03, 17470.39 examples/s][A
+Filter:  19%|█▉        | 14000/73907 [00:00<00:03, 17506.22 examples/s][A
+Filter:  22%|██▏       | 16000/73907 [00:00<00:03, 17482.36 examples/s][A
+Filter:  24%|██▍       | 18000/73907 [00:01<00:03, 17500.66 examples/s][A
+Filter:  27%|██▋       | 20000/73907 [00:01<00:03, 17501.64 examples/s][A
+Filter:  30%|██▉       | 22000/73907 [00:01<00:02, 17507.10 examples/s][A
+Filter:  32%|███▏      | 24000/73907 [00:01<00:02, 17514.15 examples/s][A
+Filter:  35%|███▌      | 26000/73907 [00:01<00:02, 17441.18 examples/s][A
+Filter:  38%|███▊      | 28000/73907 [00:01<00:02, 17483.08 examples/s][A
+Filter:  41%|████      | 30000/73907 [00:01<00:02, 17497.53 examples/s][A
+Filter:  43%|████▎     | 32000/73907 [00:01<00:02, 17501.20 examples/s][A
+Filter:  46%|████▌     | 34000/73907 [00:01<00:02, 17533.80 examples/s][A
+Filter:  49%|████▊     | 36000/73907 [00:02<00:02, 17550.09 examples/s][A
+Filter:  51%|█████▏    | 38000/73907 [00:02<00:02, 17536.17 examples/s][A
+Filter:  54%|█████▍    | 40000/73907 [00:02<00:01, 17530.72 examples/s][A
+Filter:  57%|█████▋    | 42000/73907 [00:02<00:01, 17523.88 examples/s][A
+Filter:  60%|█████▉    | 44000/73907 [00:02<00:01, 17523.88 examples/s][A
+Filter:  62%|██████▏   | 46000/73907 [00:02<00:01, 17530.08 examples/s][A
+Filter:  65%|██████▍   | 48000/73907 [00:02<00:01, 17546.86 examples/s][A
+Filter:  68%|██████▊   | 50000/73907 [00:02<00:01, 17547.09 examples/s][A
+Filter:  70%|███████   | 52000/73907 [00:02<00:01, 17483.36 examples/s][A
+Filter:  73%|███████▎  | 54000/73907 [00:03<00:01, 17511.56 examples/s][A
+Filter:  76%|███████▌  | 56000/73907 [00:03<00:01, 17536.96 examples/s][A
+Filter:  78%|███████▊  | 58000/73907 [00:03<00:00, 17542.57 examples/s][A
+Filter:  81%|████████  | 60000/73907 [00:03<00:00, 17528.47 examples/s][A
+Filter:  84%|████████▍ | 62000/73907 [00:03<00:00, 17550.80 examples/s][A
+Filter:  87%|████████▋ | 64000/73907 [00:03<00:00, 17559.92 examples/s][A
+Filter:  89%|████████▉ | 66000/73907 [00:03<00:00, 17588.12 examples/s][A
+Filter:  92%|█████████▏| 68000/73907 [00:03<00:00, 17563.64 examples/s][A
+Filter:  95%|█████████▍| 70000/73907 [00:04<00:00, 17501.56 examples/s][A
+Filter:  97%|█████████▋| 72000/73907 [00:04<00:00, 17418.79 examples/s][A
+Filter: 100%|██████████| 73907/73907 [00:04<00:00, 17422.40 examples/s][AFilter: 100%|██████████| 73907/73907 [00:04<00:00, 17469.51 examples/s]
+Filtered dataset size: 10,813 (clear safety contrast)
+Training split size: 9,731 (90% of training data)
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Validation split size: 1,082 (10% of training data)
+
+Formatting PKU-SafeRLHF for CITA:   0%|          | 0/9731 [00:00<?, ? examples/s][A
+Formatting PKU-SafeRLHF for CITA:   5%|▌         | 507/9731 [00:00<00:01, 4895.42 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  10%|█         | 1000/9731 [00:00<00:01, 4664.75 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  16%|█▌        | 1524/9731 [00:00<00:01, 4910.65 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  23%|██▎       | 2259/9731 [00:00<00:01, 4857.67 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  29%|██▊       | 2777/9731 [00:00<00:01, 4955.26 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  36%|███▌      | 3524/9731 [00:00<00:01, 4906.07 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  44%|████▍     | 4262/9731 [00:00<00:01, 4878.23 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  49%|████▉     | 4780/9731 [00:00<00:00, 4953.65 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  57%|█████▋    | 5521/9731 [00:01<00:00, 4901.28 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  64%|██████▍   | 6262/9731 [00:01<00:00, 4882.07 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  70%|██████▉   | 6786/9731 [00:01<00:00, 4964.04 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  77%|███████▋  | 7532/9731 [00:01<00:00, 4944.75 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  85%|████████▍ | 8263/9731 [00:01<00:00, 4910.92 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  90%|█████████ | 8783/9731 [00:01<00:00, 4975.80 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  98%|█████████▊| 9520/9731 [00:01<00:00, 4913.49 examples/s][AFormatting PKU-SafeRLHF for CITA: 100%|██████████| 9731/9731 [00:01<00:00, 4879.73 examples/s]
+
+Formatting PKU-SafeRLHF for CITA:   0%|          | 0/1082 [00:00<?, ? examples/s][A
+Formatting PKU-SafeRLHF for CITA:  45%|████▍     | 484/1082 [00:00<00:00, 4668.85 examples/s][A
+Formatting PKU-SafeRLHF for CITA:  91%|█████████ | 983/1082 [00:00<00:00, 4849.98 examples/s][AFormatting PKU-SafeRLHF for CITA: 100%|██████████| 1082/1082 [00:00<00:00, 4501.95 examples/s]
+/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'repr' attribute with value False was provided to the `Field()` function, which has no effect in the context it was used. 'repr' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'frozen' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'frozen' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+                                     [W 2025-10-23 16:56:51,439] Trial 0 failed with parameters: {'lambda_kl': 0.0011872700594236813, 'learning_rate': 1.1762576642309703e-05, 'beta': 0.10927975767245621, 'weight_decay': 0.010394633936788147, 'warmup_steps': 103} because of the following error: TypeError("CITATrainer.__init__() missing 1 required positional argument: 'tokenizer'").
+Traceback (most recent call last):
+  File "/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/study/_optimize.py", line 197, in _run_trial
+    value_or_values = func(trial)
+  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 471, in objective
+    return train_cita_trial(trial, max_steps=max_steps, base_model=base_model)
+  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 263, in train_cita_trial
+    trainer = CITATrainer(
+TypeError: CITATrainer.__init__() missing 1 required positional argument: 'tokenizer'
+  0%|          | 0/5 [01:10<?, ?it/s]                                     [W 2025-10-23 16:56:51,440] Trial 0 failed with value None.
+  0%|          | 0/5 [01:10<?, ?it/s]  0%|          | 0/5 [01:10<?, ?it/s]
+
+❌ Error: CITATrainer.__init__() missing 1 required positional argument: 'tokenizer'
+Traceback (most recent call last):
+  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 644, in <module>
+    best_trial = run_optuna_cita_search(
+  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 473, in run_optuna_cita_search
+    study.optimize(
+  File "/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/study/study.py", line 475, in optimize
+    _optimize(
+  File "/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/study/_optimize.py", line 63, in _optimize
+    _optimize_sequential(
+  File "/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/study/_optimize.py", line 160, in _optimize_sequential
+    frozen_trial = _run_trial(study, func, catch)
+  File "/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/study/_optimize.py", line 248, in _run_trial
+    raise func_err
+  File "/home/ubuntu/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/optuna/study/_optimize.py", line 197, in _run_trial
+    value_or_values = func(trial)
+  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 471, in objective
+    return train_cita_trial(trial, max_steps=max_steps, base_model=base_model)
+  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 263, in train_cita_trial
+    trainer = CITATrainer(
+TypeError: CITATrainer.__init__() missing 1 required positional argument: 'tokenizer'

@@ -141,9 +141,17 @@ class GibberishDetectionCallback(TrainerCallback):
 
             # Log results
             status = "❌ GIBBERISH" if is_gibberish else "✅ OK"
-            print(f"\n{status} | Prompt: {prompt[:50]}...")
-            print(f"  Response: {response[:100]}...")
-            print(f"  Repetition: {repetition_score:.2f} | Diversity: {diversity_score} tokens")
+
+            # Show more context for gibberish cases (full response), less for OK cases
+            if is_gibberish:
+                print(f"\n{status} | Prompt: {prompt}")
+                print(f"  Full Response ({len(response)} chars):")
+                print(f"  → {response}")
+                print(f"  Metrics → Repetition: {repetition_score:.2f} | Diversity: {diversity_score} tokens")
+            else:
+                print(f"\n{status} | Prompt: {prompt[:70]}...")
+                print(f"  Response: {response[:150]}...")
+                print(f"  Repetition: {repetition_score:.2f} | Diversity: {diversity_score} tokens")
 
             if is_gibberish:
                 gibberish_detected = True

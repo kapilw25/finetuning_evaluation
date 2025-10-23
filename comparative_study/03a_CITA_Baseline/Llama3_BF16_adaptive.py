@@ -205,7 +205,8 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         max_steps=max_steps,
         learning_rate=learning_rate,
         logging_steps=1,
-        optim="adamw_torch",
+        optim="adamw_torch"
+        # optim="adamw_torch_fused",  # FIXED: Fused version handles BF16 correctly (adamw_torch has dtype bugs in PyTorch 2.5.1)
         weight_decay=weight_decay,
         lr_scheduler_type="cosine",
         seed=3407,
@@ -262,8 +263,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
 
     trainer = CITATrainer(
         model=model,
-        ref_model=None,
-        processing_class=tokenizer,
+        tokenizer=tokenizer,  # CITATrainer expects 'tokenizer', not 'processing_class'
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
@@ -429,6 +429,9 @@ def run_optuna_cita_search(
     # ===== CREATE OPTUNA STUDY =====
     study_name = f"cita_adaptive_{max_steps}steps"
     storage_path = str(project_root / "outputs" / "optuna_cita.db")
+
+    # Ensure outputs directory exists (SQLite needs parent directory)
+    Path(storage_path).parent.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*80}")
     print(f"🔬 OPTUNA ADAPTIVE SEARCH FOR CITA")

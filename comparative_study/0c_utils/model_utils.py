@@ -535,6 +535,7 @@ MODEL_NAME_MAP = {
     "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-baseline",
     "DPO_GRIT": "kapilw25/llama3-8b-pku-dpo-grit",
     "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-baseline",
+    "CITA_Adaptive": "kapilw25/llama3-8b-pku-cita-adaptive",
     "CITA_GRIT": "kapilw25/llama3-8b-pku-cita-grit",
 }
 
