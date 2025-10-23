@@ -37,28 +37,43 @@ Harmlessness ↑
 
 ## Phase 3A: Sanity Checks (Stacked Pipeline)
 
-**Cost**: ~$1.20 total (200 + 200 + 800 steps = 1200 steps)
-**Time**: ~74 minutes total (A6000-48GB)
+**Cost**: ~$1.00 total (SFT + DPO only)
+**Time**: ~47 minutes total (A100-40GB @ $1.3/hour)
 
 ### **Commands** (run sequentially):
 
 ```bash
-# 1. SFT baseline (base → SFT: 200 steps, ~12 min, ~$0.20) [A6000-48GB]
+# 1. SFT baseline (base → SFT: 200 steps, ~12 min, ~$0.26) [A100-40GB]
 python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 # Pushes to: kapilw25/llama3-8b-pku-sft-baseline-bf16
 
-# 2. DPO baseline (SFT → DPO: 200 steps, ~12 min, ~$0.20) [A6000-48GB]
+# 2. DPO baseline (SFT → DPO: 200 steps, ~35 min, ~$0.76) [A100-40GB]
 python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 # Pushes to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
 
-# 3. CITA with PBT (DPO → CITA: 200 steps, ~50 min, ~$0.80) [A6000-48GB]
-python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
+# 3a. CITA Adaptive - MVP (DPO → CITA: 5 trials × 100 steps, ~74 min, ~$1.60) [A100-40GB]
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
+    --mode mvp \
+    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+# Output: outputs/CITA_Adaptive/best_trial/
+
+# 3b. CITA Adaptive - Sanity (DPO → CITA: 27 trials × 200 steps, ~13.2h, ~$17.20) [A100-40GB]
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
-# Pushes to: kapilw25/llama3-8b-pku-cita-baseline-bf16
+# Output: outputs/CITA_Adaptive/best_trial/
+
+# 3c. CITA Adaptive - Full (DPO → CITA: 27 trials × 1000 steps, ~66h, ~$85.80) [A100-40GB]
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
+    --mode full \
+    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+# Output: outputs/CITA_Adaptive/best_trial/
+# Pushes to: kapilw25/llama3-8b-pku-cita-adaptive-bf16
 ```
+
+**Note**: Run MVP first (~74 min) to validate Optuna + early stopping work correctly.
 
 ### **How to Check Validation Metrics** (No Test Set Contamination):
 
