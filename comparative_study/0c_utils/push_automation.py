@@ -108,12 +108,13 @@ class PushAutomation:
             print(f"⚠️  Git configuration failed: {e}")
             print(f"   Continuing anyway (git may already be configured)")
 
-    def _get_previous_best_margin(self, hf_repo: str) -> Optional[float]:
+    def _get_previous_best_margin(self, hf_repo: str, metric_name: str = "eval_loss") -> Optional[float]:
         """
         Fetch previous best metric from HuggingFace model metadata
 
         Args:
             hf_repo: HuggingFace repository ID
+            metric_name: Metric to extract (e.g., "cita/margin", "rewards/margins", "eval_loss")
 
         Returns:
             Previous best metric (float) or None if not found
@@ -125,7 +126,7 @@ class PushAutomation:
         try:
             from huggingface_hub import hf_hub_download
 
-            # Try trainer_state.json first (SFT/DPO - industry standard)
+            # Try trainer_state.json first (SFT/DPO/CITA - industry standard)
             try:
                 state_path = hf_hub_download(
                     repo_id=hf_repo,
@@ -136,11 +137,22 @@ class PushAutomation:
                 with open(state_path, 'r') as f:
                     state = json.load(f)
 
-                # Get last eval_loss from log_history
-                eval_losses = [log['eval_loss'] for log in state.get('log_history', []) if 'eval_loss' in log]
-                if eval_losses:
-                    previous_metric = eval_losses[-1]  # Last eval_loss
-                    print(f"📊 Previous eval_loss: {previous_metric:.4f} (from trainer_state.json)")
+                # Try to find metric in log_history (prefer eval_ prefix, fallback to non-eval)
+                eval_metric_name = f"eval_{metric_name}" if not metric_name.startswith("eval_") else metric_name
+                non_eval_metric_name = metric_name.replace("eval_", "") if metric_name.startswith("eval_") else metric_name
+
+                # Try eval version first (e.g., "eval_rewards/margins" or "eval_loss")
+                eval_values = [log[eval_metric_name] for log in state.get('log_history', []) if eval_metric_name in log]
+                if eval_values:
+                    previous_metric = eval_values[-1]  # Last eval value
+                    print(f"📊 Previous {eval_metric_name}: {previous_metric:.4f} (from trainer_state.json)")
+                    return float(previous_metric)
+
+                # Fallback to non-eval version (e.g., "rewards/margins")
+                non_eval_values = [log[non_eval_metric_name] for log in state.get('log_history', []) if non_eval_metric_name in log]
+                if non_eval_values:
+                    previous_metric = non_eval_values[-1]  # Last value
+                    print(f"📊 Previous {non_eval_metric_name}: {previous_metric:.4f} (from trainer_state.json)")
                     return float(previous_metric)
             except:
                 pass  # trainer_state.json not found, try config.json
@@ -168,13 +180,14 @@ class PushAutomation:
             print(f"   Assuming this is first training run")
             return None
 
-    def should_push_to_hf(self, current_metric: float, hf_repo: str, metric_mode: str = "max") -> bool:
+    def should_push_to_hf(self, current_metric: float, hf_repo: str, metric_name: str = "eval_loss", metric_mode: str = "max") -> bool:
         """
         Check if current training performance is better than previous
 
         Args:
             current_metric: Current training's final metric value
             hf_repo: HuggingFace repository ID
+            metric_name: Metric name to compare (e.g., "cita/margin", "rewards/margins", "eval_loss")
             metric_mode: "max" (higher is better) or "min" (lower is better)
 
         Returns:
@@ -185,7 +198,7 @@ class PushAutomation:
             print("   Skipping HuggingFace push (only successful runs are pushed)")
             return False
 
-        previous_metric = self._get_previous_best_margin(hf_repo)  # Still reads 'final_margin' from config
+        previous_metric = self._get_previous_best_margin(hf_repo, metric_name=metric_name)
 
         # Handle cases where metric is not available (training skipped)
         if isinstance(current_metric, str):
@@ -343,12 +356,20 @@ class PushAutomation:
 
         # Check if should push (performance comparison)
         # Handle both Ray Tune trial objects and SimpleNamespace (for SFT/DPO)
+        # For CITA: remap cita/margin → rewards/margins for fair comparison
+        comparison_metric_name = metric_name
         if hasattr(best_trial, 'last_result'):
-            current_metric = best_trial.last_result.get(metric_name, 'N/A')
+            # For CITA: prefer rewards/margin (comparable) over cita/margin (log-prob)
+            if metric_name == "cita/margin" and "rewards/margin" in best_trial.last_result:
+                current_metric = best_trial.last_result.get("rewards/margin", 'N/A')
+                comparison_metric_name = "rewards/margins"  # Use plural for eval comparison
+                print(f"ℹ️  Using rewards/margin for comparison (cita/margin is log-prob scale)")
+            else:
+                current_metric = best_trial.last_result.get(metric_name, 'N/A')
         else:
             current_metric = getattr(best_trial, 'final_metric', 'N/A')
 
-        if not self.should_push_to_hf(current_metric, hf_repo, metric_mode=metric_mode):
+        if not self.should_push_to_hf(current_metric, hf_repo, metric_name=comparison_metric_name, metric_mode=metric_mode):
             return
 
         try:
