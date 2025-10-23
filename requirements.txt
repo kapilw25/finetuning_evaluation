@@ -55,6 +55,9 @@ wandb==0.22.2
 ray[tune]==2.50.1
 tensorboardX==2.6.4  # Pin to stop pip backtracking hell
 
+# Hyperparameter optimization (alternative to PBT)
+optuna==4.1.0  # Adaptive search with TPE + Hyperband
+
 # authentication
 python-dotenv
 huggingface_hub
