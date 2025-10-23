@@ -613,10 +613,16 @@ Examples:
         )
 
         # Get best checkpoint path
-        # Use actual checkpoint directory (has trainer_state.json) if training completed
-        if training_skipped and latest_checkpoint:
+        # After training, fetch the latest checkpoint (to get trainer_state.json)
+        if not training_skipped:
+            # Training just completed - refresh latest checkpoint
+            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
+
+        if latest_checkpoint:
+            # Use checkpoint directory (has trainer_state.json)
             lora_checkpoint = str(latest_checkpoint)
         else:
+            # Fallback to LoRA directory (no trainer_state.json, only for edge cases)
             lora_checkpoint = str(project_root / "outputs" / "DPO_Baseline" / "lora_model_DPO_Baseline")
 
         # Initialize push automation
