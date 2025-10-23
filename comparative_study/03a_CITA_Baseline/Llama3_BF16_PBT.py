@@ -418,6 +418,14 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
         kl_threshold=0.5  # ✅ KL must be < 0.5 (standard threshold for drift detection)
     )
 
+    # ===== TRAINING SUMMARY CALLBACK (ZERO overhead - just formats existing metrics) =====
+    from monitoring_callback import TrainingSummaryCallback
+
+    summary_callback = TrainingSummaryCallback(
+        check_every_n_steps=check_interval,
+        training_method="cita"
+    )
+
     # ===== RAY TUNE INTEGRATION CALLBACK =====
     # Reports metrics to Ray Tune for PBT (every save_steps=50, aligned with checkpoints)
     ray_callback = RayTrainReportCallback()
@@ -433,14 +441,21 @@ def train_cita_with_pbt(config, checkpoint_dir=None):
         lambda_dpo=1.0,      # ✅ Continue preference learning from Stage 2 (DPO baseline)
         lambda_kl=lambda_kl, # ✅ Add KL regularization (CITA's contribution) - PBT-tuned
         beta=beta,           # Contrastive temperature (PBT-tuned)
-        callbacks=[gibberish_monitor, ray_callback]
+        callbacks=[summary_callback, gibberish_monitor, ray_callback]
     )
+
+    # ===== SHOW GPU MEMORY =====
+    from model_utils import log_gpu_memory_start, log_gpu_memory_end
+    start_gpu_memory = log_gpu_memory_start()
 
     # ===== RESUME FROM CHECKPOINT (if provided by PBT) =====
     if checkpoint_dir:
         trainer.train(resume_from_checkpoint=checkpoint_dir)
     else:
         trainer.train()
+
+    # ===== SHOW FINAL MEMORY =====
+    log_gpu_memory_end(start_gpu_memory)
 
 
 # ===== MAIN EXECUTION =====

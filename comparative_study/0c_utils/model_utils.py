@@ -572,3 +572,62 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
     full_repo = f"{base_repo}-{precision}"
 
     return full_repo
+
+
+# ===================================================================
+# 9. GPU Memory Tracking
+# ===================================================================
+
+def log_gpu_memory_start() -> float:
+    """
+    Log GPU stats and memory before training starts
+
+    Returns:
+        start_gpu_memory: Memory reserved before training (GB)
+
+    Usage:
+        from model_utils import log_gpu_memory_start
+
+        start_memory = log_gpu_memory_start()
+    """
+    gpu_stats = torch.cuda.get_device_properties(0)
+    start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+    max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
+
+    print(f"\n{'='*80}")
+    print(f"GPU MEMORY - START")
+    print(f"{'='*80}")
+    print(f"GPU: {gpu_stats.name}")
+    print(f"Total memory: {max_memory} GB")
+    print(f"Reserved before training: {start_gpu_memory} GB ({start_gpu_memory/max_memory*100:.1f}%)")
+    print(f"{'='*80}\n")
+
+    return start_gpu_memory
+
+
+def log_gpu_memory_end(start_gpu_memory: float):
+    """
+    Log GPU memory usage after training completes
+
+    Args:
+        start_gpu_memory: Memory reserved before training (from log_gpu_memory_start)
+
+    Usage:
+        from model_utils import log_gpu_memory_end
+
+        log_gpu_memory_end(start_memory)
+    """
+    gpu_stats = torch.cuda.get_device_properties(0)
+    used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
+    used_memory_for_training = round(used_memory - start_gpu_memory, 3)
+    used_percentage = round(used_memory / gpu_stats.total_memory * 100, 3)
+    max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
+
+    print(f"\n{'='*80}")
+    print(f"GPU MEMORY - END")
+    print(f"{'='*80}")
+    print(f"GPU: {gpu_stats.name}")
+    print(f"Total memory: {max_memory} GB")
+    print(f"Peak reserved: {used_memory} GB ({used_percentage}%)")
+    print(f"Memory used for training: {used_memory_for_training} GB")
+    print(f"{'='*80}\n")

@@ -1,0 +1,114 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/DPO_Baseline_training_20251023_003519.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
+================================================================================
+
+✅ Sanity check mode: 200 steps (~8 minutes)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+✅ Found existing model on HuggingFace: kapilw25/llama3-8b-pku-dpo-baseline-bf16
+✅ Git already configured: kapilw25@gmail.com
+⚠️  Could not fetch previous model: 404 Client Error. (Request ID: Root=1-68f97847-4c291fac268d555f1b68cf56;99e99eeb-359c-49a2-a31d-8218144d8d78)
+
+Entry Not Found for url: https://huggingface.co/kapilw25/llama3-8b-pku-dpo-baseline-bf16/resolve/main/config.json.
+   Assuming this is first training run
+================================================================================
+Training will take approximately: ~12 minutes
+
+Options:
+  1) Run inference only (use existing HF model)
+  2) Retrain and replace HF model (only if performance improves)
+================================================================================
+Enter choice (1 or 2): ================================================================================
+
+✅ Training mode selected
+   Will retrain and push ONLY if performance improves
+
+================================================================================
+🚀 Starting DPO Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: Standard DPO (Rafailov 2023)
+  - Loss: L_DPO only
+  - Training steps: 200
+  - Batch size: 1 (per device, reduced for DPO ref model)
+  - Gradient accumulation: 8 (effective batch=8)
+  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)
+  - Beta: 0.1 (Meta's Llama 3 DPO setting)
+  - Warmup steps: 100 (10% of total steps)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+1️⃣ Checking local checkpoints...
+🆕 No checkpoint found
+   Will start fresh training (even if HF repo exists)...
+
+Loading model...
+✅ Llama-3.1 chat template set (required by SFTTrainer)
+✅ Flash Attention 2 enabled (saves ~2.5GB memory)
+Loading checkpoint shards:   0%|                                                          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|############5                                     | 1/4 [00:00<00:02,  1.16it/s]Loading checkpoint shards:  50%|#########################                         | 2/4 [00:01<00:01,  1.14it/s]Loading checkpoint shards:  75%|#####################################5            | 3/4 [00:02<00:00,  1.16it/s]Loading checkpoint shards: 100%|##################################################| 4/4 [00:02<00:00,  1.65it/s]Loading checkpoint shards: 100%|##################################################| 4/4 [00:02<00:00,  1.43it/s]
+✅ Model loaded: meta-llama/Llama-3.1-8B
+   - Precision: BF16
+   - Max sequence length: 2048
+   - Flash Attention 2: True
+
+🔗 Loading LoRA adapters from HuggingFace: kapilw25/llama3-8b-pku-sft-baseline-bf16
+✅ LoRA adapters loaded
+🔄 Merging LoRA adapters into base model...
+✅ LoRA adapters merged (ready for new training stage)
+
+Applying LoRA adapters...
+trainable params: 41,943,040 || all params: 8,072,204,288 || trainable%: 0.5196
+✅ LoRA adapters applied (r=16, alpha=16)
+
+Applying torch.compile()...
+⚠️  torch.compile() failed: local variable 'torch' referenced before assignment
+   Continuing without compilation (training will be slower)
+
+Loading dataset...
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Training split size: 9,731 (90% of training data)
+Formatting PKU-SafeRLHF for DPO:   0%|                                          | 0/9731 [00:00<?, ? examples/s]Formatting PKU-SafeRLHF for DPO:   5%|#4                            | 470/9731 [00:00<00:02, 4531.15 examples/s]Formatting PKU-SafeRLHF for DPO:  10%|###                           | 976/9731 [00:00<00:01, 4833.94 examples/s]Formatting PKU-SafeRLHF for DPO:  17%|#####                        | 1701/9731 [00:00<00:01, 4827.14 examples/s]Formatting PKU-SafeRLHF for DPO:  25%|#######2                     | 2449/9731 [00:00<00:01, 4893.76 examples/s]Formatting PKU-SafeRLHF for DPO:  31%|########9                    | 2987/9731 [00:00<00:01, 5036.43 examples/s]Formatting PKU-SafeRLHF for DPO:  39%|###########1                 | 3750/9731 [00:00<00:01, 5051.37 examples/s]Formatting PKU-SafeRLHF for DPO:  44%|############7                | 4271/9731 [00:00<00:01, 5013.51 examples/s]Formatting PKU-SafeRLHF for DPO:  50%|##############3              | 4817/9731 [00:00<00:00, 5135.37 examples/s]Formatting PKU-SafeRLHF for DPO:  57%|################6            | 5580/9731 [00:01<00:00, 5112.27 examples/s]Formatting PKU-SafeRLHF for DPO:  65%|##################9          | 6342/9731 [00:01<00:00, 5097.74 examples/s]Formatting PKU-SafeRLHF for DPO:  71%|####################5        | 6887/9731 [00:01<00:00, 5182.53 examples/s]Formatting PKU-SafeRLHF for DPO:  78%|######################6      | 7614/9731 [00:01<00:00, 5063.23 examples/s]Formatting PKU-SafeRLHF for DPO:  86%|########################9    | 8368/9731 [00:01<00:00, 5049.05 examples/s]Formatting PKU-SafeRLHF for DPO:  92%|##########################5  | 8910/9731 [00:01<00:00, 5133.93 examples/s]Formatting PKU-SafeRLHF for DPO:  99%|############################8| 9670/9731 [00:01<00:00, 5108.18 examples/s]Formatting PKU-SafeRLHF for DPO: 100%|#############################| 9731/9731 [00:01<00:00, 5018.59 examples/s]
+✅ Loaded 9731 samples for DPO training
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Validation split size: 1,082 (10% of training data)
+Formatting PKU-SafeRLHF for DPO:   0%|                                          | 0/1082 [00:00<?, ? examples/s]Formatting PKU-SafeRLHF for DPO:  45%|#############5                | 490/1082 [00:00<00:00, 4722.88 examples/s]Formatting PKU-SafeRLHF for DPO:  92%|##########################8  | 1000/1082 [00:00<00:00, 4612.56 examples/s]Formatting PKU-SafeRLHF for DPO: 100%|#############################| 1082/1082 [00:00<00:00, 4536.96 examples/s]
+✅ Loaded 1082 samples for DPO validation
+📊 TensorBoard logs: /lambda/nfs/DiskUsEast1/finetuning_evaluation/tensorboard_logs/DPO_Baseline_20251023_003546
+
+Initializing DPOTrainer...
+
+❌ Error during training: 'Tee' object has no attribute 'encoding'
+Traceback (most recent call last):
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 522, in <module>
+    trainer, training_skipped = train_dpo_baseline(max_steps=max_steps, base_model=args.base_model, force_skip=force_skip)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 276, in train_dpo_baseline
+    from monitoring_callback import TrainingSummaryCallback
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/0c_utils/monitoring_callback.py", line 21, in <module>
+    from ray import tune
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/ray/tune/__init__.py", line 51, in <module>
+    from ray.tune.tune import run, run_experiments
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/ray/tune/tune.py", line 35, in <module>
+    from ray.tune.experimental.output import IS_NOTEBOOK, AirVerbosity, get_air_verbosity
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/ray/tune/experimental/output.py", line 528, in <module>
+    if sys.stdout and sys.stdout.encoding and sys.stdout.encoding.startswith("utf"):
+AttributeError: 'Tee' object has no attribute 'encoding'
