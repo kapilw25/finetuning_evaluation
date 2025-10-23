@@ -205,7 +205,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         max_steps=max_steps,
         learning_rate=learning_rate,
         logging_steps=1,
-        optim="adamw_torch"
+        optim="adamw_torch",
         # optim="adamw_torch_fused",  # FIXED: Fused version handles BF16 correctly (adamw_torch has dtype bugs in PyTorch 2.5.1)
         weight_decay=weight_decay,
         lr_scheduler_type="cosine",
