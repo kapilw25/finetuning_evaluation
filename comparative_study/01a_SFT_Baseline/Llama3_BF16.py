@@ -52,7 +52,9 @@ from model_utils import (
     get_test_prompts,
     get_model_repo_name,
     get_latest_checkpoint,
-    is_training_complete
+    is_training_complete,
+    log_gpu_memory_start,
+    log_gpu_memory_end
 )
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
@@ -251,20 +253,25 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
         # TRL 0.22.2 SFTTrainer only accepts: model, processing_class, args, train_dataset, eval_dataset
         # Unlike Unsloth's SFTTrainer, it does NOT accept: max_seq_length, packing, dataset_text_field
         # These are handled automatically via the "messages" field formatting
+        # ===== TRAINING SUMMARY CALLBACK =====
+        from monitoring_callback import TrainingSummaryCallback
+
+        summary_callback = TrainingSummaryCallback(
+            check_every_n_steps=50,
+            training_method="sft"
+        )
+
         trainer = SFTTrainer(
             model=model,
             processing_class=tokenizer,  # TRL 0.22.2 parameter name
             args=training_args,
             train_dataset=train_dataset,  # Already formatted with "messages" field
             eval_dataset=val_dataset,
+            callbacks=[summary_callback]
         )
 
         # ===== SHOW GPU MEMORY =====
-        gpu_stats = torch.cuda.get_device_properties(0)
-        start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-        max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
-        print(f"\nGPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
-        print(f"{start_gpu_memory} GB of memory reserved before training.")
+        start_gpu_memory = log_gpu_memory_start()
     else:
         # Training skipped - initialize empty vars
         trainer = None
@@ -284,16 +291,8 @@ def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_
 
     # ===== SHOW FINAL MEMORY =====
     if not training_skipped:
-        used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
-        used_memory_for_training = round(used_memory - start_gpu_memory, 3)
-        used_percentage = round(used_memory / max_memory * 100, 3)
-
-        print(f"\n{'='*80}")
+        log_gpu_memory_end(start_gpu_memory)
         print(f"✅ Training complete!")
-        print(f"Peak reserved memory = {used_memory} GB")
-        print(f"Peak reserved memory for training = {used_memory_for_training} GB")
-        print(f"Peak reserved memory % of max memory = {used_percentage}%")
-        print(f"{'='*80}\n")
 
     # ===== SAVE LORA ADAPTERS =====
     lora_output_dir = Path(output_dir) / "lora_model_SFT_Baseline"

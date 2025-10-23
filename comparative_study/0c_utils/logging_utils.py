@@ -59,6 +59,11 @@ class Tee:
         """Return file descriptor of terminal (required by Ray's faulthandler)"""
         return self.terminal.fileno()
 
+    @property
+    def encoding(self):
+        """Return terminal encoding (required by Ray Tune's output detection)"""
+        return getattr(self.terminal, 'encoding', 'utf-8')
+
     def close(self):
         """Close method (required by logging shutdown)"""
         # Don't close terminal, just close log file

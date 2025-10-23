@@ -323,3 +323,205 @@ appropriately complete each request.
                 return True
 
         return False
+
+
+# ===================================================================
+# Training Summary Callback (ZERO overhead - just formats existing metrics)
+# ===================================================================
+
+class TrainingSummaryCallback(TrainerCallback):
+    """
+    Print training summary at checkpoints (NO inference, ZERO overhead)
+    Just parses state.log_history and prints key metrics in clear format
+
+    Works for:
+    - SFT: loss trajectory, eval_loss
+    - DPO: margin, accuracy, rewards
+    - CITA: margin, accuracy, KL divergence, all loss components
+
+    Usage:
+        from monitoring_callback import TrainingSummaryCallback
+
+        callback = TrainingSummaryCallback(
+            check_every_n_steps=50,
+            training_method="cita"  # or "sft" or "dpo"
+        )
+    """
+
+    def __init__(
+        self,
+        check_every_n_steps=50,
+        training_method="cita",  # "sft", "dpo", or "cita"
+        window_size=50  # Number of recent batches to analyze
+    ):
+        self.check_every_n_steps = check_every_n_steps
+        self.training_method = training_method.lower()
+        self.window_size = window_size
+
+    def on_step_end(self, args, state, control, **kwargs):
+        """Print summary at checkpoint steps"""
+        if state.global_step % self.check_every_n_steps != 0:
+            return control
+
+        print(f"\n{'='*80}")
+        print(f"📊 TRAINING SUMMARY - Step {state.global_step}")
+        print(f"{'='*80}")
+
+        # Get recent logs
+        recent_logs = state.log_history[-self.window_size:] if len(state.log_history) > self.window_size else state.log_history
+
+        if self.training_method == "sft":
+            self._print_sft_summary(recent_logs, state)
+        elif self.training_method == "dpo":
+            self._print_dpo_summary(recent_logs, state)
+        elif self.training_method == "cita":
+            self._print_cita_summary(recent_logs, state)
+        else:
+            print(f"⚠️  Unknown training_method: {self.training_method}")
+
+        print(f"{'='*80}\n")
+
+        return control
+
+    def _print_sft_summary(self, recent_logs, state):
+        """Print SFT-specific summary"""
+        # Extract loss values
+        losses = [log['loss'] for log in recent_logs if 'loss' in log]
+
+        if losses:
+            print(f"LOSS trajectory (last {len(losses)} batches):")
+            print(f"  Current: {losses[-1]:.4f}")
+            print(f"  Average: {sum(losses)/len(losses):.4f}")
+            print(f"  Min: {min(losses):.4f}")
+            print(f"  Max: {max(losses):.4f}")
+
+            # Trend analysis
+            if len(losses) > 10:
+                first_half = sum(losses[:len(losses)//2]) / (len(losses)//2)
+                second_half = sum(losses[len(losses)//2:]) / (len(losses) - len(losses)//2)
+                trend = "↓ DECREASING" if second_half < first_half else "↑ INCREASING"
+                print(f"  Trend: {trend} (first half: {first_half:.4f}, second half: {second_half:.4f})")
+
+        # Extract eval_loss
+        eval_losses = [log['eval_loss'] for log in recent_logs if 'eval_loss' in log]
+        if eval_losses:
+            print(f"\nVALIDATION:")
+            print(f"  eval_loss: {eval_losses[-1]:.4f}")
+
+    def _print_dpo_summary(self, recent_logs, state):
+        """Print DPO-specific summary"""
+        # Extract DPO metrics
+        margins = [log.get('rewards/margins', log.get('rewards/margin')) for log in recent_logs if 'rewards/margins' in log or 'rewards/margin' in log]
+        accuracies = [log['rewards/accuracies'] for log in recent_logs if 'rewards/accuracies' in log]
+        losses = [log['loss'] for log in recent_logs if 'loss' in log]
+
+        if losses:
+            print(f"LOSS trajectory:")
+            print(f"  Current: {losses[-1]:.4f}")
+            print(f"  Average: {sum(losses)/len(losses):.4f}")
+
+        if margins:
+            avg_margin = sum(margins) / len(margins)
+            negative_count = sum(1 for m in margins if m < 0)
+
+            print(f"\nMARGIN (chosen - rejected logps):")
+            print(f"  Current: {margins[-1]:.4f}")
+            print(f"  Average: {avg_margin:.4f}")
+            print(f"  Min: {min(margins):.4f}")
+            print(f"  Negative samples: {negative_count}/{len(margins)} ({negative_count/len(margins)*100:.0f}%)")
+
+            if negative_count > len(margins) * 0.1:
+                print(f"  ⚠️  WARNING: >10% negative margins = model prefers UNSAFE responses!")
+
+        if accuracies:
+            avg_acc = sum(accuracies) / len(accuracies) * 100
+            print(f"\nACCURACY (chosen > rejected):")
+            print(f"  Current: {accuracies[-1]*100:.0f}%")
+            print(f"  Average: {avg_acc:.0f}%")
+
+            if avg_acc < 80:
+                print(f"  ⚠️  WARNING: Accuracy < 80% = model learning WRONG preferences!")
+
+        # Eval metrics
+        eval_margins = [log.get('eval_rewards/margins', log.get('eval_rewards/margin')) for log in recent_logs if 'eval_rewards/margins' in log or 'eval_rewards/margin' in log]
+        eval_accs = [log['eval_rewards/accuracies'] for log in recent_logs if 'eval_rewards/accuracies' in log]
+
+        if eval_margins or eval_accs:
+            print(f"\nVALIDATION:")
+            if eval_margins:
+                print(f"  eval_margin: {eval_margins[-1]:.4f}")
+            if eval_accs:
+                print(f"  eval_accuracy: {eval_accs[-1]*100:.0f}%")
+
+    def _print_cita_summary(self, recent_logs, state):
+        """Print CITA-specific summary"""
+        # Extract CITA metrics
+        total_losses = [log['cita/loss_total'] for log in recent_logs if 'cita/loss_total' in log]
+        loss_sft = [log['cita/loss_sft'] for log in recent_logs if 'cita/loss_sft' in log]
+        loss_dpo = [log['cita/loss_dpo'] for log in recent_logs if 'cita/loss_dpo' in log]
+        loss_kl = [log['cita/loss_kl'] for log in recent_logs if 'cita/loss_kl' in log]
+        margins = [log['cita/margin'] for log in recent_logs if 'cita/margin' in log]
+        accuracies = [log['rewards/accuracies'] for log in recent_logs if 'rewards/accuracies' in log]
+        reward_margins = [log.get('rewards/margins', log.get('rewards/margin')) for log in recent_logs if 'rewards/margins' in log or 'rewards/margin' in log]
+
+        # Loss breakdown
+        if total_losses:
+            print(f"LOSS COMPONENTS:")
+            print(f"  Total loss: {total_losses[-1]:.4f} (avg: {sum(total_losses)/len(total_losses):.4f})")
+            if loss_sft:
+                print(f"  L_SFT: {loss_sft[-1]:.4f} (avg: {sum(loss_sft)/len(loss_sft):.4f})")
+            if loss_dpo:
+                print(f"  L_DPO: {loss_dpo[-1]:.4f} (avg: {sum(loss_dpo)/len(loss_dpo):.4f})")
+            if loss_kl:
+                avg_kl = sum(loss_kl) / len(loss_kl)
+                print(f"  L_KL: {loss_kl[-1]:.4f} (avg: {avg_kl:.4f})")
+                if avg_kl < -2.0:
+                    print(f"  ⚠️  WARNING: High negative KL = model drifting from reference!")
+
+        # Margin analysis
+        if margins:
+            avg_margin = sum(margins) / len(margins)
+            negative_count = sum(1 for m in margins if m < 0)
+
+            print(f"\nMARGIN (chosen - rejected logps):")
+            print(f"  Current: {margins[-1]:.1f}")
+            print(f"  Average: {avg_margin:.1f}")
+            print(f"  Min: {min(margins):.1f} | Max: {max(margins):.1f}")
+            print(f"  Negative samples: {negative_count}/{len(margins)} ({negative_count/len(margins)*100:.0f}%)")
+
+            if negative_count > len(margins) * 0.1:
+                print(f"  🚨 CRITICAL: {negative_count/len(margins)*100:.0f}% negative margins!")
+                print(f"     Model systematically prefers UNSAFE responses!")
+
+        # Accuracy analysis
+        if accuracies:
+            avg_acc = sum(accuracies) / len(accuracies) * 100
+            print(f"\nACCURACY (chosen > rejected):")
+            print(f"  Current: {accuracies[-1]*100:.0f}%")
+            print(f"  Average: {avg_acc:.0f}%")
+
+            if avg_acc < 60:
+                print(f"  🚨 CRITICAL: Accuracy < 60% = worse than random guessing!")
+            elif avg_acc < 80:
+                print(f"  ⚠️  WARNING: Accuracy < 80% = model learning WRONG preferences!")
+
+        # Reward margins
+        if reward_margins:
+            avg_reward_margin = sum(reward_margins) / len(reward_margins)
+            print(f"\nREWARD MARGIN:")
+            print(f"  Current: {reward_margins[-1]:.4f}")
+            print(f"  Average: {avg_reward_margin:.4f}")
+
+        # Validation metrics
+        eval_margins = [log.get('eval_rewards/margins', log.get('eval_rewards/margin')) for log in recent_logs if 'eval_rewards/margins' in log or 'eval_rewards/margin' in log]
+        eval_accs = [log['eval_rewards/accuracies'] for log in recent_logs if 'eval_rewards/accuracies' in log]
+
+        if eval_margins or eval_accs:
+            print(f"\nVALIDATION:")
+            if eval_margins:
+                print(f"  eval_margin: {eval_margins[-1]:.4f}")
+            if eval_accs:
+                val_acc = eval_accs[-1]*100
+                print(f"  eval_accuracy: {val_acc:.0f}%")
+                if val_acc < 70:
+                    print(f"  🚨 CRITICAL: Validation accuracy < 70%!")
