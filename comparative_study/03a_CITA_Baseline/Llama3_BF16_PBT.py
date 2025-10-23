@@ -753,6 +753,8 @@ def main(num_workers=4, max_steps=1000, base_model=None, force_skip=False):
             hf_repo=HF_REPO,
             config_path=config_path,
             run_name=RUN_NAME,
+            metric_name="cita/margin",  # Training metric (will map to eval_rewards/margins for comparison)
+            metric_mode="max",  # Higher margin is better
             skip_local_backup=training_skipped  # Skip if inference-only mode
         )
 

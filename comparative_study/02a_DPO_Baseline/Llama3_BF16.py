@@ -640,7 +640,7 @@ Examples:
             hf_repo=HF_REPO,
             config_path=str(config_path),
             run_name=RUN_NAME,
-            metric_name="rewards/margin",
+            metric_name="rewards/margins",  # Plural! (matches trainer_state.json)
             metric_mode="max",  # Higher margin is better
             skip_local_backup=training_skipped  # Skip if inference-only mode
         )
