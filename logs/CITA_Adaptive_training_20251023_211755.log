@@ -1,4 +1,4 @@
-📝 Logging initialized: /home/ubuntu/finetuning_evaluation/logs/CITA_Adaptive_training_20251023_170001.log
+📝 Logging initialized: /home/ubuntu/finetuning_evaluation/logs/CITA_Adaptive_training_20251023_211755.log
 📝 All terminal output will be saved to this log file
 📝 For guaranteed unbuffered output, run with: python -u <script.py>
 ================================================================================
@@ -13,17 +13,9 @@
 ================================================================================
 ⏱️  TIME ESTIMATE
 ================================================================================
-Time per trial: 17.3 min
-Total (no pruning): 86.5 min (1.4 hours)
-Total (with early stopping): 73.5 min (1.2 hours)
-
-Early stopping:
-  - Checks at steps: 50, 100, 150, 200
-  - Stops immediately on: gibberish OR negative margin OR high KL
-  - Expected pruning: 15-20% of trials
+Time per trial: 19.5 min (no early stop)
+Total (no early stopping): 97.5 min (1.6 hours)
+Total (with early stopping): 48.8 min (0.8 hours)
 ================================================================================
 
-Proceed with 5 trials? (y/n): Traceback (most recent call last):
-  File "/home/ubuntu/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py", line 636, in <module>
-    proceed = input(f"Proceed with {n_trials} trials? (y/n): ").strip().lower()
-EOFError: EOF when reading a line
+Proceed with 5 trials? (y/n): Aborted

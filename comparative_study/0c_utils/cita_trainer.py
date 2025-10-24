@@ -1,14 +1,19 @@
 """
-CITA Trainer - Contrastive Instruction-Tuned Alignment
+CITA Trainer - Contrastive Instruction-Tuned Alignment (Stacked Training Edition)
 Based on Ecliptica paper (Legacy_code/2025_Ecliptica.pdf pages 5-7)
-Implements Unified Loss: L_SFT + λ₁·L_DPO + λ₂·L_KL
+
+ORIGINAL CITA: L_unified = L_SFT + λ_DPO·L_DPO + λ_KL·L_KL
+STACKED TRAINING (Base→SFT→DPO→CITA): L_unified = λ_DPO·L_DPO + λ_KL·L_KL
+
+Changes for Stacked Training:
+- Removed L_SFT (causes catastrophic interference on DPO-tuned models)
+- Uses DPOTrainer.dpo_loss() for apple-to-apple comparison with DPO baseline
+- Adds explicit L_KL regularization on top of DPO
 """
 
 import torch
-import torch.nn.functional as F
 from trl import DPOTrainer
 from typing import Dict, Optional, Tuple
-from copy import deepcopy
 
 
 class CITATrainer(DPOTrainer):
@@ -51,24 +56,40 @@ class CITATrainer(DPOTrainer):
         tokenizer,
         args,
         train_dataset,
-        lambda_sft: float = 1.0,
         lambda_dpo: float = 1.0,
         lambda_kl: float = 0.01,
         beta: float = 0.1,
         **kwargs
     ):
         """
-        Initialize CITA Trainer with Unified Loss
+        Initialize CITA Trainer for Stacked Training (Base→SFT→DPO→CITA)
 
         Args:
-            model: Policy model to fine-tune
+            model: Policy model to fine-tune (should be DPO-tuned for stacked training)
             tokenizer: Tokenizer
             args: DPOConfig
             train_dataset: Dataset in DPO format (prompt, chosen, rejected)
-            lambda_sft: Weight for SFT loss (default 1.0)
             lambda_dpo: Weight for DPO loss (default 1.0)
             lambda_kl: Weight for KL regularization (default 0.01)
-            beta: Contrastive temperature (default 0.1)
+            beta: Contrastive temperature (default 0.1, usually set in DPOConfig)
+
+        Stacked Training Design:
+            L_unified = λ_DPO·L_DPO + λ_KL·L_KL  (NO L_SFT!)
+
+            WHY NO L_SFT?
+            - Model is already DPO-tuned (margin=2.95, knows preferences)
+            - Adding L_SFT forces relearning chosen responses from scratch
+            - Result: Catastrophic interference (margin collapses 2.95 → 0.10)
+            - See logs_training/iter2/report.md:148-178 for detailed analysis
+
+        Apple-to-Apple Comparison:
+            - Uses DPOTrainer.dpo_loss() (EXACT same L_DPO as baseline)
+            - Adds explicit L_KL regularization on top of DPO
+            - Any improvement is from L_KL, not implementation differences
+
+        Original CITA (Ecliptica paper - NOT applicable here):
+            L_unified = L_SFT + λ_DPO·L_DPO + λ_KL·L_KL
+            Designed for Base → CITA (skip SFT/DPO stages)
         """
         super().__init__(
             model=model,
@@ -81,7 +102,6 @@ class CITATrainer(DPOTrainer):
         if lambda_kl <= 0:
             raise ValueError(f"lambda_kl must be > 0 (got {lambda_kl})")
 
-        self.lambda_sft = lambda_sft
         self.lambda_dpo = lambda_dpo
         self.lambda_kl = lambda_kl
         # Note: DPOTrainer already creates ref_model, no need to override
@@ -90,9 +110,9 @@ class CITATrainer(DPOTrainer):
         self,
         model,
         inputs: Dict[str, torch.Tensor]
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
         """
-        Helper method to compute all three loss components.
+        Helper method to compute DPO and KL loss components (NO L_SFT for stacked training).
         Extracted to avoid code duplication between compute_loss() and get_batch_metrics().
 
         Args:
@@ -100,83 +120,70 @@ class CITATrainer(DPOTrainer):
             inputs: Batch of tokenized inputs (DPO format)
 
         Returns:
-            Tuple of (loss_sft, loss_dpo, loss_kl, auxiliary_outputs)
+            Tuple of (loss_dpo, loss_kl, auxiliary_outputs)
             where auxiliary_outputs contains:
                 - policy_chosen_logps
                 - policy_rejected_logps
                 - reference_chosen_logps
                 - reference_rejected_logps
-                - probs (softmax probabilities)
+                - chosen_rewards (from DPOTrainer.dpo_loss)
+                - rejected_rewards (from DPOTrainer.dpo_loss)
                 - margin
         """
         # ========================================================================
-        # STEP 1: Compute L_SFT (Supervised Fine-Tuning Loss)
+        # STEP 1: L_SFT REMOVED FOR STACKED TRAINING
         # ========================================================================
-        # Math: L_SFT = (1/N_SFT) ∑_{(x,y^chosen)} ∑_{t=1}^T log P_π(y_t^chosen | x, y_{<t}^chosen)
-        # Code: PyTorch CrossEntropyLoss over chosen responses (model's forward pass with labels)
+        # WHY NO L_SFT?
+        #   - Model is already DPO-tuned (margin=2.95, knows preferences)
+        #   - Adding L_SFT forces relearning chosen responses from scratch
+        #   - Result: Catastrophic interference (margin collapses 2.95 → 0.10)
+        #   - See report.md:148-178 for detailed analysis
+        #
+        # ORIGINAL CITA (Ecliptica paper):
+        #   L_unified = L_SFT + λ_DPO·L_DPO + λ_KL·L_KL
+        #
+        # STACKED TRAINING (Base→SFT→DPO→CITA):
+        #   L_unified = λ_DPO·L_DPO + λ_KL·L_KL  (NO L_SFT!)
         # ========================================================================
-        # Handle different TRL data formats
-        if "chosen_input_ids" in inputs:
-            # Newest TRL format: separate chosen/rejected keys
-            chosen_input_ids = inputs["chosen_input_ids"]
-            chosen_attention_mask = inputs["chosen_attention_mask"]
-        elif "concatenated_input_ids" in inputs:
-            # Older TRL format: concatenated batches [chosen, rejected]
-            concatenated_input_ids = inputs["concatenated_input_ids"]
-            concatenated_batch_size = concatenated_input_ids.shape[0]
-            chosen_batch_size = concatenated_batch_size // 2
-            chosen_input_ids = concatenated_input_ids[:chosen_batch_size]
-            chosen_attention_mask = inputs["concatenated_attention_mask"][:chosen_batch_size]
-        elif "input_ids" in inputs:
-            # Legacy fallback: use input_ids
-            concatenated_input_ids = inputs["input_ids"]
-            concatenated_batch_size = concatenated_input_ids.shape[0]
-            chosen_batch_size = concatenated_batch_size // 2
-            chosen_input_ids = concatenated_input_ids[:chosen_batch_size]
-            chosen_attention_mask = inputs["attention_mask"][:chosen_batch_size]
-        else:
-            raise KeyError(f"Expected DPO format keys in inputs, got: {inputs.keys()}")
-
-        # Create labels for causal LM (mask padding tokens)
-        chosen_labels = chosen_input_ids.clone()
-        chosen_labels[chosen_attention_mask == 0] = -100
-
-        outputs_chosen = model(
-            input_ids=chosen_input_ids,
-            attention_mask=chosen_attention_mask,
-            labels=chosen_labels
-        )
-        loss_sft = outputs_chosen.loss
 
         # ========================================================================
         # STEP 2: Compute L_DPO (Direct Preference Optimization Loss)
         # ========================================================================
-        # IMPLEMENTATION DECISION: Standard DPO (Rafailov et al. 2023)
+        # IMPLEMENTATION DECISION: Use DPOTrainer's dpo_loss() method (Apple-to-Apple Comparison)
         #
-        # Proposal (Loss_Fully_explanded.png):
-        #   L_DPO = -(1/N_DPO) ∑ log σ(β·[log π_θ(y^+|x) - log π_θ(y^-|x)])
-        #   (No reference model in contrastive term - relies on separate L_KL)
+        # WHY USE DPOTrainer's dpo_loss() instead of custom implementation?
         #
-        # Standard DPO (Rafailov et al. 2023 - IMPLEMENTED HERE):
-        #   L_DPO = -(1/N_DPO) ∑ log σ(β·[(log π_θ(y^+|x) - log π_ref(y^+|x)) -
-        #                                 (log π_θ(y^-|x) - log π_ref(y^-|x))])
-        #   (Reference model included in contrastive term)
+        # ✅ PROS:
+        #   1. **Apple-to-apple comparison**: EXACT same L_DPO as DPO baseline
+        #      - Ensures fair comparison: any CITA improvement is from L_KL, not implementation
+        #      - Same formula, same numerical precision, same edge case handling
         #
-        # Why Standard DPO?
-        #   1. Proven formula (Rafailov 2023, HuggingFace TRL, all production implementations)
-        #   2. Anchors preference learning to reference baseline (prevents arbitrary drift)
-        #   3. Explicit L_KL provides additional regularization (addresses 2024 research concerns)
-        #   4. Conservative approach: double regularization (implicit in DPO + explicit L_KL)
+        #   2. **Automatic TRL updates**: Benefits from library improvements
+        #      - Liger kernel support (2024): 80% memory savings via use_liger_loss=True
+        #      - Padding-free training: Removes wasted compute on padding tokens
+        #      - Future optimizations: Get improvements for free
+        #
+        #   3. **Multiple loss types**: Can experiment beyond sigmoid
+        #      - loss_type="sigmoid" (standard DPO - default)
+        #      - loss_type="hinge", "ipo", "robust" (alternative formulations)
+        #      - Set via self.args.loss_type in DPOConfig
+        #
+        #   4. **Cleaner code**: 1 line vs 5 lines of manual sigmoid/softmax
+        #
+        #   5. **No performance loss**: SAME forward pass as custom implementation
+        #      - Still uses self.concatenated_forward() (inherited from DPOTrainer)
+        #      - Still uses self.compute_ref_log_probs() (inherited from DPOTrainer)
+        #      - Only difference: who computes final sigmoid/log (us vs library)
+        #
+        # ❌ CONS:
+        #   - Method call overhead: ~1-2% slower (negligible)
         #
         # Math: L_DPO = -log(P^+) where P^+ = exp(β·r^+) / [exp(β·r^+) + exp(β·r^-)]
         #       r^+ = (log π_θ(y^+|x) - log π_ref(y^+|x))  <- reward for chosen
         #       r^- = (log π_θ(y^-|x) - log π_ref(y^-|x))  <- reward for rejected
-        #
-        # Code: logits_chosen = β * (policy_chosen_logps - reference_chosen_logps)
-        #       logits_rejected = β * (policy_rejected_logps - reference_rejected_logps)
-        #       P^+ = softmax([logits_chosen, logits_rejected])[:, 0]
-        #       loss_dpo = -log(P^+)
         # ========================================================================
+
+        # Get policy log probs (concatenated forward pass - efficient!)
         model_output = self.concatenated_forward(model, inputs)
         policy_chosen_logps = model_output["chosen_logps"]
         policy_rejected_logps = model_output["rejected_logps"]
@@ -188,12 +195,16 @@ class CITATrainer(DPOTrainer):
         else:
             reference_chosen_logps, reference_rejected_logps = self.compute_ref_log_probs(inputs)
 
-        # DPO contrastive loss (Standard DPO with reference model)
-        logits_chosen = self.beta * (policy_chosen_logps - reference_chosen_logps)
-        logits_rejected = self.beta * (policy_rejected_logps - reference_rejected_logps)
-        logits_concat = torch.stack([logits_chosen, logits_rejected], dim=1)
-        probs = F.softmax(logits_concat, dim=1)
-        loss_dpo = -torch.log(probs[:, 0] + 1e-10).mean()
+        # ✅ USE DPOTrainer's dpo_loss() method (apple-to-apple comparison with baseline)
+        # Returns: (loss, chosen_rewards, rejected_rewards)
+        loss_type = getattr(self.args, 'loss_type', 'sigmoid')  # Default to sigmoid if not set
+        loss_dpo, chosen_rewards, rejected_rewards = self.dpo_loss(
+            policy_chosen_logps,
+            policy_rejected_logps,
+            reference_chosen_logps,
+            reference_rejected_logps,
+            loss_type=loss_type
+        )
 
         # ========================================================================
         # STEP 3: Compute L_KL (KL Divergence Regularization)
@@ -221,14 +232,14 @@ class CITATrainer(DPOTrainer):
             "policy_rejected_logps": policy_rejected_logps,
             "reference_chosen_logps": reference_chosen_logps,
             "reference_rejected_logps": reference_rejected_logps,
-            "probs": probs,
+            "chosen_rewards": chosen_rewards,  # From DPOTrainer.dpo_loss()
+            "rejected_rewards": rejected_rewards,  # From DPOTrainer.dpo_loss()
             "margin": margin,
             "kl_chosen": kl_chosen,
             "kl_rejected": kl_rejected,
-            "outputs_chosen": outputs_chosen,  # For return_outputs in compute_loss
         }
 
-        return loss_sft, loss_dpo, loss_kl, auxiliary_outputs
+        return loss_dpo, loss_kl, auxiliary_outputs
 
     def compute_loss(
         self,
@@ -238,14 +249,17 @@ class CITATrainer(DPOTrainer):
         num_items_in_batch: Optional[int] = None
     ):
         """
-        Compute Unified Loss: L_unified = L_SFT + λ₁·L_DPO + λ₂·L_KL
+        Compute Unified Loss for Stacked Training: L_unified = λ_DPO·L_DPO + λ_KL·L_KL
 
-        Per Ecliptica PDF (Loss_Fully_explanded.png):
-        - L_SFT: Supervised fine-tuning on chosen responses
-        - L_DPO: Direct preference optimization (contrastive)
-        - L_KL: KL divergence to reference model
+        STACKED TRAINING (Base→SFT→DPO→CITA):
+        - L_DPO: Direct preference optimization (uses DPOTrainer.dpo_loss() - apple-to-apple)
+        - L_KL: KL divergence to reference model (additional regularization)
+        - NO L_SFT: Model already learned from DPO, adding L_SFT causes catastrophic interference
 
-        All three losses computed simultaneously in SAME forward pass.
+        ORIGINAL CITA (Ecliptica PDF - Base→CITA):
+        - L_unified = L_SFT + λ_DPO·L_DPO + λ_KL·L_KL
+        - Required L_SFT to teach safe responses from scratch
+        - Not applicable for stacked training on DPO-tuned models
 
         Args:
             model: Policy model
@@ -256,37 +270,31 @@ class CITATrainer(DPOTrainer):
         Returns:
             loss or (loss, outputs) depending on return_outputs
         """
-        # Compute all loss components using helper method (DRY principle)
-        loss_sft, loss_dpo, loss_kl, aux = self._compute_loss_components(model, inputs)
+        # Compute DPO and KL loss components (NO L_SFT for stacked training)
+        loss_dpo, loss_kl, aux = self._compute_loss_components(model, inputs)
 
-        # Unified Loss
+        # Unified Loss (NO lambda_sft - always 0 for stacked training)
         loss = (
-            self.lambda_sft * loss_sft +
             self.lambda_dpo * loss_dpo +
             self.lambda_kl * loss_kl
         )
 
         # Logging (every logging_steps)
         if self.state.global_step % self.args.logging_steps == 0:
-            # Compute reward metrics (DPO standard)
-            rewards_chosen = self.beta * (aux["policy_chosen_logps"] - aux["reference_chosen_logps"])
-            rewards_rejected = self.beta * (aux["policy_rejected_logps"] - aux["reference_rejected_logps"])
+            # Use rewards from DPOTrainer.dpo_loss() (apple-to-apple comparison)
+            rewards_chosen = aux["chosen_rewards"]
+            rewards_rejected = aux["rejected_rewards"]
             rewards_accuracies = (rewards_chosen > rewards_rejected).float()
 
-            # Compute perplexity (standard LM quality metric)
-            perplexity = torch.exp(loss_sft)
-
             log_metrics = {
-                # Total loss
+                # Total loss (DPO + KL only, no SFT for stacked training)
                 "cita/loss_total": loss.item(),
 
-                # Loss components
-                "cita/loss_sft": loss_sft.item(),
+                # Loss components (NO loss_sft - removed for stacked training)
                 "cita/loss_dpo": loss_dpo.item(),
                 "cita/loss_kl": loss_kl.item(),
 
-                # Hyperparameters
-                "cita/lambda_sft": self.lambda_sft,
+                # Hyperparameters (NO lambda_sft - always 0 for stacked training)
                 "cita/lambda_dpo": self.lambda_dpo,
                 "cita/lambda_kl": self.lambda_kl,
 
@@ -305,21 +313,17 @@ class CITATrainer(DPOTrainer):
                 "cita/kl_chosen": aux["kl_chosen"].mean().item(),
                 "cita/kl_rejected": aux["kl_rejected"].mean().item(),
 
-                # Preference probability (should increase during training)
-                "cita/prob_chosen": aux["probs"][:, 0].mean().item(),
-
-                # Reward metrics (DPO standard) - more interpretable than raw margin
+                # Reward metrics (from DPOTrainer.dpo_loss - apple-to-apple with baseline)
                 "rewards/chosen": rewards_chosen.mean().item(),
                 "rewards/rejected": rewards_rejected.mean().item(),
                 "rewards/accuracies": rewards_accuracies.mean().item(),
                 "rewards/margin": (rewards_chosen - rewards_rejected).mean().item(),
-
-                # Perplexity (standard LM quality metric) - detects degradation early
-                "cita/perplexity": perplexity.item(),
             }
             self.log(log_metrics)
 
-        return (loss, aux["outputs_chosen"]) if return_outputs else loss
+        # No outputs_chosen since we removed L_SFT computation
+        # DPOTrainer's standard return is just loss
+        return loss
 
     def get_batch_metrics(
         self,
@@ -328,32 +332,29 @@ class CITATrainer(DPOTrainer):
         train_eval: str = "train"
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
         """
-        Compute batch metrics for evaluation using unified loss.
+        Compute batch metrics for evaluation using unified loss (stacked training).
 
         Returns:
-            loss: Total CITA unified loss (L_SFT + λ₁·L_DPO + λ₂·L_KL)
+            loss: Total CITA unified loss (λ_DPO·L_DPO + λ_KL·L_KL, NO L_SFT)
             metrics: Dict of evaluation metrics
         """
         # Forward pass with no gradients
         with torch.no_grad():
             # Use same helper method as compute_loss() (DRY principle)
-            loss_sft, loss_dpo, loss_kl, aux = self._compute_loss_components(model, batch)
+            loss_dpo, loss_kl, aux = self._compute_loss_components(model, batch)
 
-            # Unified loss (consistent with compute_loss)
+            # Unified loss (consistent with compute_loss - NO lambda_sft)
             loss = (
-                self.lambda_sft * loss_sft +
                 self.lambda_dpo * loss_dpo +
                 self.lambda_kl * loss_kl
             )
 
-            # Metrics
+            # Metrics (NO loss_sft - removed for stacked training)
             metrics = {
                 f"{train_eval}/loss": loss.item(),
-                f"{train_eval}/loss_sft": loss_sft.item(),
                 f"{train_eval}/loss_dpo": loss_dpo.item(),
                 f"{train_eval}/loss_kl": loss_kl.item(),
                 f"{train_eval}/margin": aux["margin"].mean().item(),
-                f"{train_eval}/prob_chosen": aux["probs"][:, 0].mean().item(),
                 f"{train_eval}/kl_chosen": aux["kl_chosen"].mean().item(),
                 f"{train_eval}/kl_rejected": aux["kl_rejected"].mean().item(),
             }
