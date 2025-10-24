@@ -27,10 +27,9 @@ MANIFEST
 *llama.cpp
 *lora_model
 *model
-*outputs
+# *outputs  # COMMENTED: Allow outputs/ directory
 lora_model*
 *.pkl
-tensorboard_logs/
 datasets
 datasets/raw
 test_output
@@ -130,15 +129,18 @@ wandb/
 # tensorboard_logs/
 lightning_logs/
 
-# Large output files and checkpoints
-outputs/*/checkpoints/
-outputs/*/adapter/
-outputs/*/cache/
-outputs/*/*.arrow
-outputs/*/*.bin
-outputs/*/*.safetensors
-outputs/*/*.pt
-outputs/*/kfac_matrices/
+# Large output files and checkpoints (ALLOW metadata, BLOCK binaries)
+# Keep: *.json, README.md, .db files (small metadata)
+# Block: Large binaries only
+outputs/**/optimizer.pt        # 160MB+ optimizer state
+outputs/**/scheduler.pt        # Large scheduler state
+outputs/**/*.safetensors       # 80MB+ model weights
+outputs/**/tokenizer.json      # 17MB tokenizer (can rebuild)
+outputs/**/*.arrow             # Large Arrow datasets
+outputs/**/checkpoints/        # Old rule (redundant with above)
+outputs/**/adapter/            # Old rule
+outputs/**/cache/              # Old rule
+outputs/**/kfac_matrices/      # Old rule
 
 # NVIDIA libraries in virtual environment
 **/nvidia/

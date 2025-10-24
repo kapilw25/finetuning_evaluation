@@ -32,7 +32,8 @@
       "WebFetch(domain:ai.stackexchange.com)",
       "WebFetch(domain:chenhuiyu.github.io)",
       "WebFetch(domain:docs.pytorch.org)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

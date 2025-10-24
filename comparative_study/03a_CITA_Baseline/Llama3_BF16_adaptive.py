@@ -110,18 +110,13 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     # Get training config values
     per_device_batch = 1
     grad_accum = 8
-    check_every_n_steps = 50
-    stop_on_gibberish = True
-    stop_on_negative_margin = False  # Disabled for apple-to-apple comparison with DPO baseline
-    stop_on_high_kl = True
 
     print(f"")
     print(f"  Training config:")
     print(f"  - Max steps: {max_steps}")
     print(f"  - Batch size: {per_device_batch} (per device)")
     print(f"  - Gradient accumulation: {grad_accum} (effective batch = {per_device_batch * grad_accum})")
-    print(f"  - Safety checks: Every {check_every_n_steps} steps")
-    print(f"  - Early stopping: gibberish={stop_on_gibberish}, negative_margin={stop_on_negative_margin} (DISABLED for fair comparison), high_kl={stop_on_high_kl}")
+    print(f"  - Callbacks: TrainingSummaryCallback only (matches DPO baseline)")
     print(f"{'='*80}\n")
 
     # ===== LOAD MODEL & TOKENIZER =====
@@ -193,9 +188,9 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         return_val=True   # 10% of train split
     )
 
-    # Format dataset for CITA (DPO format)
-    train_dataset = format_dataset(dataset_raw_train, method="cita")
-    val_dataset = format_dataset(dataset_raw_val, method="cita")
+    # Format dataset (DPO format - required by CITATrainer which inherits from DPOTrainer)
+    train_dataset = format_dataset(dataset_raw_train, method="dpo")
+    val_dataset = format_dataset(dataset_raw_val, method="dpo")
 
     # ===== CREATE TRAINING ARGS =====
     trial_output_dir = project_root / "outputs" / "CITA_Adaptive" / f"trial_{trial.number}"
@@ -235,33 +230,10 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         max_prompt_length=1024,
     )
 
-    # ===== CALLBACKS: SAFETY MONITORING + TRAINING SUMMARY =====
-    from model_utils import get_test_prompts
-    from monitoring_callback import GibberishDetectionCallback, TrainingSummaryCallback
+    # ===== CALLBACKS: TRAINING SUMMARY ONLY (MATCHES DPO BASELINE) =====
+    from monitoring_callback import TrainingSummaryCallback
 
-    test_prompts = get_test_prompts()
-
-    # Safety monitoring callback config
-    check_every_n_steps = 50
-    stop_on_gibberish = True
-    stop_on_negative_margin = False  # Disabled for apple-to-apple comparison with DPO baseline
-    stop_on_high_kl = True
-
-    safety_callback = GibberishDetectionCallback(
-        test_prompts=test_prompts,
-        check_every_n_steps=check_every_n_steps,
-        repetition_threshold=0.5,
-        diversity_threshold=15,
-        stop_on_gibberish=stop_on_gibberish,
-        use_alpaca_format=True,
-        stop_on_negative_margin=stop_on_negative_margin,
-        margin_tolerance=0.0,
-        stop_on_high_kl=stop_on_high_kl,
-        kl_threshold=0.5,
-        trial=trial  # Pass trial for Optuna pruning
-    )
-
-    # ✅ TRAINING SUMMARY (prints every 50 steps)
+    # ✅ TRAINING SUMMARY (prints every 50 steps) - MATCHES DPO BASELINE
     summary_callback = TrainingSummaryCallback(
         training_method="cita",
         check_every_n_steps=50,
@@ -278,7 +250,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         lambda_kl=lambda_kl,
-        callbacks=[safety_callback, summary_callback],
+        callbacks=[summary_callback],  # Only summary, no safety (matches DPO baseline)
     )
 
     # ===== SHOW GPU MEMORY (BEFORE TRAINING) =====
@@ -320,19 +292,8 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
 
     # ===== CHECK IF STOPPED EARLY =====
     if current_step < max_steps:
-        # Stopped early - check why
-        prune_reasons = []
-
-        if hasattr(safety_callback, 'negative_margin_violations') and safety_callback.negative_margin_violations > 0:
-            prune_reasons.append(f"negative margin (×{safety_callback.negative_margin_violations})")
-
-        if hasattr(safety_callback, 'kl_violations') and safety_callback.kl_violations > 0:
-            prune_reasons.append(f"high KL (×{safety_callback.kl_violations})")
-
-        if not prune_reasons:
-            prune_reasons.append("gibberish detected")
-
-        prune_message = f"Early stop at step {current_step}: {', '.join(prune_reasons)}"
+        # Stopped early (Optuna Hyperband pruning, no safety callbacks)
+        prune_message = f"Early stop at step {current_step}: Hyperband pruning"
         print(f"\n⚠️  {prune_message}")
         margin_str = f"{final_margin:.4f}" if final_margin is not None else "N/A"
         accuracy_str = f"{final_accuracy:.4f}" if final_accuracy is not None else "N/A"
