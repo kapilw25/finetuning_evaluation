@@ -1,0 +1,17 @@
+{
+  "method": "CITA_Adaptive_MultiObjective",
+  "max_steps": 400,
+  "best_trial": 0,
+  "best_margin": 4.3459,
+  "best_accuracy": 0.8863,
+  "best_neg_chosen": 2.2390,
+  "total_trials": 1,
+  "completed_trials": 1,
+  "pruned_trials": 0,
+  "pareto_optimal_trials": 1,
+  "lambda_kl": 0.0011872700594236813,
+  "learning_rate": 1.176258e-05,
+  "beta": 0.1093,
+  "weight_decay": 0.0104,
+  "warmup_steps": 103
+}
