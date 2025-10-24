@@ -3,7 +3,7 @@ library_name: transformers
 tags:
 - alignment
 - safety
-- sft
+- dpo
 - llama-3
 base_model: meta-llama/Llama-3.1-8B
 datasets:
@@ -11,22 +11,22 @@ datasets:
 license: llama3.1
 ---
 
-# llama3-8b-pku-sft-baseline-bf16
+# llama3-8b-pku-dpo-sft-bf16
 
-Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **SFT** (Supervised Fine-Tuning on chosen responses only) on the PKU-SafeRLHF dataset for improved safety alignment.
+Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **DPO** (Direct Preference Optimization (alignment via preference pairs)) on the PKU-SafeRLHF dataset for improved safety alignment.
 
 ## Model Details
 
 - **Base Model**: [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B)
-- **Fine-tuning Method**: SFT
+- **Fine-tuning Method**: DPO
 - **Dataset**: [PKU-SafeRLHF](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF) (10,813 samples)
-- **Training Date**: 2024-10-24
+- **Training Date**: 2025-10-24
 - **Precision**: BF16 (bfloat16)
 - **Adapter Type**: LoRA (r=16, alpha=16, ~168MB)
 
 ## Training Hyperparameters
 
-- **Learning Rate**: 0.0002
+- **Learning Rate**: 1e-05
 - **Batch Size** (per device): 2
 - **Gradient Accumulation Steps**: 4 (effective batch size: 8)
 - **Warmup Steps**: 100
@@ -34,11 +34,13 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **SFT** (Supervised Fin
 - **Weight Decay**: 0.01
 - **LR Scheduler**: cosine
 - **Optimizer**: adamw_torch
+- **Beta** (DPO temperature): 0.1
 - **Max Sequence Length**: 2048
+- **Max Prompt Length**: 1024
 
 ## Evaluation Results
 
-- **Final Loss**: 1.5136
+- **Final Rewards Margins**: 5.5151
 
 ## Usage
 
@@ -55,10 +57,10 @@ base_model = AutoModelForCausalLM.from_pretrained(
 )
 
 # Load LoRA adapter
-model = PeftModel.from_pretrained(base_model, "kapilw25/llama3-8b-pku-sft-baseline-bf16")
+model = PeftModel.from_pretrained(base_model, "kapilw25/llama3-8b-pku-dpo-sft-bf16")
 
 # Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained("kapilw25/llama3-8b-pku-sft-baseline-bf16")
+tokenizer = AutoTokenizer.from_pretrained("kapilw25/llama3-8b-pku-dpo-sft-bf16")
 
 # Generate
 messages = [{"role": "user", "content": "Explain quantum computing"}]
@@ -89,12 +91,12 @@ Llama 3.1 Community License (same as base model)
 ## Citation
 
 ```bibtex
-@misc{llama3_8b_pku_sft_baseline_bf16_2024,
+@misc{llama3_8b_pku_dpo_sft_bf16_2024,
   author = {User},
-  title = {llama3-8b-pku-sft-baseline-bf16},
+  title = {llama3-8b-pku-dpo-sft-bf16},
   year = {2024},
   publisher = {HuggingFace},
-  howpublished = {\url{https://huggingface.co/kapilw25/llama3-8b-pku-sft-baseline-bf16}}
+  howpublished = {\url{https://huggingface.co/kapilw25/llama3-8b-pku-dpo-sft-bf16}}
 }
 ```
 

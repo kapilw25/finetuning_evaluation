@@ -278,8 +278,9 @@ def apply_torch_compile(model):
 
         if torch_version >= (2, 4):
             # PyTorch 2.4+: Enable Memory Budget API for compatibility
-            import torch._functorch.config
-            torch._functorch.config.activation_memory_budget = 0.99
+            # Import without shadowing 'torch' variable
+            from torch import _functorch
+            _functorch.config.activation_memory_budget = 0.99
             print(f"✅ PyTorch {torch.__version__}: Memory Budget API enabled")
 
         # Compile model (10-20% speedup expected)
@@ -528,13 +529,13 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 # 8. HuggingFace Repo Mapping
 # ===================================================================
 
-# Model repository mapping (same for all training scripts)
+# Model repository mapping (reflects training pipeline: base → SFT → DPO → CITA)
 MODEL_NAME_MAP = {
-    "SFT_Baseline": "kapilw25/llama3-8b-pku-sft-baseline",
+    "SFT_Baseline": "kapilw25/llama3-8b-pku-sft-baseline",      # SFT trained on base model
     "SFT_GRIT": "kapilw25/llama3-8b-pku-sft-grit",
-    "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-baseline",
+    "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-sft",            # DPO trained on SFT (not baseline!)
     "DPO_GRIT": "kapilw25/llama3-8b-pku-dpo-grit",
-    "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-baseline",
+    "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-dpo",          # CITA trained on DPO (not baseline!)
     "CITA_Adaptive": "kapilw25/llama3-8b-pku-cita-adaptive",
     "CITA_GRIT": "kapilw25/llama3-8b-pku-cita-grit",
 }

@@ -480,10 +480,10 @@ Examples:
     print(f"Training will take approximately: {'~12 minutes' if max_steps == 200 else '~62 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
-        print(f"  1) Run inference only (use existing HF model)")
+        print(f"  1) Inference only from HF_repo (use existing HF model)")
         print(f"  2) Retrain and replace HF model (only if performance improves)")
     else:
-        print(f"  1) Skip training")
+        print(f"  1) Inference only from HF_repo")
         print(f"  2) Train and push to HuggingFace")
     print(f"{'='*80}")
 
