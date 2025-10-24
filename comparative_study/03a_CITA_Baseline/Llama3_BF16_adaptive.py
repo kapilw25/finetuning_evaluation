@@ -2,11 +2,6 @@
 Adaptive CITA Training Script (Optuna-based)
 Truly adaptive hyperparameter search using Optuna TPE + Hyperband
 
-Early Stopping Strategy:
-- Checks at steps: 50, 100, 150, 200 (NOT arbitrary steps)
-- Stops immediately on: gibberish OR negative margin OR high KL
-- Research-backed: 80% of harmful outputs detected within first 30%
-
 Time Estimates (DPO baseline: 34.55 min/200 steps = 0.173 min/step):
 - MVP mode (5 × 100 steps): ~87 min = 1.5 hours (with pruning: ~1.2 hours)
 - Sanity mode (27 × 200 steps): ~933 min = 15.5 hours (with pruning: ~13 hours)
@@ -112,13 +107,21 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     print(f"  beta:           {beta:.4f}")
     print(f"  weight_decay:   {weight_decay:.4f}")
     print(f"  warmup_steps:   {warmup_steps}")
+    # Get training config values
+    per_device_batch = 1
+    grad_accum = 8
+    check_every_n_steps = 50
+    stop_on_gibberish = True
+    stop_on_negative_margin = False  # Disabled for apple-to-apple comparison with DPO baseline
+    stop_on_high_kl = True
+
     print(f"")
     print(f"  Training config:")
     print(f"  - Max steps: {max_steps}")
-    print(f"  - Batch size: 1 (per device)")
-    print(f"  - Gradient accumulation: 8 (effective batch = 8)")
-    print(f"  - Safety checks: Every 50 steps")
-    print(f"  - Early stopping: Enabled (gibberish/negative margin/high KL)")
+    print(f"  - Batch size: {per_device_batch} (per device)")
+    print(f"  - Gradient accumulation: {grad_accum} (effective batch = {per_device_batch * grad_accum})")
+    print(f"  - Safety checks: Every {check_every_n_steps} steps")
+    print(f"  - Early stopping: gibberish={stop_on_gibberish}, negative_margin={stop_on_negative_margin} (DISABLED for fair comparison), high_kl={stop_on_high_kl}")
     print(f"{'='*80}\n")
 
     # ===== LOAD MODEL & TOKENIZER =====
@@ -164,6 +167,10 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         use_gradient_checkpointing=True
     )
 
+    # Cast to BF16 AFTER applying new LoRA adapters (to ensure all params including new LoRA weights are BF16)
+    model = model.to(torch.bfloat16)
+    print("✅ Model cast to BF16 (all params including LoRA)")
+
     # ===== TORCH.COMPILE() OPTIMIZATION =====
     from model_utils import apply_torch_compile
     model = apply_torch_compile(model)
@@ -205,8 +212,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         max_steps=max_steps,
         learning_rate=learning_rate,
         logging_steps=1,
-        optim="adamw_torch",
-        # optim="adamw_torch_fused",  # FIXED: Fused version handles BF16 correctly (adamw_torch has dtype bugs in PyTorch 2.5.1)
+        optim="adamw_torch",  # Merged model cast to BF16 for dtype consistency
         weight_decay=weight_decay,
         lr_scheduler_type="cosine",
         seed=3407,
@@ -235,20 +241,24 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
 
     test_prompts = get_test_prompts()
 
-    # ✅ AGGRESSIVE EARLY STOPPING
-    # Checks at steps: 50, 100, 150, 200 (check_every_n_steps=50)
-    # Stops immediately on: gibberish OR negative margin OR high KL
+    # Safety monitoring callback config
+    check_every_n_steps = 50
+    stop_on_gibberish = True
+    stop_on_negative_margin = False  # Disabled for apple-to-apple comparison with DPO baseline
+    stop_on_high_kl = True
+
     safety_callback = GibberishDetectionCallback(
         test_prompts=test_prompts,
-        check_every_n_steps=50,
+        check_every_n_steps=check_every_n_steps,
         repetition_threshold=0.5,
         diversity_threshold=15,
-        stop_on_gibberish=True,  # ✅ STOP IMMEDIATELY
+        stop_on_gibberish=stop_on_gibberish,
         use_alpaca_format=True,
-        stop_on_negative_margin=True,  # ✅ STOP IMMEDIATELY
+        stop_on_negative_margin=stop_on_negative_margin,
         margin_tolerance=0.0,
-        stop_on_high_kl=True,  # ✅ STOP IMMEDIATELY
-        kl_threshold=0.5
+        stop_on_high_kl=stop_on_high_kl,
+        kl_threshold=0.5,
+        trial=trial  # Pass trial for Optuna pruning
     )
 
     # ✅ TRAINING SUMMARY (prints every 50 steps)
@@ -292,9 +302,23 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         torch.cuda.empty_cache()
         raise optuna.TrialPruned("User interrupted training")
 
-    # ===== CHECK IF STOPPED EARLY =====
+    # ===== EXTRACT FINAL METRICS (MULTI-OBJECTIVE) =====
+    # Extract metrics FIRST (before checking early stop) so we always have values to return
     current_step = trainer.state.global_step
+    final_margin = None
+    final_accuracy = None
+    final_chosen = None
 
+    if hasattr(trainer.state, 'log_history') and len(trainer.state.log_history) > 0:
+        # Get most recent eval metrics
+        for log_entry in reversed(trainer.state.log_history):
+            if 'eval_rewards/margins' in log_entry:
+                final_margin = log_entry['eval_rewards/margins']
+                final_accuracy = log_entry.get('eval_rewards/accuracies', None)
+                final_chosen = log_entry.get('eval_rewards/chosen', None)
+                break
+
+    # ===== CHECK IF STOPPED EARLY =====
     if current_step < max_steps:
         # Stopped early - check why
         prune_reasons = []
@@ -310,51 +334,23 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
 
         prune_message = f"Early stop at step {current_step}: {', '.join(prune_reasons)}"
         print(f"\n⚠️  {prune_message}")
+        margin_str = f"{final_margin:.4f}" if final_margin is not None else "N/A"
+        accuracy_str = f"{final_accuracy:.4f}" if final_accuracy is not None else "N/A"
+        print(f"   Partial metrics: margin={margin_str}, accuracy={accuracy_str}")
 
+        # DON'T raise TrialPruned - return partial metrics instead
+        # This allows Optuna multi-objective to use early-stopped trials
+        trial.set_user_attr("early_stopped", True)
+        trial.set_user_attr("stop_reason", prune_message)
+
+    # ===== CHECK IF NO METRICS =====
+    if final_margin is None:
+        # No metrics at all - cannot proceed
+        print(f"\n❌ Trial {trial.number}: No eval metrics found")
         del model
         del trainer
         torch.cuda.empty_cache()
-
-        raise optuna.TrialPruned(prune_message)
-
-    # ===== EXTRACT FINAL MARGIN =====
-    final_margin = None
-
-    if hasattr(trainer.state, 'log_history') and len(trainer.state.log_history) > 0:
-        for log_entry in reversed(trainer.state.log_history):
-            if 'cita/margin' in log_entry:
-                final_margin = log_entry['cita/margin']
-                break
-            elif 'eval_cita/margin' in log_entry:
-                final_margin = log_entry['eval_cita/margin']
-                break
-
-    # ===== CHECK FINAL MARGIN =====
-    if final_margin is not None:
-        if final_margin <= 0:
-            print(f"\n❌ Trial {trial.number}: Final margin = {final_margin:.4f} (≤ 0)")
-            del model
-            del trainer
-            torch.cuda.empty_cache()
-            raise optuna.TrialPruned(f"Negative final margin: {final_margin:.4f}")
-    else:
-        # No margin - use eval_loss
-        print(f"\n⚠️  No margin found, falling back to eval_loss")
-        for log_entry in reversed(trainer.state.log_history):
-            if 'eval_loss' in log_entry:
-                final_eval_loss = log_entry['eval_loss']
-                print(f"   Final eval_loss: {final_eval_loss:.4f}")
-                del model
-                del trainer
-                torch.cuda.empty_cache()
-                return -final_eval_loss
-
-        # No metrics
-        print(f"\n❌ Trial {trial.number}: No metrics found")
-        del model
-        del trainer
-        torch.cuda.empty_cache()
-        raise optuna.TrialPruned("No metrics found")
+        raise optuna.TrialPruned("No eval metrics found")
 
     # ===== SHOW FINAL MEMORY =====
     used_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
@@ -383,6 +379,8 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         "warmup_steps": warmup_steps,
         "max_steps": max_steps,
         "final_margin": final_margin,
+        "final_accuracy": final_accuracy,
+        "final_chosen": final_chosen,
         "completed_steps": current_step,
     }
 
@@ -391,7 +389,10 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
 
     print(f"\n{'='*80}")
     print(f"✅ Trial {trial.number} complete!")
-    print(f"   Final margin: {final_margin:.4f}")
+    print(f"   Final metrics:")
+    print(f"     - Margin: {final_margin:.4f}")
+    print(f"     - Accuracy: {final_accuracy:.4f}" if final_accuracy is not None else "     - Accuracy: N/A")
+    print(f"     - Chosen reward: {final_chosen:.4f}" if final_chosen is not None else "     - Chosen reward: N/A")
     print(f"   Checkpoint saved: {lora_output_dir}")
     print(f"{'='*80}\n")
 
@@ -400,7 +401,13 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     del trainer
     torch.cuda.empty_cache()
 
-    return final_margin
+    # Return multi-objective metrics: (margin, accuracy, -chosen)
+    # Note: negate chosen because less negative = better, but Optuna maximizes
+    return (
+        final_margin,                              # Objective 1: maximize margin
+        final_accuracy if final_accuracy else 0.0,  # Objective 2: maximize accuracy
+        -final_chosen if final_chosen else 0.0     # Objective 3: maximize (-chosen) = minimize chosen
+    )
 
 
 # ===================================================================
@@ -433,6 +440,32 @@ def run_optuna_cita_search(
     # Ensure outputs directory exists (SQLite needs parent directory)
     Path(storage_path).parent.mkdir(parents=True, exist_ok=True)
 
+    # ===== ASK: FRESH RUN OR CONTINUE? =====
+    db_exists = Path(storage_path).exists()
+
+    if db_exists:
+        print(f"\n{'='*80}")
+        print(f"📊 EXISTING OPTUNA DATABASE FOUND")
+        print(f"{'='*80}")
+        print(f"Location: {storage_path}")
+        print(f"\nOptions:")
+        print(f"  1) Fresh run (delete previous trials, start from scratch)")
+        print(f"  2) Continue from previous run (load existing trials)")
+        print(f"{'='*80}\n")
+
+        choice = input("Select option (1 or 2): ").strip()
+
+        if choice == "1":
+            print(f"\n🗑️  Deleting previous database: {storage_path}")
+            Path(storage_path).unlink()
+            print(f"✅ Database deleted. Starting fresh run.\n")
+        elif choice == "2":
+            print(f"\n♻️  Continuing from previous run.\n")
+        else:
+            print(f"\n⚠️  Invalid choice '{choice}'. Defaulting to continue (option 2).\n")
+    else:
+        print(f"\n✅ No existing database found. Starting fresh run.\n")
+
     print(f"\n{'='*80}")
     print(f"🔬 OPTUNA ADAPTIVE SEARCH FOR CITA")
     print(f"{'='*80}")
@@ -448,7 +481,7 @@ def run_optuna_cita_search(
 
     study = optuna.create_study(
         study_name=study_name,
-        direction="maximize",
+        directions=["maximize", "maximize", "maximize"],  # Multi-objective: [margin, accuracy, -chosen]
 
         sampler=TPESampler(
             seed=42,
@@ -477,22 +510,35 @@ def run_optuna_cita_search(
         show_progress_bar=True,
     )
 
-    # ===== RESULTS =====
+    # ===== RESULTS (MULTI-OBJECTIVE) =====
     print(f"\n{'='*80}")
-    print(f"🏆 BEST HYPERPARAMETERS FOUND")
+    print(f"🏆 PARETO-OPTIMAL TRIALS FOUND")
     print(f"{'='*80}")
 
-    best_trial = study.best_trial
+    # For multi-objective, there's no single "best" trial - get Pareto front
+    best_trials = study.best_trials  # Returns list of Pareto-optimal trials
+
+    if len(best_trials) == 0:
+        print("⚠️  No completed trials found")
+        return None
+
+    # Show all Pareto-optimal trials
+    print(f"\nFound {len(best_trials)} Pareto-optimal trial(s):\n")
+    for i, trial in enumerate(best_trials):
+        print(f"  Trial {trial.number} (Pareto solution {i+1}/{len(best_trials)}):")
+        for key, value in trial.params.items():
+            if isinstance(value, float):
+                print(f"    {key}: {value:.6f}")
+            else:
+                print(f"    {key}: {value}")
+        print(f"    Objectives: margin={trial.values[0]:.4f}, accuracy={trial.values[1]:.4f}, -chosen={trial.values[2]:.4f}")
+        print()
+
+    # Pick the trial with highest margin as "best" for saving
+    best_trial = max(best_trials, key=lambda t: t.values[0])  # Max margin
     best_params = best_trial.params
 
-    for key, value in best_params.items():
-        if isinstance(value, float):
-            print(f"  {key}: {value:.6f}")
-        else:
-            print(f"  {key}: {value}")
-
-    print(f"\n  Best margin: {best_trial.value:.4f}")
-    print(f"  Best trial: {best_trial.number}")
+    print(f"✅ Selected trial {best_trial.number} (highest margin) for best config")
     print(f"  Total trials: {len(study.trials)}")
 
     # Count pruned trials
@@ -508,13 +554,16 @@ def run_optuna_cita_search(
     config_path.parent.mkdir(exist_ok=True)
 
     best_config = {
-        "method": "CITA_Adaptive",
+        "method": "CITA_Adaptive_MultiObjective",
         "max_steps": max_steps,
         "best_trial": best_trial.number,
-        "best_margin": best_trial.value,
+        "best_margin": best_trial.values[0],
+        "best_accuracy": best_trial.values[1],
+        "best_neg_chosen": best_trial.values[2],
         "total_trials": len(study.trials),
         "completed_trials": len(completed_trials),
         "pruned_trials": len(pruned_trials),
+        "pareto_optimal_trials": len(best_trials),
         **best_params
     }
 
@@ -614,23 +663,24 @@ Examples:
         max_steps = 1000
         print(f"✅ Full mode: {n_trials} trials × {max_steps} steps (~78 hours)")
 
-    # Time estimate
-    time_per_step = 0.173  # minutes (from DPO baseline: 34.55/200)
+    # Time estimate (based on actual CITA runs with eval margin stopping)
+    # Actual data from logs/CITA_Adaptive_training_20251023_194316.log:
+    # - Trials 11-14: avg 9.75 min for 50 steps (early stop at eval check)
+    # - Estimated: 19.5 min for 100 steps (no early stop)
+    time_per_step = 0.195  # minutes (CITA: 19.5 min / 100 steps)
     time_per_trial = max_steps * time_per_step
     total_time = n_trials * time_per_trial
-    total_time_pruned = total_time * 0.85  # 15% savings from early stopping
+
+    # Early stopping is very effective with eval margin checks (stops at 50 steps)
+    # Actual savings: ~50% (9.75 min vs 19.5 min for 100 steps)
+    total_time_pruned = total_time * 0.5  # 50% time with early stopping
 
     print(f"\n{'='*80}")
     print(f"⏱️  TIME ESTIMATE")
     print(f"{'='*80}")
-    print(f"Time per trial: {time_per_trial:.1f} min")
-    print(f"Total (no pruning): {total_time:.1f} min ({total_time/60:.1f} hours)")
+    print(f"Time per trial: {time_per_trial:.1f} min (no early stop)")
+    print(f"Total (no early stopping): {total_time:.1f} min ({total_time/60:.1f} hours)")
     print(f"Total (with early stopping): {total_time_pruned:.1f} min ({total_time_pruned/60:.1f} hours)")
-    print(f"")
-    print(f"Early stopping:")
-    print(f"  - Checks at steps: 50, 100, 150, 200")
-    print(f"  - Stops immediately on: gibberish OR negative margin OR high KL")
-    print(f"  - Expected pruning: 15-20% of trials")
     print(f"{'='*80}\n")
 
     # Confirm

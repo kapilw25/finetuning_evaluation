@@ -16,6 +16,14 @@ import re
 from collections import Counter
 from transformers import TrainerCallback
 
+# Optuna integration (optional - only used for pruning)
+try:
+    import optuna
+    OPTUNA_AVAILABLE = True
+except ImportError:
+    OPTUNA_AVAILABLE = False
+    optuna = None
+
 # Ray Tune integration (optional - only used when running under PBT)
 try:
     from ray import tune
@@ -48,7 +56,8 @@ class GibberishDetectionCallback(TrainerCallback):
         stop_on_negative_margin=True,  # ✅ NEW: Stop if margin becomes negative
         margin_tolerance=0.0,  # ✅ NEW: Margin must be > this value (default: 0 = must be positive)
         stop_on_high_kl=True,  # ✅ NEW: Stop if KL divergence too high (drift from reference)
-        kl_threshold=0.5  # ✅ NEW: KL must be < this value (default: 0.5)
+        kl_threshold=0.5,  # ✅ NEW: KL must be < this value (default: 0.5)
+        trial=None  # ✅ Optuna trial object for pruning
     ):
         self.test_prompts = test_prompts
         self.check_every_n_steps = check_every_n_steps
@@ -60,6 +69,7 @@ class GibberishDetectionCallback(TrainerCallback):
         self.margin_tolerance = margin_tolerance
         self.stop_on_high_kl = stop_on_high_kl
         self.kl_threshold = kl_threshold
+        self.trial = trial  # Store Optuna trial for pruning
 
         self.last_good_step = 0
         self.negative_margin_violations = 0  # ✅ Track total negative margin detections (for logging)
@@ -85,16 +95,24 @@ class GibberishDetectionCallback(TrainerCallback):
         unsafe_behavior_detected = False
         current_margin = None
 
-        # Extract current margin from trainer logs
+        # Extract current margin from trainer logs (use EVAL margin, not train margin)
         if hasattr(state, 'log_history') and len(state.log_history) > 0:
-            # Find most recent margin value
+            # Find most recent EVAL margin value (more reliable than training margin)
             for log_entry in reversed(state.log_history):
-                if 'cita/margin' in log_entry:
-                    current_margin = log_entry['cita/margin']
+                if 'eval_rewards/margins' in log_entry:
+                    current_margin = log_entry['eval_rewards/margins']
                     break
 
+            # Fallback: If no eval margin yet, use training margin (less reliable)
+            if current_margin is None:
+                for log_entry in reversed(state.log_history):
+                    if 'cita/margin' in log_entry:
+                        current_margin = log_entry['cita/margin']
+                        print(f"⚠️  Note: Using TRAIN margin (eval margin not available yet)")
+                        break
+
         if current_margin is not None:
-            print(f"📊 Current Margin: {current_margin:.4f} (must be > {self.margin_tolerance})")
+            print(f"📊 Current Eval Margin: {current_margin:.4f} (must be > {self.margin_tolerance})")
 
             if current_margin <= self.margin_tolerance:
                 self.negative_margin_violations += 1
@@ -177,27 +195,35 @@ class GibberishDetectionCallback(TrainerCallback):
         if gibberish_detected and self.stop_on_gibberish:
             failure_reasons.append(f"GIBBERISH DETECTED (mode collapse)")
 
-        # Log failure but continue training (GPU-efficient)
+        # Handle failures based on stop flags
         if failure_reasons:
             print(f"\n{'!'*80}")
             print(f"⚠️  FAILURE DETECTED AT STEP {state.global_step}")
             print(f"{'!'*80}")
             print(f"Reason(s): {', '.join(failure_reasons)}")
-            print(f"")
-            print(f"🔄 PBT RESCUE MODE (Worker continues training):")
-            print(f"   1. Worker trains with current hyperparameters until next checkpoint (≤{self.check_every_n_steps} steps)")
-            print(f"   2. PBT ranks workers at checkpoint → This worker ranked LAST (due to poor metrics)")
-            print(f"   3. PBT EXPLOIT: Copies weights from best RUNNING worker")
-            print(f"   4. PBT EXPLORE: Mutates hyperparameters ±20%")
-            print(f"   5. Worker rescued and continues with new weights + HPs")
-            print(f"")
-            print(f"   If ALL workers fail → Global safety stopper aborts experiment")
-            print(f"   GPU stays 100% utilized (no idle workers)")
-            print(f"   Last known good checkpoint: checkpoint-{self.last_good_step}")
-            print(f"{'!'*80}\n")
 
-            # ✅ Report failure status to Ray Tune (for AllWorkersSafetyStopper)
-            # This allows stopper to check if ALL workers failed → abort experiment
+            # Check if any stop flag is True
+            should_stop = (
+                (unsafe_behavior_detected and self.stop_on_negative_margin) or
+                (kl_drift_detected and self.stop_on_high_kl) or
+                (gibberish_detected and self.stop_on_gibberish)
+            )
+
+            if should_stop:
+                print(f"\n🛑 STOPPING TRAINING")
+                print(f"   stop_on_gibberish={self.stop_on_gibberish}, "
+                      f"stop_on_negative_margin={self.stop_on_negative_margin}, "
+                      f"stop_on_high_kl={self.stop_on_high_kl}")
+                print(f"{'!'*80}\n")
+                control.should_training_stop = True
+            else:
+                print(f"\n▶️  CONTINUING (all stop flags = False)")
+                print(f"   stop_on_gibberish={self.stop_on_gibberish}, "
+                      f"stop_on_negative_margin={self.stop_on_negative_margin}, "
+                      f"stop_on_high_kl={self.stop_on_high_kl}")
+                print(f"{'!'*80}\n")
+
+            # Report failure status to Ray Tune (for AllWorkersSafetyStopper)
             if RAY_AVAILABLE:
                 try:
                     tune.report(
@@ -206,10 +232,7 @@ class GibberishDetectionCallback(TrainerCallback):
                         kl_drift_detected=kl_drift_detected
                     )
                 except Exception:
-                    pass  # Not running under Ray Tune, skip reporting
-
-            # ✅ NEVER terminate individual workers - let PBT handle recovery
-            # control.should_training_stop remains False (default)
+                    pass
         else:
             # Training is healthy, update last good step
             self.last_good_step = state.global_step
@@ -224,6 +247,28 @@ class GibberishDetectionCallback(TrainerCallback):
                     )
                 except Exception:
                     pass
+
+        # ===== OPTUNA PRUNING =====
+        if self.trial is not None and hasattr(state, 'log_history') and len(state.log_history) > 0:
+            try:
+                # Get latest margin from log history
+                latest_log = state.log_history[-1]
+                if 'eval_rewards/margins' in latest_log:
+                    margin = latest_log['eval_rewards/margins']
+                    step = state.global_step
+
+                    # Report intermediate value to Optuna
+                    self.trial.report(margin, step)
+
+                    # Check if trial should be pruned
+                    if self.trial.should_prune():
+                        print(f"\n🔪 OPTUNA PRUNING: Trial pruned at step {step} (margin={margin:.4f})")
+                        raise optuna.TrialPruned()
+            except Exception as e:
+                # Don't fail training if Optuna pruning has issues
+                if "TrialPruned" in str(type(e).__name__):
+                    raise  # Re-raise TrialPruned
+                pass  # Ignore other errors
 
         return control
 

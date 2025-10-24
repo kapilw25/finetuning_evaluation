@@ -53,17 +53,26 @@ python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 # Pushes to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
 
-# 3a. CITA Adaptive - MVP (DPO → CITA: 5 trials × 100 steps, ~74 min, ~$1.60) [A100-40GB]
+# 3a. CITA Adaptive - Quick Test (1 trial × 10 steps, ~2 min, validate setup)
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
+    --trials 1 --steps 10 \
+    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+
+# 3b. CITA Adaptive - MVP (DPO → CITA: 5 trials × 100 steps, ~74 min, ~$1.60) [A100-40GB]
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
     --mode mvp \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
 # Output: outputs/CITA_Adaptive/best_trial/
 
-# 3b. CITA Adaptive - Sanity (DPO → CITA: 27 trials × 200 steps, ~13.2h, ~$17.20) [A100-40GB]
+# 3b. CITA Adaptive - Sanity (DPO → CITA: 27 trials × 400 steps, ~15h, ~$19.50) [A100-40GB]
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
     --mode sanity \
+    --trials 27 \
+    --steps 400 \
     --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
 # Output: outputs/CITA_Adaptive/best_trial/
+# Rationale: CITA needs 2× DPO steps (400 vs 200) due to dual regularization
+# Effective time: ~15h (not 35h) - Hyperband + safety callbacks prune bad trials early
 
 # 3c. CITA Adaptive - Full (DPO → CITA: 27 trials × 1000 steps, ~66h, ~$85.80) [A100-40GB]
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
@@ -127,9 +136,22 @@ tail -n 50 logs/CITA_Baseline_training_<timestamp>.log
 - Check terminal output for `✅ Pushed to HuggingFace: <repo>`
 - Verify at https://huggingface.co/kapilw25
 
+### **Monitoring During SANITY (400 steps)**:
+
+**Every 5 hours, check progress:**
+```bash
+tail -100 logs/CITA_Adaptive_training_*.log | grep "Trial.*complete"
+```
+
+**Decision points:**
+- **Hour 5** (~10 trials): All failed at step 50? → STOP, fix code
+- **Hour 10** (~20 trials): Best margin < 0.05? → STOP (underperforming)
+- **Hour 15** (~27 trials): Complete → Analyze best config
+
 ### **Decision Point**:
-- ✅ If CITA ≥ DPO ≥ SFT (qualitative): Proceed to Phase 3B (full training)
-- ❌ If ordering wrong: Debug and repeat
+- ✅ If CITA margin ≥ DPO margin (2.95): Proceed to Phase 4 (full training)
+- ⚠️ If CITA margin < DPO margin but > 1.0: Debug L_SFT removal
+- ❌ If CITA margin < 0.5: Fundamental failure, revisit approach
 
 ---
 
@@ -189,7 +211,7 @@ python3 -u comparative_study/05_evaluation/dual_metric_eval.py \
 |-------|------|-------|------|------|
 | 3A | Sanity (SFT) | 200 | ~12 min | ~$0.20 |
 | 3A | Sanity (DPO) | 200 | ~12 min | ~$0.20 |
-| 3A | Sanity (CITA PBT) | 200 | ~50 min | ~$0.80 |
+| 3A | Sanity (CITA Adaptive) | 400 | ~15h | ~$19.50 |
 | 4 | Full (SFT) | 1000 | ~62 min | ~$1.00 |
 | 4 | Full (DPO) | 1000 | ~62 min | ~$1.00 |
 | 4 | Full (CITA PBT) | 1000 | ~250 min | ~$4.00 |
