@@ -328,6 +328,190 @@ class PushAutomation:
             traceback.print_exc()
             return None
 
+    def _generate_model_card(
+        self,
+        method: str,
+        base_model: str,
+        dataset: str,
+        config: dict,
+        final_metric: float,
+        metric_name: str,
+        hf_repo: str
+    ) -> str:
+        """
+        Generate HuggingFace model card (README.md) with training details
+
+        Args:
+            method: Training method (SFT/DPO/CITA)
+            base_model: Base model ID
+            dataset: Dataset name
+            config: Training configuration dict
+            final_metric: Final evaluation metric
+            metric_name: Metric name (eval_loss/rewards/margins/etc)
+            hf_repo: HF repository ID
+
+        Returns:
+            Model card content (markdown string)
+        """
+        # Extract metric display name
+        metric_display = metric_name.replace("eval_", "").replace("/", " ").title()
+
+        # Format final metric
+        if isinstance(final_metric, (int, float)) and final_metric != 'N/A':
+            metric_str = f"{final_metric:.4f}"
+        else:
+            metric_str = "N/A"
+
+        # Method-specific descriptions
+        method_descriptions = {
+            "SFT": "Supervised Fine-Tuning on chosen responses only",
+            "DPO": "Direct Preference Optimization (alignment via preference pairs)",
+            "CITA": "Calibrated Instruction Tuning with Alignment (SFT + DPO + KL regularization)"
+        }
+
+        card = f"""---
+library_name: transformers
+tags:
+- alignment
+- safety
+- {method.lower()}
+- llama-3
+base_model: {base_model}
+datasets:
+- PKU-Alignment/PKU-SafeRLHF
+license: llama3.1
+---
+
+# {hf_repo.split('/')[-1]}
+
+Fine-tuned [Llama-3.1-8B]({base_model}) using **{method}** ({method_descriptions.get(method, method)}) on the PKU-SafeRLHF dataset for improved safety alignment.
+
+## Model Details
+
+- **Base Model**: [{base_model}](https://huggingface.co/{base_model})
+- **Fine-tuning Method**: {method}
+- **Dataset**: [{dataset}](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF) (10,813 samples)
+- **Training Date**: {datetime.now().strftime('%Y-%m-%d')}
+- **Precision**: BF16 (bfloat16)
+- **Adapter Type**: LoRA (r=16, alpha=16, ~168MB)
+
+## Training Hyperparameters
+
+"""
+
+        # Add method-specific hyperparameters
+        if method == "SFT":
+            card += f"""- **Learning Rate**: {config.get('learning_rate', 'N/A')}
+- **Batch Size** (per device): {config.get('batch_size', 'N/A')}
+- **Gradient Accumulation Steps**: {config.get('gradient_accumulation_steps', 'N/A')} (effective batch size: {config.get('batch_size', 1) * config.get('gradient_accumulation_steps', 1)})
+- **Warmup Steps**: {config.get('warmup_steps', 'N/A')}
+- **Max Steps**: {config.get('max_steps', 'N/A')}
+- **Weight Decay**: {config.get('weight_decay', 'N/A')}
+- **LR Scheduler**: {config.get('lr_scheduler_type', 'cosine')}
+- **Optimizer**: {config.get('optimizer', 'adamw_torch')}
+- **Max Sequence Length**: {config.get('max_seq_length', 2048)}
+"""
+        elif method == "DPO":
+            card += f"""- **Learning Rate**: {config.get('learning_rate', 'N/A')}
+- **Batch Size** (per device): {config.get('batch_size', 'N/A')}
+- **Gradient Accumulation Steps**: {config.get('gradient_accumulation_steps', 'N/A')} (effective batch size: {config.get('batch_size', 1) * config.get('gradient_accumulation_steps', 1)})
+- **Warmup Steps**: {config.get('warmup_steps', 'N/A')}
+- **Max Steps**: {config.get('max_steps', 'N/A')}
+- **Weight Decay**: {config.get('weight_decay', 'N/A')}
+- **LR Scheduler**: {config.get('lr_scheduler_type', 'cosine')}
+- **Optimizer**: {config.get('optimizer', 'adamw_torch')}
+- **Beta** (DPO temperature): {config.get('beta', 'N/A')}
+- **Max Sequence Length**: {config.get('max_seq_length', 2048)}
+- **Max Prompt Length**: {config.get('max_prompt_length', 1024)}
+"""
+        elif method == "CITA" or method == "CITA_Adaptive":
+            card += f"""- **Learning Rate**: {config.get('learning_rate', 'N/A')}
+- **Batch Size** (per device): {config.get('batch_size', 'N/A')}
+- **Gradient Accumulation Steps**: {config.get('gradient_accumulation_steps', 'N/A')} (effective batch size: {config.get('batch_size', 1) * config.get('gradient_accumulation_steps', 1)})
+- **Warmup Steps**: {config.get('warmup_steps', 'N/A')}
+- **Max Steps**: {config.get('max_steps', 'N/A')}
+- **Weight Decay**: {config.get('weight_decay', 'N/A')}
+- **LR Scheduler**: {config.get('lr_scheduler_type', 'cosine')}
+- **Optimizer**: {config.get('optimizer', 'adamw_torch')}
+- **Beta** (DPO temperature): {config.get('beta', 'N/A')}
+- **Lambda KL** (KL penalty): {config.get('lambda_kl', 'N/A')}
+- **Max Sequence Length**: {config.get('max_seq_length', 2048)}
+- **Max Prompt Length**: {config.get('max_prompt_length', 1024)}
+"""
+
+        card += f"""
+## Evaluation Results
+
+- **Final {metric_display}**: {metric_str}
+
+## Usage
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+import torch
+
+# Load base model
+base_model = AutoModelForCausalLM.from_pretrained(
+    "{base_model}",
+    torch_dtype=torch.bfloat16,
+    device_map="auto"
+)
+
+# Load LoRA adapter
+model = PeftModel.from_pretrained(base_model, "{hf_repo}")
+
+# Load tokenizer
+tokenizer = AutoTokenizer.from_pretrained("{hf_repo}")
+
+# Generate
+messages = [{{"role": "user", "content": "Explain quantum computing"}}]
+input_ids = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt").to("cuda")
+
+with torch.no_grad():
+    outputs = model.generate(input_ids, max_new_tokens=128, temperature=0.7)
+
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+```
+
+## Intended Use
+
+- **Primary Use**: Safety-aligned conversational AI
+- **Recommended**: Instruction following with harm refusal capabilities
+- **Not Recommended**: Medical/legal advice, factual knowledge (use base Llama-3.1 for general tasks)
+
+## Limitations
+
+- Fine-tuned on English-only safety dataset (PKU-SafeRLHF)
+- May refuse benign requests if phrased similarly to harmful prompts
+- LoRA adapter only - requires base Llama-3.1-8B for inference
+
+## License
+
+Llama 3.1 Community License (same as base model)
+
+## Citation
+
+```bibtex
+@misc{{{hf_repo.split('/')[-1].replace('-', '_')}_2024,
+  author = {{User}},
+  title = {{{hf_repo.split('/')[-1]}}},
+  year = {{2024}},
+  publisher = {{HuggingFace}},
+  howpublished = {{\\url{{https://huggingface.co/{hf_repo}}}}}
+}}
+```
+
+## Framework Versions
+
+- **Transformers**: 4.46.3
+- **PyTorch**: 2.5.1
+- **TRL**: 0.12.1
+- **PEFT**: 0.13.2
+"""
+
+        return card
+
     def push_to_huggingface(
         self,
         best_trial: Any,
@@ -482,6 +666,35 @@ This push REPLACES the previous model version (performance improved).
             # Push training metadata for performance comparison
             from huggingface_hub import HfApi
             api = HfApi()
+
+            # Generate and upload model card (README.md)
+            print(f"\n📄 Generating model card (README.md)...")
+            method = best_config.get("method", "CITA")
+            model_card_content = self._generate_model_card(
+                method=method,
+                base_model="meta-llama/Llama-3.1-8B",
+                dataset="PKU-SafeRLHF",
+                config=best_config,
+                final_metric=current_metric,
+                metric_name=comparison_metric_name,
+                hf_repo=hf_repo
+            )
+
+            # Save locally for debugging
+            readme_path = self.project_root / "outputs" / f"{run_name}_README.md"
+            readme_path.parent.mkdir(exist_ok=True)
+            with open(readme_path, 'w') as f:
+                f.write(model_card_content)
+
+            # Upload to HF
+            api.upload_file(
+                path_or_fileobj=str(readme_path),
+                path_in_repo="README.md",
+                repo_id=hf_repo,
+                token=self.hf_token,
+                commit_message=f"Add model card with training hyperparameters"
+            )
+            print(f"✅ Uploaded model card (README.md) with training hyperparameters")
 
             # Find trainer_state.json (all methods use Trainer → save trainer_state.json)
             checkpoint_path = Path(best_checkpoint)

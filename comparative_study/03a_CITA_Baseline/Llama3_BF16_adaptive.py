@@ -515,7 +515,7 @@ def run_optuna_cita_search(
     config_path.parent.mkdir(exist_ok=True)
 
     best_config = {
-        "method": "CITA_Adaptive_MultiObjective",
+        "method": "CITA_Adaptive",
         "max_steps": max_steps,
         "best_trial": best_trial.number,
         "best_margin": best_trial.values[0],
@@ -525,7 +525,15 @@ def run_optuna_cita_search(
         "completed_trials": len(completed_trials),
         "pruned_trials": len(pruned_trials),
         "pareto_optimal_trials": len(best_trials),
-        **best_params
+        # Optuna-optimized hyperparameters
+        **best_params,
+        # Fixed hyperparameters (not tuned by Optuna)
+        "batch_size": 1,
+        "gradient_accumulation_steps": 8,
+        "optimizer": "adamw_torch",
+        "lr_scheduler_type": "cosine",
+        "max_seq_length": 2048,
+        "max_prompt_length": 1024,
     }
 
     with open(config_path, 'w') as f:

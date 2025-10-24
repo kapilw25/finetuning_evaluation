@@ -603,6 +603,7 @@ Examples:
             "batch_size": 2,
             "gradient_accumulation_steps": 4,
             "max_seq_length": 2048,
+            "max_prompt_length": 1024,  # DPO-specific (prompts truncated to fit chosen+rejected)
             "beta": 0.1,  # Meta's official Llama 3 DPO setting
             "final_margin": final_margin if final_margin != 'N/A' else None,
         }
