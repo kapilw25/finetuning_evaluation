@@ -498,30 +498,49 @@ Examples:
         # Automated Push to HuggingFace & GitHub + Auto-Shutdown
         # ===================================================================
 
-        # Extract final loss from training or checkpoint
-        if not training_skipped and trainer.state.log_history:
-            # Last entry might be eval_loss (from final evaluation) or loss (from training)
-            last_entry = trainer.state.log_history[-1]
-            final_loss = last_entry.get('eval_loss', last_entry.get('loss', 'N/A'))
-        else:
-            # Training was skipped - load loss from checkpoint's trainer_state.json
-            import json
-            from model_utils import get_latest_checkpoint
+        # Extract final eval_loss from checkpoint's trainer_state.json (FIXED)
+        import json
+        from model_utils import get_latest_checkpoint
+
+        if not training_skipped:
+            # Training just completed - extract metric from checkpoint
             latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "SFT_Baseline"))
+            final_loss = None
+
             if latest_checkpoint:
                 trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
                 if trainer_state_path.exists():
                     with open(trainer_state_path, 'r') as f:
                         trainer_state = json.load(f)
-                        if trainer_state.get('log_history'):
-                            # Get last entry, prefer eval_loss over loss
-                            last_entry = trainer_state['log_history'][-1]
-                            final_loss = last_entry.get('eval_loss', last_entry.get('loss', 'N/A'))
-                        else:
-                            final_loss = 'N/A'
-                else:
-                    final_loss = 'N/A'
-            else:
+                        # Search backwards for last eval_loss (skip train_runtime entry)
+                        for entry in reversed(trainer_state.get('log_history', [])):
+                            if 'eval_loss' in entry:
+                                final_loss = entry['eval_loss']
+                                print(f"✅ Extracted final eval_loss: {final_loss:.6f} from {latest_checkpoint}")
+                                break
+
+            if final_loss is None:
+                print(f"⚠️  Could not extract eval_loss from checkpoint")
+                final_loss = 'N/A'
+        else:
+            # Training was skipped - load metric from checkpoint's trainer_state.json
+            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "SFT_Baseline"))
+            final_loss = None
+
+            if latest_checkpoint:
+                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
+                if trainer_state_path.exists():
+                    with open(trainer_state_path, 'r') as f:
+                        trainer_state = json.load(f)
+                        # Search backwards for last eval_loss (skip train_runtime entry)
+                        for entry in reversed(trainer_state.get('log_history', [])):
+                            if 'eval_loss' in entry:
+                                final_loss = entry['eval_loss']
+                                print(f"✅ Extracted final eval_loss: {final_loss:.6f} from {latest_checkpoint}")
+                                break
+
+            if final_loss is None:
+                print(f"⚠️  Could not extract eval_loss from checkpoint")
                 final_loss = 'N/A'
 
         # Save training config

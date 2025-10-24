@@ -530,54 +530,60 @@ Examples:
         # Extract final rewards/margin from training or checkpoint
         # DPO logs: rewards/chosen, rewards/rejected, rewards/margin
         # NOTE: trainer.state.log_history[-1] might be train_runtime (no metrics)
-        #       Better to read from checkpoint's trainer_state.json (saved before train_runtime added)
+        #       Better to read from checkpoint's trainer_state.json and search backwards
         if not training_skipped:
             # Load metric from checkpoint's trainer_state.json (most reliable)
             import json
             from model_utils import get_latest_checkpoint
             latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
+            final_margin = None
+
             if latest_checkpoint:
                 trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
                 if trainer_state_path.exists():
                     with open(trainer_state_path, 'r') as f:
                         trainer_state = json.load(f)
-                        if trainer_state.get('log_history'):
-                            # Get last entry (checkpoint saved before train_runtime added)
-                            last_entry = trainer_state['log_history'][-1]
+                        # Search backwards for last eval metric (skip train_runtime entry)
+                        for entry in reversed(trainer_state.get('log_history', [])):
                             # Note: DPO uses 'margins' (plural) not 'margin'
-                            final_margin = last_entry.get('eval_rewards/margins',
-                                                         last_entry.get('rewards/margins',
-                                                                      last_entry.get('eval_loss',
-                                                                                   last_entry.get('loss', 'N/A'))))
-                        else:
-                            final_margin = 'N/A'
-                else:
-                    final_margin = 'N/A'
-            else:
+                            if 'eval_rewards/margins' in entry:
+                                final_margin = entry['eval_rewards/margins']
+                                print(f"✅ Extracted eval_rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
+                                break
+                            elif 'rewards/margins' in entry:
+                                final_margin = entry['rewards/margins']
+                                print(f"✅ Extracted rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
+                                break
+
+            if final_margin is None:
+                print(f"⚠️  Could not extract rewards/margins from checkpoint")
                 final_margin = 'N/A'
         else:
             # Training was skipped - load metric from checkpoint's trainer_state.json
             import json
             from model_utils import get_latest_checkpoint
             latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
+            final_margin = None
+
             if latest_checkpoint:
                 trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
                 if trainer_state_path.exists():
                     with open(trainer_state_path, 'r') as f:
                         trainer_state = json.load(f)
-                        if trainer_state.get('log_history'):
-                            # Get last entry, prefer eval metrics over training metrics
-                            last_entry = trainer_state['log_history'][-1]
+                        # Search backwards for last eval metric (skip train_runtime entry)
+                        for entry in reversed(trainer_state.get('log_history', [])):
                             # Note: DPO uses 'margins' (plural) not 'margin'
-                            final_margin = last_entry.get('eval_rewards/margins',
-                                                         last_entry.get('rewards/margins',
-                                                                      last_entry.get('eval_loss',
-                                                                                   last_entry.get('loss', 'N/A'))))
-                        else:
-                            final_margin = 'N/A'
-                else:
-                    final_margin = 'N/A'
-            else:
+                            if 'eval_rewards/margins' in entry:
+                                final_margin = entry['eval_rewards/margins']
+                                print(f"✅ Extracted eval_rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
+                                break
+                            elif 'rewards/margins' in entry:
+                                final_margin = entry['rewards/margins']
+                                print(f"✅ Extracted rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
+                                break
+
+            if final_margin is None:
+                print(f"⚠️  Could not extract rewards/margins from checkpoint")
                 final_margin = 'N/A'
 
         # Save training config
