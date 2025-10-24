@@ -39,6 +39,11 @@ from datetime import datetime
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 import torch
+
+# ===== FIX torch.compile() CUDAGraph bug: Disable CUDAGraphs for dynamic shapes =====
+# Fixes: "Expected curr_block->next == nullptr" error during eval with torch.compile()
+# Warning showed 51 distinct input sizes → CUDAGraph memory allocator bug
+torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOTrainer, DPOConfig
 
@@ -129,12 +134,14 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
 
     training_skipped = False
     latest_checkpoint = None
+    load_from_hf = False  # NEW: Track if we should load from HF (option 1 only)
 
     # Force skip if user selected inference-only mode
     if force_skip:
         print("🚫 User selected inference-only mode")
         print("   Skipping training, will load model from HuggingFace for inference...\n")
         training_skipped = True
+        load_from_hf = True  # Option 1: Load from HF
     else:
         # Priority 1: Check local checkpoints (CHANGED ORDER - local first, HF second)
         # This allows retraining even if HF repo exists (user chose option 2)
@@ -144,8 +151,9 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
             print(f"✅ Training already completed at: {latest_checkpoint}")
             print(f"   Max steps: {max_steps}")
-            print(f"   Skipping training, loading final model...\n")
+            print(f"   Skipping training, will load from local checkpoint for inference...\n")
             training_skipped = True
+            load_from_hf = False  # Option 2 with local checkpoint: Load from local
         elif latest_checkpoint:
             print(f"📂 Found checkpoint: {latest_checkpoint}")
             print(f"   Resuming training from this checkpoint...\n")
@@ -197,6 +205,10 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
             lora_alpha=16,
             use_gradient_checkpointing=True
         )
+
+        # Cast to BF16 AFTER applying new LoRA adapters (to ensure all params including new LoRA weights are BF16)
+        model = model.to(torch.bfloat16)
+        print("✅ Model cast to BF16 (all params including LoRA)")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
         print("\nApplying torch.compile()...")
@@ -318,31 +330,36 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     lora_output_dir = Path(output_dir) / "lora_model_DPO_Baseline"
 
     if not training_skipped:
+        # Training just completed - save LoRA adapters
         lora_output_dir.mkdir(parents=True, exist_ok=True)
         print(f"💾 Saving LoRA adapters to: {lora_output_dir}")
         model.save_pretrained(str(lora_output_dir))
         tokenizer.save_pretrained(str(lora_output_dir))
         print(f"✅ LoRA adapters saved!")
-    else:
-        # Training skipped - try HF first, fallback to local checkpoint
+    elif load_from_hf:
+        # Option 1 (inference-only mode) - download model from HF for inference
+        print(f"📥 Downloading model from HuggingFace for inference: {HF_REPO}")
         model, tokenizer = load_model_bf16(
             model_id="meta-llama/Llama-3.1-8B",
             max_seq_length=2048,
             use_flash_attention=True
         )
         from peft import PeftModel
-
-        # Try downloading from HuggingFace first
-        try:
-            print(f"📥 Downloading model from HuggingFace for inference: {HF_REPO}")
-            model = PeftModel.from_pretrained(model, HF_REPO, token=HF_TOKEN)
-            print(f"✅ Model downloaded from HuggingFace")
-        except Exception as e:
-            # HF repo not available, load from local checkpoint
-            print(f"❌ HuggingFace download failed: {type(e).__name__}")
-            print(f"📥 Loading model from local checkpoint: {lora_output_dir}")
-            model = PeftModel.from_pretrained(model, str(lora_output_dir))
-            print(f"✅ Model loaded from local checkpoint")
+        model = PeftModel.from_pretrained(model, HF_REPO, token=HF_TOKEN)
+        print(f"✅ Model downloaded from HuggingFace")
+    else:
+        # Option 2 with local checkpoint - load from local checkpoint for inference
+        print(f"📂 Loading model from local checkpoint for inference: {latest_checkpoint}")
+        model, tokenizer = load_model_bf16(
+            model_id="meta-llama/Llama-3.1-8B",
+            max_seq_length=2048,
+            use_flash_attention=True
+        )
+        from peft import PeftModel
+        # Load from local checkpoint, not HF
+        checkpoint_lora_path = Path(latest_checkpoint)
+        model = PeftModel.from_pretrained(model, str(checkpoint_lora_path))
+        print(f"✅ Model loaded from local checkpoint")
 
     # ===== INFERENCE TEST =====
     print("\n" + "="*80)
@@ -492,10 +509,10 @@ Examples:
     print(f"Training will take approximately: {'~12 minutes' if max_steps == 200 else '~62 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
-        print(f"  1) Run inference only (use existing HF model)")
+        print(f"  1) Inference only from HF_repo (use existing HF model)")
         print(f"  2) Retrain and replace HF model (only if performance improves)")
     else:
-        print(f"  1) Skip training")
+        print(f"  1) Inference only from HF_repo")
         print(f"  2) Train and push to HuggingFace")
     print(f"{'='*80}")
 
@@ -504,14 +521,22 @@ Examples:
 
     force_skip = False  # Flag to override checkpoint detection
     if mode_choice == "1":
+        # Option 1: Inference-only mode (requires HF repo)
+        if not hf_model_exists:
+            print("❌ Error: Option 1 requires existing HuggingFace model")
+            print("   HuggingFace repo does not exist yet")
+            print("   Please choose option 2 to train and create the model first")
+            sys.exit(1)
         print("✅ Inference-only mode selected")
+        print("   Will load model from HuggingFace for inference tests")
         force_skip = True  # Will skip training regardless of checkpoint status
     elif mode_choice == "2":
+        # Option 2: Training mode (comparison happens in push_automation.py)
         print("✅ Training mode selected")
         if hf_model_exists:
-            print("   Will retrain and push ONLY if performance improves")
+            print("   Will compare local vs HF metrics and push ONLY if performance improves")
         else:
-            print("   Will train and push to HuggingFace")
+            print("   Will train and push to HuggingFace (first time)")
         force_skip = False
     else:
         print("⚠️  Invalid choice, defaulting to training mode")
