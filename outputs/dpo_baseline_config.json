@@ -1,0 +1,14 @@
+{
+  "method": "DPO",
+  "max_steps": 200,
+  "learning_rate": 1e-05,
+  "warmup_steps": 100,
+  "optimizer": "adamw_torch",
+  "weight_decay": 0.01,
+  "lr_scheduler_type": "cosine",
+  "batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "max_seq_length": 2048,
+  "beta": 0.1,
+  "final_margin": 2.950640916824341
+}
