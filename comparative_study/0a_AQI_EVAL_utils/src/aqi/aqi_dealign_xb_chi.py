@@ -17,7 +17,11 @@ from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 # Ensure unsloth is installed: pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
 # Or other variants depending on your system
-from unsloth import FastLanguageModel
+# Make unsloth import optional (only needed for load_model_and_tokenizer function)
+try:
+    from unsloth import FastLanguageModel
+except ImportError:
+    FastLanguageModel = None  # Will fail if load_model_and_tokenizer is called
 # Make sure transformers is installed if not using unsloth's specific loading
 try:
     from transformers import AutoModelForCausalLM, AutoTokenizer
