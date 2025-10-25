@@ -1056,3 +1056,215 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             print(f"💾 Local backup: {local_backup_path}")
         print(f"📊 Config: {config_path}")
         print(f"{'='*80}\n")
+
+    @staticmethod
+    def extract_final_metric_from_checkpoint(
+        checkpoint_dir: str,
+        metric_names: list,
+        fallback_value: str = 'N/A'
+    ) -> tuple:
+        """
+        Extract final metric from checkpoint's trainer_state.json
+
+        Args:
+            checkpoint_dir: Path to checkpoint directory
+            metric_names: List of metric names to search for (in priority order)
+                         e.g., ['eval_rewards/margins', 'rewards/margins'] for DPO
+                         e.g., ['eval_loss'] for SFT
+            fallback_value: Value to return if metric not found (default: 'N/A')
+
+        Returns:
+            Tuple of (metric_value, metric_name_found)
+            e.g., (6.5554, 'eval_rewards/margins') or ('N/A', None)
+        """
+        from pathlib import Path
+        import json
+
+        checkpoint_path = Path(checkpoint_dir)
+        trainer_state_path = checkpoint_path / "trainer_state.json"
+
+        if not trainer_state_path.exists():
+            print(f"⚠️  trainer_state.json not found in {checkpoint_dir}")
+            return fallback_value, None
+
+        try:
+            with open(trainer_state_path, 'r') as f:
+                trainer_state = json.load(f)
+
+            # Search backwards through log_history (last entry might be train_runtime)
+            for log_entry in reversed(trainer_state.get('log_history', [])):
+                for metric_name in metric_names:
+                    if metric_name in log_entry:
+                        metric_value = log_entry[metric_name]
+                        print(f"✅ Extracted {metric_name}: {metric_value:.6f} from {checkpoint_dir}")
+                        return metric_value, metric_name
+
+            print(f"⚠️  Could not find any of {metric_names} in trainer_state.json")
+            return fallback_value, None
+
+        except Exception as e:
+            print(f"⚠️  Error reading trainer_state.json: {e}")
+            return fallback_value, None
+
+    @staticmethod
+    def prepare_baseline_push(
+        method: str,
+        output_dir: str,
+        training_config: dict,
+        training_skipped: bool,
+        hf_token: str,
+        hf_repo: str,
+        run_name: str,
+        metric_names: list,
+        metric_mode: str = "max",
+        project_root: Optional[Path] = None,
+        github_email: str = "kapilw25@gmail.com",
+        github_username: str = "kapilw25"
+    ):
+        """
+        Unified post-training workflow for SFT/DPO/CITA baselines
+
+        Handles:
+        1. Metric extraction from checkpoint
+        2. Config save
+        3. Checkpoint path resolution
+        4. Push automation initialization
+        5. Push execution
+        6. Summary print
+
+        Args:
+            method: Training method ("SFT", "DPO", "CITA")
+            output_dir: Output directory (e.g., "outputs/SFT_Baseline")
+            training_config: Training configuration dict (without final_metric)
+            training_skipped: Whether training was skipped (inference-only mode)
+            hf_token: HuggingFace token
+            hf_repo: HuggingFace repository ID
+            run_name: Training run name
+            metric_names: List of metric names to extract (priority order)
+            metric_mode: "max" or "min" (default: "max")
+            project_root: Project root path (auto-detected if None)
+            github_email: GitHub email
+            github_username: GitHub username
+
+        Returns:
+            None (prints summary and executes push)
+
+        Example:
+            >>> PushAutomation.prepare_baseline_push(
+            ...     method="DPO",
+            ...     output_dir="outputs/DPO_Baseline",
+            ...     training_config={
+            ...         "method": "DPO",
+            ...         "max_steps": 1000,
+            ...         "learning_rate": 1e-5,
+            ...         ...
+            ...     },
+            ...     training_skipped=False,
+            ...     hf_token=HF_TOKEN,
+            ...     hf_repo="kapilw25/llama3-8b-pku-dpo-sft-bf16",
+            ...     run_name="DPO_Baseline",
+            ...     metric_names=["eval_rewards/margins", "rewards/margins"],
+            ...     metric_mode="max"
+            ... )
+        """
+        from pathlib import Path
+        from types import SimpleNamespace
+        import json
+        import sys
+
+        # Add parent directory to path to import model_utils
+        if project_root is None:
+            project_root = Path(__file__).parent.parent.parent
+        else:
+            project_root = Path(project_root)
+
+        sys.path.insert(0, str(project_root / "comparative_study" / "0c_utils"))
+        from model_utils import get_latest_checkpoint
+
+        print(f"\n{'='*80}")
+        print(f"📤 Preparing {method} Baseline Push")
+        print(f"{'='*80}\n")
+
+        # Step 1: Get latest checkpoint
+        latest_checkpoint = get_latest_checkpoint(str(project_root / output_dir))
+
+        # Step 2: Extract final metric from checkpoint
+        final_metric = 'N/A'
+        if latest_checkpoint:
+            final_metric, metric_name_found = PushAutomation.extract_final_metric_from_checkpoint(
+                checkpoint_dir=latest_checkpoint,
+                metric_names=metric_names
+            )
+        else:
+            print(f"⚠️  No checkpoint found in {output_dir}")
+
+        # Step 3: Save training config with final metric
+        config_filename = f"{method.lower()}_baseline_config.json"
+        config_path = project_root / "outputs" / config_filename
+
+        # Add final metric to config
+        training_config_with_metric = training_config.copy()
+
+        # Determine final metric key based on method
+        if method == "SFT":
+            training_config_with_metric["final_loss"] = final_metric if final_metric != 'N/A' else None
+        elif method in ["DPO", "CITA"]:
+            training_config_with_metric["final_margin"] = final_metric if final_metric != 'N/A' else None
+
+        with open(config_path, 'w') as f:
+            json.dump(training_config_with_metric, f, indent=2)
+
+        print(f"📊 Saved training config: {config_path}")
+
+        # Step 4: Create pseudo trial object
+        pseudo_trial = SimpleNamespace(final_metric=final_metric)
+
+        # Step 5: Get checkpoint path for push
+        if latest_checkpoint:
+            # Use checkpoint directory (has trainer_state.json)
+            lora_checkpoint = str(latest_checkpoint)
+        else:
+            # Fallback to LoRA directory (no trainer_state.json, only for edge cases)
+            lora_checkpoint = str(project_root / output_dir / f"lora_model_{run_name}")
+
+        # Step 6: Initialize push automation
+        pusher = PushAutomation(
+            hf_token=hf_token,
+            github_email=github_email,
+            github_username=github_username,
+            project_root=project_root
+        )
+
+        # Step 7: Determine metric name for push comparison
+        # Use first metric name from list (most preferred)
+        push_metric_name = metric_names[0] if metric_names else "eval_loss"
+
+        # For SFT, use "loss" instead of "eval_loss" for cleaner display
+        if method == "SFT" and push_metric_name == "eval_loss":
+            push_metric_name = "loss"
+
+        # Step 8: Push to HF (conditional) + GitHub (always)
+        print(f"\n{'='*80}")
+        print(f"📤 Executing Push")
+        print(f"{'='*80}\n")
+
+        pusher.push_all(
+            best_trial=pseudo_trial,
+            best_checkpoint=lora_checkpoint,
+            hf_repo=hf_repo,
+            config_path=str(config_path),
+            run_name=run_name,
+            metric_name=push_metric_name,
+            metric_mode=metric_mode,
+            skip_local_backup=training_skipped
+        )
+
+        # Step 9: Summary
+        print(f"\n{'='*80}")
+        print("✅ All results saved!")
+        print(f"{'='*80}")
+        print("Results saved to:")
+        print(f"  - Local: {lora_checkpoint}")
+        print(f"  - HuggingFace: {hf_repo} (only if performance improved)")
+        print(f"  - GitHub: Logs and code pushed")
+        print(f"{'='*80}\n")
