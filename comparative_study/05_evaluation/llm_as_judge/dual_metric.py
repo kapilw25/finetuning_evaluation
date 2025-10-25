@@ -74,6 +74,9 @@ BASE_MODEL = "meta-llama/Llama-3.1-8B"
 EVAL_OUTPUT_DIR = Path(__file__).parent / "DualMetric_Evaluation_Results"
 EVAL_OUTPUT_DIR.mkdir(exist_ok=True)
 
+# Load HF_TOKEN for gated model access
+HF_TOKEN = load_hf_token(project_root)
+
 # ===================================================================
 # Dataset Loaders
 # ===================================================================
@@ -219,7 +222,7 @@ def load_model_for_eval(model_key: str) -> Tuple[AutoModelForCausalLM, AutoToken
 
     # Load tokenizer from base model
     print(f"Loading tokenizer from base model: {BASE_MODEL}")
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, token=HF_TOKEN)
     tokenizer.pad_token = tokenizer.eos_token
 
     # Set Llama-3.1 chat template (same as training scripts)
@@ -240,19 +243,38 @@ def load_model_for_eval(model_key: str) -> Tuple[AutoModelForCausalLM, AutoToken
         print("✅ Chat template already present")
 
     # Load base model in BF16 (required for Tier-1 publication quality)
+    # Try Flash Attention 2 first, fallback to eager if unavailable
     print(f"Loading base model in BF16: {BASE_MODEL}")
-    model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        attn_implementation="flash_attention_2"
-    )
+
+    attn_impl = "flash_attention_2"
+    try:
+        print(f"Attempting to load with Flash Attention 2...")
+        model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation=attn_impl,
+            token=HF_TOKEN
+        )
+        print(f"✅ Using Flash Attention 2 (faster inference)")
+    except Exception as e:
+        print(f"⚠️  Flash Attention 2 unavailable: {type(e).__name__}")
+        print(f"   Falling back to eager mode (20-30% slower)...")
+        attn_impl = "eager"
+        model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation=attn_impl,
+            token=HF_TOKEN
+        )
+        print(f"✅ Using eager attention")
 
     # Load LoRA adapter from HuggingFace if specified
     if hf_repo is not None:
         print(f"📥 Downloading adapter from HuggingFace: {hf_repo}...")
         try:
-            model = PeftModel.from_pretrained(model, hf_repo)
+            model = PeftModel.from_pretrained(model, hf_repo, token=HF_TOKEN)
             print("🔄 Merging adapter weights...")
             model = model.merge_and_unload()
             print("✅ Adapter merged")
@@ -751,9 +773,6 @@ def main_inner():
         args.harmlessness_samples = args.harmlessness_samples or 1000
         args.helpfulness_samples = args.helpfulness_samples or 805
         print(f"\n✅ Full mode selected: {args.harmlessness_samples} + {args.helpfulness_samples} samples")
-
-    # Load HF token
-    load_hf_token(project_root)
 
     # Initialize LLM judge
     judge = FireworksJudge()
