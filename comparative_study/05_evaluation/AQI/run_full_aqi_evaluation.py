@@ -318,14 +318,32 @@ def load_model(model_key):
     print(f"{'='*80}")
 
     # Load base model in BF16 (no quantization for quality)
+    # Try Flash Attention 2 first, fallback to eager if unavailable
     print(f"Loading base model in BF16: {BASE_MODEL_NAME}")
-    base_model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL_NAME,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        attn_implementation="flash_attention_2",  # Use Flash Attention 2 for speed
-        token=HF_TOKEN  # Authentication for gated model
-    )
+
+    attn_impl = "flash_attention_2"
+    try:
+        print(f"Attempting to load with Flash Attention 2...")
+        base_model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL_NAME,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation=attn_impl,
+            token=HF_TOKEN
+        )
+        print(f"✅ Using Flash Attention 2 (faster inference)")
+    except Exception as e:
+        print(f"⚠️  Flash Attention 2 unavailable: {type(e).__name__}")
+        print(f"   Falling back to eager mode (20-30% slower)...")
+        attn_impl = "eager"
+        base_model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL_NAME,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation=attn_impl,
+            token=HF_TOKEN
+        )
+        print(f"✅ Using eager attention")
 
     # Load tokenizer from base model
     print(f"Loading tokenizer from base model: {BASE_MODEL_NAME}")
