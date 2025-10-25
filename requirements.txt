@@ -38,7 +38,7 @@ trl==0.24.0
 peft==0.17.1
 accelerate==1.11.0  # Pin to stop backtracking
 protobuf==3.20.3  # 3.x for wandb+ray+tensorboardX compatibility
-# bitsandbytes  # Not needed - using adamw_torch instead of adamw_8bit
+# bitsandbytes  # Not needed - using BF16 instead of 4-bit quantization
 datasets==4.2.0  # Pin to stop backtracking
 fsspec==2025.9.0  # Pin to match datasets requirement
 # unsloth
