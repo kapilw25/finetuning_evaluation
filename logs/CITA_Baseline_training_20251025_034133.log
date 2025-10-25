@@ -1,0 +1,149 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/CITA_Baseline_training_20251025_034133.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-cita-dpo-bf16
+================================================================================
+
+✅ Full training mode: 1000 steps (~62 minutes)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+❌ No existing model on HuggingFace: kapilw25/llama3-8b-pku-cita-dpo-bf16
+   This will be the first training run
+================================================================================
+Training will take approximately: ~62 minutes
+
+Options:
+  1) Inference only from HF_repo
+  2) Train and push to HuggingFace
+================================================================================
+Enter choice (1 or 2): ================================================================================
+
+✅ Training mode selected
+   Will train and push to HuggingFace (first time)
+
+================================================================================
+🚀 Starting CITA Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: CITA (Calibrated Instruction Tuning with Alignment)
+  - Loss: L_CITA = L_DPO + λ_KL × L_KL
+  - Training steps: 1000
+  - Batch size: 1 (per device)
+  - Gradient accumulation: 8 (effective batch=8)
+  - Learning rate: 1.185e-05 (Optuna Trial 2)
+  - Beta: 0.1133 (Optuna Trial 2)
+  - Lambda KL: 0.001010 (Optuna Trial 2)
+  - Weight decay: 0.00885 (Optuna Trial 2)
+  - Warmup steps: 103 (Optuna Trial 2)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+1️⃣ Checking local checkpoints...
+✅ Found complete training checkpoint: checkpoint-1000
+   Training already finished at 1000 steps
+
+📊 Loaded final margin from checkpoint: 6.5554
+✅ Training config saved to: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/cita_baseline_config.json
+
+
+================================================================================
+📤 Pushing to HuggingFace
+================================================================================
+
+✅ Git already configured: kapilw25@gmail.com
+⚠️  Could not fetch previous model: Force download failed due to the above error.
+   Assuming this is first training run
+✅ First successful training run detected (no previous metric on HF)
+   Current metric: 6.5554
+   Will push to HuggingFace (establishing baseline)
+
+================================================================================
+📤 Pushing Best Model to HuggingFace
+================================================================================
+Repository: kapilw25/llama3-8b-pku-cita-dpo-bf16
+Checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/CITA_Baseline/lora_model_CITA_Baseline
+This will REPLACE the existing model (performance improved)
+================================================================================
+
+📦 Loading base model...
+Loading checkpoint shards:   0%|                                                            | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|█████████████                                       | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|██████████████████████████                          | 2/4 [00:01<00:01,  1.13it/s]Loading checkpoint shards:  75%|███████████████████████████████████████             | 3/4 [00:02<00:00,  1.15it/s]Loading checkpoint shards: 100%|████████████████████████████████████████████████████| 4/4 [00:02<00:00,  1.65it/s]Loading checkpoint shards: 100%|████████████████████████████████████████████████████| 4/4 [00:02<00:00,  1.42it/s]
+🔧 Loading LoRA adapter from best checkpoint...
+📋 Loading tokenizer...
+
+📤 Pushing LoRA adapter to HuggingFace: kapilw25/llama3-8b-pku-cita-dpo-bf16
+   (Pushing adapter only - 165MB, compatible with inference script)
+   (This will overwrite/replace the existing model)
+Processing Files (0 / 0)      : |                                                    |  0.00B /  0.00B            
+New Data Upload               : |                                                    |  0.00B /  0.00B            [A
+
+  ...adapter_model.safetensors:   1%|▎                                               | 1.22MB /  168MB            [A[A
+
+  ...adapter_model.safetensors:   1%|▎                                               | 1.22MB /  168MB            [A[AProcessing Files (0 / 1)      :   1%|▎                                               | 1.22MB /  168MB, 6.06MB/s  
+New Data Upload               :   2%|▊                                               | 1.22MB / 67.1MB, 6.06MB/s  [A
+
+  ...adapter_model.safetensors:  40%|███████████████████                             | 66.9MB /  168MB            [A[AProcessing Files (0 / 1)      :  40%|███████████████████                             | 66.9MB /  168MB,  167MB/s  
+New Data Upload               :  50%|███████████████████████▉                        | 66.9MB /  134MB,  167MB/s  [A
+
+  ...adapter_model.safetensors:  56%|██████████████████████████▊                     | 93.6MB /  168MB            [A[AProcessing Files (0 / 1)      :  56%|██████████████████████████▊                     | 93.6MB /  168MB,  156MB/s  
+New Data Upload               :  70%|█████████████████████████████████▍              | 93.6MB /  134MB,  156MB/s  [A
+
+  ...adapter_model.safetensors:  99%|███████████████████████████████████████████████▋|  167MB /  168MB            [A[AProcessing Files (0 / 1)      :  99%|███████████████████████████████████████████████▋|  167MB /  168MB,  208MB/s  
+New Data Upload               :  99%|███████████████████████████████████████████████▋|  167MB /  168MB,  208MB/s  [A
+
+  ...adapter_model.safetensors:  99%|███████████████████████████████████████████████▋|  167MB /  168MB            [A[A
+
+  ...adapter_model.safetensors: 100%|████████████████████████████████████████████████|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|████████████████████████████████████████████████|  168MB /  168MB,  142MB/s  
+New Data Upload               : 100%|████████████████████████████████████████████████|  168MB /  168MB,  142MB/s  [A
+
+  ...adapter_model.safetensors: 100%|████████████████████████████████████████████████|  168MB /  168MB            [A[AProcessing Files (1 / 1)      : 100%|████████████████████████████████████████████████|  168MB /  168MB,  140MB/s  
+New Data Upload               : 100%|████████████████████████████████████████████████|  168MB /  168MB,  140MB/s  
+  ...adapter_model.safetensors: 100%|████████████████████████████████████████████████|  168MB /  168MB            
+README.md:   0%|                                                                      | 0.00/5.17k [00:00<?, ?B/s]README.md: 100%|█████████████████████████████████████████████████████████████| 5.17k/5.17k [00:00<00:00, 41.9MB/s]
+Processing Files (0 / 0)      : |                                                    |  0.00B /  0.00B            
+New Data Upload               : |                                                    |  0.00B /  0.00B            [A
+
+  ...mpjh78bdo9/tokenizer.json: 100%|████████████████████████████████████████████████| 17.2MB / 17.2MB            [A[A
+
+  ...mpjh78bdo9/tokenizer.json: 100%|████████████████████████████████████████████████| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|████████████████████████████████████████████████| 17.2MB / 17.2MB,   ???B/s  
+
+  ...mpjh78bdo9/tokenizer.json: 100%|████████████████████████████████████████████████| 17.2MB / 17.2MB            [A[AProcessing Files (1 / 1)      : 100%|████████████████████████████████████████████████| 17.2MB / 17.2MB,  0.00B/s  
+New Data Upload               : |                                                    |  0.00B /  0.00B,  0.00B/s  
+  ...mpjh78bdo9/tokenizer.json: 100%|████████████████████████████████████████████████| 17.2MB / 17.2MB            
+
+📄 Generating model card (README.md)...
+✅ Uploaded model card (README.md) with training hyperparameters
+⚠️  trainer_state.json not found in checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/CITA_Baseline/lora_model_CITA_Baseline
+   Skipping metrics upload
+
+================================================================================
+✅ LoRA adapter successfully pushed to HuggingFace!
+================================================================================
+🔗 View at: https://huggingface.co/kapilw25/llama3-8b-pku-cita-dpo-bf16
+📊 Best hyperparameters: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/cita_baseline_config.json
+📏 Upload size: ~165MB (adapter only, not merged model)
+✅ Compatible with inference_bf16.py
+================================================================================
+
+
+⏭️  HuggingFace push skipped (no HF_TOKEN or performance check failed)
+
+
+================================================================================
+🏁 CITA Baseline Training Complete!
+================================================================================
+📝 Log file: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/CITA_Baseline_training_20251025_034133.log
+

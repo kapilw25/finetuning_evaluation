@@ -523,57 +523,7 @@ Examples:
         # Automated Push to HuggingFace & GitHub + Auto-Shutdown
         # ===================================================================
 
-        # Extract final eval_loss from checkpoint's trainer_state.json (FIXED)
-        import json
-        from model_utils import get_latest_checkpoint
-
-        if not training_skipped:
-            # Training just completed - extract metric from checkpoint
-            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "SFT_Baseline"))
-            final_loss = None
-
-            if latest_checkpoint:
-                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
-                if trainer_state_path.exists():
-                    with open(trainer_state_path, 'r') as f:
-                        trainer_state = json.load(f)
-                        # Search backwards for last eval_loss (skip train_runtime entry)
-                        for entry in reversed(trainer_state.get('log_history', [])):
-                            if 'eval_loss' in entry:
-                                final_loss = entry['eval_loss']
-                                print(f"✅ Extracted final eval_loss: {final_loss:.6f} from {latest_checkpoint}")
-                                break
-
-            if final_loss is None:
-                print(f"⚠️  Could not extract eval_loss from checkpoint")
-                final_loss = 'N/A'
-        else:
-            # Training was skipped - load metric from checkpoint's trainer_state.json
-            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "SFT_Baseline"))
-            final_loss = None
-
-            if latest_checkpoint:
-                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
-                if trainer_state_path.exists():
-                    with open(trainer_state_path, 'r') as f:
-                        trainer_state = json.load(f)
-                        # Search backwards for last eval_loss (skip train_runtime entry)
-                        for entry in reversed(trainer_state.get('log_history', [])):
-                            if 'eval_loss' in entry:
-                                final_loss = entry['eval_loss']
-                                print(f"✅ Extracted final eval_loss: {final_loss:.6f} from {latest_checkpoint}")
-                                break
-
-            if final_loss is None:
-                print(f"⚠️  Could not extract eval_loss from checkpoint")
-                final_loss = 'N/A'
-
-        # Save training config
-        import json
-        config_dir = project_root / "outputs"
-        config_dir.mkdir(exist_ok=True)
-        config_path = config_dir / "sft_baseline_config.json"
-
+        # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
         training_config = {
             "method": "SFT",
             "max_steps": max_steps,
@@ -585,62 +535,20 @@ Examples:
             "batch_size": 2,
             "gradient_accumulation_steps": 4,
             "max_seq_length": 2048,
-            "final_loss": final_loss if final_loss != 'N/A' else None,
         }
 
-        with open(config_path, 'w') as f:
-            json.dump(training_config, f, indent=2)
-
-        print(f"📊 Saved training config: {config_path}")
-
-        # Create simple namespace to mimic best_trial interface
-        from types import SimpleNamespace
-        pseudo_trial = SimpleNamespace(
-            final_metric=final_loss
-        )
-
-        # Get best checkpoint path
-        # After training, fetch the latest checkpoint (to get trainer_state.json)
-        if not training_skipped:
-            # Training just completed - refresh latest checkpoint
-            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "SFT_Baseline"))
-
-        if latest_checkpoint:
-            # Use checkpoint directory (has trainer_state.json)
-            lora_checkpoint = str(latest_checkpoint)
-        else:
-            # Fallback to LoRA directory (no trainer_state.json, only for edge cases)
-            lora_checkpoint = str(project_root / "outputs" / "SFT_Baseline" / "lora_model_SFT_Baseline")
-
-        # Initialize push automation
-        pusher = PushAutomation(
+        PushAutomation.prepare_baseline_push(
+            method="SFT",
+            output_dir="outputs/SFT_Baseline",
+            training_config=training_config,
+            training_skipped=training_skipped,
             hf_token=HF_TOKEN,
-            github_email="kapilw25@gmail.com",
-            github_username="kapilw25",
+            hf_repo=HF_REPO,
+            run_name=RUN_NAME,
+            metric_names=["eval_loss"],
+            metric_mode="min",
             project_root=project_root
         )
-
-        # Push to HF (conditional) + GitHub (always)
-        pusher.push_all(
-            best_trial=pseudo_trial,
-            best_checkpoint=lora_checkpoint,
-            hf_repo=HF_REPO,
-            config_path=str(config_path),
-            run_name=RUN_NAME,
-            metric_name="loss",
-            metric_mode="min",  # Lower loss is better
-            skip_local_backup=training_skipped  # Skip if inference-only mode
-        )
-
-        # Summary
-        print(f"\n{'='*80}")
-        print("✅ All results saved!")
-        print(f"{'='*80}")
-        print("Results saved to:")
-        print(f"  - Local: {lora_checkpoint}")
-        print(f"  - HuggingFace: {HF_REPO} (only if performance improved)")
-        print(f"  - GitHub: Logs and code pushed")
-        print(f"{'='*80}\n")
 
     except Exception as e:
         print(f"\n❌ Error during training: {e}")

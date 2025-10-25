@@ -552,71 +552,7 @@ Examples:
         # Automated Push to HuggingFace & GitHub + Auto-Shutdown
         # ===================================================================
 
-        # Extract final rewards/margin from training or checkpoint
-        # DPO logs: rewards/chosen, rewards/rejected, rewards/margin
-        # NOTE: trainer.state.log_history[-1] might be train_runtime (no metrics)
-        #       Better to read from checkpoint's trainer_state.json and search backwards
-        if not training_skipped:
-            # Load metric from checkpoint's trainer_state.json (most reliable)
-            import json
-            from model_utils import get_latest_checkpoint
-            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
-            final_margin = None
-
-            if latest_checkpoint:
-                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
-                if trainer_state_path.exists():
-                    with open(trainer_state_path, 'r') as f:
-                        trainer_state = json.load(f)
-                        # Search backwards for last eval metric (skip train_runtime entry)
-                        for entry in reversed(trainer_state.get('log_history', [])):
-                            # Note: DPO uses 'margins' (plural) not 'margin'
-                            if 'eval_rewards/margins' in entry:
-                                final_margin = entry['eval_rewards/margins']
-                                print(f"✅ Extracted eval_rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
-                                break
-                            elif 'rewards/margins' in entry:
-                                final_margin = entry['rewards/margins']
-                                print(f"✅ Extracted rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
-                                break
-
-            if final_margin is None:
-                print(f"⚠️  Could not extract rewards/margins from checkpoint")
-                final_margin = 'N/A'
-        else:
-            # Training was skipped - load metric from checkpoint's trainer_state.json
-            import json
-            from model_utils import get_latest_checkpoint
-            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
-            final_margin = None
-
-            if latest_checkpoint:
-                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
-                if trainer_state_path.exists():
-                    with open(trainer_state_path, 'r') as f:
-                        trainer_state = json.load(f)
-                        # Search backwards for last eval metric (skip train_runtime entry)
-                        for entry in reversed(trainer_state.get('log_history', [])):
-                            # Note: DPO uses 'margins' (plural) not 'margin'
-                            if 'eval_rewards/margins' in entry:
-                                final_margin = entry['eval_rewards/margins']
-                                print(f"✅ Extracted eval_rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
-                                break
-                            elif 'rewards/margins' in entry:
-                                final_margin = entry['rewards/margins']
-                                print(f"✅ Extracted rewards/margins: {final_margin:.6f} from {latest_checkpoint}")
-                                break
-
-            if final_margin is None:
-                print(f"⚠️  Could not extract rewards/margins from checkpoint")
-                final_margin = 'N/A'
-
-        # Save training config
-        import json
-        config_dir = project_root / "outputs"
-        config_dir.mkdir(exist_ok=True)
-        config_path = config_dir / "dpo_baseline_config.json"
-
+        # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
         training_config = {
             "method": "DPO",
             "max_steps": max_steps,
@@ -630,62 +566,20 @@ Examples:
             "max_seq_length": 2048,
             "max_prompt_length": 1024,  # DPO-specific (prompts truncated to fit chosen+rejected)
             "beta": 0.1,  # Meta's official Llama 3 DPO setting
-            "final_margin": final_margin if final_margin != 'N/A' else None,
         }
 
-        with open(config_path, 'w') as f:
-            json.dump(training_config, f, indent=2)
-
-        print(f"📊 Saved training config: {config_path}")
-
-        # Create simple namespace to mimic best_trial interface
-        from types import SimpleNamespace
-        pseudo_trial = SimpleNamespace(
-            final_metric=final_margin
-        )
-
-        # Get best checkpoint path
-        # After training, fetch the latest checkpoint (to get trainer_state.json)
-        if not training_skipped:
-            # Training just completed - refresh latest checkpoint
-            latest_checkpoint = get_latest_checkpoint(str(project_root / "outputs" / "DPO_Baseline"))
-
-        if latest_checkpoint:
-            # Use checkpoint directory (has trainer_state.json)
-            lora_checkpoint = str(latest_checkpoint)
-        else:
-            # Fallback to LoRA directory (no trainer_state.json, only for edge cases)
-            lora_checkpoint = str(project_root / "outputs" / "DPO_Baseline" / "lora_model_DPO_Baseline")
-
-        # Initialize push automation
-        pusher = PushAutomation(
+        PushAutomation.prepare_baseline_push(
+            method="DPO",
+            output_dir="outputs/DPO_Baseline",
+            training_config=training_config,
+            training_skipped=training_skipped,
             hf_token=HF_TOKEN,
-            github_email="kapilw25@gmail.com",
-            github_username="kapilw25",
+            hf_repo=HF_REPO,
+            run_name=RUN_NAME,
+            metric_names=["eval_rewards/margins", "rewards/margins"],
+            metric_mode="max",
             project_root=project_root
         )
-
-        # Push to HF (conditional) + GitHub (always)
-        pusher.push_all(
-            best_trial=pseudo_trial,
-            best_checkpoint=lora_checkpoint,
-            hf_repo=HF_REPO,
-            config_path=str(config_path),
-            run_name=RUN_NAME,
-            metric_name="rewards/margins",  # Plural! (matches trainer_state.json)
-            metric_mode="max",  # Higher margin is better
-            skip_local_backup=training_skipped  # Skip if inference-only mode
-        )
-
-        # Summary
-        print(f"\n{'='*80}")
-        print("✅ All results saved!")
-        print(f"{'='*80}")
-        print("Results saved to:")
-        print(f"  - Local: {lora_checkpoint}")
-        print(f"  - HuggingFace: {HF_REPO} (only if performance improved)")
-        print(f"  - GitHub: Logs and code pushed")
-        print(f"{'='*80}\n")
 
     except Exception as e:
         print(f"\n❌ Error during training: {e}")

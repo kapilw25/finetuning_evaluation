@@ -51,7 +51,7 @@ python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode sanity \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
-# Pushes to: kapilw25/llama3-8b-pku-dpo-baseline-bf16
+# Pushes to: kapilw25/llama3-8b-pku-dpo-sft-bf16
 
 # 3a. CITA Adaptive - Quick Test (1 trial × 10 steps, ~2 min, validate setup)
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
@@ -61,7 +61,7 @@ python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
 # 3b. CITA Adaptive - MVP (DPO → CITA: 5 trials × 100 steps, ~74 min, ~$1.60) [A100-40GB]
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
     --mode mvp \
-    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16
 # Output: outputs/CITA_Adaptive/best_trial/
 
 # 3b. CITA Adaptive - Sanity (DPO → CITA: 27 trials × 400 steps, ~15h, ~$19.50) [A100-40GB]
@@ -69,17 +69,20 @@ python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
     --mode sanity \
     --trials 27 \
     --steps 400 \
-    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16
 # Output: outputs/CITA_Adaptive/best_trial/
 # Rationale: CITA needs 2× DPO steps (400 vs 200) due to dual regularization
 # Effective time: ~15h (not 35h) - Hyperband + safety callbacks prune bad trials early
 
 # 3c. CITA Adaptive - Full (DPO → CITA: 27 trials × 1000 steps, ~66h, ~$85.80) [A100-40GB]
-python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py \
+# converted adaptive [27 trials] to non-adaptive [only 1 trial]
+
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16
+
 # Output: outputs/CITA_Adaptive/best_trial/
-# Pushes to: kapilw25/llama3-8b-pku-cita-adaptive-bf16
+# Pushes to: kapilw25/lllama3-8b-pku-cita-dpo-bf16
 ```
 
 **Note**: Run MVP first (~74 min) to validate Optuna + early stopping work correctly.
@@ -171,10 +174,10 @@ python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode full \
     --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
 
-# 3. CITA with PBT (1000 steps × 4 workers = 4000 steps, ~250 min, ~$4) [A6000-48GB]
-python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16_PBT.py \
+# 3. CITA - non adaptive
+python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-dpo-baseline-bf16
+    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16
 ```
 
 **Note**: Answer "no" to auto-shutdown prompts to keep GPU running between stages
@@ -192,8 +195,8 @@ python3 -u comparative_study/05_evaluation/dual_metric_eval.py \
     --models \
         meta-llama/Llama-3.1-8B \
         kapilw25/llama3-8b-pku-sft-baseline-bf16 \
-        kapilw25/llama3-8b-pku-dpo-baseline-bf16 \
-        kapilw25/llama3-8b-pku-cita-baseline-bf16 \
+        kapilw25/llama3-8b-pku-dpo-sft-bf16 \
+        kapilw25/llama3-8b-pku-cita-dpo-bf16 \
     --judge_model gpt-oss-120b \
     --output_dir outputs/final_evaluation
 ```

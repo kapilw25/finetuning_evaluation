@@ -1,0 +1,67 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/CITA_Baseline_training_20251025_040610.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-cita-dpo-bf16
+================================================================================
+
+✅ Full training mode: 1000 steps (~62 minutes)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+❌ No existing model on HuggingFace: kapilw25/llama3-8b-pku-cita-dpo-bf16
+   This will be the first training run
+================================================================================
+Training will take approximately: ~62 minutes
+
+Options:
+  1) Inference only from HF_repo
+  2) Train and push to HuggingFace
+================================================================================
+Enter choice (1 or 2): ================================================================================
+
+✅ Training mode selected
+   Will train and push to HuggingFace (first time)
+
+================================================================================
+🚀 Starting CITA Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: CITA (Calibrated Instruction Tuning with Alignment)
+  - Loss: L_CITA = L_DPO + λ_KL × L_KL
+  - Training steps: 1000
+  - Batch size: 1 (per device)
+  - Gradient accumulation: 8 (effective batch=8)
+  - Learning rate: 1.185e-05 (Optuna Trial 2)
+  - Beta: 0.1133 (Optuna Trial 2)
+  - Lambda KL: 0.001010 (Optuna Trial 2)
+  - Weight decay: 0.00885 (Optuna Trial 2)
+  - Warmup steps: 103 (Optuna Trial 2)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+1️⃣ Checking local checkpoints...
+✅ Found complete training checkpoint: checkpoint-1000
+   Training already finished at 1000 steps
+
+📊 Loaded final margin from checkpoint: 6.5554
+✅ Training config saved to: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/cita_baseline_config.json
+
+
+❌ Error during training: name 'json' is not defined
+Traceback (most recent call last):
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16.py", line 497, in <module>
+    training_config = json.load(f)
+NameError: name 'json' is not defined

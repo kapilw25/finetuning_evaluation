@@ -139,13 +139,15 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
 
     if latest_checkpoint:
         print(f"1️⃣ Checking local checkpoints...")
+        # Convert string path to Path object to extract name
+        checkpoint_path = Path(latest_checkpoint)
         if is_training_complete(latest_checkpoint, max_steps):
-            print(f"✅ Found complete training checkpoint: {latest_checkpoint.name}")
+            print(f"✅ Found complete training checkpoint: {checkpoint_path.name}")
             print(f"   Training already finished at {max_steps} steps")
             training_skipped = True
         else:
-            completed_steps = int(latest_checkpoint.name.split("-")[-1])
-            print(f"⏸️  Found incomplete checkpoint: {latest_checkpoint.name}")
+            completed_steps = int(checkpoint_path.name.split("-")[-1])
+            print(f"⏸️  Found incomplete checkpoint: {checkpoint_path.name}")
             print(f"   Will resume from step {completed_steps}")
     else:
         print(f"🆕 No checkpoint found")
@@ -314,11 +316,30 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
 
     # ===== EXTRACT FINAL METRICS =====
     final_margin = 'N/A'
-    if not training_skipped and hasattr(trainer.state, 'log_history'):
-        for log_entry in reversed(trainer.state.log_history):
-            if 'eval_rewards/margins' in log_entry:
-                final_margin = log_entry['eval_rewards/margins']
-                break
+    if training_skipped:
+        # Training was skipped - load from existing checkpoint
+        if latest_checkpoint:
+            try:
+                import json
+                trainer_state_path = Path(latest_checkpoint) / "trainer_state.json"
+                if trainer_state_path.exists():
+                    with open(trainer_state_path, 'r') as f:
+                        state = json.load(f)
+                    # Find last eval_rewards/margins
+                    for log_entry in reversed(state['log_history']):
+                        if 'eval_rewards/margins' in log_entry:
+                            final_margin = log_entry['eval_rewards/margins']
+                            break
+                    print(f"📊 Loaded final margin from checkpoint: {final_margin:.4f}")
+            except Exception as e:
+                print(f"⚠️  Could not load metrics from checkpoint: {e}")
+    else:
+        # Training completed - extract from trainer state
+        if hasattr(trainer.state, 'log_history'):
+            for log_entry in reversed(trainer.state.log_history):
+                if 'eval_rewards/margins' in log_entry:
+                    final_margin = log_entry['eval_rewards/margins']
+                    break
 
     # ===== SAVE TRAINING CONFIG =====
     training_config = {
@@ -469,87 +490,28 @@ if __name__ == "__main__":
         )
 
         # ===== PUSH TO HUGGINGFACE =====
-        if not force_skip or (mode_choice == "2" and hf_model_exists):
-            print("\n" + "="*80)
-            print("📤 Pushing to HuggingFace")
-            print("="*80 + "\n")
+        # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
+        # Load training config template (will be updated with final metric by utility)
+        import json
+        config_path = project_root / "outputs" / "cita_baseline_config.json"
+        with open(config_path, 'r') as f:
+            training_config = json.load(f)
 
-            lora_output_dir = project_root / "outputs" / "CITA_Baseline" / "lora_model_CITA_Baseline"
+        # Remove final_margin (will be re-extracted from checkpoint by utility)
+        training_config.pop('final_margin', None)
 
-            # Load training config
-            import json
-            config_path = project_root / "outputs" / "cita_baseline_config.json"
-            with open(config_path, 'r') as f:
-                training_config = json.load(f)
-
-            # Initialize push automation
-            push_automation = PushAutomation(project_root=project_root)
-
-            # If Option 2 with existing HF model, compare metrics
-            should_push = True
-            if mode_choice == "2" and hf_model_exists and not training_skipped:
-                print("\n📊 Comparing local model with HuggingFace model...")
-                local_margin = training_config.get('final_margin')
-
-                try:
-                    # Try to get HF model's README to extract margin
-                    from huggingface_hub import hf_hub_download
-                    readme_path = hf_hub_download(
-                        repo_id=HF_REPO,
-                        filename="README.md",
-                        token=HF_TOKEN
-                    )
-                    with open(readme_path, 'r') as f:
-                        readme_content = f.read()
-
-                    # Extract final margin from README (simple parsing)
-                    hf_margin = None
-                    for line in readme_content.split('\n'):
-                        if 'Final Margin:' in line:
-                            try:
-                                hf_margin = float(line.split(':')[1].strip())
-                            except:
-                                pass
-
-                    if local_margin is not None and hf_margin is not None:
-                        print(f"\nLocal margin: {local_margin:.4f}")
-                        print(f"HF margin: {hf_margin:.4f}")
-
-                        if local_margin > hf_margin:
-                            print(f"✅ Local model is BETTER (Δ = +{local_margin - hf_margin:.4f})")
-                            should_push = True
-                        else:
-                            print(f"⚠️  Local model is WORSE (Δ = {local_margin - hf_margin:.4f})")
-                            print(f"   Skipping push to preserve better HF model")
-                            should_push = False
-                    else:
-                        print("⚠️  Could not extract margin from HF model, will push anyway")
-                        should_push = True
-
-                except Exception as e:
-                    print(f"⚠️  Could not fetch HF model README: {e}")
-                    print("   Will push anyway")
-                    should_push = True
-
-            if should_push:
-                success, message = push_automation.push_to_huggingface(
-                    lora_dir=lora_output_dir,
-                    hf_repo=HF_REPO,
-                    method="CITA",
-                    base_model="meta-llama/Llama-3.1-8B",
-                    dataset="PKU-Alignment/PKU-SafeRLHF",
-                    config=training_config,
-                    final_metric=training_config.get('final_margin', 0),
-                    metric_name="margin"
-                )
-
-                if success:
-                    print(f"\n✅ {message}")
-                    print(f"🔗 Model available at: https://huggingface.co/{HF_REPO}\n")
-                else:
-                    print(f"\n❌ {message}\n")
-            else:
-                print("\n⏭️  Skipped HuggingFace push (local model not better)\n")
+        PushAutomation.prepare_baseline_push(
+            method="CITA",
+            output_dir="outputs/CITA_Baseline",
+            training_config=training_config,
+            training_skipped=training_skipped,
+            hf_token=HF_TOKEN,
+            hf_repo=HF_REPO,
+            run_name=RUN_NAME,
+            metric_names=["eval_rewards/margins", "rewards/margins"],
+            metric_mode="max",
+            project_root=project_root
+        )
 
         print("\n" + "="*80)
         print("🏁 CITA Baseline Training Complete!")
