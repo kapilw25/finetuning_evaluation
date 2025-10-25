@@ -33,7 +33,9 @@
       "WebFetch(domain:chenhuiyu.github.io)",
       "WebFetch(domain:docs.pytorch.org)",
       "Read(//tmp/**)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(pip install:*)",
+      "WebFetch(domain:docs.vllm.ai)"
     ],
     "deny": [],
     "ask": []
