@@ -1,0 +1,36 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/dual_metric_evaluation_training_20251025_054810.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+usage: dual_metric.py [-h] [--mode {sanity,full}]
+                      [--models MODELS [MODELS ...]]
+                      [--harmlessness-samples HARMLESSNESS_SAMPLES]
+                      [--helpfulness-samples HELPFULNESS_SAMPLES]
+
+Dual-Metric Evaluation (Harmlessness + Helpfulness)
+
+options:
+  -h, --help            show this help message and exit
+  --mode {sanity,full}  Evaluation mode: sanity (50+50 samples) or full
+                        (1000+805 samples)
+  --models MODELS [MODELS ...]
+                        Models to evaluate (default: all 4)
+  --harmlessness-samples HARMLESSNESS_SAMPLES
+                        Max samples for harmlessness test (overrides --mode)
+  --helpfulness-samples HELPFULNESS_SAMPLES
+                        Max samples for helpfulness test (overrides --mode)
+
+        Examples:
+        # Evaluate all 3 baselines (loads from HuggingFace)
+        python dual_metric_eval.py
+
+        # Evaluate specific models
+        python dual_metric_eval.py --models SFT_Baseline CITA_Baseline
+
+        # Quick test with small samples
+        python dual_metric_eval.py --harmlessness-samples 100 --helpfulness-samples 100
+
+        Note: All models loaded in BF16 (Tier-1 publication quality)
+        Note: Models are loaded from HuggingFace (pushed by training scripts via push_automation.py)
+        

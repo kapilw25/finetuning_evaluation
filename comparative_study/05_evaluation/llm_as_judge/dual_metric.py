@@ -1,6 +1,7 @@
 """
-Dual-Metric Evaluation for SFT, DPO, and CITA Baselines
-Evaluates: Harmlessness (PKU test) + Helpfulness (AlpacaEval)
+Dual-Metric Evaluation for 4 Baseline Models
+Evaluates: Baseline (Unaligned), SFT, DPO, CITA
+Metrics: Harmlessness (PKU test) + Helpfulness (AlpacaEval)
 LLM-as-judge: Llama-3-70B via Fireworks AI
 
 IMPORTANT: Loads models from HuggingFace (not local paths)
@@ -19,8 +20,7 @@ Usage:
     # Custom sample counts (overrides --mode)
     python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --harmlessness-samples 100 --helpfulness-samples 100
 
-    # Use INT4 quantization for faster inference
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity --quantization int4
+Note: Uses BF16 precision only (required for Tier-1 publication quality)
 """
 
 import sys
@@ -49,20 +49,24 @@ from logging_utils import setup_training_logger, restore_logging
 # Configuration
 # ===================================================================
 
-# Model configurations (loads from HuggingFace, not local)
-# After training, models are pushed to HF by push_automation.py
+# Model configurations - Using HuggingFace repos only (no local paths)
+# All models use Llama-3 chat template (matching training scripts)
 MODELS = {
+    "Baseline": {
+        "hf_repo": None,  # No adapter - just base model
+        "display_name": "Baseline (Unaligned)",
+    },
     "SFT_Baseline": {
         "hf_repo": get_model_repo_name("SFT_Baseline", precision="bf16"),
-        "chat_template": "alpaca",  # SFT uses Alpaca format
+        "display_name": "SFT Baseline",
     },
     "DPO_Baseline": {
         "hf_repo": get_model_repo_name("DPO_Baseline", precision="bf16"),
-        "chat_template": "alpaca",  # DPO uses Alpaca format
+        "display_name": "DPO Baseline",
     },
     "CITA_Baseline": {
         "hf_repo": get_model_repo_name("CITA_Baseline", precision="bf16"),
-        "chat_template": "llama3",  # CITA uses Llama-3 chat template
+        "display_name": "CITA Baseline",
     },
 }
 
@@ -186,93 +190,86 @@ def load_air_bench_test_set(max_samples: Optional[int] = None) -> Optional[pd.Da
 # Model Loader (from HuggingFace)
 # ===================================================================
 
-def load_model_for_eval(
-    model_key: str,
-    quantization: str = "bf16"  # or "int4" for faster inference
-    ) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
+def load_model_for_eval(model_key: str) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
     """
-    Load model with LoRA adapter from HuggingFace for evaluation
+    Load model from HuggingFace in BF16 (with or without adapter)
 
     Args:
-        model_key: One of ["SFT_Baseline", "DPO_Baseline", "CITA_Baseline"]
-        quantization: "bf16" (accurate) or "int4" (fast)
+        model_key: One of ["Baseline", "SFT_Baseline", "DPO_Baseline", "CITA_Baseline"]
 
     Returns:
         Tuple of (model, tokenizer)
 
     Note:
-        Models are loaded from HuggingFace (pushed by push_automation.py after training)
-        This allows evaluation on different GPU instances than training
+        - All models use BF16 precision (Tier-1 publication quality)
+        - All models use Llama-3 chat template (matching training)
+        - Models loaded from HuggingFace (pushed by push_automation.py)
     """
     print(f"\n{'='*80}")
-    print(f"Loading {model_key} for evaluation")
+    print(f"Loading {MODELS[model_key]['display_name']} for evaluation")
     print(f"{'='*80}")
 
     model_info = MODELS[model_key]
     hf_repo = model_info["hf_repo"]
 
-    print(f"Loading from HuggingFace: {hf_repo}")
-    print(f"(Models pushed automatically by push_automation.py after training)")
+    if hf_repo:
+        print(f"Loading from HuggingFace: {hf_repo}")
+    else:
+        print(f"Loading base model (no adapter)")
 
-    # Load tokenizer and set Llama-3.1 chat template (required for CITA evaluation)
+    # Load tokenizer from base model
+    print(f"Loading tokenizer from base model: {BASE_MODEL}")
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
     tokenizer.pad_token = tokenizer.eos_token
 
-    # Set chat template (same as training scripts)
-    if not tokenizer.chat_template:
+    # Set Llama-3.1 chat template (same as training scripts)
+    if tokenizer.chat_template is None:
         tokenizer.chat_template = (
-            "{% set loop_messages = messages %}"
-            "{% for message in loop_messages %}"
-            "{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}"
-            "{% if loop.index0 == 0 %}"
-            "{% set content = bos_token + content %}"
+            "{% for message in messages %}"
+            "{% if loop.first and message['role'] != 'system' %}"
+            "{{ '<|begin_of_text|>' }}"
             "{% endif %}"
-            "{{ content }}"
+            "{{ '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n' + message['content'] + '<|eot_id|>' }}"
             "{% endfor %}"
             "{% if add_generation_prompt %}"
             "{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}"
             "{% endif %}"
         )
-
-    # Load base model
-    if quantization == "bf16":
-        model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL,
-            torch_dtype=torch.bfloat16,
-            device_map="auto"
-        )
-    elif quantization == "int4":
-        from transformers import BitsAndBytesConfig
-        quant_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL,
-            quantization_config=quant_config,
-            device_map="auto"
-        )
+        print("✅ Llama-3.1 chat template set (matching training scripts)")
     else:
-        raise ValueError(f"Unknown quantization: {quantization}")
+        print("✅ Chat template already present")
 
-    # Load LoRA adapter from HuggingFace
-    try:
-        print(f"Loading LoRA adapter from HuggingFace: {hf_repo}...")
-        model = PeftModel.from_pretrained(model, hf_repo)
-        model = model.merge_and_unload()
-        model.eval()
-        print(f"✅ {model_key} loaded successfully from HuggingFace")
-    except Exception as e:
-        raise RuntimeError(
-            f"Failed to load adapter from HuggingFace: {hf_repo}\n"
-            f"Error: {e}\n\n"
-            f"Possible causes:\n"
-            f"  1. Model not yet trained and pushed to HuggingFace\n"
-            f"  2. Training performance did not improve (push_automation skipped push)\n"
-            f"  3. HuggingFace authentication issue (check HF_TOKEN in .env)\n\n"
-            f"To train this model:\n"
-            f"  python comparative_study/0{list(MODELS.keys()).index(model_key)+1}a_{model_key}/Llama3_BF16.py --mode full\n"
-        )
+    # Load base model in BF16 (required for Tier-1 publication quality)
+    print(f"Loading base model in BF16: {BASE_MODEL}")
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL,
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
+        attn_implementation="flash_attention_2"
+    )
+
+    # Load LoRA adapter from HuggingFace if specified
+    if hf_repo is not None:
+        print(f"📥 Downloading adapter from HuggingFace: {hf_repo}...")
+        try:
+            model = PeftModel.from_pretrained(model, hf_repo)
+            print("🔄 Merging adapter weights...")
+            model = model.merge_and_unload()
+            print("✅ Adapter merged")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load adapter from HuggingFace: {hf_repo}\n"
+                f"Error: {e}\n\n"
+                f"Possible causes:\n"
+                f"  1. Model not yet trained and pushed to HuggingFace\n"
+                f"  2. Training performance did not improve (push_automation skipped push)\n"
+                f"  3. HuggingFace authentication issue (check HF_TOKEN in .env)\n"
+            )
+    else:
+        print("Using base model (no adapter)")
+
+    model.eval()
+    print(f"✅ {MODELS[model_key]['display_name']} loaded successfully")
 
     return model, tokenizer
 
@@ -337,7 +334,6 @@ def generate_responses(
     model: AutoModelForCausalLM,
     tokenizer: AutoTokenizer,
     prompts: List[str],
-    chat_template: str,
     model_key: str,
     dataset_type: str,
     max_new_tokens: int = 256,
@@ -345,13 +341,12 @@ def generate_responses(
     checkpoint_interval: int = 100
     ) -> List[str]:
     """
-    Generate responses using correct chat template per model
+    Generate responses using Llama-3 chat template (matches training)
 
     Args:
         model: Fine-tuned model
-        tokenizer: Tokenizer
+        tokenizer: Tokenizer (with Llama-3 chat template)
         prompts: List of user prompts
-        chat_template: "alpaca" (SFT/DPO) or "llama3" (CITA)
         model_key: Model identifier (for checkpointing)
         dataset_type: "harmlessness" or "helpfulness" (for checkpointing)
         max_new_tokens: Max tokens to generate
@@ -379,24 +374,16 @@ def generate_responses(
         responses = []
         start_idx = 0
 
-    for i in tqdm(range(start_idx, len(prompts), batch_size), desc=f"Generating ({chat_template})"):
+    for i in tqdm(range(start_idx, len(prompts), batch_size), desc="Generating (Llama-3)"):
         batch_prompts = prompts[i:i+batch_size]
 
-        # Format prompts based on chat template
-        if chat_template == "alpaca":
-            formatted = [
-                f"Below are some instructions that describe some tasks. Write responses that appropriately complete each request.\n\n### Instruction:\n{p}\n\n### Response:\n"
-                for p in batch_prompts
-            ]
-        elif chat_template == "llama3":
-            formatted = []
-            for p in batch_prompts:
-                messages = [{"role": "user", "content": p}]
-                formatted.append(tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True
-                ))
-        else:
-            raise ValueError(f"Unknown chat_template: {chat_template}")
+        # Format all prompts using Llama-3 chat template (matches training)
+        formatted = []
+        for p in batch_prompts:
+            messages = [{"role": "user", "content": p}]
+            formatted.append(tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            ))
 
         # Tokenize
         inputs = tokenizer(
@@ -560,11 +547,10 @@ def run_dual_metric_evaluation(
     model_key: str,
     harmlessness_test: pd.DataFrame,
     helpfulness_test: pd.DataFrame,
-    judge: FireworksJudge,
-    quantization: str = "bf16"
+    judge: FireworksJudge
     ) -> Dict:
     """
-    Run full dual-metric evaluation for a single model
+    Run full dual-metric evaluation for a single model (BF16 only)
 
     Returns:
         Dict with harmlessness_df, helpfulness_df, summary_stats
@@ -613,15 +599,13 @@ def run_dual_metric_evaluation(
 
     # Load model only if needed
     if not both_completed or (both_completed and choice == "2"):
-        model, tokenizer = load_model_for_eval(model_key, quantization=quantization)
-        chat_template = MODELS[model_key]["chat_template"]
+        model, tokenizer = load_model_for_eval(model_key)
 
         # Generate responses for harmlessness test
         print(f"\n--- Harmlessness Test ({len(harmlessness_test)} prompts) ---")
         harm_responses = generate_responses(
             model, tokenizer,
             harmlessness_test['prompt'].tolist(),
-            chat_template=chat_template,
             model_key=model_key,
             dataset_type="harmlessness",
             max_new_tokens=256
@@ -632,7 +616,6 @@ def run_dual_metric_evaluation(
         help_responses = generate_responses(
             model, tokenizer,
             helpfulness_test['prompt'].tolist(),
-            chat_template=chat_template,
             model_key=model_key,
             dataset_type="helpfulness",
             max_new_tokens=256
@@ -724,22 +707,18 @@ def main_inner():
         # Quick test with small samples
         python dual_metric_eval.py --harmlessness-samples 100 --helpfulness-samples 100
 
-        # Use INT4 for faster inference
-        python dual_metric_eval.py --quantization int4
-
+        Note: All models loaded in BF16 (Tier-1 publication quality)
         Note: Models are loaded from HuggingFace (pushed by training scripts via push_automation.py)
         """
     )
     parser.add_argument("--mode", choices=["sanity", "full"], default="full",
                        help="Evaluation mode: sanity (50+50 samples) or full (1000+805 samples)")
     parser.add_argument("--models", nargs="+", default=list(MODELS.keys()),
-                       help="Models to evaluate (default: all 3)")
+                       help="Models to evaluate (default: all 4)")
     parser.add_argument("--harmlessness-samples", type=int, default=None,
                        help="Max samples for harmlessness test (overrides --mode)")
     parser.add_argument("--helpfulness-samples", type=int, default=None,
                        help="Max samples for helpfulness test (overrides --mode)")
-    parser.add_argument("--quantization", choices=["bf16", "int4"], default="bf16",
-                       help="Model quantization (default: bf16)")
 
     args = parser.parse_args()
 
@@ -795,8 +774,7 @@ def main_inner():
                 model_key,
                 harmlessness_test,
                 helpfulness_test,
-                judge,
-                quantization=args.quantization
+                judge
             )
 
             all_results[model_key] = results
