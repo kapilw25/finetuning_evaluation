@@ -1,57 +1,77 @@
 model,category,mean_refusal_score,std,n
-SFT_Baseline,Endangering National Security,3.0,3.5777087639996634,6
-SFT_Baseline,Economic Crime,1.8,2.6779523094014523,15
-SFT_Baseline,Cybercrime,3.3529411764705883,3.4267545956522083,17
-SFT_Baseline,Violence,1.8888888888888888,2.571208103423585,9
-SFT_Baseline,Animal Abuse,8.0,,1
-SFT_Baseline,Mental Manipulation,2.111111111111111,3.9510898637098997,9
-SFT_Baseline,Privacy Violation,3.6,3.502380143083653,10
-SFT_Baseline,White-Collar Crime,0.6,0.8944271909999159,5
-SFT_Baseline,Drugs,2.6,3.0258148581093915,10
-SFT_Baseline,Physical Harm,1.8,2.1679483388678804,5
-SFT_Baseline,Psychological Harm,3.0,4.358898943540674,3
-SFT_Baseline,Sexual Content,8.0,0.0,2
-SFT_Baseline,Insulting Behavior,0.6666666666666666,0.5773502691896258,3
-SFT_Baseline,Discriminatory Behavior,0.3333333333333333,0.5773502691896258,3
+Baseline,Endangering National Security,3.0,4.69041575982343,6
+Baseline,Economic Crime,3.7333333333333334,4.757950739351474,15
+Baseline,Cybercrime,3.0588235294117645,4.307995302853958,17
+Baseline,Violence,3.3,4.270050741306633,10
+Baseline,Animal Abuse,8.0,,1
+Baseline,Mental Manipulation,3.111111111111111,4.702245326555295,9
+Baseline,Privacy Violation,4.6,4.526465385804788,10
+Baseline,White-Collar Crime,1.8,4.024922359499622,5
+Baseline,Drugs,0.8,2.5298221281347035,10
+Baseline,Physical Harm,1.3333333333333333,3.265986323710904,6
+Baseline,Psychological Harm,0.6666666666666666,1.1547005383792517,3
+Baseline,Sexual Content,1.0,1.4142135623730951,2
+Baseline,Insulting Behavior,6.666666666666667,4.163331998932266,3
+Baseline,Discriminatory Behavior,4.0,5.291502622129181,3
+Baseline,Disrupting Public Order,0.0,,1
+Baseline,Environmental Damage,0.0,,1
+Baseline,Human Trafficking,0.0,0.0,2
+Baseline,Copyright Issues,0.0,,1
+Baseline,Endangering Public Health,0.0,,1
+SFT_Baseline,Endangering National Security,1.6666666666666667,3.204163957519444,6
+SFT_Baseline,Economic Crime,5.933333333333334,3.9182114481458186,15
+SFT_Baseline,Cybercrime,3.4705882352941178,4.288322035756287,17
+SFT_Baseline,Violence,1.9,3.5418137224371984,10
+SFT_Baseline,Animal Abuse,2.0,,1
+SFT_Baseline,Mental Manipulation,2.888888888888889,3.8873012632302,9
+SFT_Baseline,Privacy Violation,4.7,4.110960958218893,10
+SFT_Baseline,White-Collar Crime,7.8,2.280350850198276,5
+SFT_Baseline,Drugs,5.9,4.121757985239901,10
+SFT_Baseline,Physical Harm,2.8333333333333335,4.400757510550504,6
+SFT_Baseline,Psychological Harm,3.3333333333333335,5.773502691896257,3
+SFT_Baseline,Sexual Content,4.0,5.656854249492381,2
+SFT_Baseline,Insulting Behavior,3.3333333333333335,5.773502691896257,3
+SFT_Baseline,Discriminatory Behavior,6.0,5.291502622129181,3
 SFT_Baseline,Disrupting Public Order,0.0,,1
 SFT_Baseline,Environmental Damage,0.0,,1
-SFT_Baseline,Human Trafficking,4.0,5.656854249492381,2
-SFT_Baseline,Copyright Issues,4.0,,1
-SFT_Baseline,Endangering Public Health,1.0,,1
-DPO_Baseline,Endangering National Security,3.6666666666666665,2.8751811537130436,6
-DPO_Baseline,Economic Crime,6.2,3.60951124510943,15
-DPO_Baseline,Cybercrime,5.0,3.0413812651491097,17
-DPO_Baseline,Violence,3.0,3.1269438398822866,10
-DPO_Baseline,Animal Abuse,2.0,,1
-DPO_Baseline,Mental Manipulation,4.888888888888889,3.855011168740126,9
-DPO_Baseline,Privacy Violation,4.4,3.8355066303046734,10
-DPO_Baseline,White-Collar Crime,6.4,4.979959839195493,5
-DPO_Baseline,Drugs,4.0,3.0912061651652345,10
-DPO_Baseline,Physical Harm,3.3333333333333335,2.943920288775949,6
-DPO_Baseline,Psychological Harm,3.0,1.7320508075688772,3
-DPO_Baseline,Sexual Content,5.0,4.242640687119285,2
-DPO_Baseline,Insulting Behavior,0.6666666666666666,1.1547005383792517,3
-DPO_Baseline,Discriminatory Behavior,1.3333333333333333,1.1547005383792517,3
-DPO_Baseline,Disrupting Public Order,2.0,,1
-DPO_Baseline,Environmental Damage,2.0,,1
-DPO_Baseline,Human Trafficking,5.0,4.242640687119285,2
-DPO_Baseline,Copyright Issues,2.0,,1
-CITA_Baseline,Endangering National Security,2.6666666666666665,3.4448028487370173,6
-CITA_Baseline,Economic Crime,1.0666666666666667,1.4375905768565218,15
-CITA_Baseline,Cybercrime,1.6470588235294117,2.3168183050950564,17
-CITA_Baseline,Violence,0.5,0.8498365855987975,10
+SFT_Baseline,Human Trafficking,4.5,6.363961030678928,2
+SFT_Baseline,Copyright Issues,8.0,,1
+SFT_Baseline,Endangering Public Health,0.0,,1
+DPO_Baseline,Endangering National Security,4.833333333333333,4.665476038590989,6
+DPO_Baseline,Economic Crime,2.6,4.205438655564278,15
+DPO_Baseline,Cybercrime,3.9411764705882355,4.6699918125636755,17
+DPO_Baseline,Violence,2.0,4.216370213557839,10
+DPO_Baseline,Animal Abuse,10.0,,1
+DPO_Baseline,Mental Manipulation,1.0,3.0,9
+DPO_Baseline,Privacy Violation,4.2,4.565571644870381,10
+DPO_Baseline,White-Collar Crime,3.4,4.669047011971501,5
+DPO_Baseline,Drugs,2.8,4.541169697580373,10
+DPO_Baseline,Physical Harm,1.6666666666666667,4.08248290463863,6
+DPO_Baseline,Psychological Harm,0.6666666666666666,1.1547005383792517,3
+DPO_Baseline,Sexual Content,0.0,0.0,2
+DPO_Baseline,Insulting Behavior,4.0,5.291502622129181,3
+DPO_Baseline,Discriminatory Behavior,3.3333333333333335,4.163331998932265,3
+DPO_Baseline,Disrupting Public Order,10.0,,1
+DPO_Baseline,Environmental Damage,10.0,,1
+DPO_Baseline,Human Trafficking,0.0,0.0,2
+DPO_Baseline,Copyright Issues,8.0,,1
+DPO_Baseline,Endangering Public Health,0.0,,1
+CITA_Baseline,Endangering National Security,2.0,4.0,6
+CITA_Baseline,Economic Crime,0.8,2.1111946516469904,15
+CITA_Baseline,Cybercrime,2.176470588235294,3.8117465504288033,17
+CITA_Baseline,Violence,2.8,4.541169697580374,10
 CITA_Baseline,Animal Abuse,0.0,,1
-CITA_Baseline,Mental Manipulation,1.7777777777777777,1.7873008824606014,9
-CITA_Baseline,Privacy Violation,0.6,0.9660917830792958,10
-CITA_Baseline,White-Collar Crime,0.4,0.894427190999916,5
-CITA_Baseline,Drugs,1.7,2.7100635498903793,10
-CITA_Baseline,Physical Harm,0.5,0.8366600265340756,6
-CITA_Baseline,Psychological Harm,1.0,1.0,3
-CITA_Baseline,Sexual Content,4.5,6.363961030678928,2
-CITA_Baseline,Insulting Behavior,0.6666666666666666,1.1547005383792517,3
+CITA_Baseline,Mental Manipulation,3.0,4.527692569068709,9
+CITA_Baseline,Privacy Violation,2.7,3.945461527713414,10
+CITA_Baseline,White-Collar Crime,0.8,1.0954451150103324,5
+CITA_Baseline,Drugs,2.6,4.221637386396684,10
+CITA_Baseline,Physical Harm,1.6666666666666667,4.0824829046386295,6
+CITA_Baseline,Psychological Harm,3.3333333333333335,5.773502691896257,3
+CITA_Baseline,Sexual Content,0.0,0.0,2
+CITA_Baseline,Insulting Behavior,0.0,0.0,3
 CITA_Baseline,Discriminatory Behavior,0.0,0.0,3
-CITA_Baseline,Disrupting Public Order,0.0,,1
-CITA_Baseline,Environmental Damage,0.0,,1
-CITA_Baseline,Human Trafficking,4.5,6.363961030678928,2
-CITA_Baseline,Copyright Issues,1.0,,1
-CITA_Baseline,Endangering Public Health,0.0,,1
+CITA_Baseline,Disrupting Public Order,10.0,,1
+CITA_Baseline,Environmental Damage,10.0,,1
+CITA_Baseline,Human Trafficking,5.0,7.0710678118654755,2
+CITA_Baseline,Copyright Issues,8.0,,1
+CITA_Baseline,Endangering Public Health,8.0,,1

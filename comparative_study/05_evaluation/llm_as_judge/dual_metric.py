@@ -9,16 +9,16 @@ Since training instances auto-shutdown after pushing to HF, evaluation runs on f
 
 Usage:
     # Sanity check: 50+50 samples (~5-10 min, ~$0.10)
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity
+    python3 comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity
 
     # Full evaluation: 1000+805 samples (~40-60 min, ~$1.80)
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode full
+    python3 comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode full
 
     # Evaluate specific models
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity --models SFT_Baseline CITA_Baseline
+    python3 comparative_study/05_evaluation/llm_as_judge/dual_metric.py --mode sanity --models SFT_Baseline CITA_Baseline
 
     # Custom sample counts (overrides --mode)
-    python comparative_study/05_evaluation/llm_as_judge/dual_metric.py --harmlessness-samples 100 --helpfulness-samples 100
+    python3 comparative_study/05_evaluation/llm_as_judge/dual_metric.py --harmlessness-samples 100 --helpfulness-samples 100
 
 Note: Uses BF16 precision only (required for Tier-1 publication quality)
 """
@@ -613,8 +613,19 @@ def run_dual_metric_evaluation(
                 tokenizer = None
                 break
             elif choice == "2":
-                # Re-run inference - proceed with loading model
+                # Re-run inference - DELETE checkpoints first
                 print("\n🔄 Re-running inference from scratch...")
+                harm_checkpoint_path = get_checkpoint_path(model_key, "harmlessness")
+                help_checkpoint_path = get_checkpoint_path(model_key, "helpfulness")
+
+                if harm_checkpoint_path.exists():
+                    harm_checkpoint_path.unlink()
+                    print(f"   🗑️  Deleted: {harm_checkpoint_path.name}")
+
+                if help_checkpoint_path.exists():
+                    help_checkpoint_path.unlink()
+                    print(f"   🗑️  Deleted: {help_checkpoint_path.name}")
+
                 break
             else:
                 print("❌ Invalid choice. Please enter 1 or 2.")
@@ -714,6 +725,7 @@ def main():
 
 def main_inner():
     import argparse
+    import shutil
 
     parser = argparse.ArgumentParser(
         description="Dual-Metric Evaluation (Harmlessness + Helpfulness)",
@@ -743,6 +755,68 @@ def main_inner():
                        help="Max samples for helpfulness test (overrides --mode)")
 
     args = parser.parse_args()
+
+    # ===================================================================
+    # Cleanup Helper: Handle cached data from previous runs
+    # ===================================================================
+    checkpoint_dir = project_root / "comparative_study" / "05_evaluation" / "llm_as_judge" / "checkpoints"
+    results_dir = EVAL_OUTPUT_DIR
+
+    checkpoints_exist = checkpoint_dir.exists() and any(checkpoint_dir.iterdir())
+    results_exist = results_dir.exists() and any(results_dir.iterdir())
+
+    if checkpoints_exist or results_exist:
+        print("\n" + "="*80)
+        print("🗑️  CLEANUP: Cached Data Detected")
+        print("="*80)
+        print("\nWhat changed since last evaluation?")
+        print("\n  1) Nothing - Use cached data (fastest)")
+        print("  2) New LLM-as-Judge - Keep model responses, delete old evaluations")
+        print("     (e.g., switched from Llama-3.3-70B to GPT-4)")
+        print("  3) Retrained Models - Delete all cached data")
+        print("     (e.g., new LoRA adapters pushed to HuggingFace)")
+        print("="*80)
+
+        while True:
+            cleanup_choice = input("\nEnter choice (1, 2, or 3): ").strip()
+
+            if cleanup_choice == "1":
+                print("\n✅ Using cached data (no cleanup)")
+                break
+
+            elif cleanup_choice == "2":
+                print("\n🗑️  Scenario: New LLM-as-Judge")
+                print("   Keeping: checkpoints/ (model responses still valid)")
+                print("   Deleting: DualMetric_Evaluation_Results/ (old judge scores)")
+
+                if results_exist:
+                    shutil.rmtree(results_dir)
+                    print(f"   ✅ Deleted: {results_dir.name}/")
+
+                results_dir.mkdir(exist_ok=True)
+                break
+
+            elif cleanup_choice == "3":
+                print("\n🗑️  Scenario: Retrained Models")
+                print("   Deleting: checkpoints/ (old model responses)")
+                print("   Deleting: DualMetric_Evaluation_Results/ (old evaluations)")
+
+                if checkpoints_exist:
+                    shutil.rmtree(checkpoint_dir)
+                    print(f"   ✅ Deleted: {checkpoint_dir.name}/")
+
+                if results_exist:
+                    shutil.rmtree(results_dir)
+                    print(f"   ✅ Deleted: {results_dir.name}/")
+
+                checkpoint_dir.mkdir(exist_ok=True)
+                results_dir.mkdir(exist_ok=True)
+                break
+
+            else:
+                print("❌ Invalid choice. Please enter 1, 2, or 3.")
+
+        print("="*80)
 
     # Interactive mode selection if --mode not provided
     print("\n" + "="*80)
