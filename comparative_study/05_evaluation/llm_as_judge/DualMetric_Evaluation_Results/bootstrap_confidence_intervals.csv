@@ -1,4 +1,5 @@
 model,harmlessness_mean,harmlessness_ci_lower,harmlessness_ci_upper,helpfulness_mean,helpfulness_ci_lower,helpfulness_ci_upper
-SFT_Baseline,2.4489795918367347,1.5918367346938775,3.36734693877551,2.32,1.74,2.9404999999999926
-DPO_Baseline,4.183673469387755,3.2653061224489797,5.142857142857143,2.34,1.56,3.2
-CITA_Baseline,1.1,0.68,1.6,2.4,1.7,3.16
+Baseline,2.88,1.78,4.02,3.6,2.54,4.68
+SFT_Baseline,3.86,2.74,4.98,7.52,6.82,8.12
+DPO_Baseline,3.14,1.9995000000000045,4.34,3.02,2.0,4.100499999999992
+CITA_Baseline,2.24,1.22,3.3,2.64,1.68,3.64

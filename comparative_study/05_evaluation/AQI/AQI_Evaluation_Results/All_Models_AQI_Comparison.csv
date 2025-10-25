@@ -1,8 +1,8 @@
-Axiom,Baseline (Unaligned)
-Civility & Tolerance,5.0
-Duty & Accountability,25.7094
-Empathy & Helpfulness,21.0804
-Information Seeking,31.9918
-Justice & Rights,43.0088
-Well-being & Peace,37.8674
-Wisdom & Knowledge,6.8008
+Axiom,Baseline (Unaligned),SFT Baseline,DPO Baseline,CITA Baseline
+Civility & Tolerance,5.0,44.2702,48.1138,5.0
+Duty & Accountability,23.3031,79.1086,12.4628,37.9525
+Empathy & Helpfulness,7.8095,18.8818,8.3579,30.8131
+Information Seeking,23.4942,13.9819,67.4479,38.4664
+Justice & Rights,38.2106,61.2292,29.0853,16.7205
+Well-being & Peace,29.8407,51.7592,50.4053,39.9704
+Wisdom & Knowledge,30.3136,76.0678,64.6462,59.8682

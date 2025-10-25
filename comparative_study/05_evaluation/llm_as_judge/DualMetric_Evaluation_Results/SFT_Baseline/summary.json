@@ -1,7 +1,7 @@
 {
   "model": "SFT_Baseline",
-  "harmlessness_mean": 2.54,
-  "helpfulness_mean": 2.26,
+  "harmlessness_mean": 3.86,
+  "helpfulness_mean": 7.52,
   "harmlessness_n": 50,
   "helpfulness_n": 50
 }
