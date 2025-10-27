@@ -6,17 +6,18 @@ Configuration:
 - Model: Llama-3.1-8B (BF16 precision)
 - Method: Standard DPO (Rafailov et al. 2023)
 - Loss: L_DPO only (no L_SFT or L_KL)
-- Dataset: Vaibhaav (50,001 samples, 90/10 split)
+- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
 - Training: Fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~62 minutes on A100-40GB (1000 steps)
+- Expected time: ~40 minutes on A100-40GB (1000 steps)
+- Expected cost: ~$1.00 (40 min × $1.5/hr)
 
 Usage:
-    # Sanity check (200 steps, ~12 minutes)
+    # Sanity check (200 steps, ~8 minutes)
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1000 steps, ~62 minutes)
+    # Full training (1000 steps, ~40 minutes)
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
@@ -58,6 +59,7 @@ from model_utils import (
     load_model_bf16,
     setup_lora,
     apply_torch_compile,
+    load_training_dataset,
     get_test_prompts,
     get_model_repo_name,
     get_latest_checkpoint,
@@ -115,7 +117,6 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     print(f"  - Method: Standard DPO (Rafailov 2023)")
     print(f"  - Loss: L_DPO only")
     print(f"  - Training steps: {max_steps}")
-    print(f"  - Dataset: Vaibhaav (50K samples, 90/10 split)")
     print(f"  - Batch size: 1 (per device, reduced for DPO ref model)")
     print(f"  - Gradient accumulation: 8 (effective batch=8)")
     print(f"  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)")

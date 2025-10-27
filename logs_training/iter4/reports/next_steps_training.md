@@ -207,36 +207,69 @@ train_dataset = dataset_raw.map(format_vaibhaav_for_cita, remove_columns=dataset
 
 ### Phase 4: Re-train All Models
 
-#### Training Commands (Sequential):
+#### SANITY Mode (Quick Test - ~17 min each)
+
+```bash
+# 1. SFT Baseline (NO instruction, Vaibhaav dataset)
+python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
+# Training: 0.1 epoch = 4,500 samples (9% of dataset)
+# Checkpoints: 1 (at end only)
+# Time: ~17 min
+
+# 2. DPO Baseline (NO instruction, Vaibhaav dataset, stacked on SFT)
+python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
+    --mode sanity \
+    --base_model kapilw25/llama3-8b-vaibhaav-sft-baseline
+# Training: 0.1 epoch = 4,500 samples
+# Checkpoints: 1 (at end only)
+# Time: ~17 min
+
+# 3. CITA Baseline (WITH natural language instructions, stacked on DPO)
+python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
+    --mode sanity \
+    --base_model kapilw25/llama3-8b-vaibhaav-dpo-baseline
+# Training: 0.1 epoch = 4,500 samples
+# Checkpoints: 1 (at end only)
+# Time: ~17 min
+
+# Total SANITY time: ~51 min (3 models)
+```
+
+#### FULL Training (Production - ~130 min each)
 
 ```bash
 # 1. SFT Baseline (NO instruction, Vaibhaav dataset)
 python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
-# Dataset: Vaibhaav/alignment-instructions (50K samples)
-# Expected: Lower safety (no instruction), learns from accepted responses
+# Training: 1.0 epoch = 45,001 samples (90% of dataset)
+# Checkpoints: 5 (every 20%: 1,125 / 2,250 / 3,375 / 4,500 / 5,625 steps)
+# Time: ~130 min
 
-# 2. DPO Baseline (NO instruction, Vaibhaav dataset)
+# 2. DPO Baseline (NO instruction, Vaibhaav dataset, stacked on SFT)
 python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
-# Dataset: Vaibhaav/alignment-instructions (50K samples)
-# Expected: Higher safety (preference learning), no instruction awareness
+    --base_model kapilw25/llama3-8b-vaibhaav-sft-baseline
+# Training: 1.0 epoch = 45,001 samples
+# Checkpoints: 5 (every 20%)
+# Time: ~130 min
 
-# 3. CITA Baseline (WITH natural language instructions, Vaibhaav dataset)
+# 3. CITA Baseline (WITH natural language instructions, stacked on DPO)
 python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16
-# Dataset: Vaibhaav/alignment-instructions (50K custom instructions!)
-# Expected: Highest safety (preferences + natural language instructions + KL regularization)
+    --base_model kapilw25/llama3-8b-vaibhaav-dpo-baseline
+# Training: 1.0 epoch = 45,001 samples
+# Checkpoints: 5 (every 20%)
+# Time: ~130 min
+
+# Total FULL training time: ~390 min (6.5 hours for all 3 models)
 ```
 
-#### Expected Training Results:
+#### Expected Results
 
-| Model | Dataset | Instruction Type | Training Samples | Expected Margin |
-|-------|---------|------------------|------------------|-----------------|
-| **SFT** | Vaibhaav | ❌ None | 50,001 | ~1.5 |
-| **DPO** | Vaibhaav | ❌ None | 50,001 | ~2.95 |
-| **CITA** | Vaibhaav | ✅ **Natural language** | 50,001 | ~5.0+ (boost from custom instructions) |
+| Model | Dataset | Instruction | Samples | Epochs | Checkpoints | Expected Margin |
+|-------|---------|-------------|---------|--------|-------------|-----------------|
+| **SFT** | Vaibhaav | ❌ None | 45,001 | 1.0 | 5 | ~1.5 |
+| **DPO** | Vaibhaav | ❌ None | 45,001 | 1.0 | 5 | ~2.95 |
+| **CITA** | Vaibhaav | ✅ Natural language | 45,001 | 1.0 | 5 | ~5.0+ |
 
 **Key Difference from PKU Training**:
 - **Old**: Generic category-based instructions ("Refuse cybercrime, violence")

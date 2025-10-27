@@ -4,8 +4,8 @@ library_name: transformers
 model_name: SFT_Baseline
 tags:
 - generated_from_trainer
-- sft
 - trl
+- sft
 licence: license
 ---
 
@@ -34,11 +34,11 @@ This model was trained with SFT.
 
 ### Framework versions
 
-- TRL: 0.22.2
-- Transformers: 4.55.4
-- Pytorch: 2.9.0
+- TRL: 0.24.0
+- Transformers: 4.57.1
+- Pytorch: 2.5.1
 - Datasets: 4.2.0
-- Tokenizers: 0.21.4
+- Tokenizers: 0.22.1
 
 ## Citations
 

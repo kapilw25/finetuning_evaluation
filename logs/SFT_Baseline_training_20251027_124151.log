@@ -1,0 +1,113 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_evaluation/logs/SFT_Baseline_training_20251027_124151.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-vaibhaav-sft-baseline-bf16
+================================================================================
+
+✅ Sanity check mode: 0.1 epochs (~17 minutes)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+❌ No existing model on HuggingFace: kapilw25/llama3-8b-vaibhaav-sft-baseline-bf16
+   This will be the first training run
+================================================================================
+Training will take approximately: ~17 minutes
+
+Options:
+  1) Inference only from HF_repo
+  2) Train and push to HuggingFace
+================================================================================
+Enter choice (1 or 2): ================================================================================
+
+✅ Training mode selected
+   Will train and push to HuggingFace (first time)
+
+================================================================================
+🚀 Starting SFT Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: Standard SFT (supervised learning)
+  - Loss: L_SFT only
+  - Training epochs: 0.1
+  - Dataset: Vaibhaav (50K samples, 90/10 split)
+  - Batch size: 2 (per device)
+  - Gradient accumulation: 4 (effective batch=8)
+  - Learning rate: 2e-4 (QLoRA recommendation)
+  - Warmup ratio: 0.03 (3% of training)
+  - Eval frequency: Every 20% (5 checkpoints per epoch)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+1️⃣ Checking local checkpoints...
+✅ Training checkpoint found at: outputs/SFT_Baseline/checkpoint-1000
+   Epochs: 0.1
+   Skipping training, will load from local checkpoint for inference...
+
+📂 Loading model from local checkpoint for inference: outputs/SFT_Baseline/checkpoint-1000
+tokenizer_config.json:   0%|                                                            | 0.00/50.5k [00:00<?, ?B/s]tokenizer_config.json: 100%|███████████████████████████████████████████████████| 50.5k/50.5k [00:00<00:00, 86.2MB/s]
+tokenizer.json:   0%|                                                                   | 0.00/9.09M [00:00<?, ?B/s]tokenizer.json: 100%|██████████████████████████████████████████████████████████| 9.09M/9.09M [00:00<00:00, 26.6MB/s]tokenizer.json: 100%|██████████████████████████████████████████████████████████| 9.09M/9.09M [00:00<00:00, 26.0MB/s]
+special_tokens_map.json:   0%|                                                           | 0.00/73.0 [00:00<?, ?B/s]special_tokens_map.json: 100%|████████████████████████████████████████████████████| 73.0/73.0 [00:00<00:00, 577kB/s]
+✅ Llama-3.1 chat template set (required by SFTTrainer)
+✅ Flash Attention 2 enabled (saves ~2.5GB memory)
+config.json:   0%|                                                                        | 0.00/826 [00:00<?, ?B/s]config.json: 100%|█████████████████████████████████████████████████████████████████| 826/826 [00:00<00:00, 5.27MB/s]
+model.safetensors.index.json:   0%|                                                     | 0.00/23.9k [00:00<?, ?B/s]model.safetensors.index.json: 100%|████████████████████████████████████████████| 23.9k/23.9k [00:00<00:00, 89.0MB/s]
+Fetching 4 files:   0%|                                                                       | 0/4 [00:00<?, ?it/s]
+model-00002-of-00004.safetensors:   0%|                                                 | 0.00/5.00G [00:00<?, ?B/s][A
+
+model-00001-of-00004.safetensors:   0%|                                                 | 0.00/4.98G [00:00<?, ?B/s][A[A
+
+
+model-00003-of-00004.safetensors:   0%|                                                 | 0.00/4.92G [00:00<?, ?B/s][A[A[A
+
+
+
+model-00004-of-00004.safetensors:   0%|                                                 | 0.00/1.17G [00:00<?, ?B/s][A[A[A[A
+
+
+model-00003-of-00004.safetensors:   0%|                                        | 841k/4.92G [00:00<1:24:23, 971kB/s][A[A[A
+model-00002-of-00004.safetensors:   0%|                                        | 803k/5.00G [00:01<1:44:18, 799kB/s][A
+
+model-00001-of-00004.safetensors:   0%|▏                                       | 23.2M/4.98G [00:01<03:41, 22.4MB/s][A[A
+
+
+model-00003-of-00004.safetensors:   1%|▌                                       | 67.9M/4.92G [00:01<01:24, 57.3MB/s][A[A[A
+model-00002-of-00004.safetensors:   1%|▌                                       | 67.9M/5.00G [00:01<01:29, 54.8MB/s][A
+
+model-00001-of-00004.safetensors:   1%|▌                                       | 67.8M/4.98G [00:01<01:47, 45.6MB/s][A[A
+model-00002-of-00004.safetensors:   4%|█▋                                        | 202M/5.00G [00:02<00:36, 133MB/s][A
+
+model-00001-of-00004.safetensors:   3%|█                                        | 135M/4.98G [00:02<01:03, 75.7MB/s][A[A
+model-00002-of-00004.safetensors:   5%|██▎                                       | 269M/5.00G [00:02<00:36, 130MB/s][A
+
+model-00001-of-00004.safetensors:   5%|██▎                                       | 269M/4.98G [00:02<00:34, 136MB/s][A[A
+
+
+model-00003-of-00004.safetensors:   3%|█▏                                       | 135M/4.92G [00:02<01:34, 50.4MB/s][A[A[A
+model-00002-of-00004.safetensors:   8%|███▍                                      | 403M/5.00G [00:02<00:24, 189MB/s][A
+
+
+model-00003-of-00004.safetensors:   5%|██▎                                       | 269M/4.92G [00:03<00:40, 116MB/s][A[A[A
+model-00002-of-00004.safetensors:  11%|████▌                                     | 537M/5.00G [00:03<00:17, 257MB/s][A
+
+model-00001-of-00004.safetensors:   7%|██▊                                       | 336M/4.98G [00:03<00:35, 129MB/s][A[A
+
+
+model-00003-of-00004.safetensors:   8%|███▍                                      | 403M/4.92G [00:03<00:24, 184MB/s][A[A[A
+model-00002-of-00004.safetensors:  12%|█████                                     | 604M/5.00G [00:03<00:16, 260MB/s][Amodel-00001-of-00004.safetensors:   8%|███▍                                      | 403M/4.98G [00:03<00:39, 115MB/s]
+model-00004-of-00004.safetensors:   0%|                                                 | 0.00/1.17G [00:03<?, ?B/s]
+model-00002-of-00004.safetensors:  13%|█████▋                                    | 671M/5.00G [00:03<00:22, 191MB/s]
+model-00003-of-00004.safetensors:   8%|███▍                                      | 403M/4.92G [00:03<00:39, 115MB/s]
+Fetching 4 files:   0%|                                                                       | 0/4 [00:03<?, ?it/s]
