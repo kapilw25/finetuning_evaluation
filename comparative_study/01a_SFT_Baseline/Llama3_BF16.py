@@ -13,7 +13,7 @@ Configuration:
 - Expected time: ~130 minutes on A100-40GB (1.0 epoch)
 
 Usage:
-    # Sanity check (0.1 epoch, ~17 minutes)
+    # Sanity check (0.1 epoch, ~22 minutes)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
     # Full training (1.0 epoch, ~130 minutes)
@@ -549,7 +549,7 @@ Examples:
             "method": "SFT",
             "num_epochs": num_epochs,
             "learning_rate": 2e-4,  # QLoRA recommendation for small models
-            "warmup_steps": 100,  # 10% warmup (2024 best practice)
+            "warmup_ratio": 0.03,  # 3% of training (auto-scales)
             "optimizer": "adamw_torch",
             "weight_decay": 0.01,
             "lr_scheduler_type": "cosine",  # Cosine for smoother convergence

@@ -214,12 +214,12 @@ train_dataset = dataset_raw.map(format_vaibhaav_for_cita, remove_columns=dataset
 python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 # Training: 0.1 epoch = 4,500 samples (9% of dataset)
 # Checkpoints: 1 (at end only)
-# Time: ~17 min
+# Time: ~22 min
 
 # 2. DPO Baseline (NO instruction, Vaibhaav dataset, stacked on SFT)
 python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode sanity \
-    --base_model kapilw25/llama3-8b-vaibhaav-sft-baseline
+    --base_model kapilw25/llama3-8b-vaibhaav-sft-baseline-bf16
 # Training: 0.1 epoch = 4,500 samples
 # Checkpoints: 1 (at end only)
 # Time: ~17 min
@@ -227,12 +227,12 @@ python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
 # 3. CITA Baseline (WITH natural language instructions, stacked on DPO)
 python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
     --mode sanity \
-    --base_model kapilw25/llama3-8b-vaibhaav-dpo-baseline
+    --base_model kapilw25/llama3-8b-vaibhaav-dpo-baseline-bf16
 # Training: 0.1 epoch = 4,500 samples
 # Checkpoints: 1 (at end only)
 # Time: ~17 min
 
-# Total SANITY time: ~51 min (3 models)
+# Total SANITY time: ~56 min (3 models)
 ```
 
 #### FULL Training (Production - ~130 min each)
