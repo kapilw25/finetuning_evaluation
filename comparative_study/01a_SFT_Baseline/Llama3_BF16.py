@@ -206,11 +206,13 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
 
         # Calculate steps for percentage-based checkpointing
         steps_per_epoch = len(train_dataset) // 8  # effective_batch_size=8
-        checkpoint_interval = int(steps_per_epoch * 0.2)  # Save/eval every 20% of epoch
+        total_steps = int(steps_per_epoch * num_epochs)  # Scale to actual training duration
+        checkpoint_interval = int(total_steps * 0.2)  # Save/eval every 20% of ACTUAL training
 
         print(f"✅ Dataset loaded: {len(train_dataset):,} train / {len(val_dataset):,} val")
         print(f"   Steps per epoch: {steps_per_epoch:,} (batch_size=8)")
-        print(f"   Checkpoint interval: {checkpoint_interval:,} steps (20% of epoch)")
+        print(f"   Total training steps: {total_steps:,} ({num_epochs} epoch)")
+        print(f"   Checkpoint interval: {checkpoint_interval:,} steps (20% of training)")
     else:
         # Training skipped - initialize empty vars (will be loaded for inference if needed)
         model = None

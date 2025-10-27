@@ -1487,3 +1487,30 @@ Checkpoint: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/c
 ?? outputs/SFT_Baseline/checkpoint-563/
 ?? tensorboard_logs/SFT_Baseline_20251027_124403/
 
+✅ Staged all changes (including logs/)
+✅ Created git commit
+
+📤 Pushing to GitHub...
+✅ Successfully pushed to GitHub!
+
+
+================================================================================
+
+
+================================================================================
+✅ Automated Push Complete!
+================================================================================
+💾 Local backup: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/lora_model_SFT_Baseline_PBT_BF16
+📊 Config: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/sft_baseline_config.json
+================================================================================
+
+
+================================================================================
+✅ All results saved!
+================================================================================
+Results saved to:
+  - Local: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/SFT_Baseline/checkpoint-563
+  - HuggingFace: kapilw25/llama3-8b-vaibhaav-sft-baseline-bf16 (only if performance improved)
+  - GitHub: Logs and code pushed
+================================================================================
+
