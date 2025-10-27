@@ -6,22 +6,21 @@ Configuration:
 - Model: Llama-3.1-8B (BF16 precision)
 - Method: Standard SFT (supervised learning on chosen responses only)
 - Loss: L_SFT only (no L_DPO or L_KL)
-- Dataset: PKU-SafeRLHF (10,813 samples, chosen responses only)
-- Training: Fixed hyperparameters (no PBT)
+- Dataset: Vaibhaav (50,001 samples, 90/10 split, NO instruction - baseline)
+- Training: Epoch-based, fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~40 minutes on A100-40GB (1000 steps)
-- Expected cost: ~$1.00 (40 min × $1.5/hr)
+- Expected time: ~130 minutes on A100-40GB (1.0 epoch)
 
 Usage:
-    # Sanity check (200 steps, ~8 minutes)
+    # Sanity check (0.1 epoch, ~17 minutes)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1000 steps, ~40 minutes)
+    # Full training (1.0 epoch, ~130 minutes)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/SFT_Baseline/checkpoint-1000/
+    - Model checkpoint: ./outputs/SFT_Baseline/checkpoint-<step>/
     - LoRA adapters: ./outputs/SFT_Baseline/lora_model_SFT_Baseline/
     - TensorBoard logs: ./tensorboard_logs/SFT_Baseline_<timestamp>/
     - Training log: ./logs/SFT_Baseline_training_<timestamp>.log
@@ -182,8 +181,9 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         )
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        print("\nApplying torch.compile()...")
-        model = apply_torch_compile(model)
+        # DISABLED: Causing AttributeError: 'float' object has no attribute 'meta'
+        # print("\nApplying torch.compile()...")
+        # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
         print("\nLoading Vaibhaav/alignment-instructions dataset...")
@@ -203,6 +203,12 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         dataset_split = dataset_formatted.train_test_split(test_size=0.1, seed=42)
         train_dataset = dataset_split["train"]
         val_dataset = dataset_split["test"]
+
+        # Scale validation set for SANITY mode (faster evaluation)
+        if num_epochs < 1.0:
+            val_size_scaled = int(len(val_dataset) * num_epochs)
+            val_dataset = val_dataset.select(range(val_size_scaled))
+            print(f"⚡ SANITY mode: Scaled validation set to {num_epochs:.1f}x ({len(val_dataset):,} samples)")
 
         # Calculate steps for percentage-based checkpointing
         steps_per_epoch = len(train_dataset) // 8  # effective_batch_size=8
@@ -415,14 +421,14 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Sanity check (200 steps, ~8 minutes)
+  # Sanity check (0.1 epoch, ~17 minutes)
   python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-  # Full training (1000 steps, ~40 minutes)
+  # Full training (1.0 epoch, ~130 minutes)
   python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
-  # Custom steps
-  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --steps 500
+  # Custom epochs
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --epochs 0.5
         """
     )
 
@@ -431,14 +437,14 @@ Examples:
         type=str,
         choices=["sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (200 steps) or 'full' (1000 steps)"
+        help="Training mode: 'sanity' (0.1 epoch) or 'full' (1.0 epoch)"
     )
 
     parser.add_argument(
-        "--steps",
-        type=int,
+        "--epochs",
+        type=float,
         default=None,
-        help="Maximum training steps (overrides --mode)"
+        help="Number of training epochs (overrides --mode)"
     )
 
     parser.add_argument(
@@ -451,9 +457,9 @@ Examples:
     args = parser.parse_args()
 
     # Determine configuration
-    if args.steps is not None:
+    if args.epochs is not None:
         # Custom epochs specified
-        num_epochs = args.steps
+        num_epochs = args.epochs
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "sanity":
         num_epochs = 0.1  # 10% of data (~4,500 samples, ~17 min)

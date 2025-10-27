@@ -45,6 +45,20 @@ What it does:
 - git fetch - downloads remote changes
 - git reset --hard origin/main - throws away ALL local changes and matches remote exactly
 
+#   TensorBoard via SSH Tunnel
+On Cloud Terminal:
+```
+tensorboard --logdir=tensorboard_logs --port=6006
+```
+
+On Local Terminal:
+```
+ssh -L 6006:localhost:6006 lambda_A100_40GB
+```
+
+Open Browser: http://localhost:6006
+
+# NOTES
 >> note: be brutally honest. You do not have to agree with me, unless I am correct. But do not LIE/ Halluciante too
 
 >> its NIGHT time: Keep explanation SHORT. My brain is FOGGing. I cant read verbose explanations

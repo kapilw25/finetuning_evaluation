@@ -9,5 +9,5 @@
   "batch_size": 2,
   "gradient_accumulation_steps": 4,
   "max_seq_length": 2048,
-  "final_loss": null
+  "final_loss": 2.218526601791382
 }
