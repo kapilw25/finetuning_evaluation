@@ -4,7 +4,7 @@ Data Prep Utils for PKU-SafeRLHF Dataset
 Provides dataset loading, filtering, and formatting for SFT, DPO, and CITA training.
 """
 
-from .pku_loader import (
+from .loader_pku import (
     load_pku_filtered,
     get_safe_unsafe_responses,
     synthesize_system_instruction

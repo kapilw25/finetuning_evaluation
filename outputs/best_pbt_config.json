@@ -1,0 +1,22 @@
+{
+  "per_device_train_batch_size": 1,
+  "gradient_accumulation_steps": 8,
+  "max_steps": 200,
+  "lr_scheduler_type": "cosine",
+  "save_steps": 50,
+  "save_total_limit": 5,
+  "logging_steps": 1,
+  "eval_strategy": "steps",
+  "eval_steps": 50,
+  "per_device_eval_batch_size": 1,
+  "gradient_checkpointing": true,
+  "bf16": true,
+  "optim": "adamw_torch",
+  "report_to": "none",
+  "lambda_kl": 0.0010070640053912274,
+  "learning_rate": 1.0626829241283678e-05,
+  "beta": 0.08277907676802122,
+  "weight_decay": 0.011067480744186897,
+  "warmup_steps": 100,
+  "base_model": "kapilw25/llama3-8b-pku-dpo-baseline-bf16"
+}

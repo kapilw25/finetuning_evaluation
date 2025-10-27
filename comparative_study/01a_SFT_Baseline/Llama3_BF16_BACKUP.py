@@ -85,12 +85,12 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base_model=None, force_skip=False):
+def train_sft_baseline(max_steps=300, output_dir="./outputs/SFT_Baseline", base_model=None, force_skip=False):
     """
     Train SFT baseline with fixed hyperparameters
 
     Args:
-        num_epochs: Number of training epochs (default: 1.0 for full, 0.1 for sanity)
+        max_steps: Maximum training steps (default: 300 for full, 100 for sanity)
         output_dir: Output directory for checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
         force_skip: If True, skip training and only run inference (user selected option 1)
@@ -105,13 +105,11 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
     print(f"  - Model: Llama-3.1-8B (BF16)")
     print(f"  - Method: Standard SFT (supervised learning)")
     print(f"  - Loss: L_SFT only")
-    print(f"  - Training epochs: {num_epochs}")
-    print(f"  - Dataset: Vaibhaav (50K samples, 90/10 split)")
+    print(f"  - Training steps: {max_steps}")
     print(f"  - Batch size: 2 (per device)")
     print(f"  - Gradient accumulation: 4 (effective batch=8)")
     print(f"  - Learning rate: 2e-4 (QLoRA recommendation)")
-    print(f"  - Warmup ratio: 0.03 (3% of training)")
-    print(f"  - Eval frequency: Every 20% (5 checkpoints per epoch)")
+    print(f"  - Warmup steps: 100 (10% of total steps)")
     print(f"  - LR scheduler: cosine")
     print(f"  - Optimizer: adamw_torch")
     print(f"  - Precision: BF16 + Flash Attention 2")
@@ -138,13 +136,15 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         print("1️⃣ Checking local checkpoints...")
         latest_checkpoint = get_latest_checkpoint(output_dir)
 
-        # Check if training is complete (simplified: check if final checkpoint exists)
-        if latest_checkpoint:
-            print(f"✅ Training checkpoint found at: {latest_checkpoint}")
-            print(f"   Epochs: {num_epochs}")
+        if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
+            print(f"✅ Training already completed at: {latest_checkpoint}")
+            print(f"   Max steps: {max_steps}")
             print(f"   Skipping training, will load from local checkpoint for inference...\n")
             training_skipped = True
             load_from_hf = False  # Option 2 with local checkpoint: Load from local
+        elif latest_checkpoint:
+            print(f"📂 Found checkpoint: {latest_checkpoint}")
+            print(f"   Resuming training from this checkpoint...\n")
         else:
             print(f"🆕 No checkpoint found")
             print(f"   Will start fresh training (even if HF repo exists)...\n")
@@ -186,31 +186,20 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
-        print("\nLoading Vaibhaav/alignment-instructions dataset...")
-        from data_prep.loader_vaibhaav import load_vaibhaav_alignment, format_vaibhaav_for_sft
-
-        # Load raw dataset (50,001 samples)
-        dataset_raw = load_vaibhaav_alignment(split="train")
-
-        # Format for SFT (NO instruction - baseline)
-        dataset_formatted = dataset_raw.map(
-            format_vaibhaav_for_sft,
-            remove_columns=dataset_raw.column_names,
-            desc="Formatting Vaibhaav for SFT (NO instruction)"
+        print("\nLoading dataset...")
+        train_dataset = load_training_dataset(
+            split="train",
+            max_samples=None,  # Use all samples
+            method="sft",  # SFT format (chosen responses only)
+            return_val=False  # Training split
         )
 
-        # Split train/val (90/10 - research standard)
-        dataset_split = dataset_formatted.train_test_split(test_size=0.1, seed=42)
-        train_dataset = dataset_split["train"]
-        val_dataset = dataset_split["test"]
-
-        # Calculate steps for percentage-based checkpointing
-        steps_per_epoch = len(train_dataset) // 8  # effective_batch_size=8
-        checkpoint_interval = int(steps_per_epoch * 0.2)  # Save/eval every 20% of epoch
-
-        print(f"✅ Dataset loaded: {len(train_dataset):,} train / {len(val_dataset):,} val")
-        print(f"   Steps per epoch: {steps_per_epoch:,} (batch_size=8)")
-        print(f"   Checkpoint interval: {checkpoint_interval:,} steps (20% of epoch)")
+        val_dataset = load_training_dataset(
+            split="train",
+            max_samples=None,
+            method="sft",
+            return_val=True  # Validation split (10% by default)
+        )
     else:
         # Training skipped - initialize empty vars (will be loaded for inference if needed)
         model = None
@@ -236,31 +225,30 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
             output_dir=str(output_dir),
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
-            num_train_epochs=num_epochs,  # Epoch-based training
-            warmup_ratio=0.03,  # 3% of training (auto-scales)
-            learning_rate=2e-4,
+            warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice)
+            max_steps=max_steps,
+            learning_rate=2e-4,  # Match DPO baseline
             logging_steps=1,
             optim="adamw_torch",
             weight_decay=0.01,
-            lr_scheduler_type="cosine",
+            lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
             seed=3407,
-            bf16=True,
+            bf16=True,  # BF16 precision
             gradient_checkpointing=True,
-            save_strategy="steps",
-            save_steps=checkpoint_interval,  # 20% of epoch
+            save_steps=50,
             save_total_limit=5,
             report_to="tensorboard",
             logging_dir=str(tensorboard_run_dir),
             logging_first_step=True,
-            dataloader_num_workers=2,
-            dataloader_pin_memory=True,
+            dataloader_num_workers=2,  # Parallel data loading
+            dataloader_pin_memory=True,  # Faster CPU→GPU transfer
             # ✅ SFT-specific parameters
-            max_length=2048,
-            packing=False,
-            # ✅ Evaluation every 20% of epoch
+            max_length=2048,  # Maximum sequence length for tokenization
+            packing=False,  # Disable packing for alignment training
+            # ✅ ADDED: Validation to detect overfitting
             eval_strategy="steps",
-            eval_steps=checkpoint_interval,  # 20% of epoch (5 evals per full epoch)
-            per_device_eval_batch_size=2,
+            eval_steps=50,  # Aligned with save_steps
+            per_device_eval_batch_size=2,  # Match training batch size
         )
 
         # ===== CREATE SFT TRAINER =====
@@ -450,15 +438,14 @@ Examples:
 
     # Determine configuration
     if args.steps is not None:
-        # Custom epochs specified
-        num_epochs = args.steps
-        print(f"✅ Custom configuration: {num_epochs} epochs")
+        max_steps = args.steps
+        print(f"✅ Custom configuration: {max_steps} steps")
     elif args.mode == "sanity":
-        num_epochs = 0.1  # 10% of data (~4,500 samples, ~17 min)
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~17 minutes)")
+        max_steps = 200  # 100 warmup + 100 training (see actual LR schedule)
+        print(f"✅ Sanity check mode: {max_steps} steps (~8 minutes)")
     else:
-        num_epochs = 1.0  # Full epoch (~45,000 samples, ~130 min)
-        print(f"✅ Full training mode: {num_epochs} epochs (~130 minutes)")
+        max_steps = 1000
+        print(f"✅ Full training mode: {max_steps} steps (~40 minutes)")
 
     # ===================================================================
     # Ask about retraining BEFORE starting (check HF repo first)
@@ -490,7 +477,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~17 minutes' if num_epochs == 0.1 else '~130 minutes'}")
+    print(f"Training will take approximately: {'~12 minutes' if max_steps == 200 else '~62 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
@@ -528,7 +515,7 @@ Examples:
 
     # Run training
     try:
-        trainer, training_skipped = train_sft_baseline(num_epochs=num_epochs, base_model=args.base_model, force_skip=force_skip)
+        trainer, training_skipped = train_sft_baseline(max_steps=max_steps, base_model=args.base_model, force_skip=force_skip)
         print(f"\n🏁 SFT Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
@@ -539,7 +526,7 @@ Examples:
         # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
         training_config = {
             "method": "SFT",
-            "num_epochs": num_epochs,
+            "max_steps": max_steps,
             "learning_rate": 2e-4,  # QLoRA recommendation for small models
             "warmup_steps": 100,  # 10% warmup (2024 best practice)
             "optimizer": "adamw_torch",
