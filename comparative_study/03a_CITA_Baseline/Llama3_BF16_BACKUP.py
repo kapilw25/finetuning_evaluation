@@ -6,28 +6,28 @@ Configuration:
 - Model: Llama-3.1-8B (BF16 precision)
 - Method: CITA (Calibrated Instruction Tuning with Alignment)
 - Loss: L_CITA = L_DPO + λ_KL × L_KL (combines DPO + KL regularization)
-- Dataset: Vaibhaav (50,001 samples, 90/10 split, WITH natural language instructions)
-- Training: Epoch-based, fixed hyperparameters (no PBT)
+- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
+- Training: Fixed hyperparameters from best Optuna trial
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~130 minutes on A100-40GB (1.0 epoch)
+- Expected time: ~62 minutes on A100-40GB (1000 steps)
 
 Best Hyperparameters (from Optuna Trial 2, 400 steps, margin=4.34, acc=89.4%):
 - Learning rate: 1.185448e-05
 - Beta: 0.1133
 - Lambda KL: 0.001010
 - Weight decay: 0.008849
-- Warmup ratio: 0.03 (3% of training)
+- Warmup steps: 103
 
 Usage:
-    # Sanity check (0.1 epoch, ~17 minutes)
+    # Sanity check (200 steps, ~12 minutes)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1.0 epoch, ~130 minutes)
+    # Full training (1000 steps, ~62 minutes)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/CITA_Baseline/checkpoint-<step>/
+    - Model checkpoint: ./outputs/CITA_Baseline/checkpoint-1000/
     - LoRA adapters: ./outputs/CITA_Baseline/lora_model_CITA_Baseline/
     - TensorBoard logs: ./tensorboard_logs/CITA_Baseline_<timestamp>/
     - Training log: ./logs/CITA_Baseline_training_<timestamp>.log
@@ -98,12 +98,12 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", base_model=None, force_skip=False):
+def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", base_model=None, force_skip=False):
     """
     Train CITA baseline with fixed hyperparameters from best Optuna trial
 
     Args:
-        num_epochs: Number of training epochs (0.1 for sanity, 1.0 for full)
+        max_steps: Number of training steps (200 for sanity, 1000 for full)
         output_dir: Directory to save checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (DPO model)
         force_skip: Skip training and use HuggingFace model directly
@@ -119,7 +119,7 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
     LEARNING_RATE = 1.1854483432291239e-05
     BETA = 0.11329770563201687
     WEIGHT_DECAY = 0.008849356442713105
-    WARMUP_RATIO = 0.03  # 3% of training (auto-scales with epochs)
+    WARMUP_STEPS = 103
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -128,17 +128,6 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     tensorboard_run_dir = project_root / "tensorboard_logs" / f"CITA_Baseline_{timestamp}"
     tensorboard_run_dir.mkdir(parents=True, exist_ok=True)
-
-    # Calculate total training steps (for checkpoint validation)
-    # Vaibhaav dataset: 50,001 samples, 90/10 split = 45,001 train samples
-    # effective_batch_size = 8 (per_device=1 × grad_accum=8)
-    steps_per_epoch = 45001 // 8  # 5,625 steps
-    max_steps = int(steps_per_epoch * num_epochs)  # Scale to actual training duration
-
-    print(f"📊 Training configuration:")
-    print(f"   Epochs: {num_epochs}")
-    print(f"   Total steps: {max_steps:,}")
-    print(f"   Steps per epoch: {steps_per_epoch:,}\n")
 
     # ===== CHECK FOR EXISTING CHECKPOINT =====
     print("="*80)
@@ -219,9 +208,8 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
         print("✅ Model cast to BF16 (all params including LoRA)")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        # DISABLED: Causing AttributeError: 'float' object has no attribute 'meta'
-        # print("\nApplying torch.compile()...")
-        # model = apply_torch_compile(model)
+        print("\nApplying torch.compile()...")
+        model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
         print("\nLoading Vaibhaav/alignment-instructions dataset...")
@@ -242,19 +230,6 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
         train_dataset = dataset_split["train"]
         val_dataset = dataset_split["test"]
 
-        print(f"✅ Train dataset: {len(train_dataset):,} samples")
-        print(f"✅ Validation dataset: {len(val_dataset):,} samples")
-
-        # Scale validation set for SANITY mode (faster evaluation)
-        if num_epochs < 1.0:
-            val_size_scaled = int(len(val_dataset) * num_epochs)
-            val_dataset = val_dataset.select(range(val_size_scaled))
-            print(f"⚡ SANITY mode: Scaled validation set to {num_epochs:.1f}x ({len(val_dataset):,} samples)")
-
-        # Calculate steps for percentage-based checkpointing
-        checkpoint_interval = int(max_steps * 0.2)  # Save/eval every 20% of ACTUAL training
-        print(f"📍 Checkpoint interval: {checkpoint_interval} steps (20% of {max_steps} steps)")
-
         print(f"📊 TensorBoard logs: {tensorboard_run_dir}\n")
 
         # ===== CREATE TRAINING ARGS =====
@@ -262,8 +237,8 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
             output_dir=str(output_dir),
             per_device_train_batch_size=1,
             gradient_accumulation_steps=8,
-            warmup_ratio=WARMUP_RATIO,  # 3% of training (auto-scales)
-            num_train_epochs=num_epochs,
+            warmup_steps=WARMUP_STEPS,
+            max_steps=max_steps,
             learning_rate=LEARNING_RATE,
             logging_steps=1,
             optim="adamw_torch",
@@ -272,7 +247,7 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
             seed=3407,
             bf16=True,
             gradient_checkpointing=True,
-            save_steps=checkpoint_interval,
+            save_steps=50,
             save_total_limit=5,
             report_to="tensorboard",
             logging_dir=str(tensorboard_run_dir),
@@ -281,7 +256,7 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
             dataloader_pin_memory=True,
             # Validation
             eval_strategy="steps",
-            eval_steps=checkpoint_interval,
+            eval_steps=50,
             per_device_eval_batch_size=1,
             # CITA-specific parameters (DPOConfig compatible)
             beta=BETA,
@@ -368,13 +343,12 @@ def train_cita_baseline(num_epochs=0.1, output_dir="./outputs/CITA_Baseline", ba
     # ===== SAVE TRAINING CONFIG =====
     training_config = {
         "method": "CITA",
-        "num_epochs": num_epochs,
-        "total_steps": max_steps,
+        "max_steps": max_steps,
         "lambda_kl": LAMBDA_KL,
         "learning_rate": LEARNING_RATE,
         "beta": BETA,
         "weight_decay": WEIGHT_DECAY,
-        "warmup_ratio": WARMUP_RATIO,
+        "warmup_steps": WARMUP_STEPS,
         "batch_size": 1,
         "gradient_accumulation_steps": 8,
         "optimizer": "adamw_torch",
@@ -409,14 +383,7 @@ if __name__ == "__main__":
         type=str,
         choices=["sanity", "full"],
         default="sanity",
-        help="Training mode: 'sanity' (0.1 epoch) or 'full' (1.0 epoch)"
-    )
-
-    parser.add_argument(
-        "--epochs",
-        type=float,
-        default=None,
-        help="Number of training epochs (overrides --mode)"
+        help="Training mode: 'sanity' (200 steps) or 'full' (1000 steps)"
     )
 
     parser.add_argument(
@@ -428,20 +395,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Determine num_epochs based on mode or explicit argument
-    if args.epochs is not None:
-        num_epochs = args.epochs
-        print(f"✅ Custom epochs: {num_epochs}\n")
-    elif args.mode == "sanity":
-        num_epochs = 0.1
-        print(f"✅ Sanity mode: {num_epochs} epochs (~17 minutes)\n")
+    # Determine max_steps based on mode
+    if args.mode == "sanity":
+        max_steps = 200
+        print(f"✅ Sanity mode: {max_steps} steps (~12 minutes)\n")
     else:  # full
-        num_epochs = 1.0
-        print(f"✅ Full training mode: {num_epochs} epochs (~130 minutes)\n")
+        max_steps = 1000
+        print(f"✅ Full training mode: {max_steps} steps (~62 minutes)\n")
 
-    # Time estimate (based on SFT/DPO timing: ~130 min for 1.0 epoch)
-    time_per_epoch = 130.0  # minutes (CITA: ~130 min / 1.0 epoch, similar to DPO)
-    estimated_time = num_epochs * time_per_epoch
+    # Time estimate
+    time_per_step = 0.062  # minutes (CITA: ~62 min / 1000 steps)
+    estimated_time = max_steps * time_per_step
 
     print("="*80)
     print("🔄 Training Mode Selection")
@@ -503,14 +467,14 @@ if __name__ == "__main__":
     print("  - Model: Llama-3.1-8B (BF16)")
     print("  - Method: CITA (Calibrated Instruction Tuning with Alignment)")
     print("  - Loss: L_CITA = L_DPO + λ_KL × L_KL")
-    print(f"  - Training epochs: {num_epochs}")
+    print(f"  - Training steps: {max_steps}")
     print("  - Batch size: 1 (per device)")
     print("  - Gradient accumulation: 8 (effective batch=8)")
     print("  - Learning rate: 1.185e-05 (Optuna Trial 2)")
     print("  - Beta: 0.1133 (Optuna Trial 2)")
     print("  - Lambda KL: 0.001010 (Optuna Trial 2)")
     print("  - Weight decay: 0.00885 (Optuna Trial 2)")
-    print("  - Warmup ratio: 0.03 (3% of training)")
+    print("  - Warmup steps: 103 (Optuna Trial 2)")
     print("  - LR scheduler: cosine")
     print("  - Optimizer: adamw_torch")
     print("  - Precision: BF16 + Flash Attention 2")
@@ -519,7 +483,7 @@ if __name__ == "__main__":
     # Train
     try:
         trainer, training_skipped = train_cita_baseline(
-            num_epochs=num_epochs,
+            max_steps=max_steps,
             base_model=args.base_model,
             force_skip=force_skip
         )
