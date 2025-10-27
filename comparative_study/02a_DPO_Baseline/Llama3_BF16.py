@@ -215,20 +215,23 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
-        print("\nLoading dataset...")
-        train_dataset = load_training_dataset(
-            split="train",
-            max_samples=None,  # Use all samples
-            method="dpo",  # DPO format (prompt, chosen, rejected)
-            return_val=False  # Training split
+        print("\nLoading Vaibhaav/alignment-instructions dataset...")
+        from data_prep.loader_vaibhaav import load_vaibhaav_alignment, format_vaibhaav_for_dpo
+
+        # Load raw dataset (50,001 samples)
+        dataset_raw = load_vaibhaav_alignment(split="train")
+
+        # Format for DPO (NO instruction - baseline)
+        dataset_formatted = dataset_raw.map(
+            format_vaibhaav_for_dpo,
+            remove_columns=dataset_raw.column_names,
+            desc="Formatting Vaibhaav for DPO (NO instruction)"
         )
 
-        val_dataset = load_training_dataset(
-            split="train",
-            max_samples=None,
-            method="dpo",
-            return_val=True  # Validation split (10% by default)
-        )
+        # Split train/val (90/10)
+        dataset_split = dataset_formatted.train_test_split(test_size=0.1, seed=42)
+        train_dataset = dataset_split["train"]
+        val_dataset = dataset_split["test"]
     else:
         # Training skipped - initialize empty vars (will be loaded for inference if needed)
         model = None

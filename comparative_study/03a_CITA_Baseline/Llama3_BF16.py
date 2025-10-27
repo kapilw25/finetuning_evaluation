@@ -212,24 +212,23 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
         model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
-        print("\nLoading dataset...")
-        from data_prep import load_pku_filtered, format_dataset
+        print("\nLoading Vaibhaav/alignment-instructions dataset...")
+        from data_prep.loader_vaibhaav import load_vaibhaav_alignment, format_vaibhaav_for_cita
 
-        # Training set (90% of train split)
-        dataset_raw_train = load_pku_filtered(
-            split="train",
-            max_samples=None,
-            return_val=False
-        )
-        train_dataset = format_dataset(dataset_raw_train, method="dpo")
+        # Load raw dataset (50,001 samples)
+        dataset_raw = load_vaibhaav_alignment(split="train")
 
-        # Validation set (10% of train split)
-        dataset_raw_val = load_pku_filtered(
-            split="train",
-            max_samples=None,
-            return_val=True
+        # Format for CITA (WITH natural language instructions - proposal innovation!)
+        dataset_formatted = dataset_raw.map(
+            format_vaibhaav_for_cita,
+            remove_columns=dataset_raw.column_names,
+            desc="Formatting Vaibhaav for CITA (WITH natural language instructions)"
         )
-        val_dataset = format_dataset(dataset_raw_val, method="dpo")
+
+        # Split train/val (90/10)
+        dataset_split = dataset_formatted.train_test_split(test_size=0.1, seed=42)
+        train_dataset = dataset_split["train"]
+        val_dataset = dataset_split["test"]
 
         print(f"📊 TensorBoard logs: {tensorboard_run_dir}\n")
 

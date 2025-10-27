@@ -530,14 +530,11 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 # ===================================================================
 
 # Model repository mapping (reflects training pipeline: base → SFT → DPO → CITA)
+# Dataset: Vaibhaav/alignment-instructions (50K samples with natural language instructions)
 MODEL_NAME_MAP = {
-    "SFT_Baseline": "kapilw25/llama3-8b-pku-sft-baseline",      # SFT trained on base model
-    "SFT_GRIT": "kapilw25/llama3-8b-pku-sft-grit",
-    "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-sft",            # DPO trained on SFT (not baseline!)
-    "DPO_GRIT": "kapilw25/llama3-8b-pku-dpo-grit",
-    "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-dpo",          # CITA trained on DPO (not baseline!)
-    "CITA_Adaptive": "kapilw25/llama3-8b-pku-cita-adaptive",
-    "CITA_GRIT": "kapilw25/llama3-8b-pku-cita-grit",
+    "SFT_Baseline": "kapilw25/llama3-8b-vaibhaav-sft-baseline",      # SFT trained on base model (NO instruction)
+    "DPO_Baseline": "kapilw25/llama3-8b-vaibhaav-dpo-baseline",      # DPO trained on SFT (NO instruction)
+    "CITA_Baseline": "kapilw25/llama3-8b-vaibhaav-cita-baseline",    # CITA trained on DPO (WITH natural language instructions)
 }
 
 

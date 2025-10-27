@@ -5,17 +5,17 @@ Formats PKU-SafeRLHF dataset to match the exact format expected by working noteb
 """
 
 from typing import Dict
-from .pku_loader import get_safe_unsafe_responses, synthesize_system_instruction
+from .loader_pku import get_safe_unsafe_responses, synthesize_system_instruction
 
 
 def format_sft(example: Dict) -> Dict:
     """
     Format PKU-SafeRLHF example for SFT training.
 
-    Matches format from comparative_study/01a_SFT_Baseline/Llama3_alignmentDB.ipynb
+    Matches proposal: SFT trains on (x, y) pairs WITHOUT instruction conditioning
 
-    Output: Llama-3 messages with explicit system role (fair comparison with DPO/CITA)
-    {"messages": [{"role": "system", "content": ...}, {"role": "user", "content": ...}, {"role": "assistant", "content": ...}]}
+    Output: Llama-3 messages WITHOUT system instruction (baseline)
+    {"messages": [{"role": "user", "content": ...}, {"role": "assistant", "content": ...}]}
 
     Args:
         example: Single example from PKU-SafeRLHF dataset
@@ -23,14 +23,10 @@ def format_sft(example: Dict) -> Dict:
     Returns:
         Dictionary with 'messages' field in Llama-3 format (SFTTrainer auto-detects)
     """
-    safe_response, _, harmful_categories = get_safe_unsafe_responses(example)
+    safe_response, _, _ = get_safe_unsafe_responses(example)
 
-    # Synthesize instruction from harm categories
-    instruction = synthesize_system_instruction(harmful_categories)
-
-    # ✅ Llama-3 format with explicit system role (matches DPO/CITA for fair comparison)
+    # SFT Baseline: NO instruction (only prompt + response)
     messages = [
-        {"role": "system", "content": instruction},
         {"role": "user", "content": example['prompt']},
         {"role": "assistant", "content": safe_response}
     ]
@@ -42,9 +38,9 @@ def format_dpo(example: Dict) -> Dict:
     """
     Format PKU-SafeRLHF example for DPO training.
 
-    ✅ UPDATED: Now uses Llama-3 message format (fair comparison with SFT/CITA)
+    Matches proposal: DPO trains on preference pairs WITHOUT instruction conditioning
 
-    Output: Message lists (DPOTrainer supports this since TRL 0.8+)
+    Output: Message lists WITHOUT system instruction (baseline)
     {"prompt": [messages], "chosen": [messages], "rejected": [messages]}
 
     Args:
@@ -53,14 +49,10 @@ def format_dpo(example: Dict) -> Dict:
     Returns:
         Dictionary with 'prompt', 'chosen', 'rejected' as message lists
     """
-    safe_response, unsafe_response, harmful_categories = get_safe_unsafe_responses(example)
+    safe_response, unsafe_response, _ = get_safe_unsafe_responses(example)
 
-    # Synthesize instruction from harm categories
-    instruction = synthesize_system_instruction(harmful_categories)
-
-    # ✅ Llama-3 format with explicit system role (matches SFT/CITA)
+    # DPO Baseline: NO instruction (only prompt + responses)
     prompt_messages = [
-        {"role": "system", "content": instruction},
         {"role": "user", "content": example['prompt']}
     ]
 
