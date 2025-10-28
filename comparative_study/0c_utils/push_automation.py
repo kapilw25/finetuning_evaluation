@@ -167,10 +167,14 @@ class PushAutomation:
             with open(config_path, 'r') as f:
                 config = json.load(f)
 
-            previous_margin = config.get('final_margin', None)
-            if previous_margin is not None and previous_margin != "N/A":
-                print(f"📊 Previous metric: {previous_margin:.4f} (from config.json)")
-                return float(previous_margin)
+            # Try exact metric name (e.g., "eval_rewards/margins", "eval_loss")
+            previous_metric = config.get(eval_metric_name, None)
+            if previous_metric is None:
+                previous_metric = config.get(non_eval_metric_name, None)
+
+            if previous_metric is not None and previous_metric != "N/A":
+                print(f"📊 Previous metric: {previous_metric:.4f} (from config.json)")
+                return float(previous_metric)
             else:
                 print("📊 No previous metric found (first training run)")
                 return None
@@ -1091,9 +1095,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             with open(trainer_state_path, 'r') as f:
                 trainer_state = json.load(f)
 
-            # Search backwards through log_history (last entry might be train_runtime)
-            for log_entry in reversed(trainer_state.get('log_history', [])):
-                for metric_name in metric_names:
+            # Search by metric priority (eval metrics first, then train metrics)
+            # Outer loop: iterate through metric_names to respect priority order
+            for metric_name in metric_names:
+                # Inner loop: search backwards through log_history to get latest value
+                for log_entry in reversed(trainer_state.get('log_history', [])):
                     if metric_name in log_entry:
                         metric_value = log_entry[metric_name]
                         print(f"✅ Extracted {metric_name}: {metric_value:.6f} from {checkpoint_dir}")
@@ -1190,6 +1196,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
         # Step 2: Extract final metric from checkpoint
         final_metric = 'N/A'
+        metric_name_found = None
         if latest_checkpoint:
             final_metric, metric_name_found = PushAutomation.extract_final_metric_from_checkpoint(
                 checkpoint_dir=latest_checkpoint,
@@ -1202,14 +1209,18 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         config_filename = f"{method.lower()}_baseline_config.json"
         config_path = project_root / "outputs" / config_filename
 
-        # Add final metric to config
+        # Add final metric to config using exact metric name from trainer_state.json
         training_config_with_metric = training_config.copy()
 
-        # Determine final metric key based on method
-        if method == "SFT":
-            training_config_with_metric["final_loss"] = final_metric if final_metric != 'N/A' else None
-        elif method in ["DPO", "CITA"]:
-            training_config_with_metric["final_margin"] = final_metric if final_metric != 'N/A' else None
+        # Use the exact metric name that was found (e.g., "eval_rewards/margins", "eval_loss")
+        if metric_name_found and final_metric != 'N/A':
+            training_config_with_metric[metric_name_found] = final_metric
+        elif final_metric != 'N/A':
+            # Fallback: use generic key if metric_name_found is None
+            if method == "SFT":
+                training_config_with_metric["eval_loss"] = final_metric
+            elif method in ["DPO", "CITA"]:
+                training_config_with_metric["eval_rewards/margins"] = final_metric
 
         with open(config_path, 'w') as f:
             json.dump(training_config_with_metric, f, indent=2)

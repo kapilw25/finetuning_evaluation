@@ -11,5 +11,5 @@
   "max_seq_length": 2048,
   "max_prompt_length": 1024,
   "beta": 0.1,
-  "final_margin": 4.413254261016846
+  "eval_rewards/margins": 5.819810390472412
 }

@@ -40,7 +40,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **DPO** (Direct Prefere
 
 ## Evaluation Results
 
-- **Final Rewards Margins**: 4.4133
+- **Final Rewards Margins**: 5.8198
 
 ## Usage
 
