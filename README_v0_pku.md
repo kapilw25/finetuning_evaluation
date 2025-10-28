@@ -23,7 +23,7 @@
 
 ## Figure 1: Training Accuracy
 
-![Accuracy Comparison](../plots/tensorboard_FULL_accuracy.png)
+![Accuracy Comparison](logs_training/iter4/plots/tensorboard_FULL_accuracy.png)
 
 **Top Panel - Preference Accuracy:**
 - DPO (orange) converges faster and higher: 90.94% final
@@ -41,7 +41,7 @@
 
 ## Figure 2: Training Loss and Margin
 
-![Loss and Margin Comparison](../plots/tensorboard_FULL_loss_margin.png)
+![Loss and Margin Comparison](logs_training/iter4/plots/tensorboard_FULL_loss_margin.png)
 
 **Top Panel - Loss:**
 - DPO (orange): 0.22 final loss (best fit to training objective)
@@ -59,7 +59,7 @@
 
 ## Figure 3: Overall AQI Evaluation Results
 
-![Overall AQI Comparison](../plots/Overall_AQI_Comparison.png)
+![Overall AQI Comparison](logs_training/iter4/plots/Overall_AQI_Comparison.png)
 
 **The Unexpected Winner:**
 - Baseline (unaligned): 85.27 AQI 🥇
@@ -81,7 +81,7 @@ No. It's a critical control showing fine-tuning's cost: we sacrificed 22% respon
 
 ## Figure 4: Per-Axiom AQI Breakdown
 
-![Per-Axiom AQI Comparison](../plots/Per_Axiom_AQI_Grouped_Bars.png)
+![Per-Axiom AQI Comparison](logs_training/iter4/plots/Per_Axiom_AQI_Grouped_Bars.png)
 
 **The SFT Paradox:**
 SFT ranks 1st or 2nd in 6 out of 7 ethical axioms individually, yet scores 12.18 overall (dead last).
@@ -106,7 +106,7 @@ SFT learned the *style* of safe responses without learning *when to refuse*. It'
 
 ## Figure 5: LLM-as-Judge Evaluation - The Ranking Reversal
 
-![LLM-as-Judge Pareto Frontier](../plots/LLM_as_Judge_pareto_frontier.png)
+![LLM-as-Judge Pareto Frontier](logs_training/iter4/plots/LLM_as_Judge_pareto_frontier.png)
 
 **Complete Reversal of AQI Rankings:**
 
