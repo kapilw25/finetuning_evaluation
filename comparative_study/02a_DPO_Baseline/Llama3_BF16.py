@@ -207,8 +207,12 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         print("✅ Model cast to BF16 (all params including LoRA)")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        print("\nApplying torch.compile()...")
-        model = apply_torch_compile(model)
+        # DISABLED: Causes KeyError: 'hidden_states' during gradient checkpointing
+        # torch.compile() + gradient_checkpointing has compatibility issues with DPO
+        # Error occurs in transformers/utils/generic.py wrapped_forward output collection
+        # Trade-off: ~10% slower training vs no crash
+        print("\n⚠️  torch.compile() disabled (prevents gradient checkpointing bug for DPO)")
+        # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
         print("\nLoading PKU-SafeRLHF dataset (combined train+test clear contrast)...")

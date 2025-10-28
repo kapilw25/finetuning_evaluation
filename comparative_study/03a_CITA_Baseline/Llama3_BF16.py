@@ -201,8 +201,12 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
         print("✅ Model cast to BF16 (all params including LoRA)")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        print("\nApplying torch.compile()...")
-        model = apply_torch_compile(model)
+        # DISABLED: Causes KeyError: 'hidden_states' during gradient checkpointing
+        # torch.compile() + gradient_checkpointing has compatibility issues with CITA (DPO-based)
+        # Error occurs in transformers/utils/generic.py wrapped_forward output collection
+        # Trade-off: ~10% slower training vs no crash
+        print("\n⚠️  torch.compile() disabled (prevents gradient checkpointing bug for CITA)")
+        # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
         print("\nLoading PKU-SafeRLHF dataset (combined train+test clear contrast)...")
