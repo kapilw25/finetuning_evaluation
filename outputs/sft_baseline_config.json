@@ -1,6 +1,6 @@
 {
   "method": "SFT",
-  "num_epochs": 0.3,
+  "num_epochs": 1.0,
   "learning_rate": 0.0002,
   "warmup_steps": 100,
   "optimizer": "adamw_torch",
@@ -9,5 +9,5 @@
   "batch_size": 2,
   "gradient_accumulation_steps": 4,
   "max_seq_length": 2048,
-  "final_loss": 1.8227107524871826
+  "final_loss": 1.7832915782928467
 }

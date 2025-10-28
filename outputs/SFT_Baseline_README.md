@@ -38,7 +38,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **SFT** (Supervised Fin
 
 ## Evaluation Results
 
-- **Final Loss**: 1.8227
+- **Final Loss**: 1.7833
 
 ## Usage
 
