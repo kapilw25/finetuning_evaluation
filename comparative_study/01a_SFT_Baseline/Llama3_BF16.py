@@ -10,14 +10,14 @@ Configuration:
 - Training: Fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~40 minutes on A100-40GB (1000 steps)
-- Expected cost: ~$1.00 (40 min × $1.5/hr)
+- Expected time: ~43 minutes on A100-40GB (1.0 epoch)
+- Expected cost: ~$1.08 (43 min × $1.5/hr)
 
 Usage:
-    # Sanity check (200 steps, ~8 minutes)
+    # Sanity check (0.3 epochs, ~13 minutes)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1000 steps, ~40 minutes)
+    # Full training (1.0 epoch, ~43 minutes)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
@@ -436,14 +436,14 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Sanity check (200 steps, ~8 minutes)
+  # Sanity check (0.3 epochs, ~13 minutes)
   python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-  # Full training (1000 steps, ~40 minutes)
+  # Full training (1.0 epoch, ~43 minutes)
   python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
-  # Custom steps
-  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --steps 500
+  # Custom epochs
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --epochs 0.5
         """
     )
 
@@ -476,11 +476,11 @@ Examples:
         num_epochs = args.epochs
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "sanity":
-        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~6 min)
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~6 minutes)")
+        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~13 min)
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~13 minutes)")
     else:
-        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~17 min)
-        print(f"✅ Full training mode: {num_epochs} epochs (~17 minutes)")
+        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~43 min)
+        print(f"✅ Full training mode: {num_epochs} epochs (~43 minutes)")
 
     # ===================================================================
     # Ask about retraining BEFORE starting (check HF repo first)
@@ -512,7 +512,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~6 minutes' if num_epochs == 0.3 else '~17 minutes'}")
+    print(f"Training will take approximately: {'~13 minutes' if num_epochs == 0.3 else '~43 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")

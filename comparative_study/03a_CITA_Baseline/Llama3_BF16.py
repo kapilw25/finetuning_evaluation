@@ -10,7 +10,7 @@ Configuration:
 - Training: Fixed hyperparameters from best Optuna trial
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~62 minutes on A100-40GB (1000 steps)
+- Expected time: ~120 minutes on A100-40GB (1.0 epoch)
 
 Best Hyperparameters (from Optuna Trial 2, 400 steps, margin=4.34, acc=89.4%):
 - Learning rate: 1.185448e-05
@@ -20,10 +20,10 @@ Best Hyperparameters (from Optuna Trial 2, 400 steps, margin=4.34, acc=89.4%):
 - Warmup steps: 103
 
 Usage:
-    # Sanity check (200 steps, ~12 minutes)
+    # Sanity check (0.3 epochs, ~36 minutes)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1000 steps, ~62 minutes)
+    # Full training (1.0 epoch, ~120 minutes)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
@@ -368,7 +368,7 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
     # ===== SAVE TRAINING CONFIG =====
     training_config = {
         "method": "CITA",
-        "max_steps": max_steps,
+        "num_epochs": num_epochs,
         "lambda_kl": LAMBDA_KL,
         "learning_rate": LEARNING_RATE,
         "beta": BETA,
@@ -432,11 +432,11 @@ if __name__ == "__main__":
         num_epochs = args.epochs
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "sanity":
-        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~6 min)
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~6 minutes)")
+        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~36 min)
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~36 minutes)")
     else:
-        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~17 min)
-        print(f"✅ Full training mode: {num_epochs} epochs (~17 minutes)")
+        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~120 min)
+        print(f"✅ Full training mode: {num_epochs} epochs (~120 minutes)")
 
     print()
     print("="*80)
@@ -457,7 +457,7 @@ if __name__ == "__main__":
         print(f"   This will be the first training run")
 
     print("="*80)
-    print(f"Training will take approximately: {'~6 minutes' if num_epochs == 0.3 else '~17 minutes'}\n")
+    print(f"Training will take approximately: {'~36 minutes' if num_epochs == 0.3 else '~120 minutes'}\n")
 
     # Show options
     print("Options:")
