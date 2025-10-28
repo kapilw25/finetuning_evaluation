@@ -1,0 +1,16 @@
+{
+  "method": "CITA",
+  "num_epochs": 1.0,
+  "lambda_kl": 0.0010102922471479012,
+  "learning_rate": 1.1854483432291239e-05,
+  "beta": 0.11329770563201687,
+  "weight_decay": 0.008849356442713105,
+  "warmup_steps": 103,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 8,
+  "optimizer": "adamw_torch",
+  "lr_scheduler_type": "cosine",
+  "max_seq_length": 2048,
+  "max_prompt_length": 1024,
+  "eval_rewards/margins": 180.37136840820312
+}
