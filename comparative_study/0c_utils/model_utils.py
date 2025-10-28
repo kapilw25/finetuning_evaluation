@@ -283,6 +283,19 @@ def apply_torch_compile(model):
             _functorch.config.activation_memory_budget = 0.99
             print(f"✅ PyTorch {torch.__version__}: Memory Budget API enabled")
 
+        # FIX 1: Disable CUDAGraph for dynamic shapes (prevents OOM during eval)
+        # Issue: CUDAGraph records separate graphs for each distinct input size
+        # Result: 51+ graphs → 2.90 GB wasted in CUDA Graph private pools → OOM at eval
+        # Solution: Skip CUDAGraph for dynamic shapes (uses eager mode instead)
+        torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
+        print(f"✅ Disabled CUDAGraph for dynamic shapes (prevents eval OOM)")
+
+        # FIX 2: Disable quantization fusion pass (causes "float has no attribute 'meta'" error)
+        # Bug in PyTorch 2.5.1 inductor backend quantization pass
+        # See: torch/_inductor/fx_passes/quantization.py:1448
+        torch._inductor.config.freezing = True
+        print(f"✅ Disabled quantization fusion (fixes PyTorch 2.5.1 inductor bug)")
+
         # Compile model (10-20% speedup expected)
         model = torch.compile(model, mode="reduce-overhead")
         print(f"✅ torch.compile() enabled (expect 10-20% speedup)")

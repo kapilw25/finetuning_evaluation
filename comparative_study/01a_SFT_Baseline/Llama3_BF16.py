@@ -178,8 +178,13 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         )
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        print("\nApplying torch.compile()...")
-        model = apply_torch_compile(model)
+        # DISABLED: Causes OOM during evaluation due to compilation overhead
+        # torch.compile() triggers recompilation with different shapes during eval
+        # Combined with Accelerate's BF16→FP32 conversion, causes 312MB OOM
+        # Trade-off: ~10% slower training vs no crash
+        # Note: DPO/CITA keep torch.compile() enabled (they have expandable_segments)
+        print("\n⚠️  torch.compile() disabled (prevents eval OOM for SFT)")
+        # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
         print("\nLoading PKU-SafeRLHF dataset (combined train+test clear contrast)...")
