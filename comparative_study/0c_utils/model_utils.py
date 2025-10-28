@@ -529,12 +529,12 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 # 8. HuggingFace Repo Mapping
 # ===================================================================
 
-# Model repository mapping (reflects training pipeline: base → SFT → DPO → CITA)
-# Dataset: Vaibhaav/alignment-instructions (50K samples with natural language instructions)
+# Model repository mapping (reflects stacked training pipeline: base → SFT → DPO → CITA)
+# Dataset: PKU-SafeRLHF (12,035 samples with clear safety contrast)
 MODEL_NAME_MAP = {
-    "SFT_Baseline": "kapilw25/llama3-8b-vaibhaav-sft-baseline",      # SFT trained on base model (NO instruction)
-    "DPO_Baseline": "kapilw25/llama3-8b-vaibhaav-dpo-baseline",      # DPO trained on SFT (NO instruction)
-    "CITA_Baseline": "kapilw25/llama3-8b-vaibhaav-cita-baseline",    # CITA trained on DPO (WITH natural language instructions)
+    "SFT_Baseline": "kapilw25/llama3-8b-pku-sft-baseline",    # Base → SFT (NO instruction)
+    "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-sft",          # SFT → DPO (stacked, NO instruction)
+    "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-dpo",        # DPO → CITA (stacked, WITH PKU metadata instructions)
 }
 
 

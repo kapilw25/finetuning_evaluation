@@ -5,8 +5,48 @@ Loads and filters PKU-Alignment/PKU-SafeRLHF dataset for safety alignment traini
 Filters for clear safety contrast (one safe, one unsafe response).
 """
 
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 from typing import Dict, Optional
+
+
+def load_pku_combined_clear_contrast(val_split: float = 0.1):
+    """
+    Load clear contrast samples from BOTH train and test splits, then create 90/10 split.
+
+    Combines:
+    - Train split clear contrast: 10,813 samples
+    - Test split clear contrast: 1,222 samples
+    - Total: 12,035 samples (+11% more data)
+
+    Args:
+        val_split: Fraction for validation (default: 0.1)
+
+    Returns:
+        DatasetDict with 'train' and 'test' keys
+        - train: 10,831 samples (90%)
+        - test: 1,204 samples (10%)
+    """
+    print("Loading PKU-SafeRLHF: Combining train+test clear contrast...")
+
+    # Load train split clear contrast
+    train_data = load_dataset("PKU-Alignment/PKU-SafeRLHF", split="train")
+    train_clear = train_data.filter(lambda x: x['is_response_0_safe'] != x['is_response_1_safe'])
+    print(f"  Train clear contrast: {len(train_clear):,} samples")
+
+    # Load test split clear contrast
+    test_data = load_dataset("PKU-Alignment/PKU-SafeRLHF", split="test")
+    test_clear = test_data.filter(lambda x: x['is_response_0_safe'] != x['is_response_1_safe'])
+    print(f"  Test clear contrast: {len(test_clear):,} samples")
+
+    # Combine
+    combined = concatenate_datasets([train_clear, test_clear])
+    print(f"  Combined: {len(combined):,} samples")
+
+    # 90/10 split
+    split_dataset = combined.train_test_split(test_size=val_split, seed=3407)
+    print(f"  Final train: {len(split_dataset['train']):,} | val: {len(split_dataset['test']):,}")
+
+    return split_dataset
 
 
 def load_pku_filtered(split: str = "train", max_samples: Optional[int] = None,

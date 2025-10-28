@@ -107,6 +107,14 @@ def format_cita(example: Dict) -> Dict:
     }
 
 
+# ===================================================================
+# Aliases for consistent naming in training scripts
+# ===================================================================
+format_pku_for_sft = format_sft
+format_pku_for_dpo = format_dpo
+format_pku_for_cita = format_cita
+
+
 def format_dataset(dataset, method: str):
     """
     Format entire dataset for specified training method.

@@ -6,22 +6,21 @@ Configuration:
 - Model: Llama-3.1-8B (BF16 precision)
 - Method: Standard DPO (Rafailov et al. 2023)
 - Loss: L_DPO only (no L_SFT or L_KL)
-- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
-- Training: Fixed hyperparameters (no PBT)
+- Dataset: Vaibhaav (50,001 samples, 90/10 split)
+- Training: Epoch-based, fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~40 minutes on A100-40GB (1000 steps)
-- Expected cost: ~$1.00 (40 min × $1.5/hr)
+- Expected time: ~130 minutes on A100-40GB (1.0 epoch)
 
 Usage:
-    # Sanity check (200 steps, ~8 minutes)
+    # Sanity check (0.1 epoch, ~17 minutes)
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1000 steps, ~40 minutes)
+    # Full training (1.0 epoch, ~130 minutes)
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/DPO_Baseline/checkpoint-1000/
+    - Model checkpoint: ./outputs/DPO_Baseline/checkpoint-<step>/
     - LoRA adapters: ./outputs/DPO_Baseline/lora_model_DPO_Baseline/
     - TensorBoard logs: ./tensorboard_logs/DPO_Baseline_<timestamp>/
     - Training log: ./logs/DPO_Baseline_training_<timestamp>.log
@@ -59,11 +58,9 @@ from model_utils import (
     load_model_bf16,
     setup_lora,
     apply_torch_compile,
-    load_training_dataset,
     get_test_prompts,
     get_model_repo_name,
     get_latest_checkpoint,
-    is_training_complete,
     log_gpu_memory_start,
     log_gpu_memory_end
 )
@@ -96,12 +93,12 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_model=None, force_skip=False):
+def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base_model=None, force_skip=False):
     """
     Train DPO baseline with fixed hyperparameters
 
     Args:
-        max_steps: Maximum training steps (default: 300 for full, 100 for sanity)
+        num_epochs: Number of training epochs (default: 1.0 for full, 0.1 for sanity)
         output_dir: Output directory for checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
         force_skip: If True, skip training and only run inference (user selected option 1)
@@ -116,12 +113,14 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
     print(f"  - Model: Llama-3.1-8B (BF16)")
     print(f"  - Method: Standard DPO (Rafailov 2023)")
     print(f"  - Loss: L_DPO only")
-    print(f"  - Training steps: {max_steps}")
+    print(f"  - Training epochs: {num_epochs}")
+    print(f"  - Dataset: Vaibhaav (50K samples, 90/10 split)")
     print(f"  - Batch size: 1 (per device, reduced for DPO ref model)")
     print(f"  - Gradient accumulation: 8 (effective batch=8)")
     print(f"  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)")
     print(f"  - Beta: 0.1 (Meta's Llama 3 DPO setting)")
-    print(f"  - Warmup steps: 100 (10% of total steps)")
+    print(f"  - Warmup ratio: 0.03 (3% of training)")
+    print(f"  - Eval frequency: Every 20% (5 checkpoints per epoch)")
     print(f"  - LR scheduler: cosine")
     print(f"  - Optimizer: adamw_torch")
     print(f"  - Precision: BF16 + Flash Attention 2")
@@ -148,15 +147,13 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         print("1️⃣ Checking local checkpoints...")
         latest_checkpoint = get_latest_checkpoint(output_dir)
 
-        if latest_checkpoint and is_training_complete(latest_checkpoint, max_steps):
-            print(f"✅ Training already completed at: {latest_checkpoint}")
-            print(f"   Max steps: {max_steps}")
+        # Check if training is complete (simplified: check if final checkpoint exists)
+        if latest_checkpoint:
+            print(f"✅ Training checkpoint found at: {latest_checkpoint}")
+            print(f"   Epochs: {num_epochs}")
             print(f"   Skipping training, will load from local checkpoint for inference...\n")
             training_skipped = True
             load_from_hf = False  # Option 2 with local checkpoint: Load from local
-        elif latest_checkpoint:
-            print(f"📂 Found checkpoint: {latest_checkpoint}")
-            print(f"   Resuming training from this checkpoint...\n")
         else:
             print(f"🆕 No checkpoint found")
             print(f"   Will start fresh training (even if HF repo exists)...\n")
@@ -211,8 +208,9 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         print("✅ Model cast to BF16 (all params including LoRA)")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        print("\nApplying torch.compile()...")
-        model = apply_torch_compile(model)
+        # DISABLED: Causing AttributeError: 'float' object has no attribute 'meta'
+        # print("\nApplying torch.compile()...")
+        # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
         print("\nLoading Vaibhaav/alignment-instructions dataset...")
@@ -232,6 +230,22 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         dataset_split = dataset_formatted.train_test_split(test_size=0.1, seed=42)
         train_dataset = dataset_split["train"]
         val_dataset = dataset_split["test"]
+
+        # Scale validation set for SANITY mode (faster evaluation)
+        if num_epochs < 1.0:
+            val_size_scaled = int(len(val_dataset) * num_epochs)
+            val_dataset = val_dataset.select(range(val_size_scaled))
+            print(f"⚡ SANITY mode: Scaled validation set to {num_epochs:.1f}x ({len(val_dataset):,} samples)")
+
+        # Calculate steps for percentage-based checkpointing
+        steps_per_epoch = len(train_dataset) // 8  # effective_batch_size=8
+        total_steps = int(steps_per_epoch * num_epochs)  # Scale to actual training duration
+        checkpoint_interval = int(total_steps * 0.2)  # Save/eval every 20% of ACTUAL training
+
+        print(f"✅ Dataset loaded: {len(train_dataset):,} train / {len(val_dataset):,} val")
+        print(f"   Steps per epoch: {steps_per_epoch:,} (batch_size=8)")
+        print(f"   Total training steps: {total_steps:,} ({num_epochs} epoch)")
+        print(f"   Checkpoint interval: {checkpoint_interval:,} steps (20% of training)")
     else:
         # Training skipped - initialize empty vars (will be loaded for inference if needed)
         model = None
@@ -252,13 +266,13 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
         print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
 
         # ===== CREATE TRAINING ARGS =====
-        # Match hyperparameters from 4bit notebook for consistency
+        # Match hyperparameters from SFT baseline for fair comparison
         training_args = DPOConfig(
             output_dir=str(output_dir),
             per_device_train_batch_size=1,  # ✅ FIXED: Reduced from 2 to avoid OOM (DPO needs ref model copy)
             gradient_accumulation_steps=8,  # ✅ FIXED: Doubled to maintain effective batch=8
-            warmup_steps=100,  # ✅ FIXED: 10% warmup (2024 best practice for DPO)
-            max_steps=max_steps,
+            num_train_epochs=num_epochs,  # Epoch-based training
+            warmup_ratio=0.03,  # 3% of training (auto-scales)
             learning_rate=1e-5,  # ✅ FIXED: Meta's official Llama 3 DPO setting (was 2e-4, 20× too high)
             logging_steps=1,
             optim="adamw_torch",
@@ -267,16 +281,17 @@ def train_dpo_baseline(max_steps=300, output_dir="./outputs/DPO_Baseline", base_
             seed=3407,
             bf16=True,  # BF16 precision
             gradient_checkpointing=True,
-            save_steps=50,
+            save_strategy="steps",
+            save_steps=checkpoint_interval,  # 20% of epoch
             save_total_limit=5,
             report_to="tensorboard",
             logging_dir=str(tensorboard_run_dir),
             logging_first_step=True,
             dataloader_num_workers=2,  # Parallel data loading
             dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-            # ✅ ADDED: Validation to detect overfitting
+            # ✅ Evaluation every 20% of epoch
             eval_strategy="steps",
-            eval_steps=50,  # Aligned with save_steps
+            eval_steps=checkpoint_interval,  # 20% of epoch (5 evals per full epoch)
             per_device_eval_batch_size=1,  # ✅ FIXED: Match training batch size
             # ✅ DPO-specific parameters (TRL 0.22.2+)
             beta=0.1,  # Contrastive temperature (standard DPO value)
@@ -433,14 +448,14 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Sanity check (200 steps, ~8 minutes)
+  # Sanity check (0.1 epoch, ~17 minutes)
   python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
 
-  # Full training (1000 steps, ~40 minutes)
+  # Full training (1.0 epoch, ~130 minutes)
   python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full
 
-  # Custom steps
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --steps 500
+  # Custom epochs
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --epochs 0.5
         """
     )
 
@@ -449,14 +464,14 @@ Examples:
         type=str,
         choices=["sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (100 steps) or 'full' (1000 steps)"
+        help="Training mode: 'sanity' (0.1 epoch) or 'full' (1.0 epoch)"
     )
 
     parser.add_argument(
-        "--steps",
-        type=int,
+        "--epochs",
+        type=float,
         default=None,
-        help="Maximum training steps (overrides --mode)"
+        help="Number of training epochs (overrides --mode)"
     )
 
     parser.add_argument(
@@ -469,15 +484,15 @@ Examples:
     args = parser.parse_args()
 
     # Determine configuration
-    if args.steps is not None:
-        max_steps = args.steps
-        print(f"✅ Custom configuration: {max_steps} steps")
+    if args.epochs is not None:
+        num_epochs = args.epochs
+        print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "sanity":
-        max_steps = 200  # 100 warmup + 100 training (see actual LR schedule)
-        print(f"✅ Sanity check mode: {max_steps} steps (~8 minutes)")
+        num_epochs = 0.1  # 10% of data (~4,500 samples, ~17 min)
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~17 minutes)")
     else:
-        max_steps = 1000
-        print(f"✅ Full training mode: {max_steps} steps (~40 minutes)")
+        num_epochs = 1.0  # Full epoch (~45,000 samples, ~130 min)
+        print(f"✅ Full training mode: {num_epochs} epochs (~130 minutes)")
 
     # ===================================================================
     # Ask about retraining BEFORE starting (check HF repo first)
@@ -509,7 +524,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~12 minutes' if max_steps == 200 else '~62 minutes'}")
+    print(f"Training will take approximately: {'~17 minutes' if num_epochs == 0.1 else '~130 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
@@ -547,7 +562,7 @@ Examples:
 
     # Run training
     try:
-        trainer, training_skipped = train_dpo_baseline(max_steps=max_steps, base_model=args.base_model, force_skip=force_skip)
+        trainer, training_skipped = train_dpo_baseline(num_epochs=num_epochs, base_model=args.base_model, force_skip=force_skip)
         print(f"\n🏁 DPO Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
@@ -558,14 +573,14 @@ Examples:
         # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
         training_config = {
             "method": "DPO",
-            "max_steps": max_steps,
+            "num_epochs": num_epochs,
             "learning_rate": 1e-5,  # Meta's official Llama 3 DPO setting
-            "warmup_steps": 100,  # 10% warmup (2024 best practice)
+            "warmup_ratio": 0.03,  # 3% of training (auto-scales)
             "optimizer": "adamw_torch",
             "weight_decay": 0.01,
             "lr_scheduler_type": "cosine",  # Cosine for smoother convergence
-            "batch_size": 2,
-            "gradient_accumulation_steps": 4,
+            "batch_size": 1,
+            "gradient_accumulation_steps": 8,
             "max_seq_length": 2048,
             "max_prompt_length": 1024,  # DPO-specific (prompts truncated to fit chosen+rejected)
             "beta": 0.1,  # Meta's official Llama 3 DPO setting
