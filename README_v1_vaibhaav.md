@@ -8,7 +8,7 @@
 
 ## 📊 TensorBoard Overview
 
-![Training Metrics](Tensorboard.png)
+![Training Metrics](logs_training/iter5/Tensorboard.png)
 
 ### Visual Evidence from TensorBoard
 
