@@ -11,7 +11,7 @@ datasets:
 license: llama3.1
 ---
 
-# llama3-8b-pku-cita-dpo-bf16
+# llama3-8b-pku-CITA-Instruct-DPO-Instruct
 
 Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **CITA** (Calibrated Instruction Tuning with Alignment (SFT + DPO + KL regularization)) on the PKU-SafeRLHF dataset for improved safety alignment.
 
@@ -20,7 +20,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **CITA** (Calibrated In
 - **Base Model**: [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B)
 - **Fine-tuning Method**: CITA
 - **Dataset**: [PKU-SafeRLHF](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF) (10,813 samples)
-- **Training Date**: 2025-10-25
+- **Training Date**: 2025-11-02
 - **Precision**: BF16 (bfloat16)
 - **Adapter Type**: LoRA (r=16, alpha=16, ~168MB)
 
@@ -30,7 +30,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **CITA** (Calibrated In
 - **Batch Size** (per device): 1
 - **Gradient Accumulation Steps**: 8 (effective batch size: 8)
 - **Warmup Steps**: 103
-- **Max Steps**: 1000
+- **Max Steps**: 200
 - **Weight Decay**: 0.008849356442713105
 - **LR Scheduler**: cosine
 - **Optimizer**: adamw_torch
@@ -41,7 +41,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **CITA** (Calibrated In
 
 ## Evaluation Results
 
-- **Final Rewards Margins**: 6.5554
+- **Final Rewards Margins**: 4.0884
 
 ## Usage
 
@@ -58,10 +58,10 @@ base_model = AutoModelForCausalLM.from_pretrained(
 )
 
 # Load LoRA adapter
-model = PeftModel.from_pretrained(base_model, "kapilw25/llama3-8b-pku-cita-dpo-bf16")
+model = PeftModel.from_pretrained(base_model, "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct")
 
 # Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained("kapilw25/llama3-8b-pku-cita-dpo-bf16")
+tokenizer = AutoTokenizer.from_pretrained("kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct")
 
 # Generate
 messages = [{"role": "user", "content": "Explain quantum computing"}]
@@ -92,12 +92,12 @@ Llama 3.1 Community License (same as base model)
 ## Citation
 
 ```bibtex
-@misc{llama3_8b_pku_cita_dpo_bf16_2024,
+@misc{llama3_8b_pku_CITA_Instruct_DPO_Instruct_2024,
   author = {User},
-  title = {llama3-8b-pku-cita-dpo-bf16},
+  title = {llama3-8b-pku-CITA-Instruct-DPO-Instruct},
   year = {2024},
   publisher = {HuggingFace},
-  howpublished = {\url{https://huggingface.co/kapilw25/llama3-8b-pku-cita-dpo-bf16}}
+  howpublished = {\url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct}}
 }
 ```
 

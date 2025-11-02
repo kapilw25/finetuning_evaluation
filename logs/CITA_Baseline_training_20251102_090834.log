@@ -1,0 +1,194 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_V0/logs/CITA_Baseline_training_20251102_090834.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_V0/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+================================================================================
+
+✅ Sanity mode: 200 steps (~12 minutes, 16.4% training data)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+❌ No existing model on HuggingFace: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+   This will be the first training run
+================================================================================
+Training will take approximately: ~12 minutes
+
+Options:
+  1) Inference only from HF_repo
+  2) Train and push to HuggingFace
+================================================================================
+Enter choice (1 or 2): ================================================================================
+
+✅ Training mode selected
+   Will train and push to HuggingFace (first time)
+
+================================================================================
+🚀 Starting CITA Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: CITA (Calibrated Instruction Tuning with Alignment)
+  - Loss: L_CITA = L_DPO + λ_KL × L_KL
+  - Training steps: 200 (1,600 samples, 16.4% coverage)
+  - Batch size: 1 (per device)
+  - Gradient accumulation: 8 (effective batch=8)
+  - Save/Eval every: 40 steps (20%, 40%, 60%, 80%, 100%)
+  - Learning rate: 1.185e-05 (Optuna Trial 2)
+  - Beta: 0.1133 (Optuna Trial 2)
+  - Lambda KL: 0.001010 (Optuna Trial 2)
+  - Weight decay: 0.00885 (Optuna Trial 2)
+  - Warmup steps: 103 (Optuna Trial 2)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+🆕 No checkpoint found
+   Will start fresh training (even if HF repo exists)...
+
+Loading model...
+✅ Llama-3.1 chat template set (required by SFTTrainer)
+✅ Flash Attention 2 enabled (saves ~2.5GB memory)
+Loading checkpoint shards:   0%|                                                                      | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|███████████████▌                                              | 1/4 [00:00<00:02,  1.15it/s]Loading checkpoint shards:  50%|███████████████████████████████                               | 2/4 [00:01<00:01,  1.14it/s]Loading checkpoint shards:  75%|██████████████████████████████████████████████▌               | 3/4 [00:02<00:00,  1.16it/s]Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████████| 4/4 [00:02<00:00,  1.66it/s]Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████████| 4/4 [00:02<00:00,  1.43it/s]
+✅ Model loaded: meta-llama/Llama-3.1-8B
+   - Precision: BF16
+   - Max sequence length: 2048
+   - Flash Attention 2: True
+
+Applying LoRA adapters...
+trainable params: 41,943,040 || all params: 8,072,204,288 || trainable%: 0.5196
+✅ LoRA adapters applied (r=16, alpha=16)
+✅ Model cast to BF16 (all params including LoRA)
+
+Applying torch.compile()...
+✅ PyTorch 2.5.1+cu124: Memory Budget API enabled
+✅ torch.compile() enabled (expect 10-20% speedup)
+
+Loading dataset...
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Training split size: 9,731 (90% of training data)
+Loading PKU-Alignment/PKU-SafeRLHF (split=train)...
+Original dataset size: 73,907
+Filtered dataset size: 10,813 (clear safety contrast)
+Validation split size: 1,082 (10% of training data)
+📊 TensorBoard logs: /lambda/nfs/DiskUsEast1/finetuning_V0/tensorboard_logs/CITA_Baseline_20251102_090843
+
+
+Initializing CITATrainer...
+/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'repr' attribute with value False was provided to the `Field()` function, which has no effect in the context it was used. 'repr' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/pydantic/_internal/_generate_schema.py:2249: UnsupportedFieldAttributeWarning: The 'frozen' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'frozen' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+
+================================================================================
+GPU MEMORY - START
+================================================================================
+GPU: NVIDIA A100-SXM4-40GB
+Total memory: 39.495 GB
+Reserved before training: 34.006 GB (86.1%)
+================================================================================
+
+
+================================================================================
+🏋️  Training CITA Baseline...
+================================================================================
+
+  0%|                                                                                               | 0/200 [00:00<?, ?it/s]
+❌ Error during training: 'hidden_states'
+Traceback (most recent call last):
+  File "/lambda/nfs/DiskUsEast1/finetuning_V0/comparative_study/03a_CITA_Baseline/Llama3_BF16.py", line 492, in <module>
+    trainer, training_skipped = train_cita_baseline(
+  File "/lambda/nfs/DiskUsEast1/finetuning_V0/comparative_study/03a_CITA_Baseline/Llama3_BF16.py", line 303, in train_cita_baseline
+    trainer.train(resume_from_checkpoint=latest_checkpoint)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 2325, in train
+    return inner_training_loop(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 2674, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+  File "/lambda/nfs/DiskUsEast1/finetuning_V0/comparative_study/0c_utils/cita_trainer.py", line 375, in training_step
+    loss = super().training_step(model, inputs, num_items_in_batch)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/trainer.py", line 4020, in training_step
+    loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+  File "/lambda/nfs/DiskUsEast1/finetuning_V0/comparative_study/0c_utils/cita_trainer.py", line 274, in compute_loss
+    loss_dpo, loss_kl, aux = self._compute_loss_components(model, inputs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_V0/comparative_study/0c_utils/cita_trainer.py", line 187, in _compute_loss_components
+    model_output = self.concatenated_forward(model, inputs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/trl/trainer/dpo_trainer.py", line 1612, in concatenated_forward
+    outputs = model(input_ids, **model_kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/accelerate/utils/operations.py", line 819, in forward
+    return model_forward(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/accelerate/utils/operations.py", line 807, in __call__
+    return convert_to_fp32(self.model_forward(*args, **kwargs))
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/amp/autocast_mode.py", line 44, in decorate_autocast
+    return func(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 465, in _fn
+    return fn(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/peft_model.py", line 1848, in forward
+    with self._enable_peft_forward_hooks(**kwargs):
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/peft_model.py", line 1850, in torch_dynamo_resume_in_forward_at_1848
+    return self.base_model(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/peft/tuners/tuners_utils.py", line 222, in forward
+    return self.model.forward(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 918, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 459, in forward
+    outputs: BaseModelOutputWithPast = self.model(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 1060, in wrapper
+    module.forward = make_capture_wrapper(module, original_forward, key, specs.index)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 1060, in torch_dynamo_resume_in_wrapper_at_1060
+    module.forward = make_capture_wrapper(module, original_forward, key, specs.index)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 1060, in torch_dynamo_resume_in_wrapper_at_1060
+    module.forward = make_capture_wrapper(module, original_forward, key, specs.index)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 1060, in torch_dynamo_resume_in_wrapper_at_1060
+    module.forward = make_capture_wrapper(module, original_forward, key, specs.index)
+  [Previous line repeated 5 more times]
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 1064, in torch_dynamo_resume_in_wrapper_at_1060
+    outputs = func(self, *args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 395, in forward
+    hidden_states = decoder_layer(
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/modeling_layers.py", line 93, in __call__
+    return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/_compile.py", line 32, in inner
+    return disable_fn(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 632, in _fn
+    return fn(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 489, in checkpoint
+    return CheckpointFunction.apply(function, preserve, *args)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/autograd/function.py", line 575, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 264, in forward
+    outputs = run_function(*args)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/lambda/nfs/DiskUsEast1/finetuning_evaluation/venv_CITA/lib/python3.10/site-packages/transformers/utils/generic.py", line 1015, in wrapped_forward
+    if key == "hidden_states" and len(collected_outputs[key]) == 0:
+KeyError: 'hidden_states'

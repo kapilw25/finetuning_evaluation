@@ -40,10 +40,13 @@
 #   Simple solution to overwrite everything:
 ```
 git fetch && git reset --hard origin/main
+source /home/ubuntu/DiskUsEast1/finetuning_evaluation/venv_CITA/bin/activate
 ```
 What it does:
 - git fetch - downloads remote changes
 - git reset --hard origin/main - throws away ALL local changes and matches remote exactly
+
+
 
 >> note: be brutally honest. You do not have to agree with me, unless I am correct. But do not LIE/ Halluciante too
 

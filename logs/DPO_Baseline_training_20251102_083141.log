@@ -1,0 +1,29 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_V0/logs/DPO_Baseline_training_20251102_083141.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+⚠️  No .env file found, using environment variables
+⚠️  HF_TOKEN not found - model push will be skipped
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-dpo-sft-bf16
+================================================================================
+
+✅ Full training mode: 1000 steps (~40 minutes)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+✅ Found existing model on HuggingFace: kapilw25/llama3-8b-pku-dpo-sft-bf16
+✅ Configured git user: kapilw25 <kapilw25@gmail.com>
+⚠️  No HF_TOKEN - skipping previous model check
+================================================================================
+Training will take approximately: ~62 minutes
+
+Options:
+  1) Inference only from HF_repo (use existing HF model)
+  2) Retrain and replace HF model (only if performance improves)
+================================================================================
+Enter choice (1 or 2): Traceback (most recent call last):
+  File "/lambda/nfs/DiskUsEast1/finetuning_V0/comparative_study/02a_DPO_Baseline/Llama3_BF16.py", line 519, in <module>
+    mode_choice = input("Enter choice (1 or 2): ").strip()
+KeyboardInterrupt

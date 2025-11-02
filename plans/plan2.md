@@ -172,7 +172,7 @@ python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 # 2. DPO baseline (1000 steps, ~62 min, ~$1) [A6000-48GB]
 python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-sft-baseline-bf16
+    --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
 
 # 3. CITA - non adaptive
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16.py \

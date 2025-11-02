@@ -1,0 +1,66 @@
+📝 Logging initialized: /lambda/nfs/DiskUsEast1/finetuning_V0/logs/CITA_Baseline_training_20251102_093153.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_V0/.env
+✅ HuggingFace authenticated
+📦 Model will be pushed to: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+================================================================================
+
+✅ Sanity mode: 200 steps (~12 minutes, 16.4% training data)
+
+================================================================================
+🔄 Training Mode Selection
+================================================================================
+❌ No existing model on HuggingFace: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+   This will be the first training run
+================================================================================
+Training will take approximately: ~14 minutes
+
+Options:
+  1) Inference only from HF_repo
+  2) Train and push to HuggingFace
+================================================================================
+Enter choice (1 or 2): ================================================================================
+
+✅ Training mode selected
+   Will train and push to HuggingFace (first time)
+
+================================================================================
+🚀 Starting CITA Baseline Training
+================================================================================
+Configuration:
+  - Model: Llama-3.1-8B (BF16)
+  - Method: CITA (Calibrated Instruction Tuning with Alignment)
+  - Loss: L_CITA = L_DPO + λ_KL × L_KL
+  - Training steps: 200 (1,600 samples, 16.4% coverage)
+  - Batch size: 1 (per device)
+  - Gradient accumulation: 8 (effective batch=8)
+  - Save/Eval every: 40 steps (20%, 40%, 60%, 80%, 100%)
+  - Learning rate: 1.185e-05 (Optuna Trial 2)
+  - Beta: 0.1133 (Optuna Trial 2)
+  - Lambda KL: 0.001010 (Optuna Trial 2)
+  - Weight decay: 0.00885 (Optuna Trial 2)
+  - Warmup steps: 103 (Optuna Trial 2)
+  - LR scheduler: cosine
+  - Optimizer: adamw_torch
+  - Precision: BF16 + Flash Attention 2
+================================================================================
+
+
+================================================================================
+🔍 Checking for existing checkpoints...
+================================================================================
+
+1️⃣ Checking local checkpoints...
+⏸️  Found incomplete checkpoint: checkpoint-40
+   Will resume from step 40
+
+Loading model...
+✅ Llama-3.1 chat template set (required by SFTTrainer)
+✅ Flash Attention 2 enabled (saves ~2.5GB memory)
+Loading checkpoint shards:   0%|                                                                      | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:   0%|                                                                      | 0/4 [00:00<?, ?it/s]
+
+
+⚠️  Training interrupted by user

@@ -258,42 +258,30 @@ def apply_torch_compile(model):
     """
     Apply torch.compile() optimization for 10-20% speedup
 
-    Compatible with gradient checkpointing in PyTorch 2.4+
-    Uses Memory Budget API for compatibility
+    TEMPORARILY DISABLED: Incompatible with gradient_checkpointing in Transformers 4.46+
+    Issue: KeyError: 'hidden_states' in generic.py when using torch.compile() + gradient_checkpointing
 
     Args:
         model: Model to compile
 
     Returns:
-        Compiled model (or original model if compilation fails)
+        Original model (uncompiled)
 
     Usage:
         from model_utils import apply_torch_compile
 
         model = apply_torch_compile(model)
     """
-    try:
-        # Check PyTorch version
-        torch_version = tuple(int(x) for x in torch.__version__.split('.')[:2])
+    # TEMPORARY FIX: Disable torch.compile() due to Transformers 4.46+ bug
+    # Error: KeyError: 'hidden_states' in transformers/utils/generic.py:1015
+    # Occurs when: torch.compile() + gradient_checkpointing + TRL DPOTrainer
+    # TODO: Re-enable when Transformers fixes the bug (tracked in HF GitHub issues)
 
-        if torch_version >= (2, 4):
-            # PyTorch 2.4+: Enable Memory Budget API for compatibility
-            # Import without shadowing 'torch' variable
-            from torch import _functorch
-            _functorch.config.activation_memory_budget = 0.99
-            print(f"✅ PyTorch {torch.__version__}: Memory Budget API enabled")
+    print(f"⚠️  torch.compile() DISABLED (Transformers 4.46+ incompatibility)")
+    print(f"   Issue: KeyError 'hidden_states' with gradient_checkpointing")
+    print(f"   Training will be ~10-20% slower without compilation")
 
-        # Compile model (10-20% speedup expected)
-        model = torch.compile(model, mode="reduce-overhead")
-        print(f"✅ torch.compile() enabled (expect 10-20% speedup)")
-
-    except Exception as e:
-        # Graceful fallback if compilation fails
-        print(f"⚠️  torch.compile() failed: {e}")
-        print(f"   Continuing without compilation (training will be slower)")
-        # Model remains uncompiled - training continues normally
-
-    return model
+    return model  # Return uncompiled model
 
 
 # ===================================================================
@@ -529,15 +517,13 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 # 8. HuggingFace Repo Mapping
 # ===================================================================
 
-# Model repository mapping (reflects training pipeline: base → SFT → DPO → CITA)
+# Model repository mapping (reflects stacked training pipeline: base → SFT → DPO → CITA)
+# Dataset: PKU-SafeRLHF (12,035 samples with clear safety contrast)
+# Repository names include full descriptive suffixes (no precision suffix added)
 MODEL_NAME_MAP = {
-    "SFT_Baseline": "kapilw25/llama3-8b-pku-sft-baseline",      # SFT trained on base model
-    "SFT_GRIT": "kapilw25/llama3-8b-pku-sft-grit",
-    "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-sft",            # DPO trained on SFT (not baseline!)
-    "DPO_GRIT": "kapilw25/llama3-8b-pku-dpo-grit",
-    "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-dpo",          # CITA trained on DPO (not baseline!)
-    "CITA_Adaptive": "kapilw25/llama3-8b-pku-cita-adaptive",
-    "CITA_GRIT": "kapilw25/llama3-8b-pku-cita-grit",
+    "SFT_Baseline": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # Base → SFT (NO instruction)
+    "DPO_Baseline": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",          # SFT_NoInstruct → DPO_NoInstruct (stacked, NO instruction)
+    "CITA_Baseline": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",        # DPO_Instruct → CITA_Instruct (stacked, WITH instructions)
 }
 
 
@@ -547,10 +533,10 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
 
     Args:
         run_name: Name of the training run (e.g., "SFT_Baseline", "DPO_Baseline")
-        precision: Model precision suffix (default: "bf16")
+        precision: Model precision suffix (deprecated - no longer appended)
 
     Returns:
-        Full HuggingFace repository name
+        Full HuggingFace repository name (no precision suffix)
 
     Raises:
         ValueError: If run_name not found in MODEL_NAME_MAP
@@ -559,10 +545,10 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
         from model_utils import get_model_repo_name
 
         repo = get_model_repo_name("SFT_Baseline")
-        # Returns: "kapilw25/llama3-8b-pku-sft-baseline-bf16"
+        # Returns: "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct"
 
-        repo = get_model_repo_name("DPO_Baseline", precision="fp16")
-        # Returns: "kapilw25/llama3-8b-pku-dpo-baseline-fp16"
+        repo = get_model_repo_name("DPO_Baseline")
+        # Returns: "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct"
     """
     if run_name not in MODEL_NAME_MAP:
         raise ValueError(
@@ -570,10 +556,8 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
             f"Available: {list(MODEL_NAME_MAP.keys())}"
         )
 
-    base_repo = MODEL_NAME_MAP[run_name]
-    full_repo = f"{base_repo}-{precision}"
-
-    return full_repo
+    # Return repo name directly - no precision suffix appended
+    return MODEL_NAME_MAP[run_name]
 
 
 # ===================================================================

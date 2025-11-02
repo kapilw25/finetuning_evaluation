@@ -10,7 +10,7 @@ Configuration:
 - Training: Fixed hyperparameters from best Optuna trial
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~62 minutes on A100-40GB (1000 steps)
+- Expected time: ~90 minutes on A100-40GB (1217 steps, 100% training data coverage, no torch.compile)
 
 Best Hyperparameters (from Optuna Trial 2, 400 steps, margin=4.34, acc=89.4%):
 - Learning rate: 1.185448e-05
@@ -20,14 +20,14 @@ Best Hyperparameters (from Optuna Trial 2, 400 steps, margin=4.34, acc=89.4%):
 - Warmup steps: 103
 
 Usage:
-    # Sanity check (200 steps, ~12 minutes)
+    # Sanity check (200 steps, ~12 minutes, 16.4% training data)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1000 steps, ~62 minutes)
+    # Full training (1217 steps, ~90 minutes, 100% training data coverage)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/CITA_Baseline/checkpoint-1000/
+    - Model checkpoints: ./outputs/CITA_Baseline/checkpoint-{243,486,729,972,1215}/
     - LoRA adapters: ./outputs/CITA_Baseline/lora_model_CITA_Baseline/
     - TensorBoard logs: ./tensorboard_logs/CITA_Baseline_<timestamp>/
     - Training log: ./logs/CITA_Baseline_training_<timestamp>.log
@@ -103,7 +103,7 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
     Train CITA baseline with fixed hyperparameters from best Optuna trial
 
     Args:
-        max_steps: Number of training steps (200 for sanity, 1000 for full)
+        max_steps: Number of training steps (200 for sanity, 1217 for full = 100% training data)
         output_dir: Directory to save checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (DPO model)
         force_skip: Skip training and use HuggingFace model directly
@@ -234,6 +234,9 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
         print(f"📊 TensorBoard logs: {tensorboard_run_dir}\n")
 
         # ===== CREATE TRAINING ARGS =====
+        # Calculate checkpoint intervals (20%, 40%, 60%, 80%, 100% of training)
+        checkpoint_interval = max_steps // 5  # 243 for full (1217), 40 for sanity (200)
+
         training_args = DPOConfig(
             output_dir=str(output_dir),
             per_device_train_batch_size=1,
@@ -248,8 +251,8 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
             seed=3407,
             bf16=True,
             gradient_checkpointing=True,
-            save_steps=50,
-            save_total_limit=5,
+            save_steps=checkpoint_interval,  # Save at 20%, 40%, 60%, 80%, 100%
+            save_total_limit=5,  # Keep all 5 checkpoints
             report_to="tensorboard",
             logging_dir=str(tensorboard_run_dir),
             logging_first_step=True,
@@ -257,7 +260,7 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
             dataloader_pin_memory=True,
             # Validation
             eval_strategy="steps",
-            eval_steps=50,
+            eval_steps=checkpoint_interval,  # Eval at 20%, 40%, 60%, 80%, 100%
             per_device_eval_batch_size=1,
             # CITA-specific parameters (DPOConfig compatible)
             beta=BETA,
@@ -271,7 +274,7 @@ def train_cita_baseline(max_steps=300, output_dir="./outputs/CITA_Baseline", bas
         from monitoring_callback import TrainingSummaryCallback
 
         summary_callback = TrainingSummaryCallback(
-            check_every_n_steps=50,
+            check_every_n_steps=checkpoint_interval,  # Check at same intervals as save/eval
             training_method="cita"
         )
 
@@ -384,7 +387,7 @@ if __name__ == "__main__":
         type=str,
         choices=["sanity", "full"],
         default="sanity",
-        help="Training mode: 'sanity' (200 steps) or 'full' (1000 steps)"
+        help="Training mode: 'sanity' (200 steps, 16.4%% data) or 'full' (1217 steps, 100%% data)"
     )
 
     parser.add_argument(
@@ -399,13 +402,14 @@ if __name__ == "__main__":
     # Determine max_steps based on mode
     if args.mode == "sanity":
         max_steps = 200
-        print(f"✅ Sanity mode: {max_steps} steps (~12 minutes)\n")
+        training_coverage = (200 * 8) / 9731 * 100  # 16.4% of training data
+        print(f"✅ Sanity mode: {max_steps} steps (~12 minutes, {training_coverage:.1f}% training data)\n")
     else:  # full
-        max_steps = 1000
-        print(f"✅ Full training mode: {max_steps} steps (~62 minutes)\n")
+        max_steps = 1217  # Covers 100% of 9,731 training samples (effective batch=8)
+        print(f"✅ Full training mode: {max_steps} steps (~90 minutes, 100% training data)\n")
 
-    # Time estimate
-    time_per_step = 0.062  # minutes (CITA: ~62 min / 1000 steps)
+    # Time estimate (updated: torch.compile disabled, ~20% slower)
+    time_per_step = 0.074  # minutes (was 0.062 with torch.compile, now ~20% slower)
     estimated_time = max_steps * time_per_step
 
     print("="*80)
@@ -461,6 +465,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Show configuration
+    checkpoint_interval = max_steps // 5
     print("="*80)
     print("🚀 Starting CITA Baseline Training")
     print("="*80)
@@ -468,9 +473,10 @@ if __name__ == "__main__":
     print("  - Model: Llama-3.1-8B (BF16)")
     print("  - Method: CITA (Calibrated Instruction Tuning with Alignment)")
     print("  - Loss: L_CITA = L_DPO + λ_KL × L_KL")
-    print(f"  - Training steps: {max_steps}")
+    print(f"  - Training steps: {max_steps} ({max_steps * 8:,} samples, {(max_steps * 8 / 9731 * 100):.1f}% coverage)")
     print("  - Batch size: 1 (per device)")
     print("  - Gradient accumulation: 8 (effective batch=8)")
+    print(f"  - Save/Eval every: {checkpoint_interval} steps (20%, 40%, 60%, 80%, 100%)")
     print("  - Learning rate: 1.185e-05 (Optuna Trial 2)")
     print("  - Beta: 0.1133 (Optuna Trial 2)")
     print("  - Lambda KL: 0.001010 (Optuna Trial 2)")
