@@ -54,15 +54,15 @@ MODELS = {
         "display_name": "Baseline (Unaligned)",
     },
     "SFT_Baseline": {
-        "hf_repo": "kapilw25/llama3-8b-pku-sft-baseline-bf16",
+        "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
         "display_name": "SFT Baseline",
     },
     "DPO_Baseline": {
-        "hf_repo": "kapilw25/llama3-8b-pku-dpo-sft-bf16",
+        "hf_repo": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",
         "display_name": "DPO Baseline",
     },
     "CITA_Baseline": {
-        "hf_repo": "kapilw25/llama3-8b-pku-cita-dpo-bf16",
+        "hf_repo": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",
         "display_name": "CITA Baseline",
     },
 }
