@@ -25,10 +25,10 @@ MANIFEST
 *_unsloth_sentencepiece_temp
 
 *llama.cpp
-*lora_model
+# *lora_model
 *model
 # *outputs  # COMMENTED: Allow outputs/ directory
-lora_model*
+# lora_model*
 *.pkl
 datasets
 datasets/raw
@@ -62,11 +62,11 @@ data/cache/
 
 # Model files (large files)
 model/*.bin
-model/*.safetensors
+# model/*.safetensors
 model/*.pt
 model/*.pth
 *.bin
-*.safetensors
+# *.safetensors
 
 # Outputs
 output/*/
@@ -134,7 +134,7 @@ lightning_logs/
 # Block: Large binaries only
 outputs/**/optimizer.pt        # 160MB+ optimizer state
 outputs/**/scheduler.pt        # Large scheduler state
-outputs/**/*.safetensors       # 80MB+ model weights
+# outputs/**/*.safetensors       # 80MB+ model weights
 outputs/**/tokenizer.json      # 17MB tokenizer (can rebuild)
 outputs/**/*.arrow             # Large Arrow datasets
 outputs/**/checkpoints/        # Old rule (redundant with above)

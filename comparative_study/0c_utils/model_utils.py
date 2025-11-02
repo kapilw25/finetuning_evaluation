@@ -544,10 +544,11 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 
 # Model repository mapping (reflects stacked training pipeline: base → SFT → DPO → CITA)
 # Dataset: PKU-SafeRLHF (12,035 samples with clear safety contrast)
+# Repository names include full descriptive suffixes (no precision suffix added)
 MODEL_NAME_MAP = {
-    "SFT_Baseline": "kapilw25/llama3-8b-pku-sft-baseline",    # Base → SFT (NO instruction)
-    "DPO_Baseline": "kapilw25/llama3-8b-pku-dpo-sft",          # SFT → DPO (stacked, NO instruction)
-    "CITA_Baseline": "kapilw25/llama3-8b-pku-cita-dpo",        # DPO → CITA (stacked, WITH PKU metadata instructions)
+    "SFT_Baseline": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # Base → SFT (NO instruction)
+    "DPO_Baseline": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",          # SFT_NoInstruct → DPO_NoInstruct (stacked, NO instruction)
+    "CITA_Baseline": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",        # DPO_Instruct → CITA_Instruct (stacked, WITH instructions)
 }
 
 
@@ -557,10 +558,10 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
 
     Args:
         run_name: Name of the training run (e.g., "SFT_Baseline", "DPO_Baseline")
-        precision: Model precision suffix (default: "bf16")
+        precision: Model precision suffix (deprecated - no longer appended)
 
     Returns:
-        Full HuggingFace repository name
+        Full HuggingFace repository name (no precision suffix)
 
     Raises:
         ValueError: If run_name not found in MODEL_NAME_MAP
@@ -569,10 +570,10 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
         from model_utils import get_model_repo_name
 
         repo = get_model_repo_name("SFT_Baseline")
-        # Returns: "kapilw25/llama3-8b-pku-sft-baseline-bf16"
+        # Returns: "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct"
 
-        repo = get_model_repo_name("DPO_Baseline", precision="fp16")
-        # Returns: "kapilw25/llama3-8b-pku-dpo-baseline-fp16"
+        repo = get_model_repo_name("DPO_Baseline")
+        # Returns: "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct"
     """
     if run_name not in MODEL_NAME_MAP:
         raise ValueError(
@@ -580,10 +581,8 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
             f"Available: {list(MODEL_NAME_MAP.keys())}"
         )
 
-    base_repo = MODEL_NAME_MAP[run_name]
-    full_repo = f"{base_repo}-{precision}"
-
-    return full_repo
+    # Return repo name directly - no precision suffix appended
+    return MODEL_NAME_MAP[run_name]
 
 
 # ===================================================================
