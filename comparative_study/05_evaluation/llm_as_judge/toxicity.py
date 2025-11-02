@@ -493,10 +493,27 @@ def run_toxicity_evaluation(
         gc.collect()
         torch.cuda.empty_cache()
 
-    # Evaluate toxicity
-    toxicity_df = evaluate_toxicity(
-        prompts, responses, harm_categories_list, judge
-    )
+    # Check if evaluation already exists (from cleanup menu choice 1)
+    csv_path = EVAL_OUTPUT_DIR / model_key / "toxicity_results.csv"
+
+    if csv_path.exists():
+        print(f"\n📂 Loading cached evaluation from: {csv_path.name}")
+        toxicity_df = pd.read_csv(csv_path)
+
+        # Convert string representations back to lists
+        import ast
+        for col in ['expected_harm_categories', 'detected_harm_categories', 'key_concerns']:
+            if col in toxicity_df.columns:
+                toxicity_df[col] = toxicity_df[col].apply(
+                    lambda x: ast.literal_eval(x) if pd.notna(x) and x != '[]' else []
+                )
+
+        print(f"✅ Loaded {len(toxicity_df)} cached evaluations (skipped LLM-as-judge API)")
+    else:
+        # No cached evaluation exists, run LLM-as-judge
+        toxicity_df = evaluate_toxicity(
+            prompts, responses, harm_categories_list, judge
+        )
 
     # Calculate summary statistics
     valid_scores = toxicity_df[toxicity_df['toxicity_score'].notna()]['toxicity_score']
@@ -737,28 +754,46 @@ def main_inner():
 
         models = list(all_results.keys())
         toxicity_means = [all_results[m]['summary']['toxicity_mean'] for m in models]
+        toxicity_medians = [all_results[m]['summary']['toxicity_median'] for m in models]
+        toxicity_stds = [all_results[m]['summary']['toxicity_std'] for m in models]
         refusal_rates = [all_results[m]['summary']['safe_refusal_rate'] for m in models]
+        safe_refusals = [all_results[m]['summary']['safe_refusals'] for m in models]
+        n_evaluated = all_results[models[0]]['summary']['n_evaluated']
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
 
         # Toxicity scores
-        ax1.bar(models, toxicity_means, color=['red', 'orange', 'yellow', 'green'])
-        ax1.set_ylabel('Mean Toxicity Score (1-5)')
-        ax1.set_title('Toxicity Comparison (Lower is Better)')
-        ax1.set_ylim(0, 5)
-        ax1.axhline(y=1, color='green', linestyle='--', label='Perfect Safety (1.0)')
+        bars1 = ax1.bar(models, toxicity_means, color=['red', 'orange', 'yellow', 'green'])
+        ax1.set_ylabel('Mean Toxicity Score (1-5)', fontsize=11)
+        ax1.set_title('Toxicity Comparison (Lower is Better)', fontsize=12, fontweight='bold')
+        ax1.set_ylim(0, 5.5)
+        ax1.axhline(y=1, color='green', linestyle='--', label='Perfect Safety (1.0)', linewidth=1.5)
         ax1.legend()
 
+        # Add value labels on bars
+        for i, (bar, mean, median, std) in enumerate(zip(bars1, toxicity_means, toxicity_medians, toxicity_stds)):
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height + 0.15,
+                    f'Mean: {mean:.2f}\nMedian: {median:.2f}\nStd: {std:.2f}',
+                    ha='center', va='bottom', fontsize=9, fontweight='bold')
+
         # Refusal rates
-        ax2.bar(models, refusal_rates, color=['red', 'orange', 'yellow', 'green'])
-        ax2.set_ylabel('Safe Refusal Rate')
-        ax2.set_title('Safe Refusal Rate (Higher is Better)')
-        ax2.set_ylim(0, 1)
-        ax2.axhline(y=1.0, color='green', linestyle='--', label='100% Refusal')
+        bars2 = ax2.bar(models, refusal_rates, color=['red', 'orange', 'yellow', 'green'])
+        ax2.set_ylabel('Safe Refusal Rate', fontsize=11)
+        ax2.set_title('Safe Refusal Rate (Higher is Better)', fontsize=12, fontweight='bold')
+        ax2.set_ylim(0, 1.1)
+        ax2.axhline(y=1.0, color='green', linestyle='--', label='100% Refusal', linewidth=1.5)
         ax2.legend()
 
+        # Add value labels on bars
+        for i, (bar, rate, count) in enumerate(zip(bars2, refusal_rates, safe_refusals)):
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height + 0.03,
+                    f'{rate:.1%}\n({count}/{n_evaluated})',
+                    ha='center', va='bottom', fontsize=9, fontweight='bold')
+
         plt.tight_layout()
-        plt.savefig(EVAL_OUTPUT_DIR / "toxicity_comparison.png", dpi=300)
+        plt.savefig(EVAL_OUTPUT_DIR / "toxicity_comparison.png", dpi=300, bbox_inches='tight')
         print(f"✅ Saved plot: {EVAL_OUTPUT_DIR / 'toxicity_comparison.png'}")
 
     print(f"\n{'='*80}")

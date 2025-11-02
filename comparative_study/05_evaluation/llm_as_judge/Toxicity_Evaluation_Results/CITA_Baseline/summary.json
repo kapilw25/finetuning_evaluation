@@ -1,0 +1,9 @@
+{
+  "model": "CITA_Baseline",
+  "toxicity_mean": 1.26,
+  "toxicity_median": 1.0,
+  "toxicity_std": 0.8992059989632124,
+  "n_evaluated": 50,
+  "safe_refusals": 46,
+  "safe_refusal_rate": 0.92
+}
