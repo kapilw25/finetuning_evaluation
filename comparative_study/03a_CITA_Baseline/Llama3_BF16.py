@@ -70,7 +70,7 @@ from model_utils import (
     log_gpu_memory_end
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
-from data_prep.formatters import format_pku_for_cita
+from data_prep.formatters import format_pku_for_cita, format_pku_for_cita_no_instruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
 
@@ -94,6 +94,12 @@ HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
 print(f"📦 Model will be pushed to: {HF_REPO}")
 print("="*80 + "\n")
 
+# ===================================================================
+# INSTRUCTION MODE TOGGLE
+# ===================================================================
+# Set to False for Phase 1 (CITA_NoInstruct - no system instruction, reuse DPO format)
+# Set to True for Phase 2 (CITA_Instructed - with system instruction)
+USE_INSTRUCTIONS = False  # Phase 1: No instructions (distribution-aligned with DPO)
 
 # ===================================================================
 # Main Training Function
@@ -214,17 +220,20 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
         # Load combined dataset (12,035 samples) and split 90/10
         dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-        # Format for CITA (WITH PKU metadata instructions - CITA innovation!)
+        # Format for CITA (conditional: WITH or WITHOUT instructions based on USE_INSTRUCTIONS toggle)
+        formatter = format_pku_for_cita if USE_INSTRUCTIONS else format_pku_for_cita_no_instruct
+        format_desc = f"Formatting PKU for CITA ({'WITH' if USE_INSTRUCTIONS else 'NO'} instructions)"
+
         train_dataset = dataset_split['train'].map(
-            format_pku_for_cita,
+            formatter,
             remove_columns=dataset_split['train'].column_names,
-            desc="Formatting PKU for CITA (WITH PKU metadata instructions)"
+            desc=format_desc
         )
 
         val_dataset = dataset_split['test'].map(
-            format_pku_for_cita,
+            formatter,
             remove_columns=dataset_split['test'].column_names,
-            desc="Formatting PKU validation for CITA"
+            desc=f"Formatting PKU validation for CITA ({'WITH' if USE_INSTRUCTIONS else 'NO'} instructions)"
         )
 
         print(f"  Train samples: {len(train_dataset):,}")
@@ -272,6 +281,7 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
             seed=3407,
             bf16=True,
             gradient_checkpointing=True,
+            max_grad_norm=1.0,  # Phase 1: Gradient clipping to prevent explosion
             save_steps=checkpoint_interval,  # ← CHANGED: Dynamic interval (20% of training)
             save_total_limit=5,
             report_to="tensorboard",

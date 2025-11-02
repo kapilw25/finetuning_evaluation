@@ -113,6 +113,7 @@ def format_cita(example: Dict) -> Dict:
 format_pku_for_sft = format_sft
 format_pku_for_dpo = format_dpo
 format_pku_for_cita = format_cita
+format_pku_for_cita_no_instruct = format_dpo  # Phase 1: Reuse DPO format (no system role)
 
 
 def format_dataset(dataset, method: str):

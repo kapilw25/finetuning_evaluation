@@ -61,7 +61,7 @@ Open Browser: http://localhost:6006
 # NOTES
 >> note: be brutally honest. You do not have to agree with me, unless I am correct. But do not LIE/ Halluciante too
 
->> its NIGHT time: Keep explanation SHORT. My brain is FOGGing. I cant read verbose explanations
+>>  Keep explanation SHORT. I cant read verbose explanations
 >> Remove all false advertising / STATIC prints
 
 
