@@ -35,7 +35,8 @@
       "Read(//tmp/**)",
       "Bash(sed:*)",
       "Bash(pip install:*)",
-      "WebFetch(domain:docs.vllm.ai)"
+      "WebFetch(domain:docs.vllm.ai)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
