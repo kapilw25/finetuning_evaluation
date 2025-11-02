@@ -11,7 +11,7 @@ datasets:
 license: llama3.1
 ---
 
-# llama3-8b-pku-dpo-sft-bf16
+# llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
 Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **DPO** (Direct Preference Optimization (alignment via preference pairs)) on the PKU-SafeRLHF dataset for improved safety alignment.
 
@@ -20,7 +20,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **DPO** (Direct Prefere
 - **Base Model**: [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B)
 - **Fine-tuning Method**: DPO
 - **Dataset**: [PKU-SafeRLHF](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF) (10,813 samples)
-- **Training Date**: 2025-10-28
+- **Training Date**: 2025-11-02
 - **Precision**: BF16 (bfloat16)
 - **Adapter Type**: LoRA (r=16, alpha=16, ~168MB)
 
@@ -57,10 +57,10 @@ base_model = AutoModelForCausalLM.from_pretrained(
 )
 
 # Load LoRA adapter
-model = PeftModel.from_pretrained(base_model, "kapilw25/llama3-8b-pku-dpo-sft-bf16")
+model = PeftModel.from_pretrained(base_model, "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct")
 
 # Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained("kapilw25/llama3-8b-pku-dpo-sft-bf16")
+tokenizer = AutoTokenizer.from_pretrained("kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct")
 
 # Generate
 messages = [{"role": "user", "content": "Explain quantum computing"}]
@@ -91,12 +91,12 @@ Llama 3.1 Community License (same as base model)
 ## Citation
 
 ```bibtex
-@misc{llama3_8b_pku_dpo_sft_bf16_2024,
+@misc{llama3_8b_pku_DPO_NoInstruct_SFT_NoInstruct_2024,
   author = {User},
-  title = {llama3-8b-pku-dpo-sft-bf16},
+  title = {llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct},
   year = {2024},
   publisher = {HuggingFace},
-  howpublished = {\url{https://huggingface.co/kapilw25/llama3-8b-pku-dpo-sft-bf16}}
+  howpublished = {\url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct}}
 }
 ```
 
