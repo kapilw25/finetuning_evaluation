@@ -30,7 +30,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **CITA** (Calibrated In
 - **Batch Size** (per device): 1
 - **Gradient Accumulation Steps**: 8 (effective batch size: 8)
 - **Warmup Steps**: 103
-- **Max Steps**: 200
+- **Max Steps**: 1217
 - **Weight Decay**: 0.008849356442713105
 - **LR Scheduler**: cosine
 - **Optimizer**: adamw_torch
@@ -41,7 +41,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **CITA** (Calibrated In
 
 ## Evaluation Results
 
-- **Final Rewards Margins**: 4.0884
+- **Final Rewards Margins**: 166.6423
 
 ## Usage
 
