@@ -30,6 +30,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 from datasets import load_dataset
+from huggingface_hub import HfApi
 
 # Add utils to path
 project_root = Path(__file__).parent.parent.parent.parent
@@ -650,6 +651,53 @@ def main_inner():
 
     # Load test set
     prompts, harm_categories_list = load_toxicity_test_set(max_samples=args.toxicity_samples)
+
+    # Verify HuggingFace repositories exist before starting evaluation
+    print("\n" + "="*80)
+    print("🔍 Verifying HuggingFace repositories...")
+    print("="*80)
+
+    hf_api = HfApi()
+    missing_repos = []
+
+    for model_key in args.models:
+        if model_key not in MODELS:
+            continue
+
+        hf_repo = MODELS[model_key]['hf_repo']
+        if hf_repo:
+            try:
+                hf_api.repo_info(repo_id=hf_repo, repo_type="model", token=HF_TOKEN)
+                print(f"  ✅ {model_key}: {hf_repo}")
+            except Exception as e:
+                print(f"  ❌ {model_key}: {hf_repo} (NOT FOUND)")
+                print(f"     Error: {str(e)}")
+                missing_repos.append(model_key)
+        else:
+            print(f"  ✅ {model_key}: (base model only, no adapter)")
+
+    if missing_repos:
+        print("\n" + "="*80)
+        print("⚠️  WARNING: Some models are missing from HuggingFace")
+        print("="*80)
+        print(f"Missing models: {', '.join(missing_repos)}")
+        print("\nOptions:")
+        print("  1) Continue evaluation (skip missing models)")
+        print("  2) Abort evaluation")
+        print("="*80)
+
+        while True:
+            choice = input("\nEnter choice (1 or 2): ").strip()
+            if choice == "1":
+                print("\n✅ Continuing evaluation (will skip missing models)")
+                # Remove missing models from evaluation list
+                args.models = [m for m in args.models if m not in missing_repos]
+                break
+            elif choice == "2":
+                print("\n❌ Aborting evaluation")
+                return
+            else:
+                print("❌ Invalid choice. Please enter 1 or 2.")
 
     # Evaluate all models
     all_results = {}
