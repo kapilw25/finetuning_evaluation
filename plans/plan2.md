@@ -29,7 +29,8 @@ python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
 # 3. CITA-Instruct (DPO → CITA: 1 epoch)
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16 # it is DPO-Instruct-SFT-Instruct
+    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16 # it is DPO-Instruct-SFT-Instruct 
+    # this DPO-Instruct is trained on kapilw25/llama3-8b-pku-sft-baseline-bf16 #which is SFT-Instruct
 # Pushes to: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
 ```
 
