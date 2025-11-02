@@ -16,20 +16,20 @@
 ### **Commands** (run sequentially):
 
 ```bash
-# 1. SFT baseline (base → SFT: 1 epoch)
+# 1. SFT-NoInstruct (base → SFT: 1 epoch)
 python3 -u comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 # Pushes to: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
 
-# 2. DPO baseline (SFT → DPO: 1 epoch)
+# 2. DPO-NoInstruct (SFT → DPO: 1 epoch)
 python3 -u comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
     --mode full \
     --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
 # Pushes to: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
-# 3. CITA baseline (DPO → CITA: 1 epoch)
+# 3. CITA-Instruct (DPO → CITA: 1 epoch)
 python3 -u comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
     --mode full \
-    --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+    --base_model kapilw25/llama3-8b-pku-dpo-sft-bf16 # it is DPO-Instruct-SFT-Instruct
 # Pushes to: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
 ```
 
