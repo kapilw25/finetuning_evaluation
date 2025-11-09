@@ -10,27 +10,33 @@ Configuration:
 - Training: Fixed hyperparameters from best Optuna trial
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
+- Warmup: Uses warmup_ratio=0.253 (FIXED: iter7 explosion bug)
 - Expected time: ~120 minutes on A100-40GB (1.0 epoch)
 
-Best Hyperparameters (from Optuna Trial 2, 400 steps, margin=4.34, acc=89.4%):
+Best Hyperparameters (from Optuna Trial 2, tuned for warmup_ratio=25.3%):
 - Learning rate: 1.185448e-05
 - Beta: 0.1133
 - Lambda KL: 0.001010
 - Weight decay: 0.008849
-- Warmup steps: 103
+- Warmup ratio: 0.253 (epoch-agnostic, enables hyperparameter transfer)
 
 Usage:
-    # Sanity check (0.3 epochs, ~36 minutes)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity
+    # SANITY: 0.3 epochs (steps auto-calculated, ~36 minutes, ~$0.90)
+    # Stack on DPO (REQUIRED):
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity \
+        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
-    # Full training (1.0 epoch, ~120 minutes)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full
+    # FULL: 1.0 epoch (steps auto-calculated, ~120 minutes, ~$3.00)
+    # Stack on DPO (REQUIRED):
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full \
+        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
 Outputs:
-    - Model checkpoint: ./outputs/CITA_Baseline/checkpoint-1000/
+    - Model checkpoints: ./outputs/CITA_Baseline/checkpoint-*/
     - LoRA adapters: ./outputs/CITA_Baseline/lora_model_CITA_Baseline/
     - TensorBoard logs: ./tensorboard_logs/CITA_Baseline_<timestamp>/
     - Training log: ./logs/CITA_Baseline_training_<timestamp>.log
+    - HuggingFace: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
 """
 
 import sys

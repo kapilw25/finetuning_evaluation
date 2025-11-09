@@ -10,21 +10,33 @@ Configuration:
 - Training: Fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
+- Warmup: Uses warmup_ratio (epoch-agnostic, hyperparameters transfer across training lengths)
 - Expected time: ~103 minutes on A100-40GB (1.0 epoch)
 - Expected cost: ~$2.58 (103 min × $1.5/hr)
 
 Usage:
-    # Sanity check (0.3 epochs, ~31 minutes)
+    # SANITY: 0.3 epochs (steps auto-calculated, ~31 minutes, ~$0.78)
+    # Stack on SFT (recommended):
+    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity \
+        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+
+    # Or from base model (not recommended):
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1.0 epoch, ~103 minutes)
+    # FULL: 1.0 epoch (steps auto-calculated, ~103 minutes, ~$2.58)
+    # Stack on SFT (recommended):
+    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full \
+        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+
+    # Or from base model (not recommended):
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/DPO_Baseline/checkpoint-1000/
+    - Model checkpoints: ./outputs/DPO_Baseline/checkpoint-*/
     - LoRA adapters: ./outputs/DPO_Baseline/lora_model_DPO_Baseline/
     - TensorBoard logs: ./tensorboard_logs/DPO_Baseline_<timestamp>/
     - Training log: ./logs/DPO_Baseline_training_<timestamp>.log
+    - HuggingFace: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 """
 
 import sys

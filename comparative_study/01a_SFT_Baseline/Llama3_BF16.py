@@ -10,18 +10,19 @@ Configuration:
 - Training: Fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
+- Warmup: Uses warmup_ratio (epoch-agnostic, hyperparameters transfer across training lengths)
 - Expected time: ~43 minutes on A100-40GB (1.0 epoch)
 - Expected cost: ~$1.08 (43 min × $1.5/hr)
 
 Usage:
-    # SANITY: 200 steps, 0.3 epochs (~13 minutes, ~$0.32)
+    # SANITY: 0.3 epochs (steps auto-calculated, ~13 minutes, ~$0.32)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-    # FULL: 1000 steps, 1.0 epoch (~43 minutes, ~$1.08)
+    # FULL: 1.0 epoch (steps auto-calculated, ~43 minutes, ~$1.08)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/SFT_Baseline/checkpoint-{200,1000}/
+    - Model checkpoints: ./outputs/SFT_Baseline/checkpoint-*/
     - LoRA adapters: ./outputs/SFT_Baseline/lora_model_SFT_Baseline/
     - TensorBoard logs: ./tensorboard_logs/SFT_Baseline_<timestamp>/
     - Training log: ./logs/SFT_Baseline_training_<timestamp>.log
