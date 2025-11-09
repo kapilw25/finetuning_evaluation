@@ -11,6 +11,7 @@ Configuration:
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
 - Warmup: Uses warmup_ratio=0.253 (FIXED: iter7 explosion bug)
+- Gradient Clipping: max_grad_norm=1.0 (iter8 - prevents explosion)
 - Expected time: ~120 minutes on A100-40GB (1.0 epoch)
 
 Best Hyperparameters (from Optuna Trial 2, tuned for warmup_ratio=25.3%):
@@ -28,8 +29,8 @@ Usage:
 
     # FULL: 1.0 epoch (steps auto-calculated, ~120 minutes, ~$3.00)
     # Stack on DPO (REQUIRED):
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full \
-        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full \
+    --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
 Outputs:
     - Model checkpoints: ./outputs/CITA_Baseline/checkpoint-*/
@@ -325,6 +326,16 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
             callbacks=[summary_callback]
         )
 
+        # ===== VERIFY GRADIENT CLIPPING IS CONFIGURED =====
+        max_grad_norm = getattr(trainer.args, 'max_grad_norm', None)
+        if max_grad_norm is not None and max_grad_norm > 0:
+            print(f"\n✅ Gradient clipping ENABLED: max_grad_norm={max_grad_norm}")
+            print(f"   Gradients will be clipped to prevent explosion")
+            print(f"   Monitor 'cita/grad_norm_clipped' and 'cita/clipping_active' in logs\n")
+        else:
+            print(f"\n⚠️  WARNING: Gradient clipping NOT configured (max_grad_norm={max_grad_norm})")
+            print(f"   Training may be unstable without clipping!\n")
+
         # ===== SHOW GPU MEMORY =====
         start_gpu_memory = log_gpu_memory_start()
     else:
@@ -525,6 +536,7 @@ if __name__ == "__main__":
     print("  - Warmup ratio: 25.3% (Optuna Trial 2 - auto-scales with training length)")
     print("  - LR scheduler: cosine")
     print("  - Optimizer: adamw_torch")
+    print("  - Gradient clipping: max_grad_norm=1.0 (iter8 - prevents explosion)")
     print("  - Precision: BF16 + Flash Attention 2")
     print("="*80 + "\n\n")
 

@@ -365,16 +365,17 @@ class CITATrainer(DPOTrainer):
         """
         Override training_step to add gradient norm monitoring
         Detects training instability early (before mode collapse)
+        Now also verifies gradient clipping is working (iter8)
 
         Args:
             model: The model to train
             inputs: The input batch
             num_items_in_batch: Number of items in the batch (Transformers 4.46+)
         """
-        # Standard training step from parent class
+        # Standard training step from parent class (includes gradient clipping)
         loss = super().training_step(model, inputs, num_items_in_batch)
 
-        # Compute and log gradient norm (after backward pass)
+        # Compute and log gradient norm (after clipping has been applied)
         if self.state.global_step % self.args.logging_steps == 0:
             total_norm = 0.0
             for p in model.parameters():
@@ -383,12 +384,29 @@ class CITATrainer(DPOTrainer):
                     total_norm += param_norm.item() ** 2
             total_norm = total_norm ** 0.5
 
-            # Log gradient norm (detects instability: high LR + short warmup → explosion)
-            self.log({"cita/grad_norm": total_norm})
+            # Log gradient norm after clipping
+            log_dict = {"cita/grad_norm_clipped": total_norm}
 
-            # Optional: warn if gradient norm too high (>10 indicates instability)
+            # Check if clipping is enabled and verify it's working
+            max_grad_norm = getattr(self.args, 'max_grad_norm', None)
+            if max_grad_norm is not None and max_grad_norm > 0:
+                log_dict["cita/max_grad_norm_config"] = max_grad_norm
+                # If clipped norm equals max, clipping occurred
+                if total_norm >= max_grad_norm * 0.99:  # Within 1% tolerance
+                    log_dict["cita/clipping_active"] = 1.0
+                else:
+                    log_dict["cita/clipping_active"] = 0.0
+
+            self.log(log_dict)
+
+            # Warn if gradient norm is high (even after clipping)
+            # This indicates clipping is working but gradients are still large
             if total_norm > 10.0:
-                print(f"\n⚠️  WARNING: High gradient norm ({total_norm:.2f}) - training may be unstable!")
-                print(f"   Consider: lower LR, longer warmup, or gradient clipping\n")
+                if max_grad_norm is not None:
+                    print(f"\n⚠️  WARNING: Grad norm {total_norm:.2f} AFTER clipping (max={max_grad_norm})")
+                    print(f"   Clipping may not be enough - consider lower max_grad_norm or lower LR\n")
+                else:
+                    print(f"\n⚠️  WARNING: High gradient norm ({total_norm:.2f}) - training may be unstable!")
+                    print(f"   Consider: lower LR, longer warmup, or gradient clipping\n")
 
         return loss
