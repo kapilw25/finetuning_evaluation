@@ -14,17 +14,18 @@ Configuration:
 - Expected cost: ~$1.08 (43 min × $1.5/hr)
 
 Usage:
-    # Sanity check (0.3 epochs, ~13 minutes)
+    # SANITY: 200 steps, 0.3 epochs (~13 minutes, ~$0.32)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1.0 epoch, ~43 minutes)
+    # FULL: 1000 steps, 1.0 epoch (~43 minutes, ~$1.08)
     python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/SFT_Baseline/checkpoint-1000/
+    - Model checkpoint: ./outputs/SFT_Baseline/checkpoint-{200,1000}/
     - LoRA adapters: ./outputs/SFT_Baseline/lora_model_SFT_Baseline/
     - TensorBoard logs: ./tensorboard_logs/SFT_Baseline_<timestamp>/
     - Training log: ./logs/SFT_Baseline_training_<timestamp>.log
+    - HuggingFace: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
 """
 
 import sys
