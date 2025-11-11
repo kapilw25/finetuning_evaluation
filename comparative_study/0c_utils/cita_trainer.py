@@ -409,4 +409,13 @@ class CITATrainer(DPOTrainer):
                     print(f"\n⚠️  WARNING: High gradient norm ({total_norm:.2f}) - training may be unstable!")
                     print(f"   Consider: lower LR, longer warmup, or gradient clipping\n")
 
+            # EXPERIMENT (iter8): Stop training on catastrophic explosion
+            # Prevents wasting compute when training has clearly diverged
+            if total_norm > 50.0:
+                print(f"\n🚨 EXPLOSION DETECTED: grad_norm={total_norm:.2f} > 50.0")
+                print(f"   Stopping training at step {self.state.global_step}")
+                print(f"   Check tensorboard logs for diagnosis")
+                print(f"   Location: tensorboard_logs/CITA_Baseline_*/")
+                raise ValueError(f"Training exploded (grad_norm={total_norm:.2f})")
+
         return loss
