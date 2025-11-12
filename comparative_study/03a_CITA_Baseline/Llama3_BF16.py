@@ -251,19 +251,16 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
         steps_per_epoch = len(train_dataset) // effective_batch_size
         total_steps = int(steps_per_epoch * num_epochs)
 
-        # EXPERIMENT (iter8): Fixed eval_steps for consistent monitoring across SANITY/FULL
-        # checkpoint_interval = int(total_steps * 0.2)  # OLD: Dynamic (SANITY=80, FULL=270)
-        checkpoint_interval = 80  # NEW: Fixed at 80 steps (same as SANITY for all modes)
-        # Rationale: More frequent eval in FULL mode to catch explosion earlier
-        # Rollback: Uncomment OLD line if this approach doesn't help
+        # Checkpoint interval: 20% of training (dynamic scaling)
+        checkpoint_interval = int(total_steps * 0.2)  # SANITY=80, FULL=270
+        # REMOVED iter9 experiment: Fixed eval_steps=80 (was too frequent for production)
 
         print(f"\n📊 Training Configuration:")
         print(f"   Dataset size: {len(train_dataset):,} samples")
         print(f"   Effective batch size: {effective_batch_size}")
         print(f"   Steps per epoch: {steps_per_epoch:,}")
         print(f"   Total steps: {total_steps:,} ({num_epochs} epochs)")
-        # print(f"   Checkpoint interval: {checkpoint_interval} steps (20% of training)")  # OLD
-        print(f"   Checkpoint interval: {checkpoint_interval} steps (EXPERIMENT: fixed at 80 for consistent eval)")
+        print(f"   Checkpoint interval: {checkpoint_interval} steps (20% of training)")
 
         # ===== SCALE VALIDATION SET FOR SANITY MODE =====
         if num_epochs < 1.0:

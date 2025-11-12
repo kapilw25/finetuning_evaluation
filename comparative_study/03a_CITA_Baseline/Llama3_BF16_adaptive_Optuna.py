@@ -1,11 +1,11 @@
 """
-Adaptive CITA Training Script (Optuna-based)
+Adaptive CITA Training Script (Optuna-based) - Updated for 1354-step FULL training
 Truly adaptive hyperparameter search using Optuna TPE + Hyperband
 
-Time Estimates (DPO baseline: 34.55 min/200 steps = 0.173 min/step):
-- MVP mode (5 × 100 steps): ~87 min = 1.5 hours (with pruning: ~1.2 hours)
-- Sanity mode (27 × 200 steps): ~933 min = 15.5 hours (with pruning: ~13 hours)
-- Full mode (27 × 1000 steps): ~4664 min = 78 hours (with pruning: ~66 hours)
+Time Estimates (CITA iter8: 0.195 min/step):
+- MVP mode (5 × 100 steps): ~98 min = 1.6 hours (with pruning: ~1.3 hours)
+- Sanity mode (27 × 200 steps): ~1053 min = 17.5 hours (with pruning: ~15 hours)
+- Full mode (27 × 1354 steps): ~7128 min = 119 hours (with pruning: ~59 hours = $88.50)
 
 Usage:
     # MVP (5 trials, 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
@@ -14,8 +14,9 @@ Usage:
     # Sanity check (27 trials, 200 steps, ~15.5 hours)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode sanity
 
-    # Full training (27 trials, 1000 steps, ~78 hours = 3.25 days)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode full
+    # Full training (27 trials, 1354 steps, ~59 hours with pruning)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode full \
+        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
 Outputs:
     - Optuna study database: ./outputs/optuna_cita.db
@@ -93,11 +94,12 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     """
 
     # ===== HYPERPARAMETER SAMPLING (Optuna TPE decides dynamically) =====
-    lambda_kl = trial.suggest_float("lambda_kl", 0.001, 0.0015, log=False)
+    # Updated for 1354-step FULL training (iter9 fix)
+    lambda_kl = trial.suggest_float("lambda_kl", 0.0005, 0.0015, log=False)  # Lower range for longer training
     learning_rate = trial.suggest_float("learning_rate", 8e-6, 1.2e-5, log=True)
     beta = trial.suggest_float("beta", 0.08, 0.12)
     weight_decay = trial.suggest_float("weight_decay", 0.008, 0.012)
-    warmup_steps = trial.suggest_int("warmup_steps", 100, 120)
+    warmup_ratio = trial.suggest_float("warmup_ratio", 0.20, 0.35)  # Epoch-agnostic (iter7 fix)
 
     print(f"\n{'='*80}")
     print(f"🔬 Trial {trial.number}: Testing hyperparameters")
@@ -106,7 +108,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     print(f"  learning_rate:  {learning_rate:.6e}")
     print(f"  beta:           {beta:.4f}")
     print(f"  weight_decay:   {weight_decay:.4f}")
-    print(f"  warmup_steps:   {warmup_steps}")
+    print(f"  warmup_ratio:   {warmup_ratio:.4f}  (auto-scales: SANITY=103, FULL=343)")
     # Get training config values
     per_device_batch = 1
     grad_accum = 8
@@ -171,26 +173,25 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     model = apply_torch_compile(model)
 
     # ===== LOAD DATASET =====
-    from data_prep import load_pku_filtered, format_dataset
+    # Match current Llama3_BF16.py format (NO instructions)
+    from data_prep.loader_pku import load_pku_combined_clear_contrast
+    from data_prep.formatters import format_pku_for_cita_no_instruct
 
-    # Note: Both use split="train" but return_val flag controls the actual split
-    # return_val=False → 90% of train split (for training)
-    # return_val=True  → 10% of train split (for validation)
-    dataset_raw_train = load_pku_filtered(
-        split="train",
-        max_samples=None,
-        return_val=False  # 90% of train split
+    # Load combined dataset (12,035 samples) and split 90/10
+    dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
+
+    # Format for CITA (NO instructions - matches current Phase 1)
+    train_dataset = dataset_split['train'].map(
+        format_pku_for_cita_no_instruct,
+        remove_columns=dataset_split['train'].column_names,
+        desc="Formatting PKU for CITA (NO instructions)"
     )
 
-    dataset_raw_val = load_pku_filtered(
-        split="train",
-        max_samples=None,
-        return_val=True   # 10% of train split
+    val_dataset = dataset_split['test'].map(
+        format_pku_for_cita_no_instruct,
+        remove_columns=dataset_split['test'].column_names,
+        desc="Formatting PKU validation for CITA"
     )
-
-    # Format dataset (DPO format - required by CITATrainer which inherits from DPOTrainer)
-    train_dataset = format_dataset(dataset_raw_train, method="dpo")
-    val_dataset = format_dataset(dataset_raw_val, method="dpo")
 
     # ===== CREATE TRAINING ARGS =====
     trial_output_dir = project_root / "outputs" / "CITA_Adaptive" / f"trial_{trial.number}"
@@ -203,7 +204,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         output_dir=str(trial_output_dir),
         per_device_train_batch_size=1,  # Reduced for DPO ref model
         gradient_accumulation_steps=8,  # Effective batch=8
-        warmup_steps=warmup_steps,
+        warmup_ratio=warmup_ratio,  # Epoch-agnostic warmup (iter7 fix)
         max_steps=max_steps,
         learning_rate=learning_rate,
         logging_steps=1,
@@ -273,6 +274,41 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         del trainer
         torch.cuda.empty_cache()
         raise optuna.TrialPruned("User interrupted training")
+    except ValueError as e:
+        # Catch explosion detector from cita_trainer.py (grad_norm > 50.0)
+        if "exploded" in str(e).lower() or "grad_norm" in str(e).lower():
+            print(f"\n🚨 Trial {trial.number} EXPLOSION DETECTED")
+            print(f"   Error: {e}")
+            print(f"   Hyperparameters caused training instability")
+
+            # Try to report last eval metric for TPE learning
+            reported = False
+            if hasattr(trainer, 'state') and hasattr(trainer.state, 'log_history'):
+                for log in reversed(trainer.state.log_history):
+                    if 'eval_rewards/margins' in log:
+                        margin = log['eval_rewards/margins']
+                        step = log.get('step', trainer.state.global_step)
+                        trial.report(margin, step)
+                        print(f"   Last stable eval: margin={margin:.4f} at step {step}")
+                        print(f"   Reported to Optuna TPE for learning")
+                        reported = True
+                        break
+
+            if not reported:
+                print(f"   No eval metrics to report (explosion before first eval)")
+
+            print(f"   Cleaning up and marking trial as pruned\n")
+
+            # Clean up GPU memory
+            del model
+            del trainer
+            torch.cuda.empty_cache()
+
+            # Mark as pruned (Optuna continues with next trial)
+            raise optuna.TrialPruned(f"Training exploded: {e}")
+        else:
+            # Other ValueError (not explosion-related) - re-raise to crash study
+            raise
 
     # ===== EXTRACT FINAL METRICS (MULTI-OBJECTIVE) =====
     # Extract metrics FIRST (before checking early stop) so we always have values to return
@@ -337,7 +373,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         "learning_rate": learning_rate,
         "beta": beta,
         "weight_decay": weight_decay,
-        "warmup_steps": warmup_steps,
+        "warmup_ratio": warmup_ratio,
         "max_steps": max_steps,
         "final_margin": final_margin,
         "final_accuracy": final_accuracy,
@@ -571,8 +607,9 @@ Examples:
   # Sanity (27 trials × 200 steps, ~15.5 hours)
   python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode sanity
 
-  # Full (27 trials × 1000 steps, ~78 hours)
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode full
+  # Full (27 trials × 1354 steps, ~59 hours with pruning)
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode full \
+      --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
         """
     )
 
@@ -629,8 +666,8 @@ Examples:
         print(f"✅ Sanity mode: {n_trials} trials × {max_steps} steps (~15.5 hours)")
     else:  # full
         n_trials = 27
-        max_steps = 1000
-        print(f"✅ Full mode: {n_trials} trials × {max_steps} steps (~78 hours)")
+        max_steps = 1354  # Match current Llama3_BF16.py FULL epoch
+        print(f"✅ Full mode: {n_trials} trials × {max_steps} steps (~59 hours with pruning)")
 
     # Time estimate (based on actual CITA runs with eval margin stopping)
     # Actual data from logs/CITA_Adaptive_training_20251023_194316.log:
