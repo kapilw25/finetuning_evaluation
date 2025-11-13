@@ -515,8 +515,8 @@ def run_optuna_cita_search(
 
         sampler=TPESampler(
             seed=42,
-            n_startup_trials=min(10, n_trials // 3),  # 10 warmup or 1/3 of trials
-            multivariate=True,
+            n_startup_trials=5,  # Reduced from 10 - TPE learns faster (avoids repeating explosions)
+            multivariate=True,  # Keeps correlations (lr↑ needs warmup↑)
         ),
 
         pruner=HyperbandPruner(
