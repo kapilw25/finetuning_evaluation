@@ -549,6 +549,7 @@ MODEL_NAME_MAP = {
     "SFT_Baseline": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # Base → SFT (NO instruction)
     "DPO_Baseline": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",          # SFT_NoInstruct → DPO_NoInstruct (stacked, NO instruction)
     "CITA_Baseline": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",        # DPO_Instruct → CITA_Instruct (stacked, WITH instructions)
+    "CITA_Adaptive": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",       # DPO_NoInstruct → CITA_Adaptive (Optuna hyperparameter search)
 }
 
 

@@ -2,21 +2,21 @@
 Adaptive CITA Training Script (Optuna-based) - Updated for 1354-step FULL training
 Truly adaptive hyperparameter search using Optuna TPE + Hyperband
 
-Time Estimates (CITA iter8: 0.195 min/step):
-- MVP mode (5 × 100 steps): ~98 min = 1.6 hours (with pruning: ~1.3 hours)
-- Sanity mode (27 × 200 steps): ~1053 min = 17.5 hours (with pruning: ~15 hours)
-- Full mode (27 × 1354 steps): ~7128 min = 119 hours (with pruning: ~59 hours = $88.50)
+Time Estimates (CITA iter8: 0.195 min/step, +15% without torch.compile):
+- MVP mode (5 × 100 steps): ~113 min = 1.9 hours (with pruning: ~1.5 hours)
+- Sanity mode (27 × 200 steps): ~1211 min = 20.2 hours (with pruning: ~17 hours)
+- Full mode (27 × 1354 steps): ~8197 min = 137 hours (with pruning: ~68 hours = $102)
 
 Usage:
     # MVP (5 trials, 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode mvp
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp
 
     # Sanity check (27 trials, 200 steps, ~15.5 hours)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode sanity
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity
 
     # Full training (27 trials, 1354 steps, ~59 hours with pruning)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode full \
-        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
+    --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
 Outputs:
     - Optuna study database: ./outputs/optuna_cita.db
@@ -36,6 +36,10 @@ import json
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 import torch
+
+# ===== FIX torch.compile() CUDAGraph bug: Disable CUDAGraphs for dynamic shapes =====
+torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
+
 import optuna
 from optuna.pruners import HyperbandPruner
 from optuna.samplers import TPESampler
@@ -169,8 +173,13 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     print("✅ Model cast to BF16 (all params including LoRA)")
 
     # ===== TORCH.COMPILE() OPTIMIZATION =====
-    from model_utils import apply_torch_compile
-    model = apply_torch_compile(model)
+    # DISABLED: Causes KeyError: 'hidden_states' during gradient checkpointing
+    # torch.compile() + gradient_checkpointing has compatibility issues with CITA (DPO-based)
+    # Error occurs in transformers/utils/generic.py wrapped_forward output collection
+    # Trade-off: ~10% slower training (59h → ~71h) vs no crash
+    print("\n⚠️  torch.compile() disabled (prevents gradient checkpointing bug for CITA)")
+    # from model_utils import apply_torch_compile
+    # model = apply_torch_compile(model)
 
     # ===== LOAD DATASET =====
     # Match current Llama3_BF16.py format (NO instructions)
@@ -200,6 +209,10 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     # TensorBoard logging for this trial
     tensorboard_dir = project_root / "tensorboard_logs" / f"CITA_Adaptive_trial_{trial.number}"
 
+    # ===== CALCULATE CHECKPOINT INTERVAL (20% of training, matches production) =====
+    checkpoint_interval = int(max_steps * 0.2)  # 1354 steps → 270, 200 steps → 40
+    print(f"\n📊 Checkpoint/Eval interval: {checkpoint_interval} steps (20% of {max_steps} total steps)")
+
     training_args = DPOConfig(
         output_dir=str(trial_output_dir),
         per_device_train_batch_size=1,  # Reduced for DPO ref model
@@ -214,7 +227,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         seed=3407,
         bf16=True,
         gradient_checkpointing=True,
-        save_steps=50,
+        save_steps=checkpoint_interval,  # Dynamic: 20% of training (matches production)
         save_total_limit=2,
         report_to="tensorboard",
         logging_dir=str(tensorboard_dir),
@@ -223,7 +236,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         dataloader_pin_memory=True,
         # Validation
         eval_strategy="steps",
-        eval_steps=50,
+        eval_steps=checkpoint_interval,  # Dynamic: 20% of training (matches production)
         per_device_eval_batch_size=1,
         # DPO-specific parameters
         beta=beta,
@@ -254,6 +267,17 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         callbacks=[summary_callback],  # Only summary, no safety (matches DPO baseline)
     )
 
+    # ===== VERIFY GRADIENT CLIPPING IS CONFIGURED =====
+    max_grad_norm = getattr(trainer.args, 'max_grad_norm', None)
+    if max_grad_norm is None or max_grad_norm == 0:
+        print(f"\n⚠️  Gradient clipping DISABLED (intentional for Optuna)")
+        print(f"   Finding stable hyperparameters without clipping")
+        print(f"   Explosion detector will prune unstable trials (grad_norm > 50.0)\n")
+    else:
+        print(f"\n✅ Gradient clipping ENABLED: max_grad_norm={max_grad_norm}")
+        print(f"   Gradients will be clipped to prevent explosion")
+        print(f"   Monitor 'cita/grad_norm_clipped' and 'cita/clipping_active' in logs\n")
+
     # ===== SHOW GPU MEMORY (BEFORE TRAINING) =====
     gpu_stats = torch.cuda.get_device_properties(0)
     start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
@@ -282,20 +306,22 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
             print(f"   Hyperparameters caused training instability")
 
             # Try to report last eval metric for TPE learning
+            # ❌ DISABLED: trial.report() not supported for multi-objective optimization
+            # Optuna will learn from final metrics of completed trials instead
             reported = False
             if hasattr(trainer, 'state') and hasattr(trainer.state, 'log_history'):
                 for log in reversed(trainer.state.log_history):
                     if 'eval_rewards/margins' in log:
                         margin = log['eval_rewards/margins']
                         step = log.get('step', trainer.state.global_step)
-                        trial.report(margin, step)
+                        # trial.report(margin, step)  # ❌ Causes NotImplementedError for multi-objective
                         print(f"   Last stable eval: margin={margin:.4f} at step {step}")
-                        print(f"   Reported to Optuna TPE for learning")
+                        print(f"   (Intermediate reporting disabled for multi-objective optimization)")
                         reported = True
                         break
 
             if not reported:
-                print(f"   No eval metrics to report (explosion before first eval)")
+                print(f"   No eval metrics found (explosion before first eval)")
 
             print(f"   Cleaning up and marking trial as pruned\n")
 
@@ -361,42 +387,49 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     print(f"Peak reserved memory % of max memory = {used_percentage}%")
     print(f"{'='*80}\n")
 
-    # ===== SAVE TRIAL CHECKPOINT =====
-    lora_output_dir = trial_output_dir / "lora_adapters"
-    lora_output_dir.mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(str(lora_output_dir))
-    tokenizer.save_pretrained(str(lora_output_dir))
+    # ===== SAVE TRIAL CHECKPOINT (non-critical, wrapped in try-except) =====
+    try:
+        lora_output_dir = trial_output_dir / "lora_adapters"
+        lora_output_dir.mkdir(parents=True, exist_ok=True)
+        model.save_pretrained(str(lora_output_dir))
+        tokenizer.save_pretrained(str(lora_output_dir))
 
-    trial_config = {
-        "trial_number": trial.number,
-        "lambda_kl": lambda_kl,
-        "learning_rate": learning_rate,
-        "beta": beta,
-        "weight_decay": weight_decay,
-        "warmup_ratio": warmup_ratio,
-        "max_steps": max_steps,
-        "final_margin": final_margin,
-        "final_accuracy": final_accuracy,
-        "final_chosen": final_chosen,
-        "completed_steps": current_step,
-    }
+        trial_config = {
+            "trial_number": trial.number,
+            "lambda_kl": lambda_kl,
+            "learning_rate": learning_rate,
+            "beta": beta,
+            "weight_decay": weight_decay,
+            "warmup_ratio": warmup_ratio,
+            "max_steps": max_steps,
+            "final_margin": final_margin,
+            "final_accuracy": final_accuracy,
+            "final_chosen": final_chosen,
+            "completed_steps": current_step,
+        }
 
-    with open(trial_output_dir / "trial_config.json", 'w') as f:
-        json.dump(trial_config, f, indent=2)
+        with open(trial_output_dir / "trial_config.json", 'w') as f:
+            json.dump(trial_config, f, indent=2)
 
-    print(f"\n{'='*80}")
-    print(f"✅ Trial {trial.number} complete!")
-    print(f"   Final metrics:")
-    print(f"     - Margin: {final_margin:.4f}")
-    print(f"     - Accuracy: {final_accuracy:.4f}" if final_accuracy is not None else "     - Accuracy: N/A")
-    print(f"     - Chosen reward: {final_chosen:.4f}" if final_chosen is not None else "     - Chosen reward: N/A")
-    print(f"   Checkpoint saved: {lora_output_dir}")
-    print(f"{'='*80}\n")
+        print(f"\n{'='*80}")
+        print(f"✅ Trial {trial.number} complete!")
+        print(f"   Final metrics:")
+        print(f"     - Margin: {final_margin:.4f}")
+        print(f"     - Accuracy: {final_accuracy:.4f}" if final_accuracy is not None else "     - Accuracy: N/A")
+        print(f"     - Chosen reward: {final_chosen:.4f}" if final_chosen is not None else "     - Chosen reward: N/A")
+        print(f"   Checkpoint saved: {lora_output_dir}")
+        print(f"{'='*80}\n")
+    except Exception as e:
+        print(f"\n⚠️  Warning: Failed to save checkpoint for trial {trial.number}: {e}")
+        print(f"   Metrics still recorded - Optuna will continue\n")
 
-    # Clean up
-    del model
-    del trainer
-    torch.cuda.empty_cache()
+    # Clean up (wrapped to ensure Optuna continues even if cleanup fails)
+    try:
+        del model
+        del trainer
+        torch.cuda.empty_cache()
+    except Exception as e:
+        print(f"⚠️  Warning: Cleanup failed: {e}")
 
     # Return multi-objective metrics: (margin, accuracy, -chosen)
     # Note: negate chosen because less negative = better, but Optuna maximizes
@@ -572,21 +605,28 @@ def run_optuna_cita_search(
         "max_prompt_length": 1024,
     }
 
-    with open(config_path, 'w') as f:
-        json.dump(best_config, f, indent=2)
+    try:
+        with open(config_path, 'w') as f:
+            json.dump(best_config, f, indent=2)
+        print(f"✅ Best config saved to: {config_path}\n")
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to save best config: {e}\n")
 
-    print(f"✅ Best config saved to: {config_path}\n")
+    # ===== COPY BEST CHECKPOINT (non-critical) =====
+    try:
+        best_trial_dir = project_root / "outputs" / "CITA_Adaptive" / f"trial_{best_trial.number}"
+        best_checkpoint_dir = project_root / "outputs" / "CITA_Adaptive" / "best_trial"
 
-    # ===== COPY BEST CHECKPOINT =====
-    best_trial_dir = project_root / "outputs" / "CITA_Adaptive" / f"trial_{best_trial.number}"
-    best_checkpoint_dir = project_root / "outputs" / "CITA_Adaptive" / "best_trial"
-
-    if best_trial_dir.exists():
-        import shutil
-        if best_checkpoint_dir.exists():
-            shutil.rmtree(best_checkpoint_dir)
-        shutil.copytree(best_trial_dir, best_checkpoint_dir)
-        print(f"✅ Best checkpoint copied to: {best_checkpoint_dir}\n")
+        if best_trial_dir.exists():
+            import shutil
+            if best_checkpoint_dir.exists():
+                shutil.rmtree(best_checkpoint_dir)
+            shutil.copytree(best_trial_dir, best_checkpoint_dir)
+            print(f"✅ Best checkpoint copied to: {best_checkpoint_dir}\n")
+        else:
+            print(f"⚠️  Warning: Best trial dir not found: {best_trial_dir}\n")
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to copy best checkpoint: {e}\n")
 
     return best_trial
 
@@ -602,13 +642,13 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   # MVP (5 trials × 100 steps, ~1.5 hours) - VALIDATES OPTUNA WORKS
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode mvp
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp
 
   # Sanity (27 trials × 200 steps, ~15.5 hours)
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode sanity
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity
 
   # Full (27 trials × 1354 steps, ~59 hours with pruning)
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive.py --mode full \
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
       --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
         """
     )
@@ -673,7 +713,8 @@ Examples:
     # Actual data from logs/CITA_Adaptive_training_20251023_194316.log:
     # - Trials 11-14: avg 9.75 min for 50 steps (early stop at eval check)
     # - Estimated: 19.5 min for 100 steps (no early stop)
-    time_per_step = 0.195  # minutes (CITA: 19.5 min / 100 steps)
+    # - torch.compile() disabled: +15% overhead (0.195 → 0.224 min/step)
+    time_per_step = 0.224  # minutes (CITA without torch.compile: 22.4 min / 100 steps)
     time_per_trial = max_steps * time_per_step
     total_time = n_trials * time_per_trial
 
