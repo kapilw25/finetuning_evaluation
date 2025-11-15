@@ -305,7 +305,7 @@ class PushAutomation:
 
             # Save LoRA adapter locally (CRITICAL BACKUP)
             # ✅ Saves adapter only (165MB, not merged 16GB)
-            local_path = self.outputs_dir / f"lora_model_{run_name}_PBT_BF16"
+            local_path = self.outputs_dir / f"lora_model_{run_name}"
             print(f"\n💾 Saving LoRA adapter locally: {local_path}/")
             model_with_adapter.save_pretrained(local_path)
             tokenizer.save_pretrained(local_path)
@@ -1206,7 +1206,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             print(f"⚠️  No checkpoint found in {output_dir}")
 
         # Step 3: Save training config with final metric
-        config_filename = f"{method.lower()}_baseline_config.json"
+        config_filename = f"{run_name}_config.json"
         config_path = project_root / "outputs" / config_filename
 
         # Add final metric to config using exact metric name from trainer_state.json

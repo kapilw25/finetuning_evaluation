@@ -417,14 +417,10 @@ def train_cita_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         "final_margin": final_margin if final_margin != 'N/A' else None,
     }
 
-    import json
-    config_path = project_root / "outputs" / "cita_baseline_config.json"
-    with open(config_path, 'w') as f:
-        json.dump(training_config, f, indent=2)
+    # Note: Config will be saved by PushAutomation.prepare_baseline_push()
+    # with correct name: {RUN_NAME}_config.json
 
-    print(f"✅ Training config saved to: {config_path}\n")
-
-    return trainer, training_skipped
+    return trainer, training_skipped, training_config
 
 
 # ===================================================================
@@ -549,7 +545,7 @@ if __name__ == "__main__":
 
     # Train
     try:
-        trainer, training_skipped = train_cita_baseline(
+        trainer, training_skipped, training_config = train_cita_baseline(
             num_epochs=num_epochs,
             base_model=args.base_model,
             force_skip=force_skip
@@ -557,18 +553,12 @@ if __name__ == "__main__":
 
         # ===== PUSH TO HUGGINGFACE =====
         # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
-        # Load training config template (will be updated with final metric by utility)
-        import json
-        config_path = project_root / "outputs" / "cita_baseline_config.json"
-        with open(config_path, 'r') as f:
-            training_config = json.load(f)
-
         # Remove final_margin (will be re-extracted from checkpoint by utility)
         training_config.pop('final_margin', None)
 
         PushAutomation.prepare_baseline_push(
             method="CITA",
-            output_dir="outputs/CITA_Baseline",
+            output_dir=f"outputs/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,
