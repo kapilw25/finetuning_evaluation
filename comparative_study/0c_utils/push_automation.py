@@ -757,7 +757,7 @@ This push REPLACES the previous model version (performance improved).
 
     def _check_large_files(self) -> list:
         """
-        Check for log files > 100MB that need special handling
+        Check for ALL files > 100MB that need to be skipped
 
         Returns:
             List of (file_path, size_mb) tuples for files > 100MB
@@ -765,125 +765,109 @@ This push REPLACES the previous model version (performance improved).
         large_files = []
         size_threshold = 100 * 1024 * 1024  # 100MB in bytes
 
-        if not self.logs_dir.exists():
-            return large_files
+        # Get all git-tracked files
+        try:
+            result = subprocess.run(
+                ["git", "ls-files"],
+                cwd=self.project_root,
+                capture_output=True,
+                text=True,
+                check=True
+            )
 
-        for log_file in self.logs_dir.glob("*.log"):
-            if log_file.is_file():
-                size_bytes = log_file.stat().st_size
-                if size_bytes > size_threshold:
-                    size_mb = size_bytes / (1024 * 1024)
-                    large_files.append((log_file, size_mb))
+            tracked_files = result.stdout.strip().split('\n')
+
+            for file_rel_path in tracked_files:
+                if not file_rel_path:
+                    continue
+
+                file_path = self.project_root / file_rel_path
+                if file_path.is_file():
+                    size_bytes = file_path.stat().st_size
+                    if size_bytes > size_threshold:
+                        size_mb = size_bytes / (1024 * 1024)
+                        large_files.append((file_path, size_mb))
+
+        except Exception as e:
+            print(f"⚠️  Could not check git-tracked files: {e}")
+
+        # Also check untracked files in common output directories
+        for pattern in ["outputs/**/*", "logs/**/*", "checkpoints/**/*"]:
+            for file_path in self.project_root.glob(pattern):
+                if file_path.is_file():
+                    size_bytes = file_path.stat().st_size
+                    if size_bytes > size_threshold:
+                        size_mb = size_bytes / (1024 * 1024)
+                        if not any(fp == file_path for fp, _ in large_files):
+                            large_files.append((file_path, size_mb))
 
         return large_files
 
-    def _split_large_file(self, file_path: Path, max_size_mb: int = 95):
+    def _add_to_gitignore(self, file_paths: list):
         """
-        Split a large file into chunks < max_size_mb
+        Add large files to .gitignore to prevent future commits
 
         Args:
-            file_path: Path to large file
-            max_size_mb: Maximum chunk size in MB (default: 95MB for safety)
-
-        Returns:
-            List of chunk file paths
+            file_paths: List of Path objects to add to .gitignore
         """
-        max_size_bytes = max_size_mb * 1024 * 1024
-        chunk_paths = []
+        gitignore_path = self.project_root / ".gitignore"
 
-        print(f"📦 Splitting large file: {file_path.name}")
+        # Read existing .gitignore
+        existing_entries = set()
+        if gitignore_path.exists():
+            with open(gitignore_path, 'r') as f:
+                existing_entries = {line.strip() for line in f if line.strip() and not line.startswith('#')}
 
-        with open(file_path, 'rb') as f:
-            chunk_num = 1
-            while True:
-                chunk_data = f.read(max_size_bytes)
-                if not chunk_data:
-                    break
+        # Add new entries (relative to project root)
+        new_entries = []
+        for file_path in file_paths:
+            try:
+                rel_path = file_path.relative_to(self.project_root)
+                rel_path_str = str(rel_path)
+                if rel_path_str not in existing_entries:
+                    new_entries.append(rel_path_str)
+            except ValueError:
+                continue  # Skip files outside project root
 
-                # Create chunk file (e.g., large_log.log.part1, large_log.log.part2)
-                chunk_path = file_path.parent / f"{file_path.name}.part{chunk_num}"
-                with open(chunk_path, 'wb') as chunk_file:
-                    chunk_file.write(chunk_data)
+        if new_entries:
+            with open(gitignore_path, 'a') as f:
+                f.write("\n# Large files (>100MB) - auto-added by push_automation.py\n")
+                for entry in new_entries:
+                    f.write(f"{entry}\n")
+            print(f"✅ Added {len(new_entries)} files to .gitignore")
 
-                chunk_paths.append(chunk_path)
-                chunk_size_mb = len(chunk_data) / (1024 * 1024)
-                print(f"   Created chunk {chunk_num}: {chunk_path.name} ({chunk_size_mb:.1f} MB)")
-                chunk_num += 1
-
-        print(f"✅ Split into {len(chunk_paths)} chunks")
-        return chunk_paths
-
-    def _handle_large_log_files(self):
+    def _handle_large_files(self):
         """
-        Handle large log files (>100MB) before git push
-
-        Strategy:
-        1. Check if Git LFS is installed
-        2. If yes: Use Git LFS
-        3. If no: Split files into <100MB chunks
+        Skip large files (>100MB) and add them to .gitignore
         """
         large_files = self._check_large_files()
 
         if not large_files:
-            print("✅ No large log files (all < 100MB)")
+            print("✅ No large files found (all < 100MB)")
             return
 
-        print(f"\n⚠️  Found {len(large_files)} large log files (>100MB):")
+        print(f"\n⚠️  Found {len(large_files)} large files (>100MB) - will be skipped:")
         for file_path, size_mb in large_files:
-            print(f"   - {file_path.name}: {size_mb:.1f} MB")
+            rel_path = file_path.relative_to(self.project_root) if file_path.is_relative_to(self.project_root) else file_path
+            print(f"   - {rel_path}: {size_mb:.1f} MB")
 
-        # Check if Git LFS is installed
-        try:
-            result = subprocess.run(
-                ["git", "lfs", "version"],
-                cwd=self.project_root,
-                capture_output=True,
-                text=True
-            )
+        # Add large files to .gitignore
+        large_file_paths = [fp for fp, _ in large_files]
+        self._add_to_gitignore(large_file_paths)
 
-            if result.returncode == 0:
-                print("\n✅ Git LFS detected - using Git LFS for large files")
-
-                # Track *.log files with Git LFS
+        # Remove from git index if already tracked
+        for file_path, _ in large_files:
+            try:
+                rel_path = file_path.relative_to(self.project_root)
                 subprocess.run(
-                    ["git", "lfs", "track", "logs/*.log"],
+                    ["git", "rm", "--cached", str(rel_path)],
                     cwd=self.project_root,
-                    check=True
+                    capture_output=True
                 )
-                print("✅ Configured Git LFS to track logs/*.log")
+            except:
+                pass  # File might not be tracked
 
-                # Add .gitattributes to git (created by git lfs track)
-                gitattributes = self.project_root / ".gitattributes"
-                if gitattributes.exists():
-                    subprocess.run(
-                        ["git", "add", ".gitattributes"],
-                        cwd=self.project_root,
-                        check=True
-                    )
-                    print("✅ Added .gitattributes to git")
-            else:
-                raise Exception("Git LFS not available")
-
-        except Exception as e:
-            print(f"\n⚠️  Git LFS not available: {e}")
-            print(f"   Using fallback: Splitting large files into <100MB chunks")
-
-            # Split each large file
-            for file_path, size_mb in large_files:
-                chunk_paths = self._split_large_file(file_path, max_size_mb=95)
-
-                # Remove original large file from git (keep chunks only)
-                try:
-                    subprocess.run(
-                        ["git", "rm", "--cached", str(file_path.relative_to(self.project_root))],
-                        cwd=self.project_root,
-                        capture_output=True
-                    )
-                except:
-                    pass  # File might not be tracked yet
-
-            print("\n✅ Large files split into chunks (<100MB each)")
-            print("   Original large files will be kept locally but not pushed to GitHub")
+        print("✅ Large files will be kept locally but not pushed to GitHub")
 
     def push_to_github(self, commit_message: Optional[str] = None):
         """
@@ -897,8 +881,8 @@ This push REPLACES the previous model version (performance improved).
         print(f"{'='*80}")
 
         try:
-            # Handle large log files first
-            self._handle_large_log_files()
+            # Handle large files first (skip files >100MB)
+            self._handle_large_files()
 
             # Check git status
             result = subprocess.run(

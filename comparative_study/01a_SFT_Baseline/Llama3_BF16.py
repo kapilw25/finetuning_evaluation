@@ -65,7 +65,7 @@ from logging_utils import setup_training_logger, restore_logging
 # ===================================================================
 # INSTRUCTION MODE TOGGLE
 # ===================================================================
-USE_INSTRUCTION = False  # False: SFT_NoInstruct, True: SFT_Instruct
+USE_INSTRUCTION = True  # False: SFT_NoInstruct, True: SFT_Instruct
 
 RUN_NAME = "SFT_Instruct" if USE_INSTRUCTION else "SFT_NoInstruct"
 
