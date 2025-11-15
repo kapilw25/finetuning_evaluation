@@ -99,6 +99,9 @@ Thumbs.db
 # Logs
 # *.log
 # logs/
+logs_training/iter11/CITA_Adaptive_eval_rewards_chosen_NOT_LOSS.log
+logs/CITA_Adaptive_training_20251114_034003.log
+logs/CITA_Adaptive_training_20251114_155504.log
 
 # HuggingFace
 .cache/

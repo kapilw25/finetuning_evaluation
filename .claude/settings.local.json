@@ -37,7 +37,8 @@
       "Bash(pip install:*)",
       "WebFetch(domain:docs.vllm.ai)",
       "Bash(cat:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
