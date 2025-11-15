@@ -38,7 +38,8 @@
       "WebFetch(domain:docs.vllm.ai)",
       "Bash(cat:*)",
       "Bash(sqlite3:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

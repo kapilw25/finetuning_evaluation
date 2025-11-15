@@ -1,7 +1,7 @@
 ---
 base_model: meta-llama/Llama-3.1-8B
 library_name: transformers
-model_name: trial_0
+model_name: trial_2
 tags:
 - generated_from_trainer
 - dpo
@@ -9,7 +9,7 @@ tags:
 licence: license
 ---
 
-# Model Card for trial_0
+# Model Card for trial_2
 
 This model is a fine-tuned version of [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B).
 It has been trained using [TRL](https://github.com/huggingface/trl).
