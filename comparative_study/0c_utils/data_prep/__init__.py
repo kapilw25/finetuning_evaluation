@@ -11,10 +11,20 @@ from .loader_pku import (
 )
 
 from .formatters import (
-    format_sft,
-    format_dpo,
-    format_cita,
-    format_dataset
+    format_sft_NoInstruct,
+    format_sft_Instruct,
+    format_dpo_NoInstruct,
+    format_dpo_Instruct,
+    format_cita_Instruct,
+    format_dataset,
+    # Aliases
+    format_pku_for_sft,
+    format_pku_for_sft_NoInstruct,
+    format_pku_for_sft_Instruct,
+    format_pku_for_dpo_NoInstruct,
+    format_pku_for_dpo_Instruct,
+    format_pku_for_cita_NoInstruct,
+    format_pku_for_cita_Instruct,
 )
 
 __all__ = [
@@ -22,9 +32,19 @@ __all__ = [
     'load_pku_filtered',
     'get_safe_unsafe_responses',
     'synthesize_system_instruction',
-    # Formatters
-    'format_sft',
-    'format_dpo',
-    'format_cita',
+    # Core formatters
+    'format_sft_NoInstruct',
+    'format_sft_Instruct',
+    'format_dpo_NoInstruct',
+    'format_dpo_Instruct',
+    'format_cita_Instruct',
     'format_dataset',
+    # Aliases
+    'format_pku_for_sft',
+    'format_pku_for_sft_NoInstruct',
+    'format_pku_for_sft_Instruct',
+    'format_pku_for_dpo_NoInstruct',
+    'format_pku_for_dpo_Instruct',
+    'format_pku_for_cita_NoInstruct',
+    'format_pku_for_cita_Instruct',
 ]

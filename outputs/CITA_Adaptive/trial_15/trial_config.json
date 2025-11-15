@@ -1,0 +1,13 @@
+{
+  "trial_number": 15,
+  "lambda_kl": 0.0009086374259052697,
+  "learning_rate": 6.235679375679257e-06,
+  "beta": 0.10479457147431631,
+  "weight_decay": 0.010715677583324814,
+  "warmup_ratio": 0.08961775147746616,
+  "max_steps": 1354,
+  "final_margin": 6.95511531829834,
+  "final_accuracy": 0.884551465511322,
+  "final_eval_loss": 0.32205086946487427,
+  "completed_steps": 1354
+}

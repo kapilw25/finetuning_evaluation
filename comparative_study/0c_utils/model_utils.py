@@ -545,11 +545,22 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 # Model repository mapping (reflects stacked training pipeline: base → SFT → DPO → CITA)
 # Dataset: PKU-SafeRLHF (12,035 samples with clear safety contrast)
 # Repository names include full descriptive suffixes (no precision suffix added)
+# Naming pattern: {METHOD}-{METHOD_INSTRUCTION}-{BASE_MODEL}-{BASE_INSTRUCTION}
 MODEL_NAME_MAP = {
-    "SFT_Baseline": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # Base → SFT (NO instruction)
-    "DPO_Baseline": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",          # SFT_NoInstruct → DPO_NoInstruct (stacked, NO instruction)
-    "CITA_Baseline": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",        # DPO_Instruct → CITA_Instruct (stacked, WITH instructions)
-    "CITA_Adaptive": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",       # DPO_NoInstruct → CITA_Adaptive (Optuna hyperparameter search)
+    # SFT variants (trained on Baseline - unaligned Llama-3-8B)
+    "SFT_NoInstruct": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # Baseline → SFT (NO instruction)
+    "SFT_Instruct": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",        # Baseline → SFT (WITH instruction)
+
+    # DPO variants (stacked on SFT)
+    "DPO_NoInstruct": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",         # SFT_NoInstruct → DPO (NO instruction)
+    "DPO_Instruct": "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct",               # SFT_Instruct → DPO (WITH instruction)
+
+    # CITA variants (stacked on DPO)
+    "CITA_NoInstruct": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",       # DPO_NoInstruct → CITA (NO instruction)
+    "CITA_Instruct": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",             # DPO_Instruct → CITA (WITH instruction)
+
+    # Legacy alias for Optuna experiments
+    "CITA_Adaptive": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",            # Optuna hyperparameter search (same as CITA_Instruct)
 }
 
 
@@ -558,7 +569,7 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
     Get HuggingFace repository name for a given run
 
     Args:
-        run_name: Name of the training run (e.g., "SFT_Baseline", "DPO_Baseline")
+        run_name: Name of the training run (e.g., "SFT_NoInstruct", "SFT_Instruct", "DPO_NoInstruct", etc.)
         precision: Model precision suffix (deprecated - no longer appended)
 
     Returns:
@@ -570,11 +581,14 @@ def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
     Usage:
         from model_utils import get_model_repo_name
 
-        repo = get_model_repo_name("SFT_Baseline")
+        repo = get_model_repo_name("SFT_NoInstruct")
         # Returns: "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct"
 
-        repo = get_model_repo_name("DPO_Baseline")
-        # Returns: "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct"
+        repo = get_model_repo_name("DPO_Instruct")
+        # Returns: "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct"
+
+        repo = get_model_repo_name("CITA_Instruct")
+        # Returns: "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct"
     """
     if run_name not in MODEL_NAME_MAP:
         raise ValueError(

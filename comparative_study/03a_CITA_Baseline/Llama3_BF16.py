@@ -77,15 +77,23 @@ from model_utils import (
     log_gpu_memory_end
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
-from data_prep.formatters import format_pku_for_cita, format_pku_for_cita_no_instruct
+from data_prep.formatters import format_pku_for_cita_Instruct, format_pku_for_cita_NoInstruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
 
 # ===================================================================
+# INSTRUCTION MODE TOGGLE
+# ===================================================================
+USE_INSTRUCTION = False  # False: CITA_NoInstruct, True: CITA_Instruct
+
+RUN_NAME = "CITA_Instruct" if USE_INSTRUCTION else "CITA_NoInstruct"
+
+# ===================================================================
 # Advanced Logging Setup (Tee System)
 # ===================================================================
+# Setup logging to capture ALL terminal output (stdout + stderr)
 log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name="CITA_Baseline",
+    run_name=RUN_NAME,
     project_root=project_root
 )
 
@@ -95,24 +103,16 @@ log_file, log_filename, original_stdout, original_stderr = setup_training_logger
 HF_TOKEN = load_hf_token(project_root)
 
 # Get HuggingFace repository name
-RUN_NAME = "CITA_Baseline"
 HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
 
 print(f"📦 Model will be pushed to: {HF_REPO}")
 print("="*80 + "\n")
 
 # ===================================================================
-# INSTRUCTION MODE TOGGLE
-# ===================================================================
-# Set to False for Phase 1 (CITA_NoInstruct - no system instruction, reuse DPO format)
-# Set to True for Phase 2 (CITA_Instructed - with system instruction)
-USE_INSTRUCTIONS = False  # Phase 1: No instructions (distribution-aligned with DPO)
-
-# ===================================================================
 # Main Training Function
 # ===================================================================
 
-def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", base_model=None, force_skip=False):
+def train_cita_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
     """
     Train CITA baseline with epoch-based training
 
@@ -128,19 +128,23 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
     """
 
     # ===== BEST HYPERPARAMETERS FROM OPTUNA =====
-    # Trial 2: 400 steps, margin=4.34, accuracy=89.4% (best at 200 steps: +20.2% vs DPO)
-    LAMBDA_KL = 0.0010102922471479012
-    LEARNING_RATE = 1.1854483432291239e-05
-    BETA = 0.11329770563201687
-    WEIGHT_DECAY = 0.008849356442713105
-    WARMUP_RATIO = 0.253  # 103/407 from Optuna SANITY (auto-scales: SANITY=103, FULL=342)
+    # Trial 5: 1354 steps, eval_loss=0.2791, margin=6.95, accuracy=89.5% (BEST)
+    LAMBDA_KL = 0.000520
+    LEARNING_RATE = 6.827978e-06
+    BETA = 0.1191
+    WEIGHT_DECAY = 0.0091
+    WARMUP_RATIO = 0.0749  # Auto-scales: SANITY=101 steps, FULL=101 steps
+
+    # Set output_dir dynamically based on RUN_NAME if not provided
+    if output_dir is None:
+        output_dir = f"./outputs/{RUN_NAME}"
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Create TensorBoard directory (unique per run)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tensorboard_run_dir = project_root / "tensorboard_logs" / f"CITA_Baseline_{timestamp}"
+    tensorboard_run_dir = project_root / "tensorboard_logs" / f"{RUN_NAME}_{timestamp}"
     tensorboard_run_dir.mkdir(parents=True, exist_ok=True)
 
     # ===== CHECK FOR EXISTING CHECKPOINT =====
@@ -227,9 +231,9 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
         # Load combined dataset (12,035 samples) and split 90/10
         dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-        # Format for CITA (conditional: WITH or WITHOUT instructions based on USE_INSTRUCTIONS toggle)
-        formatter = format_pku_for_cita if USE_INSTRUCTIONS else format_pku_for_cita_no_instruct
-        format_desc = f"Formatting PKU for CITA ({'WITH' if USE_INSTRUCTIONS else 'NO'} instructions)"
+        # Format for CITA (conditional: WITH or WITHOUT instructions based on USE_INSTRUCTION toggle)
+        formatter = format_pku_for_cita_Instruct if USE_INSTRUCTION else format_pku_for_cita_NoInstruct
+        format_desc = f"Formatting PKU for CITA ({'WITH' if USE_INSTRUCTION else 'NO'} instructions)"
 
         train_dataset = dataset_split['train'].map(
             formatter,
@@ -240,7 +244,7 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
         val_dataset = dataset_split['test'].map(
             formatter,
             remove_columns=dataset_split['test'].column_names,
-            desc=f"Formatting PKU validation for CITA ({'WITH' if USE_INSTRUCTIONS else 'NO'} instructions)"
+            desc=f"Formatting PKU validation for CITA ({'WITH' if USE_INSTRUCTION else 'NO'} instructions)"
         )
 
         print(f"  Train samples: {len(train_dataset):,}")
@@ -358,7 +362,7 @@ def train_cita_baseline(num_epochs=1.0, output_dir="./outputs/CITA_Baseline", ba
         print("💾 Saving LoRA adapters...")
         print("="*80 + "\n")
 
-        lora_output_dir = output_dir / "lora_model_CITA_Baseline"
+        lora_output_dir = output_dir / f"lora_model_{RUN_NAME}"
         lora_output_dir.mkdir(parents=True, exist_ok=True)
         model.save_pretrained(str(lora_output_dir))
         tokenizer.save_pretrained(str(lora_output_dir))
@@ -523,7 +527,7 @@ if __name__ == "__main__":
 
     # Show configuration
     print("="*80)
-    print("🚀 Starting CITA Baseline Training")
+    print(f"🚀 Starting {RUN_NAME} Training")
     print("="*80)
     print("Configuration:")
     print("  - Model: Llama-3.1-8B (BF16)")

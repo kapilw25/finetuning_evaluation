@@ -6,19 +6,23 @@
 
 ```bash
 # 1. Create venv # do NOT use system packages access from LambdaAI, they create conflict
-python3 -m venv  venv_CITA
+# 1. Create venv with Python 3.10 explicitly (python3 defaults to 3.13 on your system)
+python3.10 -m venv venv_CITA
 
 # 2. Activate environment
 source venv_CITA/bin/activate
 
-# 3. Install flash-attn (takes 10-40 mins to compile)
-MAX_JOBS=4 pip install flash-attn --no-build-isolation
+# 3. Install requirements FIRST (provides torch + build dependencies for flash-attn)
+pip install -r requirements.txt
 
-# 3. Verify torch is accessible
+# 3.1. Verify torch is accessible
 python -c "import torch; print(f'Torch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 
-# 4. Install requirements (includes ninja for flash-attn)
-pip install -r requirements.txt
+# 4. THEN install flash-attn (takes 10-40 mins to compile)
+MAX_JOBS=4 pip install flash-attn --no-build-isolation
+
+# 4.1. Verify flash_attn is accessible
+python -c "import flash_attn; print(f'Flash-Attention: {flash_attn.__version__}')"
 ```
 
 ---

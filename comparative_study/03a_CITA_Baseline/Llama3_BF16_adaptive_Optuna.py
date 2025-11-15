@@ -4,8 +4,8 @@ Truly adaptive hyperparameter search using Optuna TPE + Hyperband
 
 Time Estimates (CITA iter8: 0.195 min/step, +15% without torch.compile):
 - MVP mode (5 × 100 steps): ~113 min = 1.9 hours (with pruning: ~1.5 hours)
-- Sanity mode (27 × 200 steps): ~1211 min = 20.2 hours (with pruning: ~17 hours)
-- Full mode (27 × 1354 steps): ~8197 min = 137 hours (with pruning: ~68 hours = $102)
+- Sanity mode (27 × 200 steps): ~1211 min = 20.2 hours (with pruning: ~15.5 hours)
+- Full mode (27 × 1354 steps): ~8197 min = 137 hours (with pruning: ~59 hours)
 
 Usage:
     # MVP (5 trials, 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
@@ -87,7 +87,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
 
     Args:
         trial: Optuna trial object
-        max_steps: Maximum training steps (default: 200 for sanity, 1000 for full)
+        max_steps: Maximum training steps (200 for sanity, 1354 for full)
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
 
     Returns:
@@ -98,12 +98,14 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     """
 
     # ===== HYPERPARAMETER SAMPLING (Optuna TPE decides dynamically) =====
-    # Updated for 1354-step FULL training (iter9 fix)
+    # Updated for FAIR COMPARISON with SFT/DPO baselines (iter11 fix)
+    # Industry standard: 10% warmup (HuggingFace Alignment Handbook, Google ML Guide)
+    # SFT/DPO baselines: 100 steps / 1354 = 7.4% warmup
     lambda_kl = trial.suggest_float("lambda_kl", 0.0005, 0.0015, log=False)  # Lower range for longer training
-    learning_rate = trial.suggest_float("learning_rate", 8e-6, 1.2e-5, log=True)
+    learning_rate = trial.suggest_float("learning_rate", 5e-6, 8e-6, log=True)  # Lower for shorter warmup
     beta = trial.suggest_float("beta", 0.08, 0.12)
     weight_decay = trial.suggest_float("weight_decay", 0.008, 0.012)
-    warmup_ratio = trial.suggest_float("warmup_ratio", 0.20, 0.35)  # Epoch-agnostic (iter7 fix)
+    warmup_ratio = trial.suggest_float("warmup_ratio", 0.05, 0.15)  # Fair: matches SFT/DPO ~10%
 
     print(f"\n{'='*80}")
     print(f"🔬 Trial {trial.number}: Testing hyperparameters")
@@ -112,7 +114,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     print(f"  learning_rate:  {learning_rate:.6e}")
     print(f"  beta:           {beta:.4f}")
     print(f"  weight_decay:   {weight_decay:.4f}")
-    print(f"  warmup_ratio:   {warmup_ratio:.4f}  (auto-scales: SANITY=103, FULL=343)")
+    print(f"  warmup_ratio:   {warmup_ratio:.4f}  (auto-scales to {int(warmup_ratio * max_steps)} steps for {max_steps} total)")
     # Get training config values
     per_device_batch = 1
     grad_accum = 8
@@ -341,7 +343,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     current_step = trainer.state.global_step
     final_margin = None
     final_accuracy = None
-    final_chosen = None
+    final_eval_loss = None
 
     if hasattr(trainer.state, 'log_history') and len(trainer.state.log_history) > 0:
         # Get most recent eval metrics
@@ -349,7 +351,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
             if 'eval_rewards/margins' in log_entry:
                 final_margin = log_entry['eval_rewards/margins']
                 final_accuracy = log_entry.get('eval_rewards/accuracies', None)
-                final_chosen = log_entry.get('eval_rewards/chosen', None)
+                final_eval_loss = log_entry.get('eval_loss', None)
                 break
 
     # ===== CHECK IF STOPPED EARLY =====
@@ -364,7 +366,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         # DON'T raise TrialPruned - return partial metrics instead
         # This allows Optuna multi-objective to use early-stopped trials
         trial.set_user_attr("early_stopped", True)
-        trial.set_user_attr("stop_reason", prune_message)
+        trial.set_user_attr("stop_reason", prune_message[:255])  # Truncate to prevent DB overflow
 
     # ===== CHECK IF NO METRICS =====
     if final_margin is None:
@@ -404,7 +406,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
             "max_steps": max_steps,
             "final_margin": final_margin,
             "final_accuracy": final_accuracy,
-            "final_chosen": final_chosen,
+            "final_eval_loss": final_eval_loss,
             "completed_steps": current_step,
         }
 
@@ -416,7 +418,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         print(f"   Final metrics:")
         print(f"     - Margin: {final_margin:.4f}")
         print(f"     - Accuracy: {final_accuracy:.4f}" if final_accuracy is not None else "     - Accuracy: N/A")
-        print(f"     - Chosen reward: {final_chosen:.4f}" if final_chosen is not None else "     - Chosen reward: N/A")
+        print(f"     - Eval Loss: {final_eval_loss:.4f}" if final_eval_loss is not None else "     - Eval Loss: N/A")
         print(f"   Checkpoint saved: {lora_output_dir}")
         print(f"{'='*80}\n")
     except Exception as e:
@@ -431,12 +433,12 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     except Exception as e:
         print(f"⚠️  Warning: Cleanup failed: {e}")
 
-    # Return multi-objective metrics: (margin, accuracy, -chosen)
-    # Note: negate chosen because less negative = better, but Optuna maximizes
+    # Return multi-objective metrics: (margin, accuracy, -eval_loss)
+    # Note: negate eval_loss because lower loss = better, but Optuna maximizes
     return (
-        final_margin,                              # Objective 1: maximize margin
-        final_accuracy if final_accuracy else 0.0,  # Objective 2: maximize accuracy
-        -final_chosen if final_chosen else 0.0     # Objective 3: maximize (-chosen) = minimize chosen
+        final_margin,                                           # Objective 1: maximize margin
+        final_accuracy if final_accuracy is not None else 0.0, # Objective 2: maximize accuracy
+        -final_eval_loss if final_eval_loss is not None else -999.9  # Objective 3: minimize eval_loss (penalize missing metrics)
     )
 
 
@@ -505,13 +507,13 @@ def run_optuna_cita_search(
     print(f"Steps per trial: {max_steps}")
     print(f"Timeout: {timeout_hours}h")
     print(f"Sampler: TPE (truly adaptive)")
-    print(f"Pruner: Hyperband (early stopping)")
-    print(f"Safety checks: Steps 50, 100, 150, 200")
+    print(f"Pruner: Hyperband (min_resource=50, early stopping)")
+    print(f"Monitoring: TrainingSummaryCallback every 50 steps")
     print(f"{'='*80}\n")
 
     study = optuna.create_study(
         study_name=study_name,
-        directions=["maximize", "maximize", "maximize"],  # Multi-objective: [margin, accuracy, -chosen]
+        directions=["maximize", "maximize", "maximize"],  # Multi-objective: [margin, accuracy, -eval_loss]
 
         sampler=TPESampler(
             seed=42,
@@ -561,7 +563,7 @@ def run_optuna_cita_search(
                 print(f"    {key}: {value:.6f}")
             else:
                 print(f"    {key}: {value}")
-        print(f"    Objectives: margin={trial.values[0]:.4f}, accuracy={trial.values[1]:.4f}, -chosen={trial.values[2]:.4f}")
+        print(f"    Objectives: margin={trial.values[0]:.4f}, accuracy={trial.values[1]:.4f}, -eval_loss={trial.values[2]:.4f}")
         print()
 
     # Pick the trial with highest margin as "best" for saving
@@ -589,7 +591,7 @@ def run_optuna_cita_search(
         "best_trial": best_trial.number,
         "best_margin": best_trial.values[0],
         "best_accuracy": best_trial.values[1],
-        "best_neg_chosen": best_trial.values[2],
+        "best_neg_eval_loss": best_trial.values[2],
         "total_trials": len(study.trials),
         "completed_trials": len(completed_trials),
         "pruned_trials": len(pruned_trials),
@@ -658,7 +660,7 @@ Examples:
         type=str,
         choices=["mvp", "sanity", "full"],
         default="mvp",
-        help="Training mode: 'mvp' (5×100), 'sanity' (27×200), 'full' (27×1000)"
+        help="Training mode: 'mvp' (5×100), 'sanity' (27×200), 'full' (27×1354)"
     )
 
     parser.add_argument(

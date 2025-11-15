@@ -58,16 +58,23 @@ from model_utils import (
     log_gpu_memory_end
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
-from data_prep.formatters import format_pku_for_sft
+from data_prep.formatters import format_pku_for_sft, format_pku_for_sft_Instruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
+
+# ===================================================================
+# INSTRUCTION MODE TOGGLE
+# ===================================================================
+USE_INSTRUCTION = False  # False: SFT_NoInstruct, True: SFT_Instruct
+
+RUN_NAME = "SFT_Instruct" if USE_INSTRUCTION else "SFT_NoInstruct"
 
 # ===================================================================
 # Advanced Logging Setup (Tee System)
 # ===================================================================
 # Setup logging to capture ALL terminal output (stdout + stderr)
 log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name="SFT_Baseline",
+    run_name=RUN_NAME,
     project_root=project_root
 )
 
@@ -77,7 +84,6 @@ log_file, log_filename, original_stdout, original_stderr = setup_training_logger
 HF_TOKEN = load_hf_token(project_root)
 
 # Get HuggingFace repository name
-RUN_NAME = "SFT_Baseline"
 HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
 
 print(f"📦 Model will be pushed to: {HF_REPO}")
@@ -88,7 +94,7 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base_model=None, force_skip=False):
+def train_sft_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
     """
     Train SFT baseline with epoch-based training
 
@@ -101,8 +107,12 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
     Returns:
         trainer: Trained SFTTrainer instance
     """
+    # Set output_dir dynamically based on RUN_NAME if not provided
+    if output_dir is None:
+        output_dir = f"./outputs/{RUN_NAME}"
+
     print("\n" + "="*80)
-    print(f"🚀 Starting SFT Baseline Training")
+    print(f"🚀 Starting {RUN_NAME} Training")
     print("="*80)
     print(f"Configuration:")
     print(f"  - Model: Llama-3.1-8B (BF16)")
@@ -194,17 +204,18 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         # Load combined dataset (12,035 samples) and split 90/10
         dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-        # Format for SFT (chosen responses only, NO instruction)
+        # Format for SFT (conditional: WITH or WITHOUT instruction)
+        formatter = format_pku_for_sft_Instruct if USE_INSTRUCTION else format_pku_for_sft
         train_dataset = dataset_split['train'].map(
-            format_pku_for_sft,
+            formatter,
             remove_columns=dataset_split['train'].column_names,
-            desc="Formatting PKU for SFT (chosen only, NO instruction)"
+            desc=f"Formatting PKU for SFT ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
         val_dataset = dataset_split['test'].map(
-            format_pku_for_sft,
+            formatter,
             remove_columns=dataset_split['test'].column_names,
-            desc="Formatting PKU validation for SFT"
+            desc=f"Formatting PKU validation for SFT ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
         print(f"  Train samples: {len(train_dataset):,}")
@@ -335,7 +346,7 @@ def train_sft_baseline(num_epochs=1.0, output_dir="./outputs/SFT_Baseline", base
         print(f"✅ Training complete!")
 
     # ===== SAVE LORA ADAPTERS =====
-    lora_output_dir = Path(output_dir) / "lora_model_SFT_Baseline"
+    lora_output_dir = Path(output_dir) / f"lora_model_{RUN_NAME}"
 
     if not training_skipped:
         # Training just completed - save LoRA adapters
@@ -576,7 +587,7 @@ Examples:
 
         PushAutomation.prepare_baseline_push(
             method="SFT",
-            output_dir="outputs/SFT_Baseline",
+            output_dir=f"outputs/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,

@@ -1,0 +1,23 @@
+{
+  "method": "CITA_Adaptive",
+  "max_steps": 1354,
+  "best_trial": 0,
+  "best_margin": 13.59048080444336,
+  "best_accuracy": 0.8795680999755859,
+  "best_neg_eval_loss": -0.5160130858421326,
+  "total_trials": 19,
+  "completed_trials": 13,
+  "pruned_trials": 5,
+  "pareto_optimal_trials": 6,
+  "lambda_kl": 0.0008745401188473625,
+  "learning_rate": 7.816814251404267e-06,
+  "beta": 0.10927975767245621,
+  "weight_decay": 0.010394633936788147,
+  "warmup_ratio": 0.06560186404424365,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 8,
+  "optimizer": "adamw_torch",
+  "lr_scheduler_type": "cosine",
+  "max_seq_length": 2048,
+  "max_prompt_length": 1024
+}

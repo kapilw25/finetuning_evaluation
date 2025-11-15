@@ -79,16 +79,23 @@ from model_utils import (
     log_gpu_memory_end
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
-from data_prep.formatters import format_pku_for_dpo
+from data_prep.formatters import format_pku_for_dpo, format_pku_for_dpo_Instruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
+
+# ===================================================================
+# INSTRUCTION MODE TOGGLE
+# ===================================================================
+USE_INSTRUCTION = False  # False: DPO_NoInstruct, True: DPO_Instruct
+
+RUN_NAME = "DPO_Instruct" if USE_INSTRUCTION else "DPO_NoInstruct"
 
 # ===================================================================
 # Advanced Logging Setup (Tee System)
 # ===================================================================
 # Setup logging to capture ALL terminal output (stdout + stderr)
 log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name="DPO_Baseline",
+    run_name=RUN_NAME,
     project_root=project_root
 )
 
@@ -98,7 +105,6 @@ log_file, log_filename, original_stdout, original_stderr = setup_training_logger
 HF_TOKEN = load_hf_token(project_root)
 
 # Get HuggingFace repository name
-RUN_NAME = "DPO_Baseline"
 HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
 
 print(f"📦 Model will be pushed to: {HF_REPO}")
@@ -109,7 +115,7 @@ print("="*80 + "\n")
 # Main Training Function
 # ===================================================================
 
-def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base_model=None, force_skip=False):
+def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
     """
     Train DPO baseline with epoch-based training
 
@@ -122,8 +128,12 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
     Returns:
         trainer: Trained DPOTrainer instance
     """
+    # Set output_dir dynamically based on RUN_NAME if not provided
+    if output_dir is None:
+        output_dir = f"./outputs/{RUN_NAME}"
+
     print("\n" + "="*80)
-    print(f"🚀 Starting DPO Baseline Training")
+    print(f"🚀 Starting {RUN_NAME} Training")
     print("="*80)
     print(f"Configuration:")
     print(f"  - Model: Llama-3.1-8B (BF16)")
@@ -232,17 +242,18 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         # Load combined dataset (12,035 samples) and split 90/10
         dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-        # Format for DPO (chosen vs rejected, NO instruction)
+        # Format for DPO (conditional: WITH or WITHOUT instruction)
+        formatter = format_pku_for_dpo_Instruct if USE_INSTRUCTION else format_pku_for_dpo
         train_dataset = dataset_split['train'].map(
-            format_pku_for_dpo,
+            formatter,
             remove_columns=dataset_split['train'].column_names,
-            desc="Formatting PKU for DPO (NO instruction)"
+            desc=f"Formatting PKU for DPO ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
         val_dataset = dataset_split['test'].map(
-            format_pku_for_dpo,
+            formatter,
             remove_columns=dataset_split['test'].column_names,
-            desc="Formatting PKU validation for DPO"
+            desc=f"Formatting PKU validation for DPO ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
         print(f"  Train samples: {len(train_dataset):,}")
@@ -372,7 +383,7 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         print(f"✅ Training complete!")
 
     # ===== SAVE LORA ADAPTERS =====
-    lora_output_dir = Path(output_dir) / "lora_model_DPO_Baseline"
+    lora_output_dir = Path(output_dir) / f"lora_model_{RUN_NAME}"
 
     if not training_skipped:
         # Training just completed - save LoRA adapters
@@ -615,7 +626,7 @@ Examples:
 
         PushAutomation.prepare_baseline_push(
             method="DPO",
-            output_dir="outputs/DPO_Baseline",
+            output_dir=f"outputs/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,

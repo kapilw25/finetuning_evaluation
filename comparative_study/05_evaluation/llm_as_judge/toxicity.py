@@ -53,18 +53,37 @@ MODELS = {
     "Baseline": {
         "hf_repo": None,  # No adapter - just base model
         "display_name": "Baseline (Unaligned)",
+        "use_instruction": False,
     },
-    "SFT_Baseline": {
+    "SFT_NoInstruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
-        "display_name": "SFT Baseline",
+        "display_name": "SFT NoInstruct",
+        "use_instruction": False,
     },
-    "DPO_Baseline": {
+    "SFT_Instruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",
+        "display_name": "SFT Instruct",
+        "use_instruction": True,
+    },
+    "DPO_NoInstruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",
-        "display_name": "DPO Baseline",
+        "display_name": "DPO NoInstruct",
+        "use_instruction": False,
     },
-    "CITA_Baseline": {
+    "DPO_Instruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct",
+        "display_name": "DPO Instruct",
+        "use_instruction": True,
+    },
+    "CITA_NoInstruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",
+        "display_name": "CITA NoInstruct",
+        "use_instruction": False,
+    },
+    "CITA_Instruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",
-        "display_name": "CITA Baseline",
+        "display_name": "CITA Instruct",
+        "use_instruction": True,
     },
 }
 
@@ -267,15 +286,17 @@ def generate_responses(
     prompts: List[str],
     harm_categories_list: List[List[str]],
     model_key: str,
+    model_config: Dict,
     max_new_tokens: int = 256,
     batch_size: int = 8,
     checkpoint_interval: int = 100
 ) -> List[str]:
     """
-    Generate responses with instruction conditioning for CITA only
+    Generate responses with instruction conditioning for *_Instruct variants
 
     Args:
         harm_categories_list: List of harm category lists (for CITA instruction synthesis)
+        model_config: Model configuration dict with 'use_instruction' field
     """
     from tqdm import tqdm
 
@@ -299,18 +320,18 @@ def generate_responses(
         batch_prompts = prompts[i:i+batch_size]
         batch_harm_cats = harm_categories_list[i:i+batch_size]
 
-        # Format prompts with instruction conditioning for CITA only
+        # Format prompts with instruction conditioning for *_Instruct variants
         formatted = []
         for p, harm_cats in zip(batch_prompts, batch_harm_cats):
-            if model_key == "CITA_Baseline":
-                # CITA: Add system instruction based on harm categories
+            if model_config["use_instruction"]:
+                # *_Instruct variants: Add system instruction based on harm categories
                 instruction = synthesize_system_instruction(harm_cats)
                 messages = [
                     {"role": "system", "content": instruction},
                     {"role": "user", "content": p}
                 ]
             else:
-                # Baseline, SFT, DPO: No instruction (only user prompt)
+                # *_NoInstruct variants: No instruction (only user prompt)
                 messages = [{"role": "user", "content": p}]
 
             formatted.append(tokenizer.apply_chat_template(
@@ -434,6 +455,7 @@ def evaluate_toxicity(
 
 def run_toxicity_evaluation(
     model_key: str,
+    model_config: Dict,
     prompts: List[str],
     harm_categories_list: List[List[str]],
     judge: FireworksJudge
@@ -472,7 +494,7 @@ def run_toxicity_evaluation(
                 model, tokenizer = load_model_for_eval(model_key)
                 responses = generate_responses(
                     model, tokenizer, prompts, harm_categories_list,
-                    model_key=model_key, max_new_tokens=256
+                    model_key=model_key, model_config=model_config, max_new_tokens=256
                 )
                 del model, tokenizer
                 import gc
@@ -486,7 +508,7 @@ def run_toxicity_evaluation(
         model, tokenizer = load_model_for_eval(model_key)
         responses = generate_responses(
             model, tokenizer, prompts, harm_categories_list,
-            model_key=model_key, max_new_tokens=256
+            model_key=model_key, model_config=model_config, max_new_tokens=256
         )
         del model, tokenizer
         import gc
@@ -723,9 +745,11 @@ def main_inner():
             print(f"⚠️  Unknown model: {model_key}, skipping")
             continue
 
+        model_config = MODELS[model_key]
+
         try:
             results = run_toxicity_evaluation(
-                model_key, prompts, harm_categories_list, judge
+                model_key, model_config, prompts, harm_categories_list, judge
             )
 
             all_results[model_key] = results
