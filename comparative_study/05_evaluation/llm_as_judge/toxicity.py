@@ -594,7 +594,7 @@ def main_inner():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
         Examples:
-        # Sanity check (50 samples)
+        # Sanity check (150 samples)
         python toxicity.py --mode sanity
 
         # Full evaluation (3,684 samples)
@@ -605,7 +605,7 @@ def main_inner():
         """
     )
     parser.add_argument("--mode", choices=["sanity", "full"], default="full",
-                       help="Evaluation mode: sanity (50 samples) or full (3,684 samples)")
+                       help="Evaluation mode: sanity (150 samples) or full (3,684 samples)")
     parser.add_argument("--models", nargs="+", default=list(MODELS.keys()),
                        help="Models to evaluate (default: all 4)")
     parser.add_argument("--toxicity-samples", type=int, default=None,
