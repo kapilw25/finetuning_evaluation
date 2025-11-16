@@ -82,31 +82,12 @@ from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
 
 # ===================================================================
-# INSTRUCTION MODE TOGGLE
+# INSTRUCTION MODE TOGGLE (set via command-line argument --use-instruction)
 # ===================================================================
-USE_INSTRUCTION = False  # False: CITA_NoInstruct, True: CITA_Instruct
+# USE_INSTRUCTION will be set from command-line args (no default value)
+# Script will fail if --use-instruction is not provided
 
-RUN_NAME = "CITA_Instruct" if USE_INSTRUCTION else "CITA_NoInstruct"
-
-# ===================================================================
-# Advanced Logging Setup (Tee System)
-# ===================================================================
-# Setup logging to capture ALL terminal output (stdout + stderr)
-log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name=RUN_NAME,
-    project_root=project_root
-)
-
-# ===================================================================
-# HuggingFace Authentication
-# ===================================================================
-HF_TOKEN = load_hf_token(project_root)
-
-# Get HuggingFace repository name
-HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
-
-print(f"📦 Model will be pushed to: {HF_REPO}")
-print("="*80 + "\n")
+# NOTE: Logging setup moved to main execution block (after args parsing)
 
 # ===================================================================
 # Main Training Function
@@ -430,7 +411,26 @@ def train_cita_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="CITA Baseline Training - Fixed hyperparameters from Optuna",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # NoInstruct variant (sanity check, 0.3 epochs, ~36 minutes)
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity --use-instruction false --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+
+  # Instruct variant (full training, 1.0 epoch, ~120 minutes)
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full --use-instruction true --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+
+  # Custom epochs
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+        """
+    )
+
+    parser.add_argument(
+        "--use-instruction",
+        type=str,
+        required=True,
+        choices=["true", "false"],
+        help="REQUIRED: Use instruction conditioning (true=CITA_Instruct, false=CITA_NoInstruct)"
     )
 
     parser.add_argument(
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         type=str,
         choices=["sanity", "full"],
         default="sanity",
-        help="Training mode: 'sanity' (0.1 epochs) or 'full' (1.0 epochs)"
+        help="Training mode: 'sanity' (0.3 epochs) or 'full' (1.0 epochs)"
     )
 
     parser.add_argument(
@@ -456,6 +456,33 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    # ===================================================================
+    # Set USE_INSTRUCTION from command-line argument
+    # ===================================================================
+    USE_INSTRUCTION = args.use_instruction.lower() == "true"
+    RUN_NAME = "CITA_Instruct" if USE_INSTRUCTION else "CITA_NoInstruct"
+
+    print(f"✅ Instruction mode: {'ENABLED' if USE_INSTRUCTION else 'DISABLED'} ({RUN_NAME})")
+
+    # ===================================================================
+    # Advanced Logging Setup (Tee System)
+    # ===================================================================
+    log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+        run_name=RUN_NAME,
+        project_root=project_root
+    )
+
+    # ===================================================================
+    # HuggingFace Authentication
+    # ===================================================================
+    HF_TOKEN = load_hf_token(project_root)
+
+    # Get HuggingFace repository name
+    HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
+
+    print(f"📦 Model will be pushed to: {HF_REPO}")
+    print("="*80 + "\n")
 
     # Determine configuration
     if args.epochs is not None:

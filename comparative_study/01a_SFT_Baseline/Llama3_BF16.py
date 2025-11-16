@@ -58,36 +58,17 @@ from model_utils import (
     log_gpu_memory_end
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
-from data_prep.formatters import format_pku_for_sft, format_pku_for_sft_Instruct
+from data_prep.formatters import format_pku_for_sft_NoInstruct, format_pku_for_sft_Instruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
 
 # ===================================================================
-# INSTRUCTION MODE TOGGLE
+# INSTRUCTION MODE TOGGLE (set via command-line argument --use-instruction)
 # ===================================================================
-USE_INSTRUCTION = True  # False: SFT_NoInstruct, True: SFT_Instruct
+# USE_INSTRUCTION will be set from command-line args (no default value)
+# Script will fail if --use-instruction is not provided
 
-RUN_NAME = "SFT_Instruct" if USE_INSTRUCTION else "SFT_NoInstruct"
-
-# ===================================================================
-# Advanced Logging Setup (Tee System)
-# ===================================================================
-# Setup logging to capture ALL terminal output (stdout + stderr)
-log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name=RUN_NAME,
-    project_root=project_root
-)
-
-# ===================================================================
-# HuggingFace Authentication
-# ===================================================================
-HF_TOKEN = load_hf_token(project_root)
-
-# Get HuggingFace repository name
-HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
-
-print(f"📦 Model will be pushed to: {HF_REPO}")
-print("="*80 + "\n")
+# NOTE: Logging setup moved to main execution block (after args parsing)
 
 
 # ===================================================================
@@ -205,7 +186,7 @@ def train_sft_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
         dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
         # Format for SFT (conditional: WITH or WITHOUT instruction)
-        formatter = format_pku_for_sft_Instruct if USE_INSTRUCTION else format_pku_for_sft
+        formatter = format_pku_for_sft_Instruct if USE_INSTRUCTION else format_pku_for_sft_NoInstruct
         train_dataset = dataset_split['train'].map(
             formatter,
             remove_columns=dataset_split['train'].column_names,
@@ -449,15 +430,23 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Sanity check (0.3 epochs, ~13 minutes)
-  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
+  # NoInstruct variant (sanity check, 0.3 epochs, ~13 minutes)
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
-  # Full training (1.0 epoch, ~43 minutes)
-  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
+  # Instruct variant (full training, 1.0 epoch, ~43 minutes)
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   # Custom epochs
-  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --epochs 0.5
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false
         """
+    )
+
+    parser.add_argument(
+        "--use-instruction",
+        type=str,
+        required=True,
+        choices=["true", "false"],
+        help="REQUIRED: Use instruction conditioning (true=SFT_Instruct, false=SFT_NoInstruct)"
     )
 
     parser.add_argument(
@@ -465,7 +454,7 @@ Examples:
         type=str,
         choices=["sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (0.1 epoch) or 'full' (1.0 epoch)"
+        help="Training mode: 'sanity' (0.3 epoch) or 'full' (1.0 epoch)"
     )
 
     parser.add_argument(
@@ -483,6 +472,33 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # ===================================================================
+    # Set USE_INSTRUCTION from command-line argument
+    # ===================================================================
+    USE_INSTRUCTION = args.use_instruction.lower() == "true"
+    RUN_NAME = "SFT_Instruct" if USE_INSTRUCTION else "SFT_NoInstruct"
+
+    print(f"✅ Instruction mode: {'ENABLED' if USE_INSTRUCTION else 'DISABLED'} ({RUN_NAME})")
+
+    # ===================================================================
+    # Advanced Logging Setup (Tee System)
+    # ===================================================================
+    log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+        run_name=RUN_NAME,
+        project_root=project_root
+    )
+
+    # ===================================================================
+    # HuggingFace Authentication
+    # ===================================================================
+    HF_TOKEN = load_hf_token(project_root)
+
+    # Get HuggingFace repository name
+    HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
+
+    print(f"📦 Model will be pushed to: {HF_REPO}")
+    print("="*80 + "\n")
 
     # Determine configuration
     if args.epochs is not None:

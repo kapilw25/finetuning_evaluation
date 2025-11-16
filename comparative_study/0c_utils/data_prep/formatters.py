@@ -176,7 +176,7 @@ def format_dpo_Instruct(example: Dict) -> Dict:
 # ===================================================================
 # Aliases for consistent naming in training scripts
 # ===================================================================
-# Original alias for Llama baseline before SFT (no suffix as per user requirement)
+# Original alias for Llama baseline before SFT (no suffix - exception per user requirement)
 format_pku_for_sft = format_sft_NoInstruct  # Baseline model exception
 
 # Aliases with proper suffixes for ablation study
