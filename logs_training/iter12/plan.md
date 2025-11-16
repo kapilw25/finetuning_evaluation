@@ -413,7 +413,7 @@ Implementation Plan: Full Ablation (6 Models) for Tier 1 Paper
    Line 109: Fix variable name consistency
 
    ```python
-   `USE_INSTRUCTION = False`  # Changed from USE_INSTRUCTIONS
+   USE_INSTRUCTION = False  # Changed from USE_INSTRUCTIONS
    ```
 
    Line 130-136: REPLACE Trial 2 with Trial 5 hyperparameters
