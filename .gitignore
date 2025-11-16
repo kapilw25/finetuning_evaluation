@@ -98,9 +98,9 @@ Thumbs.db
 
 # Logs - Ignore ALL logs to avoid GitHub file size limits
 *.log
-logs/
-logs_training/
-logs_training_iter/
+# logs/
+# logs_training/
+# logs_training_iter/
 
 # HuggingFace
 .cache/
