@@ -2,27 +2,37 @@
 Adaptive CITA Training Script (Optuna-based) - Updated for 1354-step FULL training
 Truly adaptive hyperparameter search using Optuna TPE + Hyperband
 
-Time Estimates (CITA iter8: 0.195 min/step, +15% without torch.compile):
-- MVP mode (5 × 100 steps): ~113 min = 1.9 hours (with pruning: ~1.5 hours)
-- Sanity mode (27 × 200 steps): ~1211 min = 20.2 hours (with pruning: ~15.5 hours)
-- Full mode (27 × 1354 steps): ~8197 min = 137 hours (with pruning: ~59 hours)
+Features:
+- Conditional HP spaces: CITA_Instruct uses 50-70% lower LR than CITA_NoInstruct
+- Prevents gradient explosions from longer instruction sequences
+- Multi-objective optimization: [margin, accuracy, -eval_loss]
+
+Time Estimates (10 trials × 1354 steps, with pruning):
+- CITA_NoInstruct: ~20-24 hours
+- CITA_Instruct: ~20-24 hours
 
 Usage:
-    # MVP (5 trials, 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp
+    # CITA_NoInstruct - Full search (10 trials × 1354 steps, ~20-24 hours)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
+        --use-instruction false --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
-    # Sanity check (27 trials, 200 steps, ~15.5 hours)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity
+    # CITA_Instruct - Full search (conservative HP space for longer sequences)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
+        --use-instruction true --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
 
-    # Full training (27 trials, 1354 steps, ~59 hours with pruning)
-python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
-    --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+    # MVP (5 trials × 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp \
+        --use-instruction false
+
+    # Sanity check (27 trials × 200 steps, ~15.5 hours)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity \
+        --use-instruction true
 
 Outputs:
-    - Optuna study database: ./outputs/optuna_cita.db
+    - Optuna study database: ./outputs/optuna_cita_noinstruct.db or ./outputs/optuna_cita_instruct.db
     - Best hyperparameters: ./outputs/best_optuna_config.json
-    - Best model checkpoint: ./outputs/CITA_Adaptive/best_trial/
-    - Training log: ./logs/CITA_Adaptive_training_<timestamp>.log
+    - Best model checkpoint: ./outputs/CITA_NoInstruct_Adaptive/best_trial/ or ./outputs/CITA_Instruct_Adaptive/best_trial/
+    - Training log: ./logs/CITA_NoInstruct_Adaptive_training_<timestamp>.log or ./logs/CITA_Instruct_Adaptive_training_<timestamp>.log
 """
 
 import sys
@@ -51,37 +61,26 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "comparative_study" / "0c_utils"))
 
 # ===================================================================
-# Advanced Logging Setup (Tee System)
+# Logging Setup (will be done AFTER argparse to use instruction-aware RUN_NAME)
 # ===================================================================
 from logging_utils import setup_training_logger, restore_logging
 
-# Setup logging to capture ALL terminal output (stdout + stderr)
-log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name="CITA_Adaptive",
-    project_root=project_root
-)
+# Note: Logging setup moved to main execution block (after args parsing)
 
 # ===================================================================
-# HuggingFace Configuration
+# HuggingFace Configuration (will be done AFTER argparse to use instruction-aware RUN_NAME)
 # ===================================================================
-from model_utils import load_hf_token, get_model_repo_name
+from model_utils import load_hf_token
 
-# Load HuggingFace token and authenticate
-HF_TOKEN = load_hf_token(project_root)
-
-# Get HuggingFace repository name
-RUN_NAME = "CITA_Adaptive"
-HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
-
-print(f"📦 Model will be pushed to: {HF_REPO}")
-print("="*80 + "\n")
+# Note: HF_TOKEN will be set in main execution block (after args parsing)
+# Optuna trials are intermediate runs and NOT pushed to HuggingFace
 
 
 # ===================================================================
 # Optuna Objective Function (CITA Training)
 # ===================================================================
 
-def train_cita_trial(trial, max_steps=200, base_model=None):
+def train_cita_trial(trial, max_steps=200, base_model=None, use_instruction=False, run_name="CITA_Adaptive"):
     """
     Single Optuna trial - trains CITA model with suggested hyperparameters
 
@@ -89,6 +88,8 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         trial: Optuna trial object
         max_steps: Maximum training steps (200 for sanity, 1354 for full)
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
+        use_instruction: Whether to use instruction conditioning (affects HP space)
+        run_name: Run name for output directories (e.g., "CITA_NoInstruct" or "CITA_Instruct")
 
     Returns:
         float: Final margin (higher = better, model prefers safe responses)
@@ -98,14 +99,26 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     """
 
     # ===== HYPERPARAMETER SAMPLING (Optuna TPE decides dynamically) =====
-    # Updated for FAIR COMPARISON with SFT/DPO baselines (iter11 fix)
-    # Industry standard: 10% warmup (HuggingFace Alignment Handbook, Google ML Guide)
-    # SFT/DPO baselines: 100 steps / 1354 = 7.4% warmup
-    lambda_kl = trial.suggest_float("lambda_kl", 0.0005, 0.0015, log=False)  # Lower range for longer training
-    learning_rate = trial.suggest_float("learning_rate", 5e-6, 8e-6, log=True)  # Lower for shorter warmup
-    beta = trial.suggest_float("beta", 0.08, 0.12)
-    weight_decay = trial.suggest_float("weight_decay", 0.008, 0.012)
-    warmup_ratio = trial.suggest_float("warmup_ratio", 0.05, 0.15)  # Fair: matches SFT/DPO ~10%
+    # HP space differs for NoInstruct vs Instruct (iter12 finding: Instruct needs lower LR)
+    # Evidence: CITA_Instruct exploded with LR=6.83e-06 (grad_norm 103), NoInstruct succeeded
+    # Root cause: System instructions add ~50-100 tokens → longer sequences → larger gradients
+
+    if use_instruction:
+        # CITA_Instruct: Ultra-conservative HP space for longer sequences (system instructions add ~50-100 tokens)
+        # After iter12: 5/5 trials exploded with LR [2e-6, 5e-6] → lowered to [8e-7, 2.5e-6]
+        # Uses gradient clipping (max_grad_norm=1.0) to match CITA_NoInstruct iter11 methodology
+        lambda_kl = trial.suggest_float("lambda_kl", 0.0001, 0.001, log=False)
+        learning_rate = trial.suggest_float("learning_rate", 8e-7, 2.5e-6, log=True)  # Much lower for stability
+        beta = trial.suggest_float("beta", 0.08, 0.15)
+        weight_decay = trial.suggest_float("weight_decay", 0.005, 0.015)
+        warmup_ratio = trial.suggest_float("warmup_ratio", 0.05, 0.10)  # Match SFT/DPO/CITA_NoInstruct (~100 steps)
+    else:
+        # CITA_NoInstruct: Original HP space from Trial 5 (proven stable)
+        lambda_kl = trial.suggest_float("lambda_kl", 0.0005, 0.0015, log=False)
+        learning_rate = trial.suggest_float("learning_rate", 5e-6, 8e-6, log=True)
+        beta = trial.suggest_float("beta", 0.08, 0.12)
+        weight_decay = trial.suggest_float("weight_decay", 0.008, 0.012)
+        warmup_ratio = trial.suggest_float("warmup_ratio", 0.05, 0.15)  # Fair: matches SFT/DPO
 
     print(f"\n{'='*80}")
     print(f"🔬 Trial {trial.number}: Testing hyperparameters")
@@ -184,32 +197,34 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     # model = apply_torch_compile(model)
 
     # ===== LOAD DATASET =====
-    # Match current Llama3_BF16.py format (NO instructions)
     from data_prep.loader_pku import load_pku_combined_clear_contrast
-    from data_prep.formatters import format_pku_for_cita_no_instruct
+    from data_prep.formatters import format_pku_for_cita_Instruct, format_pku_for_cita_NoInstruct
 
     # Load combined dataset (12,035 samples) and split 90/10
     dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-    # Format for CITA (NO instructions - matches current Phase 1)
+    # Format for CITA (conditional: WITH or WITHOUT instructions)
+    formatter = format_pku_for_cita_Instruct if use_instruction else format_pku_for_cita_NoInstruct
+    instruction_status = "WITH" if use_instruction else "NO"
+
     train_dataset = dataset_split['train'].map(
-        format_pku_for_cita_no_instruct,
+        formatter,
         remove_columns=dataset_split['train'].column_names,
-        desc="Formatting PKU for CITA (NO instructions)"
+        desc=f"Formatting PKU for CITA ({instruction_status} instructions)"
     )
 
     val_dataset = dataset_split['test'].map(
-        format_pku_for_cita_no_instruct,
+        formatter,
         remove_columns=dataset_split['test'].column_names,
-        desc="Formatting PKU validation for CITA"
+        desc=f"Formatting PKU validation for CITA ({instruction_status} instructions)"
     )
 
     # ===== CREATE TRAINING ARGS =====
-    trial_output_dir = project_root / "outputs" / "CITA_Adaptive" / f"trial_{trial.number}"
+    trial_output_dir = project_root / "outputs" / run_name / f"trial_{trial.number}"
     trial_output_dir.mkdir(parents=True, exist_ok=True)
 
     # TensorBoard logging for this trial
-    tensorboard_dir = project_root / "tensorboard_logs" / f"CITA_Adaptive_trial_{trial.number}"
+    tensorboard_dir = project_root / "tensorboard_logs" / f"{run_name}_trial_{trial.number}"
 
     # ===== CALCULATE CHECKPOINT INTERVAL (20% of training, matches production) =====
     checkpoint_interval = int(max_steps * 0.2)  # 1354 steps → 270, 200 steps → 40
@@ -229,6 +244,9 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
         seed=3407,
         bf16=True,
         gradient_checkpointing=True,
+        max_grad_norm=1.0,  # Enable clipping to match CITA_NoInstruct iter11 (fair comparison)
+        # Note: CITA_NoInstruct used clipping, so CITA_Instruct should too for apples-to-apples comparison
+        # Future work (Option B): Rerun both NoInstruct & Instruct without clipping for truly stable HPs
         save_steps=checkpoint_interval,  # Dynamic: 20% of training (matches production)
         save_total_limit=2,
         report_to="tensorboard",
@@ -272,12 +290,13 @@ def train_cita_trial(trial, max_steps=200, base_model=None):
     # ===== VERIFY GRADIENT CLIPPING IS CONFIGURED =====
     max_grad_norm = getattr(trainer.args, 'max_grad_norm', None)
     if max_grad_norm is None or max_grad_norm == 0:
-        print(f"\n⚠️  Gradient clipping DISABLED (intentional for Optuna)")
-        print(f"   Finding stable hyperparameters without clipping")
-        print(f"   Explosion detector will prune unstable trials (grad_norm > 50.0)\n")
+        print(f"\n⚠️  Gradient clipping DISABLED (intentional for Optuna HP search)")
+        print(f"   Finding stable hyperparameters WITHOUT clipping band-aid")
+        print(f"   Explosion detector will prune unstable trials (grad_norm > 50.0)")
+        print(f"   This finds HPs that are truly stable, not just clipping-masked\n")
     else:
         print(f"\n✅ Gradient clipping ENABLED: max_grad_norm={max_grad_norm}")
-        print(f"   Gradients will be clipped to prevent explosion")
+        print(f"   WARNING: Clipping may mask unstable HPs!")
         print(f"   Monitor 'cita/grad_norm_clipped' and 'cita/clipping_active' in logs\n")
 
     # ===== SHOW GPU MEMORY (BEFORE TRAINING) =====
@@ -450,7 +469,9 @@ def run_optuna_cita_search(
     n_trials=27,
     max_steps=200,
     base_model=None,
-    timeout_hours=15
+    use_instruction=False,
+    timeout_hours=15,
+    run_name="CITA_Adaptive"
 ):
     """
     Run Optuna adaptive hyperparameter search for CITA
@@ -459,15 +480,18 @@ def run_optuna_cita_search(
         n_trials: Number of trials
         max_steps: Training steps per trial
         base_model: HuggingFace model ID to load LoRA adapters from
+        use_instruction: Whether to use instruction conditioning (affects HP space)
         timeout_hours: Max time to run
+        run_name: Run name for output directories (e.g., "CITA_NoInstruct" or "CITA_Instruct")
 
     Returns:
         best_trial: Best Optuna trial with hyperparameters and checkpoint
     """
 
     # ===== CREATE OPTUNA STUDY =====
-    study_name = f"cita_adaptive_{max_steps}steps"
-    storage_path = str(project_root / "outputs" / "optuna_cita.db")
+    instruction_suffix = "_instruct" if use_instruction else "_noinstruct"
+    study_name = f"cita_adaptive_{max_steps}steps{instruction_suffix}"
+    storage_path = str(project_root / "outputs" / f"optuna_cita{instruction_suffix}.db")
 
     # Ensure outputs directory exists (SQLite needs parent directory)
     Path(storage_path).parent.mkdir(parents=True, exist_ok=True)
@@ -533,7 +557,7 @@ def run_optuna_cita_search(
 
     # ===== RUN OPTIMIZATION =====
     def objective(trial):
-        return train_cita_trial(trial, max_steps=max_steps, base_model=base_model)
+        return train_cita_trial(trial, max_steps=max_steps, base_model=base_model, use_instruction=use_instruction, run_name=run_name)
 
     study.optimize(
         objective,
@@ -616,8 +640,8 @@ def run_optuna_cita_search(
 
     # ===== COPY BEST CHECKPOINT (non-critical) =====
     try:
-        best_trial_dir = project_root / "outputs" / "CITA_Adaptive" / f"trial_{best_trial.number}"
-        best_checkpoint_dir = project_root / "outputs" / "CITA_Adaptive" / "best_trial"
+        best_trial_dir = project_root / "outputs" / run_name / f"trial_{best_trial.number}"
+        best_checkpoint_dir = project_root / "outputs" / run_name / "best_trial"
 
         if best_trial_dir.exists():
             import shutil
@@ -643,15 +667,21 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # CITA_NoInstruct - Full (10 trials × 1354 steps, ~20-24 hours)
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
+      --use-instruction false --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+
+  # CITA_Instruct - Full (10 trials × 1354 steps, ~20-24 hours)
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
+      --use-instruction true --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+
   # MVP (5 trials × 100 steps, ~1.5 hours) - VALIDATES OPTUNA WORKS
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp \
+      --use-instruction false
 
   # Sanity (27 trials × 200 steps, ~15.5 hours)
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity
-
-  # Full (27 trials × 1354 steps, ~59 hours with pruning)
-  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
-      --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+  python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity \
+      --use-instruction true
         """
     )
 
@@ -685,6 +715,14 @@ Examples:
     )
 
     parser.add_argument(
+        "--use-instruction",
+        type=str,
+        required=True,
+        choices=["true", "false"],
+        help="REQUIRED: Use instruction conditioning (true=CITA_Instruct, false=CITA_NoInstruct). Affects HP search space."
+    )
+
+    parser.add_argument(
         "--timeout",
         type=int,
         default=15,
@@ -692,6 +730,31 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # ===================================================================
+    # Set USE_INSTRUCTION and RUN_NAME from command-line argument
+    # ===================================================================
+    use_instruction = args.use_instruction.lower() == "true"
+    RUN_NAME = "CITA_Instruct_Adaptive" if use_instruction else "CITA_NoInstruct_Adaptive"
+
+    print(f"✅ Instruction mode: {'ENABLED' if use_instruction else 'DISABLED'} ({RUN_NAME})")
+
+    # ===================================================================
+    # Setup Logging (now that we have RUN_NAME)
+    # ===================================================================
+    log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+        run_name=RUN_NAME,
+        project_root=project_root
+    )
+
+    # ===================================================================
+    # HuggingFace Authentication (now that we have RUN_NAME)
+    # ===================================================================
+    HF_TOKEN = load_hf_token(project_root)
+
+    # Note: Optuna trials are NOT pushed to HuggingFace (intermediate search runs)
+    # HF_REPO would only be used if we decided to push the best trial
+    print("="*80 + "\n")
 
     # Determine configuration
     if args.trials is not None and args.steps is not None:
@@ -744,10 +807,12 @@ Examples:
             n_trials=n_trials,
             max_steps=max_steps,
             base_model=args.base_model,
-            timeout_hours=args.timeout
+            use_instruction=use_instruction,
+            timeout_hours=args.timeout,
+            run_name=RUN_NAME
         )
 
-        print(f"\n🏁 CITA Adaptive Training Complete!")
+        print(f"\n🏁 {RUN_NAME} Optuna Search Complete!")
         print(f"📝 Log file: {log_filename}")
 
     except Exception as e:

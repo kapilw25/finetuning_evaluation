@@ -215,3 +215,4 @@ outputs/DPO_Instruct/checkpoint-1080/optimizer.pt
 outputs/DPO_Instruct/checkpoint-1350/optimizer.pt
 outputs/DPO_Instruct/checkpoint-1354/optimizer.pt
 outputs/lora_model_DPO_Instruct/adapter_model.safetensors
+logs/CITA_Instruct_Adaptive_training_20251116_070715.log
