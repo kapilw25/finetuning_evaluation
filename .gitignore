@@ -207,6 +207,7 @@ outputs/CITA_NoInstruct/checkpoint-1354/optimizer.pt
 outputs/lora_model_CITA_NoInstruct/adapter_model.safetensors
 
 # Large files (>100MB) - auto-added by push_automation.py
+logs_training/iter11/adaptive_trianing_log/CITA_Adaptive_training_20251114_034003.log
 logs_training/iter11/adaptive_trianing_log/CITA_Adaptive_training_20251114_155504.log
 logs_training/iter11/adaptive_trianing_log/CITA_Adaptive_training_20251115_042538.log
 outputs/DPO_Instruct/checkpoint-540/optimizer.pt
