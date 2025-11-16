@@ -10,7 +10,7 @@ IMPORTANT:
 - SFT/DPO do NOT receive instructions (only user prompt)
 
 Usage:
-    # Sanity check: 50 samples (~5 min)
+    # Sanity check: 150 samples (~15 min)
     python3 comparative_study/05_evaluation/llm_as_judge/toxicity.py --mode sanity
 
     # Full evaluation: 3,684 samples (~60 min)
@@ -662,7 +662,7 @@ def main_inner():
     print("🎯 TOXICITY EVALUATION: Mode Selection")
     print("="*80)
     print("\nChoose evaluation mode:")
-    print("  1) Sanity Check  - 50 both-unsafe prompts (~5 min)")
+    print("  1) Sanity Check  - 150 both-unsafe prompts (~15 min)")
     print("  2) Full Evaluation - 3,684 both-unsafe prompts (~60 min)")
     print("="*80)
 
@@ -679,7 +679,7 @@ def main_inner():
 
     # Set sample counts
     if args.mode == "sanity":
-        args.toxicity_samples = args.toxicity_samples or 50
+        args.toxicity_samples = args.toxicity_samples or 150
         print(f"\n✅ Sanity mode selected: {args.toxicity_samples} samples")
     else:
         args.toxicity_samples = args.toxicity_samples or None  # Load all

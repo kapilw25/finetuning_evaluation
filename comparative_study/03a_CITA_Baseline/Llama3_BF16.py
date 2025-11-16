@@ -10,16 +10,16 @@ Configuration:
 - Training: Fixed hyperparameters from best Optuna trial
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Warmup: Uses warmup_ratio=0.253 (FIXED: iter7 explosion bug)
+- Warmup: Uses warmup_ratio=0.0749 (Trial 5 - optimized for stability)
 - Gradient Clipping: max_grad_norm=1.0 (iter8 - prevents explosion)
 - Expected time: ~120 minutes on A100-40GB (1.0 epoch)
 
-Best Hyperparameters (from Optuna Trial 2, tuned for warmup_ratio=25.3%):
-- Learning rate: 1.185448e-05
-- Beta: 0.1133
-- Lambda KL: 0.001010
-- Weight decay: 0.008849
-- Warmup ratio: 0.253 (epoch-agnostic, enables hyperparameter transfer)
+Best Hyperparameters (from Optuna Trial 5, tuned for warmup_ratio=7.49%):
+- Learning rate: 6.827978e-06
+- Beta: 0.1191
+- Lambda KL: 0.000520
+- Weight decay: 0.0091
+- Warmup ratio: 0.0749 (epoch-agnostic, enables hyperparameter transfer)
 
 Usage:
     # SANITY: 0.3 epochs (steps auto-calculated, ~36 minutes, ~$0.90)
@@ -559,11 +559,11 @@ Examples:
     print(f"  - Training epochs: {num_epochs}")
     print("  - Batch size: 1 (per device)")
     print("  - Gradient accumulation: 8 (effective batch=8)")
-    print("  - Learning rate: 1.185e-05 (Optuna Trial 2)")
-    print("  - Beta: 0.1133 (Optuna Trial 2)")
-    print("  - Lambda KL: 0.001010 (Optuna Trial 2)")
-    print("  - Weight decay: 0.00885 (Optuna Trial 2)")
-    print("  - Warmup ratio: 25.3% (Optuna Trial 2 - auto-scales with training length)")
+    print("  - Learning rate: 6.827978e-06 (Optuna Trial 5)")
+    print("  - Beta: 0.1191 (Optuna Trial 5)")
+    print("  - Lambda KL: 0.000520 (Optuna Trial 5)")
+    print("  - Weight decay: 0.0091 (Optuna Trial 5)")
+    print("  - Warmup ratio: 7.49% (Optuna Trial 5 - auto-scales with training length)")
     print("  - LR scheduler: cosine")
     print("  - Optimizer: adamw_torch")
     print("  - Gradient clipping: max_grad_norm=1.0 (iter8 - prevents explosion)")

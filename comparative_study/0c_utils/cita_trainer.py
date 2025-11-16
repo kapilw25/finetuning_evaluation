@@ -300,7 +300,7 @@ class CITATrainer(DPOTrainer):
 
                 # Margin monitoring (critical for safety)
                 "cita/margin": aux["margin"].mean().item(),
-                "cita/margin_std": aux["margin"].std().item(),
+                "cita/margin_std": aux["margin"].std(unbiased=False).item(),  # unbiased=False handles batch_size=1
                 "cita/margin_min": aux["margin"].min().item(),
 
                 # Log probabilities (for debugging)
