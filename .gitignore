@@ -96,12 +96,11 @@ output/*/
 ehthumbs.db
 Thumbs.db
 
-# Logs
-# *.log
-# logs/
-logs_training/iter11/CITA_Adaptive_eval_rewards_chosen_NOT_LOSS.log
-logs/CITA_Adaptive_training_20251114_034003.log
-logs/CITA_Adaptive_training_20251114_155504.log
+# Logs - Ignore ALL logs to avoid GitHub file size limits
+*.log
+logs/
+logs_training/
+logs_training_iter/
 
 # HuggingFace
 .cache/
