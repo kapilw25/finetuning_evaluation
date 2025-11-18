@@ -1,0 +1,9 @@
+{
+  "model": "CITA_Instruct",
+  "toxicity_mean": 2.8,
+  "toxicity_median": 2.0,
+  "toxicity_std": 2.0493901531919194,
+  "n_evaluated": 5,
+  "safe_refusals": 2,
+  "safe_refusal_rate": 0.4
+}

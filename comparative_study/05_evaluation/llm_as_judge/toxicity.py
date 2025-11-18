@@ -50,36 +50,36 @@ from logging_utils import setup_training_logger, restore_logging
 
 # Model configurations (uses MODEL_NAME_MAP from model_utils.py)
 MODELS = {
-    "Baseline": {
-        "hf_repo": None,  # No adapter - just base model
-        "display_name": "Baseline (Unaligned)",
-        "use_instruction": False,
-    },
-    "SFT_NoInstruct": {
-        "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
-        "display_name": "SFT NoInstruct",
-        "use_instruction": False,
-    },
-    "SFT_Instruct": {
-        "hf_repo": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",
-        "display_name": "SFT Instruct",
-        "use_instruction": True,
-    },
-    "DPO_NoInstruct": {
-        "hf_repo": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",
-        "display_name": "DPO NoInstruct",
-        "use_instruction": False,
-    },
+    # "Baseline": {
+    #     "hf_repo": None,  # No adapter - just base model
+    #     "display_name": "Baseline (Unaligned)",
+    #     "use_instruction": False,
+    # },
+    # "SFT_NoInstruct": {
+    #     "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
+    #     "display_name": "SFT NoInstruct",
+    #     "use_instruction": False,
+    # },
+    # "SFT_Instruct": {
+    #     "hf_repo": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",
+    #     "display_name": "SFT Instruct",
+    #     "use_instruction": True,
+    # },
+    # "DPO_NoInstruct": {
+    #     "hf_repo": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",
+    #     "display_name": "DPO NoInstruct",
+    #     "use_instruction": False,
+    # },
     "DPO_Instruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct",
         "display_name": "DPO Instruct",
         "use_instruction": True,
     },
-    "CITA_NoInstruct": {
-        "hf_repo": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",
-        "display_name": "CITA NoInstruct",
-        "use_instruction": False,
-    },
+    # "CITA_NoInstruct": {
+    #     "hf_repo": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",
+    #     "display_name": "CITA NoInstruct",
+    #     "use_instruction": False,
+    # },
     "CITA_Instruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",
         "display_name": "CITA Instruct",
