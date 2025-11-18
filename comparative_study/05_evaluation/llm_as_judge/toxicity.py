@@ -50,36 +50,36 @@ from logging_utils import setup_training_logger, restore_logging
 
 # Model configurations (uses MODEL_NAME_MAP from model_utils.py)
 MODELS = {
-    # "Baseline": {
-    #     "hf_repo": None,  # No adapter - just base model
-    #     "display_name": "Baseline (Unaligned)",
-    #     "use_instruction": False,
-    # },
-    # "SFT_NoInstruct": {
-    #     "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
-    #     "display_name": "SFT NoInstruct",
-    #     "use_instruction": False,
-    # },
-    # "SFT_Instruct": {
-    #     "hf_repo": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",
-    #     "display_name": "SFT Instruct",
-    #     "use_instruction": True,
-    # },
-    # "DPO_NoInstruct": {
-    #     "hf_repo": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",
-    #     "display_name": "DPO NoInstruct",
-    #     "use_instruction": False,
-    # },
+    "Baseline": {
+        "hf_repo": None,  # No adapter - just base model
+        "display_name": "Baseline (Unaligned)",
+        "use_instruction": False,
+    },
+    "SFT_NoInstruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
+        "display_name": "SFT NoInstruct",
+        "use_instruction": False,
+    },
+    "SFT_Instruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",
+        "display_name": "SFT Instruct",
+        "use_instruction": True,
+    },
+    "DPO_NoInstruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",
+        "display_name": "DPO NoInstruct",
+        "use_instruction": False,
+    },
     "DPO_Instruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct",
         "display_name": "DPO Instruct",
         "use_instruction": True,
     },
-    # "CITA_NoInstruct": {
-    #     "hf_repo": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",
-    #     "display_name": "CITA NoInstruct",
-    #     "use_instruction": False,
-    # },
+    "CITA_NoInstruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",
+        "display_name": "CITA NoInstruct",
+        "use_instruction": False,
+    },
     "CITA_Instruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",
         "display_name": "CITA Instruct",
@@ -241,8 +241,7 @@ def save_checkpoint(
     model_key: str,
     responses: List[str],
     prompts: List[str],
-    completed: bool = False
-):
+    completed: bool = False):
     """Save checkpoint with responses generated so far"""
     checkpoint_path = get_checkpoint_path(model_key)
 
@@ -289,8 +288,7 @@ def generate_responses(
     model_config: Dict,
     max_new_tokens: int = 256,
     batch_size: int = 8,
-    checkpoint_interval: int = 100
-) -> List[str]:
+    checkpoint_interval: int = 100) -> List[str]:
     """
     Generate responses with instruction conditioning for *_Instruct variants
 
@@ -384,8 +382,7 @@ def evaluate_toxicity(
     prompts: List[str],
     responses: List[str],
     harm_categories_list: List[List[str]],
-    judge: FireworksJudge
-) -> pd.DataFrame:
+    judge: FireworksJudge) -> pd.DataFrame:
     """
     Evaluate toxicity using LLM-as-judge (5-point scale)
 
@@ -458,8 +455,7 @@ def run_toxicity_evaluation(
     model_config: Dict,
     prompts: List[str],
     harm_categories_list: List[List[str]],
-    judge: FireworksJudge
-) -> Dict:
+    judge: FireworksJudge) -> Dict:
     """Run toxicity evaluation for a single model"""
     print(f"\n{'='*80}")
     print(f"TOXICITY EVALUATION: {model_key}")
@@ -775,7 +771,9 @@ def main_inner():
         print(f"{'='*80}")
 
         import matplotlib.pyplot as plt
+        import numpy as np
 
+        # Prepare data
         models = list(all_results.keys())
         toxicity_means = [all_results[m]['summary']['toxicity_mean'] for m in models]
         toxicity_medians = [all_results[m]['summary']['toxicity_median'] for m in models]
@@ -784,41 +782,100 @@ def main_inner():
         safe_refusals = [all_results[m]['summary']['safe_refusals'] for m in models]
         n_evaluated = all_results[models[0]]['summary']['n_evaluated']
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+        # Sort by toxicity score (ascending = better models on right)
+        sorted_indices = np.argsort(toxicity_means)[::-1]  # Descending (worst to best left-to-right)
+        models_sorted = [models[i] for i in sorted_indices]
+        toxicity_means_sorted = [toxicity_means[i] for i in sorted_indices]
+        toxicity_medians_sorted = [toxicity_medians[i] for i in sorted_indices]
+        toxicity_stds_sorted = [toxicity_stds[i] for i in sorted_indices]
+        refusal_rates_sorted = [refusal_rates[i] for i in sorted_indices]
+        safe_refusals_sorted = [safe_refusals[i] for i in sorted_indices]
 
-        # Toxicity scores
-        bars1 = ax1.bar(models, toxicity_means, color=['red', 'orange', 'yellow', 'green'])
-        ax1.set_ylabel('Mean Toxicity Score (1-5)', fontsize=11)
-        ax1.set_title('Toxicity Comparison (Lower is Better)', fontsize=12, fontweight='bold')
+        # Color mapping function (method-specific with Instruct/NoInstruct shades)
+        def get_color(model_name):
+            """Assign colors: SFT=red, DPO=green, CITA=blue; dark=Instruct, light=NoInstruct"""
+            if 'SFT' in model_name:
+                return '#8B0000' if 'Instruct' in model_name else '#FF6B6B'  # Dark/Light Red
+            elif 'DPO' in model_name:
+                return '#006400' if 'Instruct' in model_name else '#90EE90'  # Dark/Light Green
+            elif 'CITA' in model_name:
+                return '#00008B' if 'Instruct' in model_name else '#87CEEB'  # Dark/Light Blue
+            elif 'Baseline' in model_name:
+                return '#808080'  # Gray for baseline
+            else:
+                return '#FFA500'  # Orange for unknown
+
+        colors_sorted = [get_color(m) for m in models_sorted]
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
+
+        # ========== LEFT PLOT: TOXICITY SCORES ==========
+        bars1 = ax1.bar(range(len(models_sorted)), toxicity_means_sorted,
+                       color=colors_sorted, edgecolor='black', linewidth=1.2,
+                       yerr=toxicity_stds_sorted, capsize=5, alpha=0.85)
+
+        ax1.set_ylabel('Mean Toxicity Score', fontsize=12, fontweight='bold')
+        ax1.set_title('Toxicity Comparison (Lower is Better)', fontsize=14, fontweight='bold', pad=15)
         ax1.set_ylim(0, 5.5)
-        ax1.axhline(y=1, color='green', linestyle='--', label='Perfect Safety (1.0)', linewidth=1.5)
-        ax1.legend()
+        ax1.set_xticks(range(len(models_sorted)))
+        ax1.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=10)
+        ax1.axhline(y=1, color='green', linestyle='--', label='Perfect Safety (1.0)', linewidth=2, alpha=0.7)
+        ax1.grid(axis='y', alpha=0.3, linestyle='--')
+        ax1.legend(loc='upper left', fontsize=10)
 
-        # Add value labels on bars
-        for i, (bar, mean, median, std) in enumerate(zip(bars1, toxicity_means, toxicity_medians, toxicity_stds)):
+        # Value labels on bars
+        for i, (bar, mean, median, std) in enumerate(zip(bars1, toxicity_means_sorted,
+                                                          toxicity_medians_sorted, toxicity_stds_sorted)):
             height = bar.get_height()
-            ax1.text(bar.get_x() + bar.get_width()/2., height + 0.15,
-                    f'Mean: {mean:.2f}\nMedian: {median:.2f}\nStd: {std:.2f}',
-                    ha='center', va='bottom', fontsize=9, fontweight='bold')
+            ax1.text(bar.get_x() + bar.get_width()/2., height + std + 0.2,
+                    f'{mean:.2f}\n(±{std:.2f})',
+                    ha='center', va='bottom', fontsize=8, fontweight='bold')
 
-        # Refusal rates
-        bars2 = ax2.bar(models, refusal_rates, color=['red', 'orange', 'yellow', 'green'])
-        ax2.set_ylabel('Safe Refusal Rate', fontsize=11)
-        ax2.set_title('Safe Refusal Rate (Higher is Better)', fontsize=12, fontweight='bold')
+        # ========== RIGHT PLOT: SAFE REFUSAL RATES ==========
+        bars2 = ax2.bar(range(len(models_sorted)), refusal_rates_sorted,
+                       color=colors_sorted, edgecolor='black', linewidth=1.2, alpha=0.85)
+
+        ax2.set_ylabel('Safe Refusal Rate', fontsize=12, fontweight='bold')
+        ax2.set_title('Safe Refusal Rate (Higher is Better)', fontsize=14, fontweight='bold', pad=15)
         ax2.set_ylim(0, 1.1)
-        ax2.axhline(y=1.0, color='green', linestyle='--', label='100% Refusal', linewidth=1.5)
-        ax2.legend()
+        ax2.set_xticks(range(len(models_sorted)))
+        ax2.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=10)
+        ax2.axhline(y=1.0, color='green', linestyle='--', label='100% Refusal', linewidth=2, alpha=0.7)
+        ax2.grid(axis='y', alpha=0.3, linestyle='--')
+        ax2.legend(loc='upper left', fontsize=10)
 
-        # Add value labels on bars
-        for i, (bar, rate, count) in enumerate(zip(bars2, refusal_rates, safe_refusals)):
+        # Value labels on bars
+        for i, (bar, rate, count) in enumerate(zip(bars2, refusal_rates_sorted, safe_refusals_sorted)):
             height = bar.get_height()
             ax2.text(bar.get_x() + bar.get_width()/2., height + 0.03,
                     f'{rate:.1%}\n({count}/{n_evaluated})',
-                    ha='center', va='bottom', fontsize=9, fontweight='bold')
+                    ha='center', va='bottom', fontsize=8, fontweight='bold')
 
-        plt.tight_layout()
+        # Add color legend
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='#8B0000', edgecolor='black', label='SFT_Instruct'),
+            Patch(facecolor='#FF6B6B', edgecolor='black', label='SFT_NoInstruct'),
+            Patch(facecolor='#006400', edgecolor='black', label='DPO_Instruct'),
+            Patch(facecolor='#90EE90', edgecolor='black', label='DPO_NoInstruct'),
+            Patch(facecolor='#00008B', edgecolor='black', label='CITA_Instruct'),
+            Patch(facecolor='#87CEEB', edgecolor='black', label='CITA_NoInstruct'),
+        ]
+        # Only add baseline to legend if present
+        if any('Baseline' in m for m in models_sorted):
+            legend_elements.insert(0, Patch(facecolor='#808080', edgecolor='black', label='Baseline'))
+
+        fig.legend(handles=legend_elements, loc='lower center', ncol=4,
+                  fontsize=10, frameon=True, bbox_to_anchor=(0.5, -0.05))
+
+        plt.tight_layout(rect=[0, 0.02, 1, 1])  # Leave space for legend
         plt.savefig(EVAL_OUTPUT_DIR / "toxicity_comparison.png", dpi=300, bbox_inches='tight')
         print(f"✅ Saved plot: {EVAL_OUTPUT_DIR / 'toxicity_comparison.png'}")
+
+        # Print ranking for easy reference
+        print(f"\n📊 Toxicity Ranking (Best to Worst):")
+        for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(toxicity_means_sorted)), 1):
+            print(f"   {rank}. {model}: {score:.2f}")
 
     print(f"\n{'='*80}")
     print("EVALUATION COMPLETE")

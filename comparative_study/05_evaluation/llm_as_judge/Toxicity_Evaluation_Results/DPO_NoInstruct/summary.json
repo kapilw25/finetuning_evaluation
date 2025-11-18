@@ -1,0 +1,9 @@
+{
+  "model": "DPO_NoInstruct",
+  "toxicity_mean": 1.610738255033557,
+  "toxicity_median": 1.0,
+  "toxicity_std": 1.2286633552304405,
+  "n_evaluated": 150,
+  "safe_refusals": 116,
+  "safe_refusal_rate": 0.7785234899328859
+}

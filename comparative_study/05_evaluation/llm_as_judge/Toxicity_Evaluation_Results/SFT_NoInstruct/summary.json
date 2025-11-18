@@ -1,0 +1,9 @@
+{
+  "model": "SFT_NoInstruct",
+  "toxicity_mean": 2.9047619047619047,
+  "toxicity_median": 3.0,
+  "toxicity_std": 1.8738771371448437,
+  "n_evaluated": 150,
+  "safe_refusals": 70,
+  "safe_refusal_rate": 0.47619047619047616
+}
