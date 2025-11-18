@@ -370,7 +370,7 @@ Implementation Plan: Full Ablation (6 Models) for Tier 1 Paper
    # ===================================================================
    # INSTRUCTION MODE TOGGLE
    # ===================================================================
-   `USE_INSTRUCTION = False`  # False: DPO_NoInstruct, True: DPO_Instruct
+   USE_INSTRUCTION = False  # False: DPO_NoInstruct, True: DPO_Instruct
    ```
 
    Line 101-103: Update RUN_NAME (REVISED NAMING)

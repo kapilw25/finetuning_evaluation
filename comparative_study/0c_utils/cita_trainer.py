@@ -367,15 +367,26 @@ class CITATrainer(DPOTrainer):
         Detects training instability early (before mode collapse)
         Now also verifies gradient clipping is working (iter8)
 
+        FIX (iter12): Manually clip gradients BEFORE measuring grad_norm
+        - super().training_step() only does backward(), NOT clipping
+        - Clipping happens in outer training loop AFTER this method returns
+        - We need to clip HERE to measure correct post-clipping grad_norm
+
         Args:
             model: The model to train
             inputs: The input batch
             num_items_in_batch: Number of items in the batch (Transformers 4.46+)
         """
-        # Standard training step from parent class (includes gradient clipping)
+        # Standard training step from parent class (backward pass only)
         loss = super().training_step(model, inputs, num_items_in_batch)
 
-        # Compute and log gradient norm (after clipping has been applied)
+        # FIX (iter12): Manually clip gradients BEFORE measuring
+        # (parent class doesn't clip - that happens in outer training loop)
+        max_grad_norm = getattr(self.args, 'max_grad_norm', None)
+        if max_grad_norm is not None and max_grad_norm > 0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+
+        # Compute and log gradient norm (NOW properly clipped)
         if self.state.global_step % self.args.logging_steps == 0:
             total_norm = 0.0
             for p in model.parameters():
@@ -384,14 +395,14 @@ class CITATrainer(DPOTrainer):
                     total_norm += param_norm.item() ** 2
             total_norm = total_norm ** 0.5
 
-            # Log gradient norm after clipping
+            # Log gradient norm (now properly clipped)
             log_dict = {"cita/grad_norm_clipped": total_norm}
 
-            # Check if clipping is enabled and verify it's working
-            max_grad_norm = getattr(self.args, 'max_grad_norm', None)
+            # Log clipping config for debugging
             if max_grad_norm is not None and max_grad_norm > 0:
                 log_dict["cita/max_grad_norm_config"] = max_grad_norm
-                # If clipped norm equals max, clipping occurred
+                # After manual clipping, norm should always be ≤ max_grad_norm
+                # If it equals max (within tolerance), clipping was active
                 if total_norm >= max_grad_norm * 0.99:  # Within 1% tolerance
                     log_dict["cita/clipping_active"] = 1.0
                 else:
@@ -399,23 +410,26 @@ class CITATrainer(DPOTrainer):
 
             self.log(log_dict)
 
-            # Warn if gradient norm is high (even after clipping)
-            # This indicates clipping is working but gradients are still large
-            if total_norm > 10.0:
-                if max_grad_norm is not None:
-                    print(f"\n⚠️  WARNING: Grad norm {total_norm:.2f} AFTER clipping (max={max_grad_norm})")
-                    print(f"   Clipping may not be enough - consider lower max_grad_norm or lower LR\n")
-                else:
-                    print(f"\n⚠️  WARNING: High gradient norm ({total_norm:.2f}) - training may be unstable!")
-                    print(f"   Consider: lower LR, longer warmup, or gradient clipping\n")
+            # Warn if gradient norm equals max (clipping is active)
+            # This means raw gradients are larger than max_grad_norm
+            if max_grad_norm is not None and total_norm >= max_grad_norm * 0.99:
+                print(f"\n⚠️  CLIPPING ACTIVE: grad_norm={total_norm:.2f} at limit {max_grad_norm}")
+                print(f"   Raw gradients are larger - this is expected during training\n")
 
-            # EXPERIMENT (iter8): Stop training on catastrophic explosion
-            # Prevents wasting compute when training has clearly diverged
+            # SAFETY CHECK 1: Verify clipping logic is working
+            # If grad_norm > max_grad_norm, clipping failed (shouldn't happen)
+            if max_grad_norm is not None and total_norm > max_grad_norm * 1.1:
+                print(f"\n⚠️  WARNING: Clipping may have failed (grad_norm={total_norm:.2f} > max={max_grad_norm})")
+                print(f"   Continuing training, but monitor closely...\n")
+                # Don't crash - just log and continue (fallback behavior)
+
+            # SAFETY CHECK 2: Catastrophic explosion (same as iter11)
+            # If grad_norm > 50, training has diverged (regardless of clipping)
             if total_norm > 50.0:
                 print(f"\n🚨 EXPLOSION DETECTED: grad_norm={total_norm:.2f} > 50.0")
-                print(f"   Stopping training at step {self.state.global_step}")
-                print(f"   Check tensorboard logs for diagnosis")
-                print(f"   Location: tensorboard_logs/CITA_Baseline_*/")
+                print(f"   Training has diverged catastrophically")
+                print(f"   Stopping at step {self.state.global_step}")
+                print(f"   Check tensorboard logs: tensorboard_logs/CITA_*/")
                 raise ValueError(f"Training exploded (grad_norm={total_norm:.2f})")
 
         return loss

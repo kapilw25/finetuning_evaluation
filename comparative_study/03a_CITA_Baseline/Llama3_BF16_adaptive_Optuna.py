@@ -17,8 +17,10 @@ Usage:
         --use-instruction false --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
     # CITA_Instruct - Full search (conservative HP space for longer sequences)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
-        --use-instruction true --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py \
+        --mode full \
+        --use-instruction true \
+        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
 
     # MVP (5 trials × 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
     python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp \
@@ -30,7 +32,7 @@ Usage:
 
 Outputs:
     - Optuna study database: ./outputs/optuna_cita_noinstruct.db or ./outputs/optuna_cita_instruct.db
-    - Best hyperparameters: ./outputs/best_optuna_config.json
+    - Best hyperparameters: ./outputs/CITA_NoInstruct_Adaptive_best_config.json or ./outputs/CITA_Instruct_Adaptive_best_config.json
     - Best model checkpoint: ./outputs/CITA_NoInstruct_Adaptive/best_trial/ or ./outputs/CITA_Instruct_Adaptive/best_trial/
     - Training log: ./logs/CITA_NoInstruct_Adaptive_training_<timestamp>.log or ./logs/CITA_Instruct_Adaptive_training_<timestamp>.log
 """
@@ -104,11 +106,13 @@ def train_cita_trial(trial, max_steps=200, base_model=None, use_instruction=Fals
     # Root cause: System instructions add ~50-100 tokens → longer sequences → larger gradients
 
     if use_instruction:
-        # CITA_Instruct: Ultra-conservative HP space for longer sequences (system instructions add ~50-100 tokens)
-        # After iter12: 5/5 trials exploded with LR [2e-6, 5e-6] → lowered to [8e-7, 2.5e-6]
-        # Uses gradient clipping (max_grad_norm=1.0) to match CITA_NoInstruct iter11 methodology
+        # CITA_Instruct: HP space calibrated after explosion analysis (iter12)
+        # Trial 0 (LR=2.36e-6): margin=3.30 (stable but underpowered)
+        # Fixed HP (LR=6.83e-6): margin=5.72 @ 20%, then EXPLODED @ 37% (loss=214.44)
+        # Instruct sequences are 30-40% longer → more sensitive to LR despite gradient clipping
+        # New range [2.5e-6, 5.5e-6]: Lower than NoInstruct to account for longer sequences
         lambda_kl = trial.suggest_float("lambda_kl", 0.0001, 0.001, log=False)
-        learning_rate = trial.suggest_float("learning_rate", 8e-7, 2.5e-6, log=True)  # Much lower for stability
+        learning_rate = trial.suggest_float("learning_rate", 2.5e-6, 5.5e-6, log=True)  # Calibrated after explosion
         beta = trial.suggest_float("beta", 0.08, 0.15)
         weight_decay = trial.suggest_float("weight_decay", 0.005, 0.015)
         warmup_ratio = trial.suggest_float("warmup_ratio", 0.05, 0.10)  # Match SFT/DPO/CITA_NoInstruct (~100 steps)
@@ -529,7 +533,7 @@ def run_optuna_cita_search(
     print(f"Storage: {storage_path}")
     print(f"Trials: {n_trials}")
     print(f"Steps per trial: {max_steps}")
-    print(f"Timeout: {timeout_hours}h")
+    print(f"Timeout: None (disabled - will run all {n_trials} trials)")
     print(f"Sampler: TPE (truly adaptive)")
     print(f"Pruner: Hyperband (min_resource=50, early stopping)")
     print(f"Monitoring: TrainingSummaryCallback every 50 steps")
@@ -562,7 +566,7 @@ def run_optuna_cita_search(
     study.optimize(
         objective,
         n_trials=n_trials,
-        timeout=timeout_hours * 3600,
+        # timeout=timeout_hours * 3600,  # REMOVED - no timeout, run all n_trials to completion
         show_progress_bar=True,
     )
 
@@ -606,7 +610,7 @@ def run_optuna_cita_search(
     print(f"{'='*80}\n")
 
     # ===== SAVE BEST CONFIG =====
-    config_path = project_root / "outputs" / "best_optuna_config.json"
+    config_path = project_root / "outputs" / f"{run_name}_best_config.json"
     config_path.parent.mkdir(exist_ok=True)
 
     best_config = {

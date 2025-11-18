@@ -4,8 +4,8 @@ library_name: transformers
 model_name: trial_1
 tags:
 - generated_from_trainer
-- trl
 - dpo
+- trl
 licence: license
 ---
 

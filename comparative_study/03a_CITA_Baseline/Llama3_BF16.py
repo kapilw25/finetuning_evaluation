@@ -2,42 +2,49 @@
 CITA Baseline Training Script (BF16 precision)
 Calibrated Instruction Tuning with Alignment - Fixed Hyperparameters
 
-Configuration:
-- Model: Llama-3.1-8B (BF16 precision)
-- Method: CITA (Calibrated Instruction Tuning with Alignment)
-- Loss: L_CITA = L_DPO + λ_KL × L_KL (combines DPO + KL regularization)
-- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
-- Training: Fixed hyperparameters from best Optuna trial
-- Precision: BF16 + Flash Attention 2
-- LoRA: r=16, alpha=16
-- Warmup: Uses warmup_ratio=0.0749 (Trial 5 - optimized for stability)
-- Gradient Clipping: max_grad_norm=1.0 (iter8 - prevents explosion)
-- Expected time: ~120 minutes on A100-40GB (1.0 epoch)
-
-Best Hyperparameters (from Optuna Trial 5, tuned for warmup_ratio=7.49%):
-- Learning rate: 6.827978e-06
-- Beta: 0.1191
-- Lambda KL: 0.000520
-- Weight decay: 0.0091
-- Warmup ratio: 0.0749 (epoch-agnostic, enables hyperparameter transfer)
+Hyperparameters:
+- CITA_NoInstruct: Trial 5 HPs (eval_loss=0.279, margin=6.95)
+- CITA_Instruct: Trial 7 HPs + λ_KL fix (iter13 - expect eval_loss~0.29)
 
 Usage:
-    # SANITY: 0.3 epochs (steps auto-calculated, ~36 minutes, ~$0.90)
-    # Stack on DPO (REQUIRED):
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity \
+    # CITA_NoInstruct - SANITY (0.3 epochs, ~36 minutes)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
+        --mode sanity \
+        --use-instruction false \
         --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 
-    # FULL: 1.0 epoch (steps auto-calculated, ~120 minutes, ~$3.00)
-    # Stack on DPO (REQUIRED):
-python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full \
-    --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+    # CITA_NoInstruct - FULL (1.0 epoch, ~120 minutes)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
+        --mode full \
+        --use-instruction false \
+        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+
+    # CITA_Instruct - SANITY (0.3 epochs, ~36 minutes)
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
+        --mode sanity \
+        --use-instruction true \
+        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+
+    # CITA_Instruct - FULL (1.0 epoch, ~120 minutes) [iter13 - regularization fix]
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
+        --mode full \
+        --use-instruction true \
+        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
 
 Outputs:
-    - Model checkpoints: ./outputs/CITA_Baseline/checkpoint-*/
-    - LoRA adapters: ./outputs/CITA_Baseline/lora_model_CITA_Baseline/
-    - TensorBoard logs: ./tensorboard_logs/CITA_Baseline_<timestamp>/
-    - Training log: ./logs/CITA_Baseline_training_<timestamp>.log
+    NoInstruct:
+    - HuggingFace: kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct
+    - Checkpoints: ./outputs/CITA_NoInstruct/checkpoint-*/
+    - LoRA: ./outputs/CITA_NoInstruct/lora_model_CITA_NoInstruct/
+    - TensorBoard: ./tensorboard_logs/CITA_NoInstruct_<timestamp>/
+    - Log: ./logs/CITA_NoInstruct_training_<timestamp>.log
+
+    Instruct:
     - HuggingFace: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+    - Checkpoints: ./outputs/CITA_Instruct/checkpoint-*/
+    - LoRA: ./outputs/CITA_Instruct/lora_model_CITA_Instruct/
+    - TensorBoard: ./tensorboard_logs/CITA_Instruct_<timestamp>/
+    - Log: ./logs/CITA_Instruct_training_<timestamp>.log
 """
 
 import sys
@@ -108,13 +115,25 @@ def train_cita_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         training_skipped: Whether training was skipped
     """
 
-    # ===== BEST HYPERPARAMETERS FROM OPTUNA =====
-    # Trial 5: 1354 steps, eval_loss=0.2791, margin=6.95, accuracy=89.5% (BEST)
-    LAMBDA_KL = 0.000520
-    LEARNING_RATE = 6.827978e-06
-    BETA = 0.1191
-    WEIGHT_DECAY = 0.0091
-    WARMUP_RATIO = 0.0749  # Auto-scales: SANITY=101 steps, FULL=101 steps
+    # ===== BEST HYPERPARAMETERS FROM OPTUNA (INSTRUCTION-AWARE) =====
+    if USE_INSTRUCTION:
+        # CITA_Instruct: Trial 7 HPs + λ_KL Fix (iter13)
+        # Trial 7: margin=7.52, accuracy=89%, eval_loss=0.326 (under-regularized)
+        # Fix: 3x stronger λ_KL to improve calibration (expect eval_loss: 0.326 → ~0.29)
+        # Rationale: 350-token sequences need proportionally stronger KL regularization
+        LAMBDA_KL = 0.00071      # 3x Trial 7's 0.000235 (MANUAL FIX - only HP modified)
+        LEARNING_RATE = 5.407820e-06  # Trial 7 (trust TPE)
+        BETA = 0.1067            # Trial 7 (trust TPE)
+        WEIGHT_DECAY = 0.0109    # Trial 7 (trust TPE)
+        WARMUP_RATIO = 0.0996    # Trial 7 (trust TPE - auto-scales with steps)
+    else:
+        # CITA_NoInstruct: Trial 5 HPs (PROVEN OPTIMAL)
+        # Trial 5: 1354 steps, eval_loss=0.2791, margin=6.95, accuracy=89.5%
+        LAMBDA_KL = 0.000520
+        LEARNING_RATE = 6.827978e-06
+        BETA = 0.1191
+        WEIGHT_DECAY = 0.0091
+        WARMUP_RATIO = 0.0749  # Auto-scales: SANITY=101 steps, FULL=101 steps
 
     # Set output_dir dynamically based on RUN_NAME if not provided
     if output_dir is None:
@@ -559,11 +578,20 @@ Examples:
     print(f"  - Training epochs: {num_epochs}")
     print("  - Batch size: 1 (per device)")
     print("  - Gradient accumulation: 8 (effective batch=8)")
-    print("  - Learning rate: 6.827978e-06 (Optuna Trial 5)")
-    print("  - Beta: 0.1191 (Optuna Trial 5)")
-    print("  - Lambda KL: 0.000520 (Optuna Trial 5)")
-    print("  - Weight decay: 0.0091 (Optuna Trial 5)")
-    print("  - Warmup ratio: 7.49% (Optuna Trial 5 - auto-scales with training length)")
+
+    if USE_INSTRUCTION:
+        print("  - Learning rate: 5.407820e-06 (Optuna Trial 7)")
+        print("  - Beta: 0.1067 (Optuna Trial 7)")
+        print("  - Lambda KL: 0.00071 (Trial 7 × 3 - iter13 regularization fix)")
+        print("  - Weight decay: 0.0109 (Optuna Trial 7)")
+        print("  - Warmup ratio: 9.96% (Optuna Trial 7 - auto-scales with training length)")
+    else:
+        print("  - Learning rate: 6.827978e-06 (Optuna Trial 5)")
+        print("  - Beta: 0.1191 (Optuna Trial 5)")
+        print("  - Lambda KL: 0.000520 (Optuna Trial 5)")
+        print("  - Weight decay: 0.0091 (Optuna Trial 5)")
+        print("  - Warmup ratio: 7.49% (Optuna Trial 5 - auto-scales with training length)")
+
     print("  - LR scheduler: cosine")
     print("  - Optimizer: adamw_torch")
     print("  - Gradient clipping: max_grad_norm=1.0 (iter8 - prevents explosion)")
