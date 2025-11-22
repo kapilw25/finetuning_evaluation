@@ -4,7 +4,7 @@ Calibrated Instruction Tuning with Alignment - Fixed Hyperparameters
 
 Hyperparameters:
 - CITA_NoInstruct: Trial 5 HPs (eval_loss=0.279, margin=6.95)
-- CITA_Instruct: Trial 7 HPs + λ_KL fix (iter13 - expect eval_loss~0.29)
+- CITA_Instruct: Trial 7 HPs (eval_loss=0.326, margin=7.52)
 
 Usage:
     # CITA_NoInstruct - SANITY (0.3 epochs, ~36 minutes)
@@ -25,7 +25,7 @@ Usage:
         --use-instruction true \
         --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
 
-    # CITA_Instruct - FULL (1.0 epoch, ~120 minutes) [iter13 - regularization fix]
+    # CITA_Instruct - FULL (1.0 epoch, ~120 minutes)
     python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
         --mode full \
         --use-instruction true \
@@ -117,15 +117,13 @@ def train_cita_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
 
     # ===== BEST HYPERPARAMETERS FROM OPTUNA (INSTRUCTION-AWARE) =====
     if USE_INSTRUCTION:
-        # CITA_Instruct: Trial 7 HPs + λ_KL Fix (iter13)
-        # Trial 7: margin=7.52, accuracy=89%, eval_loss=0.326 (under-regularized)
-        # Fix: 3x stronger λ_KL to improve calibration (expect eval_loss: 0.326 → ~0.29)
-        # Rationale: 350-token sequences need proportionally stronger KL regularization
-        LAMBDA_KL = 0.00071      # 3x Trial 7's 0.000235 (MANUAL FIX - only HP modified)
-        LEARNING_RATE = 5.407820e-06  # Trial 7 (trust TPE)
-        BETA = 0.1067            # Trial 7 (trust TPE)
-        WEIGHT_DECAY = 0.0109    # Trial 7 (trust TPE)
-        WARMUP_RATIO = 0.0996    # Trial 7 (trust TPE - auto-scales with steps)
+        # CITA_Instruct: Trial 7 HPs (EXACT - no modifications)
+        # Trial 7: margin=7.52, accuracy=89%, eval_loss=0.326
+        LAMBDA_KL = 0.00023457122236804812     # Trial 7 exact value
+        LEARNING_RATE = 5.407819703808436e-06  # Trial 7 exact value
+        BETA = 0.1067277996528356              # Trial 7 exact value
+        WEIGHT_DECAY = 0.010936370520834316    # Trial 7 exact value
+        WARMUP_RATIO = 0.09962587581553221     # Trial 7 exact value
     else:
         # CITA_NoInstruct: Trial 5 HPs (PROVEN OPTIMAL)
         # Trial 5: 1354 steps, eval_loss=0.2791, margin=6.95, accuracy=89.5%
@@ -582,7 +580,7 @@ Examples:
     if USE_INSTRUCTION:
         print("  - Learning rate: 5.407820e-06 (Optuna Trial 7)")
         print("  - Beta: 0.1067 (Optuna Trial 7)")
-        print("  - Lambda KL: 0.00071 (Trial 7 × 3 - iter13 regularization fix)")
+        print("  - Lambda KL: 0.0002346 (Optuna Trial 7)")
         print("  - Weight decay: 0.0109 (Optuna Trial 7)")
         print("  - Warmup ratio: 9.96% (Optuna Trial 7 - auto-scales with training length)")
     else:
