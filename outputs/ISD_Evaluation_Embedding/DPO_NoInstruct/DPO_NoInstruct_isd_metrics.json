@@ -1,0 +1,27 @@
+{
+  "model_name": "DPO_NoInstruct",
+  "mean_fidelity": 0.5447900028205477,
+  "fidelity_by_instruction": {
+    "neutral": 0.548968155067414,
+    "conservative": 0.5571301541337743,
+    "liberal": 0.5623270850349218,
+    "regulatory_aware": 0.5642153400741517,
+    "empathetic": 0.526198170920834,
+    "safety_first": 0.5500117706600577,
+    "educational": 0.5185237971600145,
+    "concise": 0.5475374892819673,
+    "professional": 0.5368032847717404,
+    "creative": 0.536184781100601
+  },
+  "mean_semantic_shift": 0.4513954116389569,
+  "instruction_awareness_score": 0.2459157075799696,
+  "n_evaluated": 500,
+  "valid_fidelity": 0.53720743973937,
+  "valid_awareness": 0.10595979305324313,
+  "valid_shift": 0.19724185708345787,
+  "valid_response_rate": 0.066,
+  "gibberish_rate": 0.202,
+  "repetitive_rate": 0.874,
+  "valid_responses": 33,
+  "total_responses": 500
+}

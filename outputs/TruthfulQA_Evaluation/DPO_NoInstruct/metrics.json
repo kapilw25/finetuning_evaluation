@@ -1,0 +1,19 @@
+{
+  "honest_uncertainty_rate": 0.1,
+  "confident_uncertainty_rate": 0.36,
+  "honest_avg_markers": 0.8,
+  "confident_avg_markers": 2.6,
+  "adaptation_score": -0.26,
+  "avg_marker_change": -1.8,
+  "std_marker_change": 3.492849839314596,
+  "n_questions": 50,
+  "honest_valid_rate": 0.4,
+  "honest_gibberish_rate": 0.0,
+  "honest_repetitive_rate": 0.6,
+  "confident_valid_rate": 0.34,
+  "confident_gibberish_rate": 0.06,
+  "confident_repetitive_rate": 0.62,
+  "valid_honest_uncertainty_rate": 0.1,
+  "valid_confident_uncertainty_rate": 0.058823529411764705,
+  "valid_adaptation_score": 0.0411764705882353
+}

@@ -476,11 +476,11 @@ comparative_study/05_evaluation/
 │   ├── isd_metrics.py
 │   └── push_isd_to_hf.py
 │
-├── conditional_safety/  # Priority 1
+├── conditional_safety/  # Priority 1  ✅ DONE
 │   ├── evaluation.py
 │   └── results/
 │
-├── truthfulqa/  # Priority 2
+├── truthfulqa/  # Priority 2 ✅ DONE
 │   ├── evaluation.py
 │   └── results/
 │
@@ -519,13 +519,51 @@ For each eval, the key metric is **how much the model changes behavior**:
 
 ---
 
+## PART 6: FEATURE PARITY STATUS ✅ COMPLETE
+
+All evaluation scripts now have complete feature parity:
+
+| Feature                         | toxicity.py | ISD | TruthfulQA |
+|---------------------------------|-------------|-----|------------|
+| Batch processing (batch_size=8) | ✅           | ✅   | ✅          |
+| temperature=0.7, top_p=0.9      | ✅           | ✅   | ✅          |
+| Checkpointing with resume       | ✅           | ✅   | ✅          |
+| GPU cleanup (cleanup_gpu)       | ✅           | ✅   | ✅          |
+| HF repo pre-flight verification | ✅           | ✅   | ✅          |
+| judge.judge_batch()             | ✅           | ✅   | ✅          |
+| Interactive cleanup menu        | ✅           | ✅   | ✅          |
+| Interactive mode selection      | ✅           | ✅   | ✅          |
+| Re-run inference option         | ✅           | ✅   | ✅          |
+| Cached eval detection           | ✅           | ✅   | ✅          |
+| RuntimeError handling           | ✅           | ✅   | ✅          |
+| Logging setup                   | ✅           | ✅   | ✅          |
+| Ranking print                   | ✅           | ✅   | ✅          |
+
+### ISD/TruthfulQA Are Actually Better in Some Ways:
+
+1. **Lazy Judge Initialization**:
+   - toxicity.py: Initializes `FireworksJudge()` unconditionally at start (line 684-685)
+   - TruthfulQA: Initializes only if `use_llm=True` (line 531-534)
+   - ISD: Initializes lazily in `_load_fireworks()` only when first needed
+
+2. **Summary Table**:
+   - TruthfulQA has a nice formatted summary table at end (lines 894-901)
+   - toxicity.py and ISD don't have this
+
+3. **Uses Shared eval_utils**:
+   - ISD/TruthfulQA properly use shared utilities (MODELS, load_model_for_eval, checkpointing)
+   - toxicity.py has duplicate implementations (lines 52-276)
+
+---
+
 ## NEXT STEPS
 
 1. ✅ ISD Dataset created and pushed to HuggingFace
 2. ✅ eval_utils created with shared model loading (model_loader.py)
 3. ✅ isd_evaluation.py refactored to use eval_utils
-4. Build Conditional Safety eval (highest signal for instruction awareness)
-5. Build TruthfulQA eval
-6. Build Style Transfer eval
-7. Run all evals on DPO_Instruct vs CITA_Instruct
-8. Generate comparison report showing adaptation scores
+4. ✅ TruthfulQA eval built with full feature parity
+5. ✅ All evaluation scripts optimized (batch processing, judge.judge_batch, etc.)
+6. Build Conditional Safety eval (highest signal for instruction awareness)
+7. Build Style Transfer eval
+8. Run all evals on DPO_Instruct vs CITA_Instruct
+9. Generate comparison report showing adaptation scores

@@ -1,0 +1,27 @@
+{
+  "model_name": "CITA_Instruct",
+  "mean_fidelity": 0.17266666666666666,
+  "fidelity_by_instruction": {
+    "neutral": 0.22666666666666666,
+    "conservative": 0.20666666666666664,
+    "liberal": 0.09333333333333332,
+    "regulatory_aware": 0.26666666666666666,
+    "empathetic": 0.03333333333333333,
+    "safety_first": 0.18666666666666665,
+    "educational": 0.3533333333333333,
+    "concise": 0.09333333333333332,
+    "professional": 0.26666666666666666,
+    "creative": 0.0
+  },
+  "mean_semantic_shift": 0.7865230019442325,
+  "instruction_awareness_score": 0.13580630500237081,
+  "n_evaluated": 500,
+  "valid_fidelity": 0.35185185185185186,
+  "valid_awareness": 0.03226447827613878,
+  "valid_shift": 0.09169904352165759,
+  "valid_response_rate": 0.072,
+  "gibberish_rate": 0.798,
+  "repetitive_rate": 0.436,
+  "valid_responses": 36,
+  "total_responses": 500
+}

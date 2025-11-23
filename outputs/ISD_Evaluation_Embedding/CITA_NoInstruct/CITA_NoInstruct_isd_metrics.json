@@ -1,0 +1,27 @@
+{
+  "model_name": "CITA_NoInstruct",
+  "mean_fidelity": 0.5451389219528064,
+  "fidelity_by_instruction": {
+    "neutral": 0.5583110561594367,
+    "conservative": 0.5582984981872141,
+    "liberal": 0.5589444009028375,
+    "regulatory_aware": 0.5687866553012282,
+    "empathetic": 0.537033466650173,
+    "safety_first": 0.5584806092642247,
+    "educational": 0.515739352311939,
+    "concise": 0.5369415011070668,
+    "professional": 0.5280996082909405,
+    "creative": 0.5307540713530033
+  },
+  "mean_semantic_shift": 0.395053701447323,
+  "instruction_awareness_score": 0.21535914892045951,
+  "n_evaluated": 500,
+  "valid_fidelity": 0.538588131899419,
+  "valid_awareness": 0.09766235753140383,
+  "valid_shift": 0.18133031856268644,
+  "valid_response_rate": 0.046,
+  "gibberish_rate": 0.218,
+  "repetitive_rate": 0.92,
+  "valid_responses": 23,
+  "total_responses": 500
+}

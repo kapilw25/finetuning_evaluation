@@ -64,3 +64,4 @@ huggingface_hub
 
 # LLM-as-judge evaluation (Fireworks API)
 litellm
+sentence-transformers

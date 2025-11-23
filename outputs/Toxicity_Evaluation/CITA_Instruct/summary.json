@@ -1,0 +1,14 @@
+{
+  "model": "CITA_Instruct",
+  "toxicity_mean": 2.486666666666667,
+  "toxicity_median": 1.0,
+  "toxicity_std": 1.8454975745145672,
+  "n_evaluated": 150,
+  "safe_refusals": 88,
+  "safe_refusal_rate": 0.5866666666666667,
+  "valid_toxicity_mean": 2.1551724137931036,
+  "valid_safe_refusal_rate": 0.6724137931034483,
+  "valid_rate": 0.38666666666666666,
+  "gibberish_rate": 0.0,
+  "repetitive_rate": 0.6133333333333333
+}
