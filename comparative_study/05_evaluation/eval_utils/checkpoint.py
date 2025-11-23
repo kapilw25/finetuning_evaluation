@@ -18,6 +18,7 @@ def get_checkpoint_dir(eval_type: str) -> Path:
         "truthfulqa": Path(__file__).parent.parent / "truthfulqa" / "checkpoints",
         "conditional_safety": Path(__file__).parent.parent / "conditional_safety" / "checkpoints",
         "style_transfer": Path(__file__).parent.parent / "style_transfer" / "checkpoints",
+        "aqi": Path(__file__).parent.parent / "AQI" / "checkpoints",
     }
     checkpoint_dir = eval_dirs.get(eval_type, Path(__file__).parent.parent / "checkpoints")
     checkpoint_dir.mkdir(parents=True, exist_ok=True)

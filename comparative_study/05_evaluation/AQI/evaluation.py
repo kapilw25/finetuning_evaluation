@@ -194,6 +194,12 @@ def generate_responses(
     # Format all messages at once
     formatted_prompts = format_chat_messages(tokenizer, messages_list)
 
+    # Create checkpoint callback for intermediate saves
+    def checkpoint_cb(batch_responses_so_far):
+        temp_responses = responses + batch_responses_so_far
+        save_checkpoint(model_key, temp_responses, len(prompts),
+                       eval_type="aqi", completed=False)
+
     # Batch generate
     batch_responses = batch_generate(
         model=model,
@@ -206,6 +212,7 @@ def generate_responses(
         do_sample=True,
         show_progress=True,
         desc=f"Generating ({model_key})",
+        checkpoint_callback=checkpoint_cb,
         checkpoint_interval=checkpoint_interval
     )
 
@@ -235,6 +242,7 @@ def calculate_aqi(
 ) -> Dict:
     """
     Calculate AQI by embedding responses and measuring cluster separation
+    Calculates BOTH overall and valid-only AQI scores.
 
     Args:
         responses: List of model responses
@@ -243,7 +251,7 @@ def calculate_aqi(
         output_dir: Where to save results
 
     Returns:
-        Dict with AQI scores
+        Dict with overall_aqi, valid_aqi, results, per_axiom results
     """
     model_output_dir = output_dir / model_key
     model_output_dir.mkdir(parents=True, exist_ok=True)
@@ -253,24 +261,41 @@ def calculate_aqi(
     df_with_responses['original_prompt'] = df_with_responses['input']
     df_with_responses['input'] = responses  # Replace input with response for embedding
 
+    # Add validation columns for gibberish/repetition detection
+    df_with_responses = add_validation_columns(df_with_responses, response_column='input')
+    validation = get_validation_summary(df_with_responses)
+
     # Check for cached embeddings
     cache_file = model_output_dir / "embeddings.pkl"
 
     if cache_file.exists():
         print(f"\nLoading cached embeddings from {cache_file}")
         processed_df = pd.read_pickle(cache_file)
+        # Ensure validation columns exist in cached data
+        if 'is_valid' not in processed_df.columns:
+            processed_df = add_validation_columns(processed_df, response_column='input')
     else:
         print(f"\nEmbedding responses for {model_key}...")
-        # Use process_model_data to embed responses
-        # Note: We pass None for model since we just need embeddings
-        processed_df = process_model_data(
-            None, None, df_with_responses,
-            model_name=model_key,
-            cache_file=str(cache_file)
+        # Use SentenceTransformer for embeddings
+        from sentence_transformers import SentenceTransformer
+
+        embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+        embeddings = embed_model.encode(
+            df_with_responses['input'].tolist(),
+            show_progress_bar=True,
+            batch_size=32
         )
 
-    # Calculate AQI
-    print(f"\nCalculating AQI for {model_key}")
+        # Add embeddings to dataframe
+        processed_df = df_with_responses.copy()
+        processed_df['embedding'] = list(embeddings)
+
+        # Save cache
+        processed_df.to_pickle(cache_file)
+        print(f"Saved embeddings to {cache_file}")
+
+    # Calculate OVERALL AQI (all responses)
+    print(f"\nCalculating OVERALL AQI for {model_key}")
     results, embeddings_3d, _, _ = analyze_by_axiom(
         processed_df,
         model_name=model_key,
@@ -278,15 +303,44 @@ def calculate_aqi(
         dim_reduction_method=DIM_REDUCTION_METHOD
     )
 
-    # Save metrics summary
+    # Save overall metrics summary
     create_metrics_summary(results, model_key, output_dir=str(model_output_dir))
-
-    # Get overall AQI
     overall_aqi = results.get('overall', {}).get('AQI', 0.0)
+
+    # Calculate VALID-ONLY AQI (filtered responses)
+    valid_df = processed_df[processed_df['is_valid']].copy()
+    valid_aqi = None
+    valid_results = None
+
+    if len(valid_df) > 0:
+        print(f"\nCalculating VALID-ONLY AQI for {model_key} ({len(valid_df)}/{len(processed_df)} samples)")
+        valid_results, _, _, _ = analyze_by_axiom(
+            valid_df,
+            model_name=f"{model_key}_valid",
+            gamma=GAMMA,
+            dim_reduction_method=DIM_REDUCTION_METHOD
+        )
+        valid_aqi = valid_results.get('overall', {}).get('AQI', 0.0)
+
+        # Save valid-only metrics
+        create_metrics_summary(valid_results, f"{model_key}_valid", output_dir=str(model_output_dir))
+    else:
+        print(f"\n⚠️ No valid responses for {model_key} - cannot calculate valid-only AQI")
+
+    # Print comparison
+    print(f"\n{model_key} AQI Results:")
+    print(f"  Valid response rate: {validation['valid_rate']:.1%}")
+    print(f"  Overall AQI: {overall_aqi:.2f}")
+    print(f"  Valid-only AQI: {f'{valid_aqi:.2f}' if valid_aqi is not None else 'N/A'}")
 
     return {
         "overall_aqi": overall_aqi,
+        "valid_aqi": valid_aqi,
+        "valid_rate": validation['valid_rate'],
+        "gibberish_rate": validation['gibberish_rate'],
+        "repetitive_rate": validation['repetitive_rate'],
         "results": results,
+        "valid_results": valid_results,
         "embeddings_3d": embeddings_3d,
         "processed_df": processed_df
     }
@@ -372,7 +426,7 @@ def run_aqi_evaluation(
             del tokenizer
             cleanup_gpu()
 
-            # Calculate AQI
+            # Calculate AQI (both overall and valid-only)
             aqi_results = calculate_aqi(
                 responses, balanced_df, model_key, output_dir
             )
@@ -397,6 +451,13 @@ def run_aqi_evaluation(
                 timestamp=datetime.now().isoformat(),
                 aqi_score=aqi_results['overall_aqi']
             )
+            # Store additional metrics for plotting
+            result.valid_aqi = aqi_results['valid_aqi']
+            result.valid_rate = aqi_results['valid_rate']
+            result.gibberish_rate = aqi_results['gibberish_rate']
+            result.repetitive_rate = aqi_results['repetitive_rate']
+            result.per_axiom_results = aqi_results['results']
+
             results[model_key] = result
 
             # Save responses CSV
@@ -423,8 +484,13 @@ def run_aqi_evaluation(
 # PLOTTING
 # =============================================================================
 
-def generate_comparison_plots(all_results: Dict[str, AQIModelResult], output_dir: Path):
-    """Generate comparison plot for AQI scores"""
+def generate_comparison_plots(
+    all_results: Dict[str, AQIModelResult],
+    output_dir: Path,
+    stratified_metrics: Dict[str, Dict] = None,
+    per_axiom_results: Dict[str, Dict] = None
+):
+    """Generate comparison plots for AQI scores with Overall vs Valid-only bars and per-axiom breakdown"""
     import matplotlib.pyplot as plt
 
     if len(all_results) < 2:
@@ -434,26 +500,46 @@ def generate_comparison_plots(all_results: Dict[str, AQIModelResult], output_dir
     models = list(all_results.keys())
     aqi_scores = [all_results[m].aqi_score for m in models]
 
-    # Sort by AQI score (ascending = best on right)
+    # Get valid-only scores from stratified metrics
+    valid_aqi = []
+    valid_rates = []
+    for m in models:
+        if stratified_metrics and m in stratified_metrics:
+            va = stratified_metrics[m].get('valid_aqi')
+            vr = stratified_metrics[m].get('valid_rate', 1.0)
+            valid_aqi.append(va if va is not None else aqi_scores[models.index(m)])
+            valid_rates.append(vr)
+        else:
+            valid_aqi.append(aqi_scores[models.index(m)])
+            valid_rates.append(1.0)
+
+    # Sort by overall AQI (ascending = best on right)
     sorted_indices = np.argsort(aqi_scores)
     models_sorted = [models[i] for i in sorted_indices]
     aqi_sorted = [aqi_scores[i] for i in sorted_indices]
+    valid_aqi_sorted = [valid_aqi[i] for i in sorted_indices]
+    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
 
     # Get colors using shared utility
     colors_sorted = get_model_colors(models_sorted)
 
-    # Single plot with AQI bars
+    # Plot 1: Overall AQI with Overall vs Valid-only bars
     fig, ax = plt.subplots(figsize=(14, 7))
 
     x = np.arange(len(models_sorted))
-    bar_width = 0.6
+    bar_width = 0.35
 
-    # AQI bars
-    bars = ax.bar(x, aqi_sorted, bar_width,
-                  color=colors_sorted, edgecolor='black', linewidth=1.5)
+    # Overall bars (solid)
+    bars_overall = ax.bar(x - bar_width/2, aqi_sorted, bar_width,
+                          color=colors_sorted, edgecolor='black', linewidth=1.5, label='Overall')
+
+    # Valid-only bars (hatched)
+    bars_valid = ax.bar(x + bar_width/2, valid_aqi_sorted, bar_width,
+                        color=colors_sorted, edgecolor='black', linewidth=1.5,
+                        hatch='///', alpha=0.7, label='Valid-only')
 
     ax.set_ylabel('AQI Score [0-100]', fontsize=14, fontweight='bold')
-    ax.set_title('AQI: Alignment Quality Index - Response Embedding Separation (Higher = Better)',
+    ax.set_title('AQI: Alignment Quality Index - Overall vs Valid-Only (Higher = Better)',
                  fontsize=16, fontweight='bold', pad=15)
     ax.set_ylim(0, 100)
 
@@ -464,11 +550,17 @@ def generate_comparison_plots(all_results: Dict[str, AQIModelResult], output_dir
     ax.set_xticks(x)
     ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
     ax.grid(axis='y', alpha=0.3, linestyle='--')
+    ax.legend(loc='upper left', fontsize=10)
 
     # Add value labels
-    for i, (bar, score) in enumerate(zip(bars, aqi_sorted)):
-        ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 1,
-                f'{score:.1f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(bars_overall, bars_valid,
+                                                                   aqi_sorted, valid_aqi_sorted, valid_rates_sorted)):
+        # Overall label
+        ax.text(bar_o.get_x() + bar_o.get_width()/2., bar_o.get_height() + 1,
+                f'{score_o:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+        # Valid-only label with valid rate
+        ax.text(bar_v.get_x() + bar_v.get_width()/2., bar_v.get_height() + 1,
+                f'{score_v:.1f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
     plt.tight_layout()
     plot_path = output_dir / "aqi_comparison.png"
@@ -479,6 +571,82 @@ def generate_comparison_plots(all_results: Dict[str, AQIModelResult], output_dir
     print(f"\nAQI Ranking (Best to Worst):")
     for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(aqi_sorted)), 1):
         print(f"   {rank}. {model}: {score:.2f}")
+
+    # Plot 2: Per-axiom breakdown (if per_axiom_results provided)
+    if per_axiom_results and len(per_axiom_results) >= 2:
+        axioms = [
+            'Civility & Tolerance',
+            'Duty & Accountability',
+            'Empathy & Helpfulness',
+            'Information Seeking',
+            'Justice & Rights',
+            'Well-being & Peace',
+            'Wisdom & Knowledge'
+        ]
+
+        # Define colors with different shades for Instruct vs NoInstruct
+        # Use same colors as eval_utils/plotting.py for consistency
+        model_color_map = {
+            'CITA_Instruct': '#00008B',     # Dark Blue (matches plotting.py)
+            'CITA_NoInstruct': '#87CEEB',   # Light Sky Blue (matches plotting.py)
+            'DPO_Instruct': '#006400',      # Dark Green (matches plotting.py)
+            'DPO_NoInstruct': '#90EE90',    # Light Green (matches plotting.py)
+        }
+
+        fig, ax = plt.subplots(figsize=(16, 8))
+
+        x = np.arange(len(axioms))
+        n_models = len(models)  # Use original models list
+        bar_width = 0.8 / n_models
+
+        # For each axiom, sort models by their score (descending)
+        for ax_idx, axiom in enumerate(axioms):
+            # Get scores for this axiom
+            axiom_model_scores = []
+            for model in models:
+                if model in per_axiom_results:
+                    score = per_axiom_results[model].get(axiom, {}).get('AQI', 0)
+                    axiom_model_scores.append((model, score))
+                else:
+                    axiom_model_scores.append((model, 0))
+
+            # Sort by score descending
+            axiom_model_scores.sort(key=lambda x: x[1], reverse=True)
+
+            # Draw bars for this axiom in sorted order
+            for bar_idx, (model, score) in enumerate(axiom_model_scores):
+                offset = (bar_idx - n_models/2 + 0.5) * bar_width
+                color = model_color_map.get(model, '#808080')
+                bar = ax.bar(x[ax_idx] + offset, score, bar_width,
+                            color=color, edgecolor='black', linewidth=0.5)
+
+                # Add value label
+                if score > 0:
+                    ax.text(x[ax_idx] + offset, score + 1.5,
+                           f'{score:.0f}', ha='center', va='bottom', fontsize=7, fontweight='bold')
+
+        # Create custom legend
+        legend_elements = []
+        for model in ['CITA_Instruct', 'CITA_NoInstruct', 'DPO_Instruct', 'DPO_NoInstruct']:
+            if model in models:
+                from matplotlib.patches import Patch
+                legend_elements.append(Patch(facecolor=model_color_map[model],
+                                            edgecolor='black', label=model))
+
+        ax.set_ylabel('AQI Score [0-100]', fontsize=14, fontweight='bold')
+        ax.set_title('AQI: Per-Axiom Breakdown - All Models (Higher = Better)',
+                     fontsize=16, fontweight='bold', pad=15)
+        ax.set_ylim(0, 110)  # Extended to avoid label overlap
+        ax.set_xticks(x)
+        ax.set_xticklabels(axioms, rotation=45, ha='right', fontsize=10)
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.legend(handles=legend_elements, loc='upper right', fontsize=9,
+                 bbox_to_anchor=(1.0, 1.15))
+
+        plt.tight_layout()
+        axiom_plot_path = output_dir / "aqi_per_axiom_comparison.png"
+        plt.savefig(axiom_plot_path, dpi=300, bbox_inches='tight')
+        print(f"Saved plot: {axiom_plot_path}")
 
 
 # =============================================================================
@@ -571,12 +739,60 @@ def main():
             batch_size=args.batch_size
         )
 
+        # Collect stratified metrics and per-axiom results for plotting
+        all_stratified = {}
+        all_per_axiom = {}
+
+        for model_key, result in all_results.items():
+            model_dir = EVAL_OUTPUT_DIR / model_key
+
+            # Use actual calculated values from result object
+            all_stratified[model_key] = {
+                'valid_rate': result.valid_rate,
+                'valid_aqi': result.valid_aqi,  # Actual valid-only AQI (not a copy!)
+                'gibberish_rate': result.gibberish_rate,
+                'repetitive_rate': result.repetitive_rate
+            }
+
+            # Build per-axiom dict from result
+            if hasattr(result, 'per_axiom_results') and result.per_axiom_results:
+                per_axiom = {}
+                for category, metrics in result.per_axiom_results.items():
+                    if category != 'overall':
+                        per_axiom[category] = {
+                            'AQI': metrics.get('AQI', 0),
+                            'CHI': metrics.get('CHI', 0),
+                            'XB': metrics.get('XB', 0)
+                        }
+                all_per_axiom[model_key] = per_axiom
+            else:
+                # Fallback: load from CSV if result doesn't have per_axiom_results
+                metrics_csv = model_dir / f"{model_key}_metrics_summary.csv"
+                if metrics_csv.exists():
+                    metrics_df = pd.read_csv(metrics_csv)
+                    per_axiom = {}
+                    for _, row in metrics_df.iterrows():
+                        category = row['Category']
+                        if category != 'overall':
+                            per_axiom[category] = {
+                                'AQI': row['AQI [0-100] (↑)'],
+                                'CHI': row['CHI (raw)'],
+                                'XB': row['XB (raw)']
+                            }
+                    all_per_axiom[model_key] = per_axiom
+
+            # Print summary
+            print(f"\n{model_key} Final Results:")
+            print(f"  Valid response rate: {result.valid_rate:.1%}")
+            print(f"  Overall AQI: {result.aqi_score:.2f}")
+            print(f"  Valid-only AQI: {f'{result.valid_aqi:.2f}' if result.valid_aqi else 'N/A'}")
+
         # Generate comparison plots
         if len(all_results) >= 2:
             print(f"\n{'=' * 80}")
             print("Generating Comparison Plots")
             print(f"{'=' * 80}")
-            generate_comparison_plots(all_results, EVAL_OUTPUT_DIR)
+            generate_comparison_plots(all_results, EVAL_OUTPUT_DIR, all_stratified, all_per_axiom)
 
         # Final summary
         print(f"\n{'=' * 80}")

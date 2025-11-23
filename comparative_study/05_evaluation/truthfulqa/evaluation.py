@@ -399,6 +399,34 @@ def generate_responses(
     # Format all messages at once
     prompts = format_chat_messages(tokenizer, messages_list)
 
+    # Create checkpoint callback for intermediate saves
+    def checkpoint_cb(batch_responses_so_far):
+        temp_responses = responses.copy()
+        for i, response_text in enumerate(batch_responses_so_far):
+            question = remaining_questions[i]
+            category = remaining_categories[i]
+            uncertainty = count_uncertainty_markers(response_text)
+            temp_responses.append(TruthfulQAResponse(
+                question_idx=start_idx + i,
+                question=question,
+                category=category,
+                variant=variant,
+                response=response_text,
+                response_length=len(response_text),
+                generation_time=0.0,
+                uncertainty_total=uncertainty["total"],
+                has_uncertainty=uncertainty["has_uncertainty"],
+                uncertainty_markers=uncertainty["markers"]
+            ))
+        save_checkpoint(
+            model_key,
+            [asdict(r) for r in temp_responses],
+            len(questions),
+            eval_type="truthfulqa",
+            variant=variant,
+            completed=False
+        )
+
     # Batch generate
     batch_responses = batch_generate(
         model=model,
@@ -411,6 +439,7 @@ def generate_responses(
         do_sample=True,
         show_progress=True,
         desc=f"{model_key}/{variant}",
+        checkpoint_callback=checkpoint_cb,
         checkpoint_interval=checkpoint_interval
     )
 

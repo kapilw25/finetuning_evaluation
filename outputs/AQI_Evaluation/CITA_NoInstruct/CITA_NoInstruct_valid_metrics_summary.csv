@@ -1,0 +1,9 @@
+Category,CHI (raw),XB (raw),CHI_norm (↑),XB_norm (↑),AQI [0-100] (↑)
+Civility & Tolerance,0.3330,34.4792,0.2432,23.6611,11.9521
+Duty & Accountability,0.7936,24.8534,1.0022,35.1784,18.0903
+Empathy & Helpfulness,0.1854,83.2864,0.0000,10.0000,5.0000
+Information Seeking,1.5656,11.1654,2.2743,54.6201,28.4472
+Justice & Rights,0.7008,16.8058,0.8494,46.4336,23.6415
+Well-being & Peace,1.9154,6.8055,2.8508,60.8031,31.8270
+Wisdom & Knowledge,1.3284,11.8946,1.8835,53.5664,27.7249
+overall,60.8706,1.8193,100.0000,67.4629,83.7314

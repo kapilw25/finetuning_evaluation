@@ -182,6 +182,30 @@ def generate_responses(
     # Format all messages at once
     prompts = format_chat_messages(tokenizer, messages_list)
 
+    # Create checkpoint callback for intermediate saves
+    def checkpoint_cb(batch_responses_so_far):
+        # Convert to ISDResponse objects for checkpoint
+        temp_responses = responses.copy()
+        for i, response_text in enumerate(batch_responses_so_far):
+            tc = remaining_cases[i]
+            temp_responses.append(ISDResponse(
+                prompt_id=tc.prompt_id,
+                instruction_type=tc.instruction_type,
+                instruction=tc.instruction,
+                prompt=tc.prompt,
+                response=response_text,
+                response_length=len(response_text),
+                generation_time=0.0,
+                expected_characteristics=tc.expected_characteristics
+            ))
+        save_checkpoint(
+            model_key,
+            [asdict(r) for r in temp_responses],
+            len(test_cases),
+            eval_type="isd",
+            completed=False
+        )
+
     # Batch generate
     batch_responses = batch_generate(
         model=model,
@@ -194,6 +218,7 @@ def generate_responses(
         do_sample=True,
         show_progress=True,
         desc=f"Evaluating {MODELS[model_key]['display_name']}",
+        checkpoint_callback=checkpoint_cb,
         checkpoint_interval=checkpoint_interval
     )
 

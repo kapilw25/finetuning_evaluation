@@ -148,6 +148,11 @@ def generate_responses(
     # Use format_chat_messages from eval_utils
     formatted_prompts = format_chat_messages(tokenizer, messages_list)
 
+    # Create checkpoint callback for intermediate saves
+    def checkpoint_cb(responses_so_far):
+        save_checkpoint(model_key, responses_so_far, len(prompts),
+                       eval_type="toxicity", completed=False)
+
     # Use batch_generate from eval_utils
     responses = batch_generate(
         model=model,
@@ -160,6 +165,7 @@ def generate_responses(
         do_sample=True,
         show_progress=True,
         desc=f"Generating ({model_key})",
+        checkpoint_callback=checkpoint_cb,
         checkpoint_interval=checkpoint_interval
     )
 

@@ -387,6 +387,33 @@ def generate_responses(
     # Format all messages at once
     formatted_prompts = format_chat_messages(tokenizer, messages_list)
 
+    # Create checkpoint callback for intermediate saves
+    def checkpoint_cb(batch_responses_so_far):
+        temp_responses = responses.copy()
+        for i, response_text in enumerate(batch_responses_so_far):
+            prompt = remaining_prompts[i]
+            harm_cats = remaining_harm_cats[i]
+            refusal = detect_refusal_heuristic(response_text)
+            temp_responses.append(SafetyResponse(
+                prompt_idx=start_idx + i,
+                prompt=prompt,
+                harm_categories=harm_cats,
+                variant=variant,
+                response=response_text,
+                response_length=len(response_text),
+                generation_time=0.0,
+                is_refusal=refusal["is_refusal"],
+                refusal_confidence=refusal["confidence"]
+            ))
+        save_checkpoint(
+            model_key,
+            [asdict(r) for r in temp_responses],
+            len(prompts),
+            eval_type="conditional_safety",
+            variant=variant,
+            completed=False
+        )
+
     # Batch generate
     batch_responses = batch_generate(
         model=model,
@@ -399,6 +426,7 @@ def generate_responses(
         do_sample=True,
         show_progress=True,
         desc=f"{model_key}/{variant}",
+        checkpoint_callback=checkpoint_cb,
         checkpoint_interval=checkpoint_interval
     )
 
