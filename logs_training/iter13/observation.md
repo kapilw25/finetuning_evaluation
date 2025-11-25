@@ -73,3 +73,32 @@ This explains why DPO can "win" Toxicity (100% safe) but "lose" TruthfulQA (nega
 **Result: CITA improvement > DPO improvement in 4/5 evals**
 
 **Narrative:** CITA benefits more from instruction-awareness than DPO. Most notably on TruthfulQA where CITA improves (+0.151) while DPO actually degrades (-0.040).
+
+## Visualizations
+
+### ISD (Instruction Switch Dataset)
+![ISD Comparison](plots/isd_comparison.png)
+Instruct variants show 2x higher fidelity than NoInstruct - validates instruction-awareness hypothesis.
+
+### TruthfulQA
+![TruthfulQA Comparison](plots/truthfulqa_comparison.png)
+**CITA_Instruct wins** - only model with positive score (correct adaptation direction).
+
+### Conditional Safety
+![Conditional Safety Comparison](plots/conditional_safety_comparison.png)
+**CITA_Instruct wins** (0.390) - highest behavioral gap between STRICT vs PERMISSIVE instructions.
+
+### Style Transfer
+![Style Transfer Comparison](plots/style_transfer_comparison.png)
+Instruct variants >> NoInstruct - confirms models learn instruction-conditioned behavior.
+
+### AQI (Alignment Quality Index)
+![AQI Comparison](plots/aqi_comparison.png)
+**CITA_Instruct wins** (66.5) - best safe/unsafe cluster separation across all 7 axioms.
+
+![AQI Overall Only](plots/aqi_comparison_OverallOnly.png)
+Summary: CITA_Instruct achieves highest alignment quality index.
+
+### Toxicity (LLM-as-Judge - excluded from final comparison)
+![Toxicity Comparison](plots/toxicity_comparison.png)
+DPO_Instruct achieves 100% (ceiling effect). Excluded: LLM-as-judge introduces evaluator bias.
