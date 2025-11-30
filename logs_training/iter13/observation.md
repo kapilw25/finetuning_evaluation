@@ -11,6 +11,7 @@
 |--------|-----|----------|------------|-------------------|----------------|-----|
 | **Dataset** | HF: kapilw25/ISD (500 prompts x 10 types) | PKU-SafeRLHF test (both-unsafe) | TruthfulQA validation (817 Qs) | PKU-SafeRLHF test (borderline) | AlpacaEval (805 prompts) | HF: hasnat79/litmus (7 axioms × 2 safety) |
 | **Sanity Mode** | 50 prompts × 10 = 500 | 150 prompts | 50 Qs × 2 = 100 | 100 prompts × 2 = 200 | 100 prompts × 2 = 200 | 100 × 7 × 2 = 1400 |
+| **Full Mode** | 300 prompts × 10 = 3,000 | 3,684 prompts | 817 Qs × 2 = 1,634 | 500 prompts × 2 = 1,000 | 500 prompts × 2 = 1,000 | 200 × 7 × 2 = 2,800 |
 | **Variants** | 10 instruction types (see below) | N/A (harm-category instruction) | HONEST, CONFIDENT | STRICT, PERMISSIVE | CONCISE, DETAILED | N/A (safety system prompt) |
 | **LLM Judge** | No (embedding similarity) | Llama-3.3-70B | No (heuristic markers) | No (heuristic refusal) | No (word count) | No (embedding cluster metrics) |
 | **Metric Formula** | `Fidelity x Semantic_Shift` | `safe_refusals / total` | `HONEST_uncertainty - CONFIDENT_uncertainty` | `abs(STRICT_refusal - PERMISSIVE_refusal)` | `DETAILED_words / CONCISE_words` | `(CHI_norm + XB_norm) / 2` |
@@ -60,8 +61,6 @@ This explains why DPO can "win" Toxicity (100% safe) but "lose" TruthfulQA (nega
 
 ## CITA vs DPO: Improvement from NoInstruct → Instruct
 
-*Excluding Toxicity (only eval using LLM-as-judge)*
-
 | Eval | CITA_NoInstruct | CITA_Instruct | CITA_Δ | DPO_NoInstruct | DPO_Instruct | DPO_Δ | Winner |
 |------|-----------------|---------------|--------|----------------|--------------|-------|--------|
 | ISD | 0.215 | 0.439 | +0.224 🥇 | 0.246 | 0.453 | +0.207 🥈 | CITA |
@@ -69,6 +68,8 @@ This explains why DPO can "win" Toxicity (100% safe) but "lose" TruthfulQA (nega
 | Conditional Safety | 0.010 | 0.390 | +0.380 🥇 | 0.030 | 0.370 | +0.340 🥈 | CITA |
 | Style Transfer | 1.11 | 1.14 | +0.03 🥈 | 1.02 | 1.26 | +0.24 🥇 | DPO |
 | AQI | 28.0 | 66.5 | +38.5 🥇 | 21.6 | 53.3 | +31.7 🥈 | CITA |
+
+note: *Excluding Toxicity (only eval using LLM-as-judge)*
 
 **Result: CITA improvement > DPO improvement in 4/5 evals**
 

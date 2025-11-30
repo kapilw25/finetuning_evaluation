@@ -1,0 +1,13 @@
+% =============================================================================
+% INTRODUCTION
+% =============================================================================
+
+\label{sec:introduction}
+
+Large language models (LLMs) achieve alignment through methods like RLHF~\cite{ouyang2022training} and DPO~\cite{rafailov2023direct}. However, these embed \textit{static} alignment into weights, lacking flexibility for dynamic policy changes. We propose CITA, enabling \textbf{instruction-driven alignment} at inference time.
+
+\noindent\textbf{Contributions:} (1) \textbf{CITA framework}---a unified loss combining SFT, DPO, and mandatory KL regularization for instruction-conditioned alignment; (2) \textbf{Instruction Switch Dataset (ISD)}---3,000 test cases isolating alignment instruction effects; (3) \textbf{Comprehensive evaluation} on 5 benchmarks showing CITA outperforms DPO in 4/5 metrics.
+
+\subsection{Related Work}
+
+\textbf{Instruction Tuning:} FLAN~\cite{wei2022finetuned} and T0~\cite{sanh2022multitask} showed instruction-following improves generalization. \textbf{Preference Optimization:} DPO~\cite{rafailov2023direct} eliminates reward models but lacks instruction-awareness. \textbf{Safety Alignment:} Constitutional AI~\cite{bai2022constitutional} and PKU-SafeRLHF~\cite{ji2024pku} focus on static safety. CITA bridges these by enabling dynamic, instruction-conditioned alignment. To evaluate this capability, we contribute the \textbf{Instruction Switch Dataset (ISD)}, a benchmark of 300 prompts $\times$ 10 instruction types (3,000 cases) designed to isolate alignment instruction effects from prompt variation.

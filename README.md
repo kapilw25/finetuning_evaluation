@@ -116,6 +116,21 @@ python comparative_study/05_evaluation/toxicity/evaluation.py \
 
 See [logs_training/iter13/observation.md](logs_training/iter13/observation.md) for latest evaluation results.
 
+## Paper (LaTeX)
+
+```bash
+# Install LaTeX (one-time)
+# macOS:
+brew install --cask mactex  # or: brew install basictex
+# Ubuntu/Debian:
+sudo apt-get install texlive-full
+
+# Compile PDF
+cd Overleaf_draft && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+```
+
+Output: `Overleaf_draft/main.pdf`
+
 ## Notes
 
 | Script | Interactive | Key Args |

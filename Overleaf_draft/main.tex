@@ -1,0 +1,135 @@
+% =============================================================================
+% CITA: Calibrated Instruction Tuning with Alignment
+% ACL 2025 - Two Column Format
+% =============================================================================
+
+\documentclass[11pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{times}  % ACL requires Times font
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{natbib}  % For proper citations
+\usepackage[breaklinks=true,colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+
+\title{CITA: Contrastive Instruction-Tuned Alignment\\for Dynamic LLM Alignment}
+
+\author{
+Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vinija Jain$^{3}$ \quad Aman Chadha$^{4}$ \quad Amitava Das$^{5}$ \\[0.5em]
+{\small $^{1}$San Jos\'{e} State University \quad $^{2}$GITA, India \quad $^{3}$Google AI}\\
+{\small $^{4}$Apple GenAI \quad $^{5}$BITS Pilani, Goa} \\[0.3em]
+{\small \texttt{kapilw25@gmail.com}}
+}
+
+\date{}
+
+\begin{document}
+
+\twocolumn[
+\maketitle
+
+% =============================================================================
+% ABSTRACT
+% =============================================================================
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} Instruction-Tuned Alignment, DPO, KL Regularization, LLM Safety
+
+\vspace{0.3em}
+\noindent\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation}\\
+\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+\vspace{1em}
+]
+
+% =============================================================================
+% INTRODUCTION
+% =============================================================================
+\section{Introduction}
+\input{sections/introduction}
+
+% =============================================================================
+% METHODOLOGY
+% =============================================================================
+\input{sections/methodology}
+
+% =============================================================================
+% ISD DATASET
+% =============================================================================
+\input{sections/isd_dataset}
+
+% =============================================================================
+% EXPERIMENTS
+% =============================================================================
+\section{Experiments}
+\input{sections/experiments}
+
+% =============================================================================
+% RESULTS
+% =============================================================================
+\section{Results}
+\input{sections/results}
+
+% =============================================================================
+% CONCLUSION
+% =============================================================================
+\section{Conclusion}
+\input{sections/conclusion}
+
+% =============================================================================
+% LIMITATIONS (ACL Required)
+% =============================================================================
+\section*{Limitations}
+
+\begin{itemize}
+    \item \textbf{Model Scale:} Experiments limited to Llama-3.1-8B; scaling behavior to 70B+ models remains untested.
+    \item \textbf{Language:} English-only evaluation; cross-lingual transfer unexplored.
+    \item \textbf{Instruction Types:} 10 predefined types may not cover all alignment scenarios.
+    \item \textbf{Evaluation:} TruthfulQA uses heuristic markers; human evaluation would strengthen claims.
+\end{itemize}
+
+% =============================================================================
+% RESOURCES
+% =============================================================================
+\section*{Resources}
+
+All artifacts are publicly available for reproducibility:
+
+\smallskip
+\noindent\textbf{Code:} \href{https://github.com/kapilw25/finetuning_evaluation}{github.com/kapilw25/finetuning\_evaluation}
+
+\smallskip
+\noindent\textbf{ISD Dataset:} \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{huggingface.co/.../ISD-Instruction-Switch-Dataset}
+
+\smallskip
+\noindent\textbf{Trained Models:} All 6 model variants available at \texttt{huggingface.co/kapilw25/}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Stage} & \textbf{NoInstruct} & \textbf{Instruct} \\
+\midrule
+SFT & \href{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct}{SFT-NI} & \href{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct}{SFT-I} \\
+DPO & \href{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct}{DPO-NI} & \href{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct}{DPO-I} \\
+CITA & \href{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct}{CITA-NI} & \href{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct}{CITA-I} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+% REFERENCES
+% =============================================================================
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

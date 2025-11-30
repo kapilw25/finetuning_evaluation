@@ -1,0 +1,149 @@
+% =============================================================================
+% METHODOLOGY
+% =============================================================================
+
+\label{sec:methodology}
+
+\section{Experiment Steps}
+
+\subsection{Phase 0: Setup for LLaMA 3}
+
+\begin{itemize}
+    \item \textbf{Model}: Llama-3.1-8B
+    \item \textbf{Format}: Chat-style prompts
+    \item \textbf{Tokenizer}: LLaMA-3 (BOS/EOS)
+\end{itemize}
+
+\subsection{Phase 1: Dataset Formatting}
+
+\subsubsection{Instruction-Tuned Format (ITA)}
+
+Template structure:
+\begin{small}
+\begin{verbatim}
+<user>
+### Alignment Instruction:
+${alignment_instruction}
+### User Prompt:
+${user_prompt}
+<assistant>
+${expected_response}
+\end{verbatim}
+\end{small}
+
+\subsubsection{Contrastive ITA}
+
+Adds rejected response for contrastive learning:
+\begin{small}
+\begin{verbatim}
+### Rejected Response (Bad):
+${rejected_response}
+### What's expected instead?
+${accepted_response}
+\end{verbatim}
+\end{small}
+
+\subsubsection{Example-Based Format (EBA)}
+
+DPO preference format: \texttt{\{prompt, chosen, rejected\}}
+
+\subsection{Phase 2: Training Configuration}
+
+\textbf{ITA Config:} Trainer/LoRA, 3-5 epochs, 2048 seq len, LR 2e-5, LoRA rank=8.
+
+\textbf{EBA Config:} DPOTrainer, beta=0.1, contrastive loss.
+
+% =============================================================================
+% UNIFIED TRAINING OBJECTIVE
+% =============================================================================
+
+\section{Unified Training Objective}
+\label{sec:unified_loss}
+
+CITA combines three loss components for instruction-conditioned alignment:
+
+\begin{equation}
+\mathcal{L}_{\text{unified}} = \mathcal{L}_{\text{SFT}} + \lambda_1 \mathcal{L}_{\text{DPO}} + \lambda_2 \mathcal{L}_{\text{KL}}
+\end{equation}
+
+\noindent\textbf{SFT Loss} (response quality):
+\begin{equation}
+\mathcal{L}_{\text{SFT}} = -\frac{1}{N} \sum_{(x, y^+)} \sum_{t=1}^{T} \log P_\pi(y_t^+ | x, y_{<t}^+)
+\end{equation}
+
+\noindent\textbf{DPO Loss} (preference alignment):
+\begin{equation}
+\mathcal{L}_{\text{DPO}} = -\frac{1}{N} \sum \log \sigma \left( \beta \cdot \Delta \right)
+\end{equation}
+where $\Delta = \log P_\pi(y^+|x) - \log P_\pi(y^-|x)$.
+
+\noindent\textbf{KL Loss} (stability, \textit{mandatory} in CITA):
+\begin{equation}
+\mathcal{L}_{\text{KL}} = \frac{1}{N} \sum_{(x,y)} \text{KL}[P_\pi \| P_{\text{ref}}]
+\end{equation}
+
+% =============================================================================
+% CITA
+% =============================================================================
+
+\section{CITA: Contrastive Instruction-Tuned Alignment}
+
+\subsection{Training Triplet}
+
+Let $I$ = instruction, $X$ = input, $Y^+$ = accepted, $Y^-$ = rejected.
+
+\subsection{CITA-KL Loss}
+
+\begin{equation}
+\mathcal{L}_{\text{CITA}} = -\log P^+ + \lambda \cdot \text{KL}[\pi_\theta \| \pi_0]
+\end{equation}
+
+where:
+\begin{equation}
+P^+ = \frac{\exp(\beta s^+)}{\exp(\beta s^+) + \exp(\beta s^-)}
+\end{equation}
+
+and $s^+ = \log \pi_\theta(Y^+ | I, X)$, $s^- = \log \pi_\theta(Y^- | I, X)$.
+
+\textbf{Parameters:}
+\begin{itemize}
+    \item $\pi_\theta$: fine-tuned model
+    \item $\pi_0$: base model
+    \item $\beta$: temperature
+    \item $\lambda$: KL weight (\textbf{mandatory})
+\end{itemize}
+
+\subsection{Gradient}
+
+\begin{equation}
+\nabla_\theta \mathcal{L} = -\beta [(1-P^+)\nabla s^+ - P^+\nabla s^-]
+\end{equation}
+
+\subsection{Benefits}
+
+\begin{itemize}
+    \item \textbf{Generalization}: Novel prompts
+    \item \textbf{Robustness}: Resists jailbreaks
+    \item \textbf{Calibration}: Avoids over-refusal
+    \item \textbf{Switching}: Adapts to instructions
+\end{itemize}
+
+\subsection{Comparison}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Property} & \textbf{PPO} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Reward Model & Yes & No & No \\
+Instr.-Aware & No & No & \textbf{Yes} \\
+Behavior Switch & No & No & \textbf{Yes} \\
+Mandatory KL & Opt. & Opt. & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\caption{Alignment method comparison.}
+\label{tab:method_comparison}
+\end{table}
+
