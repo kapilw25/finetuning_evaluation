@@ -112,7 +112,8 @@ def show_cached_data_menu(
 def show_mode_selection_menu(
     eval_name: str,
     sanity_desc: str,
-    full_desc: str
+    full_desc: str,
+    max_desc: Optional[str] = None
 ) -> Tuple[str, int]:
     """
     Show evaluation mode selection menu
@@ -121,28 +122,37 @@ def show_mode_selection_menu(
         eval_name: Name of evaluation (e.g., "ISD", "TRUTHFULQA")
         sanity_desc: Description for sanity check option
         full_desc: Description for full evaluation option
+        max_desc: Description for max available option (optional)
 
     Returns:
-        Tuple of (mode, num_samples) - mode is "sanity" or "full"
+        Tuple of (mode, num_samples) - mode is "sanity", "full", or "max"
     """
     print("\n" + "=" * 80)
     print(f"🎯 {eval_name} EVALUATION: Mode Selection")
     print("=" * 80)
     print("\nChoose evaluation mode:")
-    print(f"  1) Sanity Check  - {sanity_desc}")
+    print(f"  1) Sanity Check    - {sanity_desc}")
     print(f"  2) Full Evaluation - {full_desc}")
+    if max_desc:
+        print(f"  3) Max Available   - {max_desc}")
     print("=" * 80)
 
+    valid_choices = ["1", "2", "3"] if max_desc else ["1", "2"]
+    prompt = "\nEnter choice (1, 2, or 3): " if max_desc else "\nEnter choice (1 or 2): "
+
     while True:
-        choice = input("\nEnter choice (1 or 2): ").strip()
+        choice = input(prompt).strip()
         if choice == "1":
             print("\n✅ Running Sanity Check")
             return "sanity", None  # Caller sets actual number
         elif choice == "2":
             print("\n✅ Running Full Evaluation")
             return "full", None
+        elif choice == "3" and max_desc:
+            print("\n✅ Running Max Available")
+            return "max", None
         else:
-            print("❌ Invalid choice. Please enter 1 or 2.")
+            print(f"❌ Invalid choice. Please enter {', '.join(valid_choices)}.")
 
 
 def show_checkpoint_resume_menu(

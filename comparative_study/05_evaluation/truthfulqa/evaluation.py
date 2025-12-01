@@ -57,7 +57,8 @@ from eval_utils import (
     FireworksJudge, batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu,
-    get_model_colors, add_figure_legend
+    get_model_colors, add_figure_legend,
+    get_truthfulqa_max_samples
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -793,14 +794,22 @@ def main():
                 plot_filename="truthfulqa_comparison.png"
             )
 
-        # Interactive mode selection
+        # Interactive mode selection (defer HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
             eval_name="TRUTHFULQA",
             sanity_desc="50 questions × 2 variants = 100 test cases (~15 min)",
-            full_desc="817 questions × 2 variants = 1,634 test cases (~60 min)"
+            full_desc="817 questions × 2 variants = 1,634 test cases (~60 min)",
+            max_desc="100% of dataset (fetches from HF)"
         )
         args.mode = mode
-        args.samples = 50 if mode == "sanity" else None
+        if mode == "sanity":
+            args.samples = 50
+        elif mode == "full":
+            args.samples = None  # Full dataset
+        else:  # max - fetch dynamically
+            max_questions, max_cases, source = get_truthfulqa_max_samples()
+            print(f"   Max Available: {max_questions} Qs x 2 = {max_cases:,} [{source}]")
+            args.samples = max_questions
 
         # Determine sample count
         if args.samples:

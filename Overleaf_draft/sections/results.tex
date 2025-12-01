@@ -19,7 +19,7 @@ DPO\_NI & .246 & $-$.26 & .03 & 1.02 & 21.6 \\
 DPO\_I & \textbf{.453} & $-$.30 & .37 & \textbf{1.26} & 53.3 \\
 \bottomrule
 \end{tabular}
-\caption{Results across 5 benchmarks. TQA=TruthfulQA, CS=Cond. Safety, ST=Style Transfer. \textbf{Bold}=best per column.}
+\caption{Results across 5 benchmarks. TQA=TruthfulQA, CS=Cond. Safety, ST=Length Control. \textbf{Bold}=best per column.}
 \label{tab:overall_results}
 \end{table}
 
@@ -35,7 +35,7 @@ DPO\_I & \textbf{.453} & $-$.30 & .37 & \textbf{1.26} & 53.3 \\
 ISD & +0.224 & +0.207 & \textbf{CITA} \\
 TruthfulQA & +0.151 & $-$0.040 & \textbf{CITA} \\
 Cond. Safety & +0.380 & +0.340 & \textbf{CITA} \\
-Style Transfer & +0.03 & +0.24 & DPO \\
+Length Control & +0.03 & +0.24 & DPO \\
 AQI & +38.5 & +31.7 & \textbf{CITA} \\
 \bottomrule
 \end{tabular}
@@ -71,9 +71,9 @@ AQI & +38.5 & +31.7 & \textbf{CITA} \\
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/style_transfer_comparison.png}
-\caption{Style Transfer: Instruct variants adapt length better than NoInstruct variants.}
-\label{fig:style_transfer}
+\includegraphics[width=0.85\textwidth]{figures/evaluation/length_control_comparison.png}
+\caption{Length Control: Instruct variants adapt length better than NoInstruct variants.}
+\label{fig:length_control}
 \end{figure*}
 
 \begin{figure*}[!t]

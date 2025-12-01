@@ -2,7 +2,7 @@
 Shared Checkpoint System for All Evaluations
 
 Saves/loads inference results to avoid re-running expensive model generation.
-Supports: ISD, TruthfulQA, Conditional Safety, Style Transfer
+Supports: ISD, TruthfulQA, Conditional Safety, Length Control
 """
 
 import json
@@ -17,7 +17,7 @@ def get_checkpoint_dir(eval_type: str) -> Path:
         "isd": Path(__file__).parent.parent / "isd" / "checkpoints",
         "truthfulqa": Path(__file__).parent.parent / "truthfulqa" / "checkpoints",
         "conditional_safety": Path(__file__).parent.parent / "conditional_safety" / "checkpoints",
-        "style_transfer": Path(__file__).parent.parent / "style_transfer" / "checkpoints",
+        "length_control": Path(__file__).parent.parent / "length_control" / "checkpoints",
         "aqi": Path(__file__).parent.parent / "AQI" / "checkpoints",
     }
     checkpoint_dir = eval_dirs.get(eval_type, Path(__file__).parent.parent / "checkpoints")

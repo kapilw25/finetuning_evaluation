@@ -1,5 +1,5 @@
 """
-Style Transfer Evaluation with Instruction Variants
+Length Control Evaluation with Instruction Variants
 
 Tests: Does model follow length/style instructions?
 
@@ -16,11 +16,11 @@ Dataset: AlpacaEval (500 questions)
 
 Usage:
     # Sanity check (100 prompts)
-    python comparative_study/05_evaluation/style_transfer/evaluation.py \
+    python comparative_study/05_evaluation/length_control/evaluation.py \
     --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
 
     # Full evaluation (500 prompts)
-    python comparative_study/05_evaluation/style_transfer/evaluation.py \
+    python comparative_study/05_evaluation/length_control/evaluation.py \
     --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct \
     --mode full
 """
@@ -49,7 +49,8 @@ from eval_utils import (
     batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
-    get_model_colors, filter_model_keys
+    get_model_colors, filter_model_keys,
+    get_length_control_max_samples
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -85,7 +86,7 @@ class StyleModelResult:
 # CONFIGURATION
 # =============================================================================
 
-EVAL_OUTPUT_DIR = project_root / "outputs" / "Style_Transfer_Evaluation"
+EVAL_OUTPUT_DIR = project_root / "outputs" / "Length_Control_Evaluation"
 EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Instruction variants
@@ -170,18 +171,18 @@ def generate_responses(
     """Generate responses for all prompts with batch processing and checkpointing"""
 
     # Check for existing checkpoint
-    checkpoint = load_checkpoint(model_key, eval_type="style_transfer", variant=variant)
+    checkpoint = load_checkpoint(model_key, eval_type="length_control", variant=variant)
 
     if checkpoint and checkpoint['completed']:
         choice = show_checkpoint_resume_menu(
             model_key=f"{model_key}/{variant}",
             n_responses=checkpoint['n_completed'],
-            eval_type="Style Transfer"
+            eval_type="Length Control"
         )
         if choice == "1":
             return [StyleResponse(**r) for r in checkpoint['responses']]
         else:  # choice == "2"
-            delete_checkpoint(model_key, eval_type="style_transfer", variant=variant)
+            delete_checkpoint(model_key, eval_type="length_control", variant=variant)
             checkpoint = None
 
     # Resume from checkpoint if exists
@@ -230,7 +231,7 @@ def generate_responses(
             model_key,
             [asdict(r) for r in temp_responses],
             len(prompts),
-            eval_type="style_transfer",
+            eval_type="length_control",
             variant=variant,
             completed=False
         )
@@ -270,7 +271,7 @@ def generate_responses(
         model_key,
         [asdict(r) for r in responses],
         len(prompts),
-        eval_type="style_transfer",
+        eval_type="length_control",
         variant=variant,
         completed=True
     )
@@ -466,7 +467,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
                         hatch='///', alpha=0.7, label='Valid-only')
 
     ax.set_ylabel('Length Adaptation Score', fontsize=14, fontweight='bold')
-    ax.set_title('Style Transfer: Adaptation Score - Overall vs Valid-Only (Higher = Better)', fontsize=16, fontweight='bold', pad=15)
+    ax.set_title('Length Control: Adaptation Score - Overall vs Valid-Only (Higher = Better)', fontsize=16, fontweight='bold', pad=15)
     max_adapt = max(max(adaptation_sorted), max(valid_adaptation_sorted)) if adaptation_sorted else 3.0
     ax.set_ylim(0, max_adapt * 1.4)
 
@@ -493,7 +494,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
                 f'{score_v:.2f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
     plt.tight_layout()
-    plot_path = output_dir / "style_transfer_comparison.png"
+    plot_path = output_dir / "length_control_comparison.png"
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     print(f"Saved plot: {plot_path}")
 
@@ -510,7 +511,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Style Transfer Evaluation")
+    parser = argparse.ArgumentParser(description="Length Control Evaluation")
     parser.add_argument("--mode", choices=["sanity", "full"], default="sanity",
                        help="sanity (100 prompts) or full (500 prompts)")
     parser.add_argument("--models", nargs="+", default=None,
@@ -524,13 +525,13 @@ def main():
 
     # Setup logging
     log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-        run_name="style_transfer_evaluation",
+        run_name="length_control_evaluation",
         project_root=project_root
     )
 
     try:
         # Cleanup handler
-        checkpoint_dir = get_checkpoint_dir("style_transfer")
+        checkpoint_dir = get_checkpoint_dir("length_control")
         results_dir = EVAL_OUTPUT_DIR
 
         checkpoints_exist = checkpoint_dir.exists() and any(
@@ -542,20 +543,28 @@ def main():
             show_cached_data_menu(
                 checkpoint_dir=checkpoint_dir,
                 results_dir=results_dir,
-                eval_type="Style Transfer",
+                eval_type="Length Control",
                 checkpoint_suffix="_checkpoint.json",
                 metrics_filename="metrics.json",
-                plot_filename="style_transfer_comparison.png"
+                plot_filename="length_control_comparison.png"
             )
 
-        # Interactive mode selection
+        # Interactive mode selection (defer HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
-            eval_name="STYLE TRANSFER",
+            eval_name="LENGTH CONTROL",
             sanity_desc="100 prompts x 2 variants = 200 test cases (~15 min)",
-            full_desc="500 prompts x 2 variants = 1,000 test cases (~60 min)"
+            full_desc="500 prompts x 2 variants = 1,000 test cases (~60 min)",
+            max_desc="100% of dataset (fetches from HF)"
         )
         args.mode = mode
-        args.samples = 100 if mode == "sanity" else 500
+        if mode == "sanity":
+            args.samples = 100
+        elif mode == "full":
+            args.samples = 500
+        else:  # max - fetch dynamically
+            max_prompts, max_cases, source = get_length_control_max_samples()
+            print(f"   Max Available: {max_prompts} prompts x 2 = {max_cases:,} [{source}]")
+            args.samples = max_prompts
 
         # Determine sample count
         if args.samples:
@@ -566,7 +575,7 @@ def main():
             max_samples = 500
 
         print(f"\n{'=' * 80}")
-        print(f"Style Transfer Evaluation")
+        print(f"Length Control Evaluation")
         print(f"{'=' * 80}")
         print(f"Mode: {args.mode}")
         print(f"Samples: {max_samples}")

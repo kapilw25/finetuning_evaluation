@@ -81,17 +81,14 @@ All evals are interactive - select "full" when prompted.
 # ISD (300 prompts × 10 instructions)
 python comparative_study/05_evaluation/isd/evaluation_embedding.py
 
-# Toxicity (3,684 both-unsafe prompts)
-python comparative_study/05_evaluation/toxicity/evaluation.py
-
 # TruthfulQA (817 questions × 2 variants)
 python comparative_study/05_evaluation/truthfulqa/evaluation.py
 
 # Conditional Safety (500 prompts × 2 variants)
 python comparative_study/05_evaluation/conditional_safety/evaluation.py
 
-# Style Transfer (500 prompts × 2 variants)
-python comparative_study/05_evaluation/style_transfer/evaluation.py
+# Length Control (500 prompts × 2 variants)
+python comparative_study/05_evaluation/length_control/evaluation.py
 
 # AQI (200 samples per category)
 python comparative_study/05_evaluation/AQI/evaluation.py
@@ -99,7 +96,7 @@ python comparative_study/05_evaluation/AQI/evaluation.py
 
 ### With specific models:
 ```bash
-python comparative_study/05_evaluation/toxicity/evaluation.py \
+python comparative_study/05_evaluation/isd/evaluation_embedding.py \
     --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
 ```
 

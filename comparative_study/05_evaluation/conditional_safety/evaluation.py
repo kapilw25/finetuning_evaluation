@@ -51,7 +51,8 @@ from eval_utils import (
     FireworksJudge, batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
-    get_model_colors, add_figure_legend, filter_model_keys
+    get_model_colors, add_figure_legend, filter_model_keys,
+    get_conditional_safety_max_samples
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -770,14 +771,22 @@ def main():
                 plot_filename="conditional_safety_comparison.png"
             )
 
-        # Interactive mode selection
+        # Interactive mode selection (defer HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
             eval_name="CONDITIONAL SAFETY",
             sanity_desc="100 prompts x 2 variants = 200 test cases (~15 min)",
-            full_desc="500 prompts x 2 variants = 1,000 test cases (~60 min)"
+            full_desc="500 prompts x 2 variants = 1,000 test cases (~60 min)",
+            max_desc="100% of dataset (fetches from HF)"
         )
         args.mode = mode
-        args.samples = 100 if mode == "sanity" else 500
+        if mode == "sanity":
+            args.samples = 100
+        elif mode == "full":
+            args.samples = 500
+        else:  # max - fetch dynamically
+            max_prompts, max_cases, source = get_conditional_safety_max_samples()
+            print(f"   Max Available: {max_prompts:,} prompts x 2 = {max_cases:,} [{source}]")
+            args.samples = max_prompts
 
         # Determine sample count
         if args.samples:

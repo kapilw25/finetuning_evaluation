@@ -34,7 +34,7 @@ from .generation import (
 )
 
 from .prompts import (
-    get_toxicity_prompt,
+    # get_toxicity_prompt,  # LEGACY - Toxicity eval excluded from final comparison
     get_harmlessness_prompt,
     get_helpfulness_prompt,
     get_pairwise_prompt
@@ -62,6 +62,15 @@ from .cli_menus import (
     show_mode_selection_menu,
     show_checkpoint_resume_menu,
     filter_model_keys
+)
+
+from .dataset_info import (
+    get_isd_max_samples,
+    get_truthfulqa_max_samples,
+    get_conditional_safety_max_samples,
+    get_length_control_max_samples,
+    get_aqi_max_samples,
+    get_all_max_samples
 )
 
 from .plotting import (
@@ -92,7 +101,7 @@ __all__ = [
     'format_chat_messages',
     # LLM-as-judge
     'FireworksJudge',
-    'get_toxicity_prompt',
+    # 'get_toxicity_prompt',  # LEGACY
     'get_harmlessness_prompt',
     'get_helpfulness_prompt',
     'get_pairwise_prompt',
@@ -114,6 +123,13 @@ __all__ = [
     'show_mode_selection_menu',
     'show_checkpoint_resume_menu',
     'filter_model_keys',
+    # Dataset info
+    'get_isd_max_samples',
+    'get_truthfulqa_max_samples',
+    'get_conditional_safety_max_samples',
+    'get_length_control_max_samples',
+    'get_aqi_max_samples',
+    'get_all_max_samples',
     # Plotting
     'get_model_color',
     'get_model_colors',

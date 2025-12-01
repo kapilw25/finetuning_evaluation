@@ -61,7 +61,8 @@ from eval_utils import (
     batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
-    get_model_colors, filter_model_keys
+    get_model_colors, filter_model_keys,
+    get_aqi_max_samples
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -695,13 +696,18 @@ def main():
                 plot_filename="aqi_comparison.png"
             )
 
-        # Interactive mode selection
+        # Interactive mode selection (defer HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
             eval_name="AQI",
             sanity_desc="100 samples per axiom/safety = 1400 total (~50 min per model)",
-            full_desc="200 samples per axiom/safety = 2800 total (~100 min per model)"
+            full_desc="200 samples per axiom/safety = 2800 total (~100 min per model)",
+            max_desc="100% of dataset (fetches from HF)"
         )
         args.mode = mode
+        if mode == "max":
+            max_total, max_per_axiom, axiom_counts, source = get_aqi_max_samples()
+            print(f"   Max Available: {max_total:,} samples ({len(axiom_counts)} axioms) [{source}]")
+            args.samples = max_per_axiom  # Use min per axiom for balanced sampling
 
         # Determine sample count
         if args.samples:

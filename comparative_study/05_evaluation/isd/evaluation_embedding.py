@@ -64,7 +64,8 @@ from eval_utils import (
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     get_model_color, get_model_colors, get_legend_elements, add_figure_legend,
-    filter_model_keys
+    filter_model_keys,
+    get_isd_max_samples
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -531,13 +532,21 @@ def main():
                 plot_filename="isd_comparison.png"
             )
 
-        # Interactive mode selection
+        # Interactive mode selection (max_desc shown without HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
             eval_name="ISD",
             sanity_desc="50 prompts x 10 instructions = 500 test cases (~15 min)",
-            full_desc="300 prompts x 10 instructions = 3,000 test cases (~60 min)"
+            full_desc="300 prompts x 10 instructions = 3,000 test cases (~60 min)",
+            max_desc="100% of dataset (fetches from HF)"
         )
-        args.num_prompts = 50 if mode == "sanity" else 300
+        if mode == "sanity":
+            args.num_prompts = 50
+        elif mode == "full":
+            args.num_prompts = 300
+        else:  # max - fetch dynamically
+            max_prompts, max_cases, source = get_isd_max_samples()
+            print(f"   Max Available: {max_prompts} prompts x 10 = {max_cases:,} [{source}]")
+            args.num_prompts = max_prompts
 
         # Filter models if specified
         model_keys = filter_model_keys(args.models, MODELS, MODEL_KEYS)
