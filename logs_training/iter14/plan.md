@@ -3,15 +3,15 @@
 ## Models
 SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct, CITA_NoInstruct, CITA_Instruct
 
-## Sample Sizes & Timing (Dec 2-3, 2025)
+## Sample Sizes & Duration
 
-| Eval | Samples | Batch | Status | Elapsed | ETA | Total |
-|------|---------|-------|--------|---------|-----|-------|
-| TruthfulQA | 1,634 | 8 | ✅ DONE | 3h 55m | - | **3h 55m** |
-| Conditional Safety | 2,444 | 8 | ✅ DONE | 6h 52m | - | **6h 52m** |
-| ISD | 3,000 | 8 | 🔄 6/6 models | 13h 47m | ~2h 23m | ~16h 10m |
-| AQI | 2,800 | 4 | 🔄 6/6 models | 8h 27m | ~1h 36m | ~10h 3m |
-| Length Control | 1,610 | 8 | 🔄 4/6 models | 6h 42m | ~3h 48m | ~10h 30m |
+| Eval | Samples | Batch | Duration |
+|------|---------|-------|----------|
+| TruthfulQA | 1,634 | 8 | **3h 57m** |
+| Conditional Safety | 2,444 | 8 | **6h 53m** |
+| ISD | 3,000 | 8 | **16h 15m** |
+| AQI | 2,800 | 4 | **10h 3m** |
+| Length Control | 1,610 | 8 | **10h 24m** |
 
 **Note**: AQI uses Full mode (2,800) instead of Max (20,439) to keep sample sizes proportional (~1,600-3,000 range) and avoid 72-hour bottleneck.
 

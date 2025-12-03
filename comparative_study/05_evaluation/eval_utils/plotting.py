@@ -384,8 +384,10 @@ def generate_improvement_radar_chart(
     for method in methods:
         method_data[method] = method_data[method] + method_data[method][:1]
 
-    # Create figure
-    fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(polar=True))
+    # Create figure - wider to accommodate table on the right
+    fig, ax = plt.subplots(figsize=(14, 10), subplot_kw=dict(polar=True))
+    # Center the radar
+    ax.set_position([0.1, 0.15, 0.55, 0.75])
 
     # Plot each method
     for method in methods:
@@ -435,11 +437,7 @@ def generate_improvement_radar_chart(
         winner = max(methods, key=lambda m: deltas.get(m, float('-inf')))
         wins[winner] += 1
 
-    summary = " | ".join([f"{m}: {wins[m]}/{num_evals}" for m in methods])
-    fig.text(0.5, 0.02, f"Wins: {summary}", ha='center', fontsize=12, fontweight='bold',
-             bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='orange', alpha=0.9))
-
-    # Add delta table showing all values for all methods
+    # Add delta table showing all values for all methods (right side, outside radar)
     # Build table data: rows=evals, cols=methods
     table_data = []
     for eval_name in eval_names:
@@ -450,9 +448,9 @@ def generate_improvement_radar_chart(
             row.append(f'{val:+.3f}')
         table_data.append(row)
 
-    # Add table to figure (bottom-left)
-    table = fig.add_axes([0.02, 0.12, 0.25, 0.22])  # [left, bottom, width, height]
-    table.axis('off')
+    # Add table to figure (right bottom, outside the radar)
+    table_ax = fig.add_axes([0.68, 0.15, 0.30, 0.35])  # [left, bottom, width, height]
+    table_ax.axis('off')
 
     # Create table
     cell_colors = []
@@ -468,7 +466,7 @@ def generate_improvement_radar_chart(
                 row_colors.append('white')
         cell_colors.append(row_colors)
 
-    tbl = table.table(
+    tbl = table_ax.table(
         cellText=table_data,
         rowLabels=eval_names,
         colLabels=methods,
@@ -477,13 +475,17 @@ def generate_improvement_radar_chart(
         cellLoc='center'
     )
     tbl.auto_set_font_size(False)
-    tbl.set_fontsize(8)
-    tbl.scale(1.2, 1.4)
+    tbl.set_fontsize(9)
+    tbl.scale(1.0, 1.5)  # Reduced width scale from 1.3 to 1.0
 
     # Table title
-    table.set_title('Δ = Instruct - NoInstruct', fontsize=9, fontweight='bold', pad=2)
+    table_ax.set_title('Δ = Instruct - NoInstruct', fontsize=11, fontweight='bold', pad=5)
 
-    plt.tight_layout()
+    # Add winner summary at bottom with boundary padding
+    summary = " | ".join([f"{m}: {wins[m]}/{num_evals}" for m in methods])
+    fig.text(0.82, 0.05, f"Wins: {summary}", ha='center', fontsize=12, fontweight='bold',
+             bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='orange', alpha=0.9))
+
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
