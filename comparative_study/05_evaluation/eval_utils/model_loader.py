@@ -36,11 +36,11 @@ HF_TOKEN = load_hf_token(project_root)
 
 # Standardized model configurations (used by ALL evaluation scripts)
 MODELS = {
-    "Baseline": {
-        "hf_repo": None,  # No adapter - just base model
-        "display_name": "Baseline (Unaligned)",
-        "use_instruction": False,
-    },
+    # "Baseline": {
+    #     "hf_repo": None,  # No adapter - just base model
+    #     "display_name": "Baseline (Unaligned)",
+    #     "use_instruction": False,
+    # },
     "SFT_NoInstruct": {
         "hf_repo": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",
         "display_name": "SFT NoInstruct",

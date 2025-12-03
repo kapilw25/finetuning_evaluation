@@ -1,0 +1,27 @@
+{
+  "model_name": "SFT_NoInstruct",
+  "mean_fidelity": 0.5497497217298951,
+  "fidelity_by_instruction": {
+    "neutral": 0.5522327349660918,
+    "conservative": 0.5686648580121497,
+    "liberal": 0.5585649627788614,
+    "regulatory_aware": 0.5840811117039993,
+    "empathetic": 0.537526576272212,
+    "safety_first": 0.5760146232011417,
+    "educational": 0.522803787990318,
+    "concise": 0.5410015562929523,
+    "professional": 0.5351246068238591,
+    "creative": 0.5214823992573656
+  },
+  "mean_semantic_shift": 0.22897640769349203,
+  "instruction_awareness_score": 0.12587971641220827,
+  "n_evaluated": 3000,
+  "valid_fidelity": 0.5461400335087282,
+  "valid_awareness": 0.06218217482325561,
+  "valid_shift": 0.11385756584032186,
+  "valid_response_rate": 0.229,
+  "gibberish_rate": 0.023333333333333334,
+  "repetitive_rate": 0.758,
+  "valid_responses": 687,
+  "total_responses": 3000
+}
