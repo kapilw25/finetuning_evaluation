@@ -63,11 +63,10 @@ from eval_utils import (
     batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
-    get_model_color, get_model_colors, get_legend_elements, add_figure_legend,
     filter_model_keys,
-    get_isd_max_samples
+    get_isd_max_samples,
+    generate_comparison_plots
 )
-from eval_utils.plotting import save_figure_dual_format
 from eval_utils.checkpoint import get_checkpoint_dir
 
 # Add isd utils path
@@ -391,103 +390,43 @@ def run_isd_evaluation(
 # PLOTTING FUNCTIONS
 # =============================================================================
 
-def generate_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate comparison plot with Overall vs Valid-only bars"""
-    import matplotlib.pyplot as plt
-    import numpy as np
-
+def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
+    """Generate ISD comparison plot using shared plotting function"""
     if len(all_metrics) < 2:
         print("Need at least 2 models for comparison plots")
         return
 
     models = list(all_metrics.keys())
-    awareness_scores = [all_metrics[m].instruction_awareness_score for m in models]
+    overall_scores = [all_metrics[m].instruction_awareness_score for m in models]
 
     # Get valid-only scores from stratified metrics
-    valid_awareness = []
+    valid_scores = []
     valid_rates = []
     for m in models:
         if stratified_metrics and m in stratified_metrics:
             va = stratified_metrics[m].get('valid_awareness')
             vr = stratified_metrics[m].get('valid_rate', 1.0)
-            valid_awareness.append(va if va is not None else awareness_scores[models.index(m)])
+            valid_scores.append(va if va is not None else all_metrics[m].instruction_awareness_score)
             valid_rates.append(vr)
         else:
-            valid_awareness.append(awareness_scores[models.index(m)])
+            valid_scores.append(all_metrics[m].instruction_awareness_score)
             valid_rates.append(1.0)
 
-    # Sort by overall awareness (ascending = best on right)
-    sorted_indices = np.argsort(awareness_scores)
-    models_sorted = [models[i] for i in sorted_indices]
-    awareness_sorted = [awareness_scores[i] for i in sorted_indices]
-    valid_awareness_sorted = [valid_awareness[i] for i in sorted_indices]
-    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
-
-    # Get colors using shared utility
-    colors_sorted = get_model_colors(models_sorted)
-
-    # Single plot with Overall and Valid-only bars
-    fig, ax = plt.subplots(figsize=(14, 7))
-
-    x = np.arange(len(models_sorted))
-    bar_width = 0.35
-
-    # Get std for error bars (use fidelity std as proxy if available)
-    std_sorted = []
-    for m in models_sorted:
-        if stratified_metrics and m in stratified_metrics:
-            # Use difference between overall and valid as error estimate
-            overall = all_metrics[m].instruction_awareness_score
-            valid = stratified_metrics[m].get('valid_awareness', overall)
-            std_sorted.append(abs(overall - valid) if valid else 0)
-        else:
-            std_sorted.append(0)
-
-    # Overall bars (solid) with error bars
-    bars_overall = ax.bar(x - bar_width/2, awareness_sorted, bar_width,
-                          color=colors_sorted, edgecolor='black', linewidth=1.5, label='Overall',
-                          yerr=std_sorted, capsize=3, error_kw={'linewidth': 1.5})
-
-    # Valid-only bars (hatched)
-    bars_valid = ax.bar(x + bar_width/2, valid_awareness_sorted, bar_width,
-                        color=colors_sorted, edgecolor='black', linewidth=1.5,
-                        hatch='///', alpha=0.7, label='Valid-only')
-
-    ax.set_ylabel('Instruction Awareness Score', fontsize=14, fontweight='bold')
-    ax.set_title('ISD: Instruction Awareness - Overall vs Valid-Only (Higher = Better)', fontsize=16, fontweight='bold', pad=15)
-    max_aware = max(max(awareness_sorted), max(valid_awareness_sorted)) if awareness_sorted else 0.5
-    ax.set_ylim(0, max_aware * 1.4)
-
-    # Add Perfect score annotation (text instead of line for better scaling)
-    ax.text(0.98, 0.98, 'Perfect = 1.0', transform=ax.transAxes,
-            fontsize=10, fontweight='bold', ha='right', va='top',
-            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
-    ax.set_xticks(x)
-    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
-    ax.grid(axis='y', alpha=0.3, linestyle='--')
-    ax.legend(loc='upper left', fontsize=10)
-
-    # Add value labels
-    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(bars_overall, bars_valid,
-                                                                   awareness_sorted, valid_awareness_sorted, valid_rates_sorted)):
-        # Overall label
-        ax.text(bar_o.get_x() + bar_o.get_width()/2., bar_o.get_height() + 0.005,
-                f'{score_o:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        # Valid-only label with valid rate
-        ax.text(bar_v.get_x() + bar_v.get_width()/2., bar_v.get_height() + 0.005,
-                f'{score_v:.3f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
-
-    plt.tight_layout()
-    plot_path = output_dir / "isd_comparison"
-    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
-    print(f"Saved plot:")
-    print(f"  PDF: {pdf_path}")
-    print(f"  PNG: {png_path}")
-
-    # Print ranking
-    print(f"\nInstruction Awareness Ranking (Best to Worst):")
-    for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(awareness_sorted)), 1):
-        print(f"   {rank}. {model}: {score:.3f}")
+    # Use shared plotting function
+    generate_comparison_plots(
+        models=models,
+        overall_scores=overall_scores,
+        valid_scores=valid_scores,
+        valid_rates=valid_rates,
+        output_dir=output_dir,
+        plot_filename="isd_comparison",
+        ylabel="Instruction Awareness Score",
+        title="ISD: Instruction Awareness - Overall vs Valid-Only (Higher = Better)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        score_format=".3f",
+        higher_is_better=True
+    )
 
 
 # =============================================================================
@@ -694,7 +633,7 @@ def main():
             print("\n" + "=" * 80)
             print("Generating Comparison Plots")
             print("=" * 80)
-            generate_comparison_plots(all_metrics, output_dir, all_stratified)
+            generate_isd_comparison_plots(all_metrics, output_dir, all_stratified)
 
         print("\n" + "=" * 80)
         print("ISD Evaluation Complete")

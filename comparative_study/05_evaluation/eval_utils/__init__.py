@@ -77,7 +77,8 @@ from .plotting import (
     get_model_color,
     get_model_colors,
     get_legend_elements,
-    add_figure_legend
+    add_figure_legend,
+    generate_comparison_plots
 )
 
 from logging_utils import setup_training_logger, restore_logging
@@ -135,6 +136,7 @@ __all__ = [
     'get_model_colors',
     'get_legend_elements',
     'add_figure_legend',
+    'generate_comparison_plots',
     # Logging
     'setup_training_logger',
     'restore_logging',

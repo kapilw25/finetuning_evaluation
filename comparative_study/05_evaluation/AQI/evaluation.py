@@ -62,7 +62,8 @@ from eval_utils import (
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     get_model_colors, filter_model_keys,
-    get_aqi_max_samples
+    get_aqi_max_samples,
+    generate_comparison_plots as _generate_comparison_plots  # shared plotting function
 )
 from eval_utils.plotting import save_figure_dual_format
 from eval_utils.checkpoint import get_checkpoint_dir
@@ -492,7 +493,7 @@ def generate_comparison_plots(
     stratified_metrics: Dict[str, Dict] = None,
     per_axiom_results: Dict[str, Dict] = None
 ):
-    """Generate comparison plots for AQI scores with Overall vs Valid-only bars and per-axiom breakdown"""
+    """Generate comparison plots for AQI scores using shared plotting function (no error bars)"""
     import matplotlib.pyplot as plt
 
     if len(all_results) < 2:
@@ -515,66 +516,23 @@ def generate_comparison_plots(
             valid_aqi.append(aqi_scores[models.index(m)])
             valid_rates.append(1.0)
 
-    # Sort by overall AQI (ascending = best on right)
-    sorted_indices = np.argsort(aqi_scores)
-    models_sorted = [models[i] for i in sorted_indices]
-    aqi_sorted = [aqi_scores[i] for i in sorted_indices]
-    valid_aqi_sorted = [valid_aqi[i] for i in sorted_indices]
-    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
-
-    # Get colors using shared utility
-    colors_sorted = get_model_colors(models_sorted)
-
-    # Plot 1: Overall AQI with Overall vs Valid-only bars
-    fig, ax = plt.subplots(figsize=(14, 7))
-
-    x = np.arange(len(models_sorted))
-    bar_width = 0.35
-
-    # Overall bars (solid)
-    bars_overall = ax.bar(x - bar_width/2, aqi_sorted, bar_width,
-                          color=colors_sorted, edgecolor='black', linewidth=1.5, label='Overall')
-
-    # Valid-only bars (hatched)
-    bars_valid = ax.bar(x + bar_width/2, valid_aqi_sorted, bar_width,
-                        color=colors_sorted, edgecolor='black', linewidth=1.5,
-                        hatch='///', alpha=0.7, label='Valid-only')
-
-    ax.set_ylabel('AQI Score [0-100]', fontsize=14, fontweight='bold')
-    ax.set_title('AQI: Alignment Quality Index - Overall vs Valid-Only (Higher = Better)',
-                 fontsize=16, fontweight='bold', pad=15)
-    ax.set_ylim(0, 100)
-
-    # Add Perfect score annotation
-    ax.text(0.98, 0.98, 'Perfect = 100', transform=ax.transAxes,
-            fontsize=10, fontweight='bold', ha='right', va='top',
-            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
-    ax.set_xticks(x)
-    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
-    ax.grid(axis='y', alpha=0.3, linestyle='--')
-    ax.legend(loc='upper left', fontsize=10)
-
-    # Add value labels
-    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(bars_overall, bars_valid,
-                                                                   aqi_sorted, valid_aqi_sorted, valid_rates_sorted)):
-        # Overall label
-        ax.text(bar_o.get_x() + bar_o.get_width()/2., bar_o.get_height() + 1,
-                f'{score_o:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        # Valid-only label with valid rate
-        ax.text(bar_v.get_x() + bar_v.get_width()/2., bar_v.get_height() + 1,
-                f'{score_v:.1f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
-
-    plt.tight_layout()
-    plot_path = output_dir / "aqi_comparison"
-    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
-    print(f"Saved plot:")
-    print(f"  PDF: {pdf_path}")
-    print(f"  PNG: {png_path}")
-
-    # Print ranking
-    print(f"\nAQI Ranking (Best to Worst):")
-    for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(aqi_sorted)), 1):
-        print(f"   {rank}. {model}: {score:.2f}")
+    # Use shared plotting function (no error bars for cleaner visuals)
+    _generate_comparison_plots(
+        models=models,
+        overall_scores=aqi_scores,
+        valid_scores=valid_aqi,
+        valid_rates=valid_rates,
+        output_dir=output_dir,
+        plot_filename="aqi_comparison",
+        ylabel="AQI Score [0-100]",
+        title="AQI: Alignment Quality Index - Overall vs Valid-Only (Higher = Better)",
+        perfect_score=100.0,
+        perfect_label="Perfect = 100",
+        ylim_max=100,
+        ylim_min=0,
+        score_format=".1f",
+        higher_is_better=True
+    )
 
     # Plot 2: Per-axiom breakdown (if per_axiom_results provided)
     if per_axiom_results and len(per_axiom_results) >= 2:

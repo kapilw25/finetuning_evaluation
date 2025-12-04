@@ -3,8 +3,8 @@
     "model_name": "DPO_NoInstruct",
     "total_prompts": 300,
     "total_test_cases": 3000,
-    "evaluation_time": 9672.713371515274,
-    "timestamp": "2025-12-03T00:13:31.481628"
+    "evaluation_time": 3.110769033432007,
+    "timestamp": "2025-12-04T21:22:22.595148"
   },
   "responses": [
     {

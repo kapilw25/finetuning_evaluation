@@ -127,6 +127,165 @@ def add_figure_legend(fig, models: List[str], ncol: int = 4, fontsize: int = 10)
 
 
 # =============================================================================
+# SHARED COMPARISON PLOT (Overall vs Valid-Only bars)
+# =============================================================================
+
+def generate_comparison_plots(
+    models: List[str],
+    overall_scores: List[float],
+    valid_scores: List[float],
+    valid_rates: List[float],
+    output_dir: Path,
+    plot_filename: str,
+    ylabel: str,
+    title: str,
+    perfect_score: float = 1.0,
+    perfect_label: str = "Perfect = 1.0",
+    ylim_max: Optional[float] = None,
+    ylim_min: float = 0,
+    reference_line: Optional[float] = None,
+    reference_label: str = "Reference",
+    score_format: str = ".3f",
+    higher_is_better: bool = True
+) -> Tuple[str, str]:
+    """
+    Shared comparison plot generator for all evaluation scripts.
+
+    Creates a bar chart with Overall (solid) vs Valid-only (hatched) bars.
+    No error bars - the two bars already convey variability.
+
+    Args:
+        models: List of model names
+        overall_scores: Overall scores for each model
+        valid_scores: Valid-only scores for each model
+        valid_rates: Valid response rates for each model (0-1)
+        output_dir: Directory to save plot
+        plot_filename: Filename without extension (e.g., "isd_comparison")
+        ylabel: Y-axis label
+        title: Plot title
+        perfect_score: Perfect score value for annotation
+        perfect_label: Label for perfect score annotation
+        ylim_max: Maximum y-axis limit (auto if None)
+        ylim_min: Minimum y-axis limit (default 0)
+        reference_line: Y value for horizontal reference line (optional)
+        reference_label: Label for reference line
+        score_format: Format string for score labels (e.g., ".3f", ".2f", ".1f")
+        higher_is_better: If True, sort ascending (best on right)
+
+    Returns:
+        Tuple of (pdf_path, png_path)
+    """
+    if len(models) < 2:
+        print("Need at least 2 models for comparison plots")
+        return None, None
+
+    # Sort by overall score (ascending = best on right for higher_is_better)
+    sorted_indices = np.argsort(overall_scores)
+    if not higher_is_better:
+        sorted_indices = sorted_indices[::-1]
+
+    models_sorted = [models[i] for i in sorted_indices]
+    overall_sorted = [overall_scores[i] for i in sorted_indices]
+    valid_sorted = [valid_scores[i] for i in sorted_indices]
+    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
+
+    # Get colors using shared utility
+    colors_sorted = get_model_colors(models_sorted)
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(14, 7))
+
+    x = np.arange(len(models_sorted))
+    bar_width = 0.35
+
+    # Overall bars (solid) - NO error bars
+    bars_overall = ax.bar(x - bar_width/2, overall_sorted, bar_width,
+                          color=colors_sorted, edgecolor='black', linewidth=1.5,
+                          label='Overall')
+
+    # Valid-only bars (hatched)
+    bars_valid = ax.bar(x + bar_width/2, valid_sorted, bar_width,
+                        color=colors_sorted, edgecolor='black', linewidth=1.5,
+                        hatch='///', alpha=0.7, label='Valid-only')
+
+    ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
+    ax.set_title(title, fontsize=16, fontweight='bold', pad=15)
+
+    # Set y-axis limits
+    all_values = overall_sorted + valid_sorted
+    if ylim_max is None:
+        ylim_max = max(all_values) * 1.4 if all_values else 1.0
+
+    # Handle negative values
+    if min(all_values) < 0:
+        y_margin = max(abs(min(all_values)), abs(max(all_values))) * 0.4
+        ax.set_ylim(min(all_values) - y_margin, max(all_values) + y_margin)
+        ax.axhline(y=0, color='black', linestyle='-', linewidth=1.5, alpha=0.7)
+    else:
+        ax.set_ylim(ylim_min, ylim_max)
+
+    # Add reference line if specified
+    if reference_line is not None:
+        ax.axhline(y=reference_line, color='red', linestyle='--', linewidth=1.5,
+                   alpha=0.7, label=reference_label)
+
+    # Add Perfect score annotation
+    ax.text(0.98, 0.98, perfect_label, transform=ax.transAxes,
+            fontsize=10, fontweight='bold', ha='right', va='top',
+            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    ax.legend(loc='upper left', fontsize=10)
+
+    # Add value labels
+    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(
+            bars_overall, bars_valid, overall_sorted, valid_sorted, valid_rates_sorted)):
+        # Determine label position based on bar height and sign
+        if score_o >= 0:
+            y_offset_o = bar_o.get_height() + (ylim_max - ylim_min) * 0.01
+            va_o = 'bottom'
+        else:
+            y_offset_o = bar_o.get_height() - (ylim_max - ylim_min) * 0.01
+            va_o = 'top'
+
+        if score_v >= 0:
+            y_offset_v = bar_v.get_height() + (ylim_max - ylim_min) * 0.01
+            va_v = 'bottom'
+        else:
+            y_offset_v = bar_v.get_height() - (ylim_max - ylim_min) * 0.01
+            va_v = 'top'
+
+        # Overall label
+        ax.text(bar_o.get_x() + bar_o.get_width()/2., y_offset_o,
+                f'{score_o:{score_format}}', ha='center', va=va_o,
+                fontsize=9, fontweight='bold')
+
+        # Valid-only label with valid rate
+        ax.text(bar_v.get_x() + bar_v.get_width()/2., y_offset_v,
+                f'{score_v:{score_format}}\n({vr:.0%})', ha='center', va=va_v,
+                fontsize=9, fontweight='bold')
+
+    plt.tight_layout()
+    plot_path = output_dir / plot_filename
+    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
+    plt.close(fig)
+
+    print(f"Saved plot:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
+
+    # Print ranking
+    direction = "Best to Worst" if higher_is_better else "Worst to Best"
+    print(f"\nRanking ({direction}):")
+    for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(overall_sorted)), 1):
+        print(f"   {rank}. {model}: {score:{score_format}}")
+
+    return pdf_path, png_path
+
+
+# =============================================================================
 # IMPROVEMENT RATIO PLOT (NoInstruct → Instruct)
 # =============================================================================
 

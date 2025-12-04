@@ -51,10 +51,10 @@ from eval_utils import (
     FireworksJudge, batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
-    get_model_colors, add_figure_legend, filter_model_keys,
-    get_conditional_safety_max_samples
+    filter_model_keys,
+    get_conditional_safety_max_samples,
+    generate_comparison_plots as _generate_comparison_plots  # shared plotting function
 )
-from eval_utils.plotting import save_figure_dual_format
 from eval_utils.checkpoint import get_checkpoint_dir
 
 
@@ -630,9 +630,7 @@ def run_safety_evaluation(
 # =============================================================================
 
 def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate comparison plot with Overall vs Valid-only bars"""
-    import matplotlib.pyplot as plt
-
+    """Generate Conditional Safety comparison plot using shared plotting function (no error bars)"""
     if len(all_results) < 2:
         print("Need at least 2 models for comparison")
         return
@@ -656,75 +654,23 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
             valid_adaptation.append(adaptation_scores[models.index(m)])
             valid_rates.append(1.0)
 
-    # Sort by overall adaptation (ascending = best on right)
-    sorted_indices = np.argsort(adaptation_scores)
-    models_sorted = [models[i] for i in sorted_indices]
-    adaptation_sorted = [adaptation_scores[i] for i in sorted_indices]
-    valid_adaptation_sorted = [valid_adaptation[i] for i in sorted_indices]
-    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
-
-    # Calculate std for error bars (difference between overall and valid)
-    std_sorted = []
-    for i in sorted_indices:
-        m = models[i]
-        overall = adaptation_scores[i]
-        valid = valid_adaptation[i]
-        std_sorted.append(abs(overall - valid) if valid else 0)
-
-    # Get colors using shared utility
-    colors_sorted = get_model_colors(models_sorted)
-
-    # Single plot with Overall and Valid-only bars
-    fig, ax = plt.subplots(figsize=(14, 7))
-
-    x = np.arange(len(models_sorted))
-    bar_width = 0.35
-
-    # Overall bars (solid) with error bars
-    bars_overall = ax.bar(x - bar_width/2, adaptation_sorted, bar_width,
-                          color=colors_sorted, edgecolor='black', linewidth=1.5, label='Overall',
-                          yerr=std_sorted, capsize=3, error_kw={'linewidth': 1.5})
-
-    # Valid-only bars (hatched)
-    bars_valid = ax.bar(x + bar_width/2, valid_adaptation_sorted, bar_width,
-                        color=colors_sorted, edgecolor='black', linewidth=1.5,
-                        hatch='///', alpha=0.7, label='Valid-only')
-
-    ax.set_ylabel('Safety Adaptation Score', fontsize=14, fontweight='bold')
-    ax.set_title('Conditional Safety: Adaptation Score - Overall vs Valid-Only (Higher = Better)', fontsize=16, fontweight='bold', pad=15)
-    max_adapt = max(max(adaptation_sorted), max(valid_adaptation_sorted)) if adaptation_sorted else 0.5
-    ax.set_ylim(0, max_adapt * 1.4)
-
-    # Add Perfect score annotation (text instead of line for better scaling)
-    ax.text(0.98, 0.98, 'Perfect = 1.0', transform=ax.transAxes,
-            fontsize=10, fontweight='bold', ha='right', va='top',
-            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
-    ax.set_xticks(x)
-    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
-    ax.grid(axis='y', alpha=0.3, linestyle='--')
-    ax.legend(loc='upper left', fontsize=10)
-
-    # Add value labels
-    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(bars_overall, bars_valid,
-                                                                   adaptation_sorted, valid_adaptation_sorted, valid_rates_sorted)):
-        # Overall label
-        ax.text(bar_o.get_x() + bar_o.get_width()/2., bar_o.get_height() + 0.01,
-                f'{score_o:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        # Valid-only label with valid rate
-        ax.text(bar_v.get_x() + bar_v.get_width()/2., bar_v.get_height() + 0.01,
-                f'{score_v:.3f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
-
-    plt.tight_layout()
-    plot_path = output_dir / "conditional_safety_comparison"
-    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
-    print(f"Saved plot:")
-    print(f"  PDF: {pdf_path}")
-    print(f"  PNG: {png_path}")
-
-    # Print ranking
-    print(f"\nAdaptation Ranking (Best to Worst):")
-    for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(adaptation_sorted)), 1):
-        print(f"   {rank}. {model}: {score:.3f}")
+    # Use shared plotting function (no error bars for cleaner visuals)
+    _generate_comparison_plots(
+        models=models,
+        overall_scores=adaptation_scores,
+        valid_scores=valid_adaptation,
+        valid_rates=valid_rates,
+        output_dir=output_dir,
+        plot_filename="conditional_safety_comparison",
+        ylabel="Safety Adaptation Score",
+        title="Conditional Safety: Adaptation Score - Overall vs Valid-Only (Higher = Better)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        ylim_max=None,  # Auto-scale
+        ylim_min=0,
+        score_format=".3f",
+        higher_is_better=True
+    )
 
 
 # =============================================================================
