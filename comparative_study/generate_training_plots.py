@@ -105,8 +105,8 @@ def plot_single_metric(
     output_path: Path,
     ylabel: str = None,
     figsize: tuple = (6, 4),
-):
-    """Generate a single publication-quality plot."""
+) -> list:
+    """Generate a single publication-quality plot. Returns list of generated file paths."""
     fig, ax = plt.subplots(figsize=figsize, facecolor='white')
     ax.set_facecolor('white')
 
@@ -124,7 +124,7 @@ def plot_single_metric(
     if not has_data:
         print(f"  [SKIP] No data for {output_path.name}")
         plt.close(fig)
-        return False
+        return []
 
     ax.set_xlabel('Training Steps', fontsize=12)
     ax.set_ylabel(ylabel or metric_name.capitalize(), fontsize=12)
@@ -143,7 +143,7 @@ def plot_single_metric(
     fig.savefig(png_path, format='png', dpi=300, bbox_inches='tight', facecolor='white')
     plt.close(fig)
     print(f"  [OK] {output_path.stem}.{{pdf,png}}")
-    return True
+    return [pdf_path, png_path]
 
 
 def generate_dpo_cita_plots():
@@ -173,23 +173,23 @@ def generate_dpo_cita_plots():
         'margins': ('Reward Margin', 'DPO vs CITA: Reward Margins'),
     }
 
-    count = 0
+    generated_files = []
     for metric, (ylabel, title) in metrics.items():
         runs = {}
         for label, data in runs_data.items():
             steps, values = find_metric_data(data, metric)
             runs[label] = (steps, values)
 
-        if plot_single_metric(
+        files = plot_single_metric(
             runs=runs,
             metric_name=metric,
             title=title,
-            output_path=OUTPUT_DIR / f"dpo_cita_{metric}.pdf",
+            output_path=OUTPUT_DIR / f"dpo_cita_{metric}",
             ylabel=ylabel,
-        ):
-            count += 1
+        )
+        generated_files.extend(files)
 
-    return count
+    return generated_files
 
 
 def generate_sft_plots():
@@ -218,23 +218,23 @@ def generate_sft_plots():
         'mean_token_accuracy': ('Mean Token Accuracy', 'SFT: Mean Token Accuracy'),
     }
 
-    count = 0
+    generated_files = []
     for metric, (ylabel, title) in metrics.items():
         runs = {}
         for label, data in runs_data.items():
             steps, values = find_metric_data(data, metric)
             runs[label] = (steps, values)
 
-        if plot_single_metric(
+        files = plot_single_metric(
             runs=runs,
             metric_name=metric,
             title=title,
-            output_path=OUTPUT_DIR / f"sft_{metric}.pdf",
+            output_path=OUTPUT_DIR / f"sft_{metric}",
             ylabel=ylabel,
-        ):
-            count += 1
+        )
+        generated_files.extend(files)
 
-    return count
+    return generated_files
 
 
 def main():
@@ -244,18 +244,22 @@ def main():
     print(f"TensorBoard logs: {TB_LOGS}")
     print(f"Output: {OUTPUT_DIR}")
 
-    total = 0
-    total += generate_dpo_cita_plots()
-    total += generate_sft_plots()
+    generated_files = []
+    generated_files.extend(generate_dpo_cita_plots())
+    generated_files.extend(generate_sft_plots())
+
+    # Separate PDFs and PNGs
+    pdfs = sorted([f for f in generated_files if f.suffix == '.pdf'])
+    pngs = sorted([f for f in generated_files if f.suffix == '.png'])
 
     print("\n" + "="*60)
-    print(f"DONE: {total}/5 plots generated (PDF + PNG each)")
+    print(f"DONE: {len(pdfs)}/5 plots generated (PDF + PNG each)")
     print("="*60)
     print("PDFs:")
-    for pdf in sorted(OUTPUT_DIR.glob("*.pdf")):
+    for pdf in pdfs:
         print(f"  - {pdf.name}")
     print("PNGs:")
-    for png in sorted(OUTPUT_DIR.glob("*.png")):
+    for png in pngs:
         print(f"  - {png.name}")
 
 
