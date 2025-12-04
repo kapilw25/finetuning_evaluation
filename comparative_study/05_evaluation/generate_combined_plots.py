@@ -5,12 +5,17 @@ Reads metrics from all 5 evaluation outputs and generates:
 1. Radar chart: Instruction adaptation (NoInstruct → Instruct) improvement
 2. Heatmap: Absolute scores across all models and evals
 
+Both PDF (for Overleaf) and PNG (for sharing) formats are generated.
+
 Usage:
-    python comparative_study/05_evaluation/generate_combined_radar.py
+    python comparative_study/05_evaluation/generate_combined_plots.py
 
 Output:
-    outputs/combined_improvement_radar.png
-    outputs/combined_performance_heatmap.png
+    outputs/combined_plots/
+    ├── radar.png      (for sharing)
+    ├── radar.pdf      (for Overleaf)
+    ├── heatmap.png
+    └── heatmap.pdf
 """
 
 import sys
@@ -24,8 +29,12 @@ sys.path.insert(0, str(project_root / "comparative_study" / "05_evaluation"))
 
 from eval_utils.plotting import generate_improvement_radar_chart, generate_combined_heatmap
 
-# Output directories for each evaluation
+# Output directories
 OUTPUTS_DIR = project_root / "outputs"
+COMBINED_PLOTS_DIR = OUTPUTS_DIR / "combined_plots"
+COMBINED_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Input directories for each evaluation
 EVAL_DIRS = {
     "ISD": OUTPUTS_DIR / "ISD_Evaluation_Embedding",  # Embedding-based ISD
     "TruthfulQA": OUTPUTS_DIR / "TruthfulQA_Evaluation",
@@ -165,7 +174,7 @@ def main():
     # Generate Heatmap (absolute scores)
     # =========================================================================
     if len(eval_scores) >= 2:
-        heatmap_path = OUTPUTS_DIR / "combined_performance_heatmap.png"
+        heatmap_path = COMBINED_PLOTS_DIR / "heatmap"
         print(f"\n{'=' * 80}")
         print("Generating Heatmap (Absolute Scores)...")
         print(f"{'=' * 80}")
@@ -185,7 +194,7 @@ def main():
     # Generate Radar Chart (improvement deltas)
     # =========================================================================
     if len(eval_deltas) >= 2:
-        radar_path = OUTPUTS_DIR / "combined_improvement_radar.png"
+        radar_path = COMBINED_PLOTS_DIR / "radar"
         print(f"\n{'=' * 80}")
         print("Generating Radar Chart (Improvement Deltas)...")
         print(f"{'=' * 80}")
@@ -209,10 +218,13 @@ def main():
     print(f"{'=' * 80}")
     print(f"Evals loaded: {len(eval_scores)}/5")
     print(f"Evals with deltas: {len(eval_deltas)}/5")
+    print(f"\nOutput directory: {COMBINED_PLOTS_DIR}")
     if len(eval_scores) >= 2:
-        print(f"✅ Heatmap: outputs/combined_performance_heatmap.png")
+        print(f"  ✅ heatmap.png (for sharing)")
+        print(f"  ✅ heatmap.pdf (for Overleaf)")
     if len(eval_deltas) >= 2:
-        print(f"✅ Radar:   outputs/combined_improvement_radar.png")
+        print(f"  ✅ radar.png   (for sharing)")
+        print(f"  ✅ radar.pdf   (for Overleaf)")
 
 
 if __name__ == "__main__":

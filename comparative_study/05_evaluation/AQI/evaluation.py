@@ -64,6 +64,7 @@ from eval_utils import (
     get_model_colors, filter_model_keys,
     get_aqi_max_samples
 )
+from eval_utils.plotting import save_figure_dual_format
 from eval_utils.checkpoint import get_checkpoint_dir
 
 # Import AQI-specific functions
@@ -564,9 +565,11 @@ def generate_comparison_plots(
                 f'{score_v:.1f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
     plt.tight_layout()
-    plot_path = output_dir / "aqi_comparison.png"
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"Saved plot: {plot_path}")
+    plot_path = output_dir / "aqi_comparison"
+    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
+    print(f"Saved plot:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
 
     # Print ranking
     print(f"\nAQI Ranking (Best to Worst):")
@@ -645,9 +648,11 @@ def generate_comparison_plots(
                  bbox_to_anchor=(1.0, 1.15))
 
         plt.tight_layout()
-        axiom_plot_path = output_dir / "aqi_per_axiom_comparison.png"
-        plt.savefig(axiom_plot_path, dpi=300, bbox_inches='tight')
-        print(f"Saved plot: {axiom_plot_path}")
+        axiom_plot_path = output_dir / "aqi_per_axiom_comparison"
+        pdf_path, png_path = save_figure_dual_format(fig, axiom_plot_path, dpi=300)
+        print(f"Saved plot:")
+        print(f"  PDF: {pdf_path}")
+        print(f"  PNG: {png_path}")
 
 
 # =============================================================================

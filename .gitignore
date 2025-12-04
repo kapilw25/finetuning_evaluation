@@ -21,6 +21,8 @@ wheels/
 *.egg
 MANIFEST
 
+trash
+
 #UnSloth
 *_unsloth_sentencepiece_temp
 

@@ -24,15 +24,19 @@ SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct, CITA_NoInstruct, CIT
 
 ### Available TensorBoard Event Files
 ```
-tensorboard_logs/
-├── CITA_Instruct_20251118_031257
-├── CITA_Instruct_Adaptive_trial_2
+tensorboard_logs
 ├── CITA_Instruct_Adaptive_trial_7
+│   └── events.out.tfevents.1763383977.150-136-36-227
 ├── CITA_NoInstruct_20251116_015238
+│   └── events.out.tfevents.1763257976.150-136-90-240
 ├── DPO_Instruct_20251116_035213
+│   └── events.out.tfevents.1763265157.150-136-90-240
 ├── DPO_NoInstruct_20251115_234037
+│   └── events.out.tfevents.1763250058.150-136-90-240
 ├── SFT_Instruct_20251115_223957
+│   └── events.out.tfevents.1763246407.150-136-90-240
 ├── SFT_NoInstruct_20251115_212216
+│   └── events.out.tfevents.1763241744.150-136-90-240
 ```
 
 ### Metrics to Extract (per event file)

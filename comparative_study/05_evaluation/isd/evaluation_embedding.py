@@ -67,6 +67,7 @@ from eval_utils import (
     filter_model_keys,
     get_isd_max_samples
 )
+from eval_utils.plotting import save_figure_dual_format
 from eval_utils.checkpoint import get_checkpoint_dir
 
 # Add isd utils path
@@ -477,9 +478,11 @@ def generate_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_dir: 
                 f'{score_v:.3f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
 
     plt.tight_layout()
-    plot_path = output_dir / "isd_comparison.png"
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"Saved plot: {plot_path}")
+    plot_path = output_dir / "isd_comparison"
+    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
+    print(f"Saved plot:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
 
     # Print ranking
     print(f"\nInstruction Awareness Ranking (Best to Worst):")

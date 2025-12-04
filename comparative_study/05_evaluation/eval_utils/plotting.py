@@ -12,6 +12,31 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 
 
+def save_figure_dual_format(fig, output_path: Path, dpi: int = 300) -> Tuple[str, str]:
+    """
+    Save figure in both PDF (for Overleaf) and PNG (for sharing) formats.
+
+    Args:
+        fig: Matplotlib figure
+        output_path: Base output path (will save .pdf and .png)
+        dpi: Resolution for PNG
+
+    Returns:
+        Tuple of (pdf_path, png_path)
+    """
+    output_path = Path(output_path)
+
+    # Save PNG
+    png_path = output_path.with_suffix('.png')
+    fig.savefig(png_path, format='png', dpi=dpi, bbox_inches='tight', facecolor='white')
+
+    # Save PDF
+    pdf_path = output_path.with_suffix('.pdf')
+    fig.savefig(pdf_path, format='pdf', dpi=dpi, bbox_inches='tight', facecolor='white')
+
+    return str(pdf_path), str(png_path)
+
+
 def get_model_color(model_name: str) -> str:
     """
     Get consistent color for model based on name
@@ -302,10 +327,12 @@ def generate_improvement_ratio_plot(
             bbox=dict(boxstyle='round', facecolor='lightgreen', edgecolor='green', alpha=0.8))
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
     plt.close()
 
-    print(f"Saved improvement plot: {output_path}")
+    print(f"Saved improvement plot:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
 
     # Print ranking
     sorted_methods = sorted(zip(method_list, deltas), key=lambda x: x[1], reverse=higher_is_better)
@@ -486,10 +513,12 @@ def generate_improvement_radar_chart(
     fig.text(0.82, 0.05, f"Wins: {summary}", ha='center', fontsize=12, fontweight='bold',
              bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='orange', alpha=0.9))
 
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
     plt.close()
 
-    print(f"Saved radar chart: {output_path}")
+    print(f"Saved radar chart:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
 
     # Print summary
     print(f"\nImprovement Summary (NoInstruct → Instruct):")
@@ -648,10 +677,12 @@ def generate_combined_heatmap(
             ax.axhline(y=idx, color='black', linewidth=3)
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
     plt.close()
 
-    print(f"Saved heatmap: {output_path}")
+    print(f"Saved heatmap:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
 
     # Print summary table
     print(f"\nPerformance Summary:")
