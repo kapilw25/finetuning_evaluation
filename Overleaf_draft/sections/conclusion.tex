@@ -9,9 +9,9 @@ This paper introduces CITA (Contrastive Instruction-Tuned Alignment), a novel fr
 \subsection{Key Findings}
 
 \begin{enumerate}
-    \item \textbf{CITA outperforms DPO in instruction-awareness}: When comparing the improvement from NoInstruct to Instruct variants, CITA wins 4 out of 5 evaluation metrics.
+    \item \textbf{CITA outperforms DPO in instruction-awareness}: When comparing the improvement from NoInstruct to Instruct variants, CITA wins 3 out of 5 evaluation metrics (TruthfulQA, Length Control, AQI), while DPO wins 2 (ISD, Conditional Safety).
 
-    \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by +0.151 (becoming more confident when instructed), while DPO degrades by $-$0.040 (becoming more uncertain when told to be confident).
+    \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by +0.054 (becoming more confident when instructed), while DPO shows minimal change (+0.001), indicating CITA better follows uncertainty instructions.
 
     \item \textbf{Mandatory KL regularization is essential}: The KL term prevents catastrophic forgetting and enables stable instruction-conditioned behavior switching.
 

@@ -25,22 +25,24 @@ $\downarrow$ & & $\downarrow$ & & $\downarrow$ & & $\downarrow$ \\[2pt]
 
 \subsection{Model Variants}
 
-We train 4 variants to compare CITA vs DPO:
+We train 6 model variants across 3 methods (SFT, DPO, CITA) $\times$ 2 instruction settings:
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
-\textbf{Model} & \textbf{Training Path} \\
+\textbf{Model} & \textbf{Training Path} & \textbf{Instruction} \\
 \midrule
-CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA \\
-CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA \\
-DPO\_NI & Base$\rightarrow$SFT$\rightarrow$DPO \\
-DPO\_I & Base$\rightarrow$SFT$\rightarrow$DPO \\
+SFT\_NI & Base$\rightarrow$SFT & No \\
+SFT\_I & Base$\rightarrow$SFT & Yes \\
+DPO\_NI & Base$\rightarrow$SFT$\rightarrow$DPO & No \\
+DPO\_I & Base$\rightarrow$SFT$\rightarrow$DPO & Yes \\
+CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & No \\
+CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
 \bottomrule
 \end{tabular}
-\caption{Model variants. NI=NoInstruct, I=Instruct.}
+\caption{6 model variants. NI=NoInstruct (standard prompts), I=Instruct (with behavioral instructions).}
 \label{tab:model_variants}
 \end{table}
 
@@ -115,18 +117,39 @@ Accuracy & 89.5\% & 89.0\% \\
 
 \subsection{Training Dynamics}
 
-Figure~\ref{fig:training_cita} shows training curves from TensorBoard. CITA achieves higher reward margins than DPO with stable convergence.
+Figures~\ref{fig:training_accuracy}--\ref{fig:training_margins} show training curves comparing DPO vs CITA. Key observation: \textbf{CITA achieves higher reward margins} (7.5 vs 6.0) than DPO despite similar accuracy, validating the KL-regularized objective.
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/training/CITA_Instruct_Best3Trials_vs_DPO_Instruct_CITA_NoInstruct.png}
-\caption{Training curves: Best CITA\_Instruct trials (Optuna) vs DPO\_Instruct and CITA\_NoInstruct. Top-left: accuracy, top-right: eval loss, bottom: reward margins.}
-\label{fig:training_cita}
-\end{figure*}
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_accuracy.pdf}
+\caption{Reward Accuracy: All models converge to 89--92\%. DPO variants slightly higher accuracy.}
+\label{fig:training_accuracy}
+\end{figure}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/training/DPO_NoInstruct_vs_CITA_NoInstruct.png}
-\caption{DPO vs CITA (NoInstruct): CITA achieves higher margins (7.16 vs 6.01) validating the KL-regularized objective.}
-\label{fig:training_dpo_cita}
-\end{figure*}
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_loss.pdf}
+\caption{Eval Loss: CITA\_Instruct has higher loss but achieves better margins (see Figure~\ref{fig:training_margins}).}
+\label{fig:training_loss}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_margins.pdf}
+\caption{Reward Margins: \textbf{CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.1) $>$ DPO (6.0)}. Higher margins indicate stronger preference learning.}
+\label{fig:training_margins}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/sft_loss.pdf}
+\caption{SFT Training Loss: SFT\_Instruct (1.49) converges to lower loss than SFT\_NoInstruct (1.78).}
+\label{fig:sft_loss}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/sft_mean_token_accuracy.pdf}
+\caption{SFT Token Accuracy: SFT\_Instruct (63\%) achieves higher accuracy than SFT\_NoInstruct (56\%).}
+\label{fig:sft_accuracy}
+\end{figure}
