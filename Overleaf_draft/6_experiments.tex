@@ -1,0 +1,176 @@
+% =============================================================================
+% EXPERIMENTS - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Experiments}
+\label{sec:experiments}
+
+We present our experimental setup, including the training pipeline, model variants, evaluation benchmarks, hyperparameter optimization, and training dynamics.
+
+\vspace{-2mm}
+\subsection{Training Pipeline}
+\label{sec:training_pipeline_exp}
+
+Following the staged approach from Section~\ref{sec:training_pipeline}, we train on PKU-SafeRLHF~\cite{ji2024pku} using an NVIDIA A100-40GB GPU. Training proceeds through four stages:
+
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+    \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} (pretrained weights)
+    \item \textbf{SFT}: Fine-tune on PKU chosen responses
+    \item \textbf{DPO}: Train on PKU preference pairs
+    \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
+\end{enumerate}
+
+\vspace{-2mm}
+\subsection{Model Variants}
+\label{sec:model_variants}
+
+We train 6 model variants across 3 methods (SFT, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct):
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Model} & \textbf{Training Path} & \textbf{Instruction} \\
+\midrule
+SFT\_NI & Base$\rightarrow$SFT & No \\
+SFT\_I & Base$\rightarrow$SFT & Yes \\
+DPO\_NI & Base$\rightarrow$SFT$\rightarrow$DPO & No \\
+DPO\_I & Base$\rightarrow$SFT$\rightarrow$DPO & Yes \\
+CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & No \\
+CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
+\bottomrule
+\end{tabular}
+\caption{6 model variants. NI = NoInstruct (standard prompts), I = Instruct (with behavioral instructions).}
+\label{tab:model_variants}
+\vspace{-4mm}
+\end{table}
+
+\textbf{Comparison Design.} By evaluating NoInstruct vs. Instruct variants, we measure each method's \textit{instruction sensitivity}---the improvement from adding alignment instructions.
+
+\vspace{-2mm}
+\subsection{Evaluation Benchmarks}
+\label{sec:benchmarks}
+
+We evaluate on 5 benchmarks with deterministic metrics (no LLM-as-judge):
+
+\begin{table}[h!]
+\centering
+\footnotesize
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Benchmark} & \textbf{Test Cases} & \textbf{Instruction Types} \\
+\midrule
+ISD (ours) & 3,000 & 10 types \\
+TruthfulQA~\cite{lin2022truthfulqa} & 1,634 & HON/CONF \\
+Conditional Safety & 1,000 & STRICT/PERMISSIVE \\
+Length Control & 1,000 & CONCISE/DETAILED \\
+AQI~\cite{hendrycks2023aligning} & 2,800 & 7 axioms \\
+\bottomrule
+\end{tabular}
+\caption{Evaluation benchmarks. All use deterministic metrics for reproducibility.}
+\label{tab:benchmarks}
+\vspace{-4mm}
+\end{table}
+
+\paragraph{Metrics.}
+
+\begin{table}[h!]
+\centering
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Benchmark} & \textbf{Metric (Ideal Value)} \\
+\midrule
+ISD & Fidelity $\times$ Behavioral Shift (1.0) \\
+TruthfulQA & HON $-$ CONF uncertainty difference (+) \\
+Conditional Safety & $|$STRICT $-$ PERMISSIVE$|$ (1.0) \\
+Length Control & DETAILED/CONCISE word ratio ($>$4) \\
+AQI & (CHI + XB) / 2 clustering score (100) \\
+\bottomrule
+\end{tabular}
+\caption{Metric definitions. Higher is better for all except TruthfulQA (positive direction matters).}
+\label{tab:metrics}
+\vspace{-4mm}
+\end{table}
+
+\textbf{ISD Types}: Neutral, Conservative, Liberal, Regulatory, Empathetic, Safety, Educational, Concise, Professional, Creative.
+
+\textbf{AQI Axioms}: Civility, Duty, Empathy, Information, Justice, Well-being, Wisdom.
+
+\vspace{-2mm}
+\subsection{Hyperparameter Optimization}
+\label{sec:hyperparams}
+
+We use Optuna~\cite{akiba2019optuna} with TPE sampler (12 trials) to optimize hyperparameters. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
+
+\begin{table}[h!]
+\centering
+\footnotesize
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{NoInstruct (T5)} & \textbf{Instruct (T7)} \\
+\midrule
+Learning rate & 6.83e-6 & 5.41e-6 \\
+$\lambda_{\text{KL}}$ & 0.00052 & 0.00023 \\
+$\beta$ (DPO temp.) & 0.119 & 0.107 \\
+Weight decay & 0.0091 & 0.0109 \\
+Warmup ratio & 7.5\% & 10.0\% \\
+\midrule
+Final margin & 6.95 & 7.52 \\
+Accuracy & 89.5\% & 89.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration.}
+\label{tab:hyperparams}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Training Dynamics}
+\label{sec:training_dynamics}
+
+We analyze training curves comparing DPO and CITA variants (Figures~\ref{fig:training_accuracy}--\ref{fig:sft_accuracy}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_accuracy.pdf}
+\caption{\textbf{Reward Accuracy}: All models converge to 89--92\%. DPO variants achieve slightly higher accuracy.}
+\label{fig:training_accuracy}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_loss.pdf}
+\caption{\textbf{Eval Loss}: CITA\_Instruct has higher loss but achieves better reward margins (see Figure~\ref{fig:training_margins}).}
+\label{fig:training_loss}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_margins.pdf}
+\caption{\textbf{Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.1) $>$ DPO ($\sim$6.0). Higher margins indicate stronger preference learning.}
+\label{fig:training_margins}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/sft_loss.pdf}
+\caption{\textbf{SFT Training Loss}: SFT\_Instruct (1.49) converges to lower loss than SFT\_NoInstruct (1.78).}
+\label{fig:sft_loss}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/sft_mean_token_accuracy.pdf}
+\caption{\textbf{SFT Token Accuracy}: SFT\_Instruct (63\%) achieves higher accuracy than SFT\_NoInstruct (56\%).}
+\label{fig:sft_accuracy}
+\vspace{-3mm}
+\end{figure}
+
+\textbf{Key Observation.} CITA achieves higher reward margins (7.5 vs. 6.0) than DPO despite similar accuracy, validating that mandatory KL regularization leads to stronger preference differentiation.

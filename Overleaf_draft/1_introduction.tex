@@ -1,0 +1,59 @@
+% =============================================================================
+% INTRODUCTION - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Introduction}
+\label{sec:introduction}
+
+Large language models (LLMs) achieve alignment through preference optimization methods like RLHF~\cite{ouyang2022training} and DPO~\cite{rafailov2023direct}. However, these approaches embed \textit{static} alignment objectives directly into model weights, fundamentally lacking flexibility for dynamic policy changes at deployment time.
+
+\textbf{The Core Problem.} Current alignment methods optimize for a fixed behavioral policy during training. Once deployed, the model cannot adapt its alignment posture based on contextual requirements---a critical limitation for real-world applications where safety policies, regulatory constraints, and user preferences vary across contexts~\cite{kirk2024benefits,bai2022constitutional}.
+
+\textbf{Our Solution.} We propose \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling \textbf{instruction-driven alignment} at inference time. Unlike static alignment, CITA allows models to dynamically switch behavioral policies based on natural language instructions provided with each query.
+
+\vspace{-2mm}
+\subsection{Key Contributions}
+\label{sec:contributions}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{CITA Framework}: A unified training objective combining SFT, contrastive preference optimization, and \textit{mandatory} KL regularization for instruction-conditioned alignment. The key insight is that KL regularization---optional in DPO---becomes essential for stable behavioral switching.
+
+    \item \textbf{Instruction Switch Dataset (ISD)}: A diagnostic benchmark of 3,000 test cases (300 prompts $\times$ 10 instruction types) designed to isolate alignment instruction effects from prompt variation. ISD enables systematic evaluation of instruction-awareness beyond surface-level instruction-following.
+
+    \item \textbf{Comprehensive Evaluation}: Experiments on Llama-3.1-8B~\cite{dubey2024llama} across 5 benchmarks demonstrate CITA outperforms DPO in 3/5 metrics. On TruthfulQA~\cite{lin2022truthfulqa}, CITA improves by +0.054 while DPO shows minimal change (+0.001).
+\end{enumerate}
+
+\vspace{-3mm}
+\subsection{Related Work}
+\label{sec:related_work}
+
+\paragraph{Instruction Tuning.} FLAN~\cite{wei2022finetuned}, T0~\cite{sanh2022multitask}, and subsequent work~\cite{wang2023self,iyer2022opt} demonstrated that instruction-following during training improves zero-shot generalization. However, these approaches focus on task generalization rather than alignment conditioning.
+
+\paragraph{Preference Optimization.} RLHF~\cite{ouyang2022training,stiennon2020learning} uses reward models trained on human preferences. DPO~\cite{rafailov2023direct} eliminates the need for separate reward models but lacks instruction-awareness---both approaches embed static alignment into weights.
+
+\paragraph{Safety Alignment.} Constitutional AI~\cite{bai2022constitutional}, PKU-SafeRLHF~\cite{ji2024pku}, and red-teaming approaches~\cite{perez2022red,ganguli2022red} focus on making models safer but assume a single, fixed safety policy. Recent work on context-dependent safety~\cite{bianchi2024safetytuned} highlights the need for adaptive policies.
+
+\paragraph{Dynamic Alignment.} Controllable generation methods~\cite{keskar2019ctrl,dathathri2020plug} and prompting techniques~\cite{wei2022chain,kojima2022large} offer some behavioral control but operate at the surface level. CITA differs by training models to internalize instruction-conditioned alignment, achieving deeper behavioral switching.
+
+\vspace{-2mm}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Property} & \textbf{RLHF/PPO} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Reward Model Required & Yes & No & No \\
+Instruction-Aware & No & No & \textbf{Yes} \\
+Behavioral Switching & No & No & \textbf{Yes} \\
+Mandatory KL & Optional & Optional & \textbf{Yes} \\
+Dynamic Policy & No & No & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of alignment methods. CITA uniquely enables instruction-conditioned behavioral switching through mandatory KL regularization.}
+\label{tab:method_comparison}
+\vspace{-4mm}
+\end{table}
+
+\textbf{Positioning.} CITA bridges instruction tuning and preference optimization by training models to condition their alignment behavior on natural language instructions. This enables a new paradigm of \textbf{interactive alignment} where policy changes can be expressed without retraining.

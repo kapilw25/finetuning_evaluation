@@ -1,0 +1,52 @@
+% =============================================================================
+% CONCLUSION - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling instruction-aware alignment in large language models. Unlike traditional methods (RLHF, DPO) that embed static alignment into weights, CITA allows models to dynamically adapt behavior based on natural language instructions at inference time.
+
+\vspace{-2mm}
+\subsection{Key Findings}
+\label{sec:key_findings}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{CITA outperforms DPO in instruction-awareness}: Measuring NoInstruct $\rightarrow$ Instruct improvement, CITA wins \textbf{3/5 benchmarks} (TruthfulQA, Length Control, AQI), while DPO wins 2/5 (ISD, Conditional Safety).
+
+    \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
+
+    \item \textbf{Mandatory KL is essential}: The KL term---optional in DPO---becomes mandatory in CITA to prevent mode collapse and enable stable instruction-conditioned behavioral switching.
+
+    \item \textbf{Instruction-alignment $\neq$ instruction-following}: Through the Instruction Switch Dataset, we demonstrate that CITA achieves \textit{deeper} instruction-alignment (internalized policies) rather than \textit{superficial} instruction-following (surface compliance).
+\end{enumerate}
+
+\vspace{-2mm}
+\subsection{Implications}
+\label{sec:implications}
+
+CITA enables a new paradigm of \textbf{interactive and adaptive AI systems} where:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Policy updates via natural language}: Alignment changes can be expressed through instructions without model retraining.
+
+    \item \textbf{Context-aware responses}: Different users, applications, or deployment contexts can receive appropriately calibrated behaviors.
+
+    \item \textbf{Dynamic safety policies}: Safety constraints can be adjusted at inference time based on deployment requirements (e.g., stricter for child-facing apps, more permissive for research contexts).
+
+    \item \textbf{Reduced alignment tax}: No need for multiple specialized models for different alignment policies---a single CITA model can switch behaviors on demand.
+\end{itemize}
+
+\textbf{Outlook.} CITA opens several research directions: (1) scaling to larger models and more instruction types, (2) theoretical analysis of instruction-conditioned learning dynamics, (3) applications to multi-stakeholder alignment where different parties have different policy requirements, and (4) integration with constitutional AI methods for hierarchical instruction handling.
+
+\vspace{-2mm}
+\subsection{Reproducibility}
+\label{sec:reproducibility}
+
+All code, trained models, and the Instruction Switch Dataset are publicly available:
+
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item \textbf{Code}: \url{https://github.com/kapilw25/finetuning_evaluation}
+    \item \textbf{Dataset}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+\end{itemize}

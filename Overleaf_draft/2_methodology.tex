@@ -1,0 +1,100 @@
+% =============================================================================
+% METHODOLOGY - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Methodology}
+\label{sec:methodology}
+
+We present the CITA training methodology, organized into three phases: (1) setup and data preparation, (2) instruction-tuned formatting, and (3) contrastive training configuration.
+
+\vspace{-2mm}
+\subsection{Phase 0: Model and Infrastructure Setup}
+\label{sec:phase0}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+Base Model & Llama-3.1-8B~\cite{dubey2024llama} \\
+Prompt Format & Chat-style (system/user/assistant) \\
+Tokenizer & LLaMA-3 with BOS/EOS tokens \\
+Hardware & NVIDIA A100-40GB \\
+Training Data & PKU-SafeRLHF~\cite{ji2024pku} \\
+\bottomrule
+\end{tabular}
+\caption{Training infrastructure and configuration.}
+\label{tab:infrastructure}
+\vspace{-4mm}
+\end{table}
+
+\textbf{Rationale.} We select Llama-3.1-8B for its strong instruction-following capabilities and accessibility. PKU-SafeRLHF provides high-quality preference pairs with explicit safety annotations, enabling evaluation of instruction-conditioned safety behaviors.
+
+\vspace{-2mm}
+\subsection{Phase 1: Dataset Formatting}
+\label{sec:phase1}
+
+We define two complementary data formats that enable instruction-conditioned training:
+
+\paragraph{Instruction-Tuned Alignment (ITA) Format.}
+Each training example explicitly includes an alignment instruction alongside the user query:
+
+\begin{small}
+\begin{verbatim}
+<user>
+### Alignment Instruction:
+${alignment_instruction}
+### User Prompt:
+${user_prompt}
+<assistant>
+${expected_response}
+\end{verbatim}
+\end{small}
+
+\paragraph{Contrastive ITA Format.}
+For preference learning, we extend ITA to include rejected responses:
+
+\begin{small}
+\begin{verbatim}
+### Rejected Response (Bad):
+${rejected_response}
+### Expected Response (Good):
+${accepted_response}
+\end{verbatim}
+\end{small}
+
+\paragraph{Example-Based Alignment (EBA) Format.}
+Standard DPO format without explicit instructions for baseline comparison:
+\begin{center}
+\texttt{\{prompt, chosen, rejected\}}
+\end{center}
+
+\vspace{-2mm}
+\subsection{Phase 2: Training Configuration}
+\label{sec:phase2}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Parameter} & \textbf{SFT Stage} & \textbf{CITA Stage} \\
+\midrule
+Trainer & SFTTrainer & Custom DPO+KL \\
+Epochs & 3--5 & 3 \\
+Sequence Length & 2048 & 2048 \\
+Learning Rate & 2e-5 & 5--7e-6 \\
+LoRA Rank & 8 & 8 \\
+$\beta$ (temperature) & --- & 0.1--0.12 \\
+$\lambda_{\text{KL}}$ & --- & 0.0002--0.0005 \\
+\bottomrule
+\end{tabular}
+\caption{Training hyperparameters for SFT and CITA stages.}
+\label{tab:training_config}
+\vspace{-4mm}
+\end{table}
+
+\textbf{Key Design Choice.} The CITA stage uses significantly lower learning rates (3--4$\times$ lower than typical DPO) because instruction-augmented sequences are 30--40\% longer, producing larger gradients. This finding emerged from hyperparameter optimization (Section~\ref{sec:hyperparams}).

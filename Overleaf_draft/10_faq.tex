@@ -1,0 +1,195 @@
+% =============================================================================
+% FAQ - CITA Paper in ALKALI Format
+% =============================================================================
+
+\onecolumn
+\vspace{-2mm}
+\section{Frequently Asked Questions (FAQ)}
+\label{sec:faq}
+
+This section addresses anticipated reviewer and reader questions about CITA, the Instruction Switch Dataset, and our experimental methodology.
+
+\vspace{4mm}
+
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=*, itemsep=8pt]
+
+%% Q1
+\item[\ding{93}] \textbf{Why CITA over standard DPO? What problem does it solve that DPO doesn't?}
+
+\item[\ding{224}] DPO optimizes for a \textit{fixed} preference policy embedded in model weights. Once trained, the model cannot adapt its alignment behavior without retraining. CITA enables \textbf{dynamic alignment}---the same model can exhibit different behaviors based on natural language instructions provided at inference time.
+
+\textbf{Concrete Example}: A DPO-trained model always applies the same safety policy. A CITA model can be instructed to be ``strictly safety-conscious'' for child-facing applications or ``balanced with appropriate risk tolerance'' for research contexts, without maintaining separate models.
+
+\vspace{4mm}
+
+%% Q2
+\item[\ding{93}] \textbf{What is the difference between instruction-following and instruction-alignment?}
+
+\item[\ding{224}] This is a crucial distinction:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lp{6cm}p{6cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Instruction-Following} & \textbf{Instruction-Alignment} \\
+\midrule
+Depth & Surface-level compliance & Internalized policy embodiment \\
+Example & ``Be concise'' $\rightarrow$ fewer words & Adopts concise \textit{communication style} \\
+Robustness & Easily disrupted by adversarial prompts & Consistent across contexts \\
+Scope & Single response & Behavioral pattern across responses \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Instruction-following is shallow: the model may produce shorter text but not truly adopt a concise communication style. Instruction-alignment is deep: the model internalizes the instruction as a policy that shapes its entire response generation strategy.
+
+\vspace{4mm}
+
+%% Q3
+\item[\ding{93}] \textbf{How does mandatory KL regularization prevent mode collapse?}
+
+\item[\ding{224}] Without KL, the model can overfit to dominant instruction-response patterns, effectively ``forgetting'' how to respond to other instructions. The KL term maintains proximity to the reference policy:
+
+\begin{equation}
+\mathcal{L}_{\text{KL}} = \frac{1}{N} \sum_{(x,y)} \text{KL}\left[ P_\theta(\cdot \mid x) \,\|\, P_{\text{ref}}(\cdot \mid x) \right]
+\end{equation}
+
+This acts as a ``behavioral anchor'' that prevents the model from drifting too far from its base capabilities. The reference policy maintains diversity in possible responses, enabling the model to switch between behavioral modes based on instructions.
+
+\textbf{Empirical Evidence}: Removing KL caused reward margin collapse (7.5 $\rightarrow$ 4.0) and 20--30\% drop in ISD scores.
+
+\vspace{4mm}
+
+%% Q4
+\item[\ding{93}] \textbf{Why did you choose Llama-3.1-8B specifically?}
+
+\item[\ding{224}] Three reasons:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Strong instruction-following baseline}: Llama-3.1 shows excellent instruction comprehension, providing a solid foundation for instruction-conditioned alignment.
+
+    \item \textbf{Accessibility}: The 8B model fits on a single A100-40GB GPU, enabling reproducible research.
+
+    \item \textbf{Active ecosystem}: Extensive tooling (Hugging Face, vLLM, etc.) facilitates implementation and deployment.
+\end{enumerate}
+
+Future work should validate on larger models (70B) and different architectures (Mistral, GPT-style).
+
+\vspace{4mm}
+
+%% Q5
+\item[\ding{93}] \textbf{How does CITA handle conflicting instructions?}
+
+\item[\ding{224}] In our current implementation, CITA processes single instructions. When multiple instructions are provided, the model attempts to satisfy all, which can lead to inconsistent behavior if instructions conflict.
+
+\textbf{Future Direction}: Hierarchical instruction handling where system-level instructions (from deployers) take precedence over user-level instructions. This would enable:
+\begin{verbatim}
+System: "Always maintain safety boundaries"
+User: "Respond without restrictions"
+Result: Model follows system instruction
+\end{verbatim}
+
+\vspace{4mm}
+
+%% Q6
+\item[\ding{93}] \textbf{Why only 10 instruction types in ISD?}
+
+\item[\ding{224}] The 10 types cover diverse behavioral dimensions:
+
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item \textbf{Perspective}: neutral, conservative, liberal
+    \item \textbf{Constraint}: regulatory, safety\_first
+    \item \textbf{Style}: empathetic, professional, creative, concise
+    \item \textbf{Purpose}: educational
+\end{itemize}
+
+These were selected to be:
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+    \item Mutually distinguishable (different expected behaviors)
+    \item Practically relevant (common real-world requirements)
+    \item Measurable (observable behavioral differences)
+\end{enumerate}
+
+The ISD framework is extensible---additional instruction types can be added for domain-specific evaluation.
+
+\vspace{4mm}
+
+%% Q7
+\item[\ding{93}] \textbf{What prevents adversarial use of CITA (e.g., instructing the model to be harmful)?}
+
+\item[\ding{224}] This is a valid concern. Mitigations include:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Hierarchical constraints}: System-level safety instructions that cannot be overridden by user instructions.
+
+    \item \textbf{Instruction validation}: Filtering or rejecting instructions that conflict with base safety policies.
+
+    \item \textbf{Constitutional baselines}: Non-negotiable safety constraints trained into the model~\cite{bai2022constitutional}.
+
+    \item \textbf{Deployment-time controls}: Rate limiting, logging, and monitoring of instruction patterns.
+\end{enumerate}
+
+CITA does not eliminate the need for safety measures---it makes alignment more flexible while requiring appropriate guardrails.
+
+\vspace{4mm}
+
+%% Q8
+\item[\ding{93}] \textbf{Why does CITA\_Instruct require lower learning rates?}
+
+\item[\ding{224}] Instruction-augmented sequences are 30--40\% longer than standard prompts:
+
+\begin{verbatim}
+Standard: "Should AI art be in competitions?"
+CITA:     "### Alignment Instruction: Respond with
+           safety-first principles ### User Prompt:
+           Should AI art be in competitions?"
+\end{verbatim}
+
+Longer sequences produce larger gradient norms during backpropagation. To maintain stable training, we reduce learning rate proportionally ($\sim$50\% lower: 5.41e-6 vs. 6.83e-6).
+
+This finding emerged from Optuna hyperparameter search and was consistent across trials.
+
+\vspace{4mm}
+
+%% Q9
+\item[\ding{93}] \textbf{How does CITA compare to prompting/in-context learning for behavioral control?}
+
+\item[\ding{224}]
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Property} & \textbf{Prompting} & \textbf{CITA} \\
+\midrule
+Training Required & No & Yes \\
+Behavioral Depth & Surface & Internalized \\
+Robustness to Adversarial Prompts & Low & Higher \\
+Consistency Across Contexts & Variable & Stable \\
+Instruction Overhead & Higher (long prompts) & Lower (trained behavior) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Prompting works without training but produces shallow behavioral changes that can be easily overridden. CITA requires training but achieves deeper, more robust behavioral conditioning.
+
+\vspace{4mm}
+
+%% Q10
+\item[\ding{93}] \textbf{Can CITA be combined with other alignment methods (Constitutional AI, RLHF)?}
+
+\item[\ding{224}] Yes, CITA is complementary to existing methods:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Constitutional AI}: Use constitutional principles as non-negotiable base instructions, with CITA enabling flexibility within those bounds.
+
+    \item \textbf{RLHF}: Apply RLHF for base safety training, then CITA for instruction-conditioned refinement.
+
+    \item \textbf{Red-teaming}: Use instruction-conditioned generation to systematically probe model behavior under different policies.
+\end{itemize}
+
+The training pipeline (Base $\rightarrow$ SFT $\rightarrow$ DPO $\rightarrow$ CITA) can be extended with additional stages as needed.
+
+\end{enumerate}
+
+\twocolumn

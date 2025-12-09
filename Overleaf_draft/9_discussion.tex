@@ -1,0 +1,91 @@
+% =============================================================================
+% DISCUSSION - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Discussion}
+\label{sec:discussion}
+
+We analyze CITA's strengths and limitations, discuss ethical considerations, and outline future research directions.
+
+\vspace{-2mm}
+\subsection{Strengths and Limitations}
+\label{sec:strengths_limitations}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}p{3.8cm}p{3.8cm}@{}}
+\toprule
+\textbf{Strengths} & \textbf{Limitations} \\
+\midrule
+Dynamic behavioral switching via natural language & Single base model (Llama-3.1-8B) \\
+No reward model required & English-only evaluation \\
+Mandatory KL prevents collapse & 10 instruction types tested \\
+Outperforms DPO in 3/5 metrics & Requires instruction at inference \\
+Publicly available ISD benchmark & Longer context windows needed \\
+\bottomrule
+\end{tabular}
+\caption{Summary of CITA's strengths and current limitations.}
+\label{tab:strengths_limitations}
+\vspace{-4mm}
+\end{table}
+
+\paragraph{Model Generalization.} We evaluate only Llama-3.1-8B. Future work should validate CITA on diverse architectures (GPT, Mistral, Gemma) and scales (7B--70B) to establish generality.
+
+\paragraph{Instruction Coverage.} The 10 instruction types in ISD cover common alignment dimensions but may not capture all real-world policy requirements. Extending to domain-specific instructions (medical, legal, educational) is important.
+
+\paragraph{Multilingual Alignment.} All experiments are English-only. Instruction-conditioned alignment in multilingual settings raises questions about cross-lingual instruction transfer.
+
+\paragraph{Inference Overhead.} CITA requires alignment instructions in every prompt, increasing context length by 10--40 tokens. This is minimal overhead for modern LLMs but may matter for latency-critical applications.
+
+\vspace{-2mm}
+\subsection{Why Mandatory KL?}
+\label{sec:why_kl}
+
+A natural question is: \textit{Why does CITA require mandatory KL while DPO works with implicit regularization?}
+
+\paragraph{Hypothesis.} When conditioning on instructions, the model must maintain multiple behavioral modes simultaneously. Without explicit KL:
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+    \item The model may collapse to a single dominant mode (ignoring instructions)
+    \item Preference margins can grow unbounded, destabilizing training
+    \item The model may overfit to specific instruction-prompt combinations
+\end{enumerate}
+
+The mandatory KL term acts as a ``behavioral anchor,'' keeping the model close enough to the reference policy to respond appropriately to different instructions rather than memorizing fixed responses.
+
+\paragraph{Empirical Evidence.} In ablation studies (Appendix~\ref{sec:appendix_ablations}), removing KL or reducing $\lambda$ below 0.0001 caused:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item Reward margin collapse (from 7.5 to $<$4.0)
+    \item Reduced instruction sensitivity (ISD scores dropped 20--30\%)
+    \item Training instability (loss spikes, gradient explosions)
+\end{itemize}
+
+\vspace{-2mm}
+\subsection{Ethical Considerations}
+\label{sec:ethics}
+
+\paragraph{Dual-Use Concerns.} Instruction-conditioned alignment could be misused to make models \textit{less} safe by providing adversarial instructions. Mitigations include:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item Hierarchical instruction handling (system instructions override user instructions)
+    \item Instruction validation/filtering at deployment
+    \item Constitutional constraints~\cite{bai2022constitutional} as non-negotiable baselines
+\end{itemize}
+
+\paragraph{Alignment Washing.} Organizations might claim ``aligned'' behavior while using permissive instructions. Transparency about instruction policies and third-party auditing are essential.
+
+\paragraph{User Autonomy vs. Safety.} CITA enables user-specified alignment, raising questions about who controls the alignment policy. We advocate for tiered systems where users can adjust within bounds set by deployers, who operate within regulatory constraints.
+
+\vspace{-2mm}
+\subsection{Future Research Directions}
+\label{sec:future_work}
+
+\paragraph{Hierarchical Instructions.} Multi-level instruction handling where system-level policies override user preferences, useful for enterprise deployments with governance requirements.
+
+\paragraph{Instruction Compositionality.} Training models to combine multiple instructions (e.g., ``be concise AND professional'') in semantically meaningful ways.
+
+\paragraph{Instruction Robustness.} Evaluating resistance to instruction injection attacks and developing defenses for instruction-conditioned models.
+
+\paragraph{Theoretical Foundations.} Understanding the learning dynamics of instruction-conditioned preference optimization, including convergence guarantees and sample complexity.
+
+\paragraph{Multi-Modal CITA.} Extending instruction-conditioned alignment to vision-language models where behavioral instructions may span modalities.

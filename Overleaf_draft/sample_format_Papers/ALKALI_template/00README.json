@@ -1,0 +1,78 @@
+{
+   "stamp" : true,
+   "sources" : [
+      {
+         "usage" : "toplevel",
+         "filename" : "0_main.tex"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "3_llm.tex"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "acl2023.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "acl_natbib.bst"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "avi_control_generation.png"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "custom.bib"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "extra.tex"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/ASR_Heatmap_AllLLMs_DPO_GRACE.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/ASRalt.png"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/LLM_Attack_Benchmark_Heatmap_AdjacentBar.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/LLM_Attack_Benchmark_Heatmap_PostGRACE_OpenOnly_400dpi_OneLine.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/LLM_Attack_Benchmark_Heatmap_PostGRACE_OpenOnly_400dpi_OneLine_full.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/LLM_Attack_Benchmark_Heatmap_PostGRACE_Realistic.pdf"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/LL_map.png"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/avi_control_generation.png"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/output_plot.png"
+      },
+      {
+         "usage" : "ignore",
+         "filename" : "figures/results.png"
+      }
+   ],
+   "spec_version" : 1,
+   "texlive_version" : "2025",
+   "process" : {
+      "compiler" : "pdflatex"
+   }
+}

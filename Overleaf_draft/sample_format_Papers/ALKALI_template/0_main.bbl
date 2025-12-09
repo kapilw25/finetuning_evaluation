@@ -1,0 +1,377 @@
+\begin{thebibliography}{74}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\bibitem[{Andriushchenko et~al.(2022)Andriushchenko, Croce, and Hein}]{andriushchenko2022towards}
+Maksym Andriushchenko, Francesco Croce, and Matthias Hein. 2022.
+\newblock Towards certified and efficient defenses against adversarial examples.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, volume~35, pages 17266--17279.
+
+\bibitem[{{Anthropic}(2024)}]{claude}
+{Anthropic}. 2024.
+\newblock Claude 3 model family.
+\newblock \url{https://www.anthropic.com/news/claude-3-family}.
+
+\bibitem[{Bai et~al.(2022)Bai, Kadavath, and et~al.}]{bai2022training}
+Yuntao Bai, Saurav Kadavath, and et~al. 2022.
+\newblock Training a helpful and harmless assistant with rlhf.
+\newblock \emph{arXiv preprint arXiv:2204.05862}.
+
+\bibitem[{Belrose et~al.(2023)Belrose, Olsson, Wang, Nanda, and Ganguli}]{belrose2023language}
+Lucas Belrose, Catherine Olsson, Nelson~Elhage Wang, Neel Nanda, and Surya Ganguli. 2023.
+\newblock Language models represent space and time.
+\newblock In \emph{arXiv preprint arXiv:2305.17493}.
+
+\bibitem[{Bengio et~al.(2013)Bengio, Courville, and Vincent}]{bengio2013representation}
+Yoshua Bengio, Aaron Courville, and Pascal Vincent. 2013.
+\newblock Representation learning: A review and new perspectives.
+\newblock \emph{IEEE transactions on pattern analysis and machine intelligence}, 35(8):1798--1828.
+
+\bibitem[{Carlini et~al.(2023)Carlini, Tirumala, Jagielski, Andrus, Tramer, Roberts, Li, and Song}]{carlini2023extracting}
+Nicholas Carlini, Abhinav Tirumala, Matthew Jagielski, McKenna Andrus, Florian Tramer, Alex Roberts, Congzheng Li, and Dawn Song. 2023.
+\newblock Extracting training data from diffusion models.
+\newblock \emph{arXiv preprint arXiv:2305.06201}.
+
+\bibitem[{Chaudhry et~al.(2019)Chaudhry, Rohrbach, Elhoseiny, Ajanthan, Torr, and Dokania}]{chaudhry2019tiny}
+Arslan Chaudhry, Marcus Rohrbach, Mohamed Elhoseiny, Thalaiyasingam Ajanthan, Philip H.~S. Torr, and Puneet~K. Dokania. 2019.
+\newblock Tiny episodic memories in continual learning.
+\newblock In \emph{Proceedings of the International Conference on Machine Learning (ICML)}.
+
+\bibitem[{Chen et~al.(2023{\natexlab{a}})Chen, Chen, Radhakrishnan, Chi, Austerweil, and Singh}]{chen2023epsilon}
+Andy Chen, Huan Chen, Aparna Radhakrishnan, Ethan Chi, Joseph Austerweil, and Sameer Singh. 2023{\natexlab{a}}.
+\newblock Epsilon-dpo: Towards robust preference optimization without a perfect reference.
+\newblock In \emph{arXiv preprint arXiv:2310.12036}.
+
+\bibitem[{Chen et~al.(2023{\natexlab{b}})Chen, Paliwal, and Yan}]{chen2023jailbreaker}
+Bocheng Chen, Advait Paliwal, and Qiben Yan. 2023{\natexlab{b}}.
+\newblock Jailbreaker in jail: Moving target defense for large language models.
+\newblock \emph{arXiv preprint arXiv:2310.02417}.
+
+\bibitem[{Chen and Yao(2024)}]{chen2024pseudo}
+Zheng Chen and Buhui Yao. 2024.
+\newblock Pseudo-conversation injection for llm goal hijacking.
+\newblock \emph{arXiv preprint arXiv:2410.23678}.
+
+\bibitem[{Chiang et~al.(2023)Chiang, Zhu et~al.}]{vicuna}
+Lulu Chiang, Yuhui Zhu, et~al. 2023.
+\newblock Vicuna: An open-source chatbot impressing gpt-4 with 90\% chatgpt quality.
+\newblock \url{https://lmsys.org/blog/2023-03-30-vicuna/}.
+
+\bibitem[{Doe and Smith(2024)}]{ascii24}
+John Doe and Jane Smith. 2024.
+\newblock Ascii-based adversarial prompts for llms.
+\newblock \emph{Journal of AI Security}, 12(3):45--60.
+
+\bibitem[{Dong et~al.(2021)Dong, Mao, Balduzzi, Yang, Lin, Lu, and Song}]{dong2021attention}
+Yihe Dong, Jiayuan Mao, David Balduzzi, Jianfeng Yang, Zhenhai Lin, Zhengdong Lu, and Yizhou Song. 2021.
+\newblock Attention is not all you need: Pure attention loses rank doubly exponentially with depth.
+\newblock In \emph{Proceedings of the 38th International Conference on Machine Learning (ICML)}.
+
+\bibitem[{Dunn(1973)}]{dunn1973fuzzy}
+Joseph~C Dunn. 1973.
+\newblock A fuzzy relative of the isodata process and its use in detecting compact well-separated clusters.
+\newblock \emph{Journal of Cybernetics}, 3(3):32--57.
+
+\bibitem[{Elhage et~al.(2021)Elhage, Nanda, Olsson et~al.}]{elhage2021mechanistic}
+Nelson Elhage, Neel Nanda, Catherine Olsson, et~al. 2021.
+\newblock A mechanistic interpretability analysis of grokking.
+\newblock \emph{Transformer Circuits Thread}.
+\newblock Https://transformer-circuits.pub/2022/mech-interp/grokking.
+
+\bibitem[{Gehman et~al.(2020)Gehman, Gururangan, Sap, Choi, and Smith}]{gehman2020realtoxicityprompts}
+Samuel Gehman, Suchin Gururangan, Maarten Sap, Yejin Choi, and Noah~A. Smith. 2020.
+\newblock Realtoxicityprompts: Evaluating neural toxic degeneration in language models.
+\newblock \emph{arXiv preprint arXiv:2009.11462}.
+
+\bibitem[{Geva et~al.(2022)Geva, Schuster, Berant, and Levy}]{geva2022transformer}
+Mor Geva, Tal Schuster, Jonathan Berant, and Omer Levy. 2022.
+\newblock Transformer feed-forward layers are key-value memories.
+\newblock In \emph{Proceedings of the 2022 Annual Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)}.
+
+\bibitem[{{Google DeepMind}(2024)}]{gemma}
+{Google DeepMind}. 2024.
+\newblock Gemma: Open-weight models by google deepmind.
+\newblock \url{https://ai.google.dev/gemma}.
+
+\bibitem[{Greshake and Others(2023)}]{greshake_indirect}
+B.~Greshake and Others. 2023.
+\newblock Indirect prompt injection via external data sources.
+\newblock In \emph{International Workshop on AI Exploits}.
+
+\bibitem[{Greshake et~al.(2023)Greshake, Abdelnabi, Mishra, Endres, and Holz}]{greshake2023indirect}
+Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, and Thorsten Holz. 2023.
+\newblock Not what you've signed up for: Compromising real-world llm-integrated applications with indirect prompt injection.
+\newblock \emph{arXiv preprint arXiv:2302.12173}.
+
+\bibitem[{Guo et~al.(2024)Guo, Yu, Zhang, Qin, and COLD-Attack}]{guo2024jailbreaking}
+Xingang Guo, Fangxu Yu, Huan Zhang, Lianhui Qin, and Bin~Hu COLD-Attack. 2024.
+\newblock Jailbreaking llms with stealthiness and controllability.
+\newblock In \emph{Proceedings of the International Conference on Machine Learning (ICML)}.
+
+\bibitem[{Hendrycks et~al.(2021)Hendrycks, Burns, Kadavath, Arora, Basart, Tang, Wang, Kriti, Song, and Steinhardt}]{hendrycks2021measuring}
+Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Dawn Tang, Dawn Wang, Spencer Kriti, Dawn Song, and Jacob Steinhardt. 2021.
+\newblock Measuring massive multitask language understanding.
+\newblock \emph{arXiv preprint arXiv:2009.03300}.
+
+\bibitem[{Huang et~al.(2023)Huang, Gupta, Xia, Li, and Chen}]{huang2023catastrophic}
+Yangsibo Huang, Samyak Gupta, Mengzhou Xia, Kai Li, and Danqi Chen. 2023.
+\newblock Catastrophic jailbreak of open-source llms via exploiting generation.
+\newblock \emph{arXiv preprint arXiv:2310.06987}.
+
+\bibitem[{Jain et~al.(2023)Jain, Schwarzschild, Wen, Somepalli, Kirchenbauer, Chiang, Goldblum, Saha, Geiping, and Goldstein}]{jain2023baseline}
+Neel Jain, Avi Schwarzschild, Yuxin Wen, Gowthami Somepalli, John Kirchenbauer, Ping-yeh Chiang, Micah Goldblum, Aniruddha Saha, Jonas Geiping, and Tom Goldstein. 2023.
+\newblock Baseline defenses for adversarial attacks against aligned language models.
+\newblock \emph{arXiv preprint arXiv:2309.00614}.
+
+\bibitem[{Jain et~al.(2024)Jain, Lubana, Oksuz, Joy, Torr, Sanyal, and Dokania}]{NEURIPS2024_a9bef53e}
+Samyak Jain, Ekdeep~S Lubana, Kemal Oksuz, Tom Joy, Philip Torr, Amartya Sanyal, and Puneet Dokania. 2024.
+\newblock \href {https://proceedings.neurips.cc/paper_files/paper/2024/file/a9bef53eb7b0e5950d4f2d9c74a16006-Paper-Conference.pdf} {What makes and breaks safety fine-tuning? a mechanistic study}.
+\newblock In \emph{Advances in Neural Information Processing Systems}, volume~37, pages 93406--93478. Curran Associates, Inc.
+
+\bibitem[{Jiang et~al.(2023)Jiang, Chen, and Tang}]{jiang2023promptpacker}
+Shuyu Jiang, Xingshu Chen, and Rui Tang. 2023.
+\newblock Prompt packer: Deceiving llms through compositional instruction with hidden attacks.
+\newblock \emph{arXiv preprint arXiv:2310.10077}.
+
+\bibitem[{Ke et~al.(2025)Ke, Lai, Fang, and Kao}]{pair23}
+Shih-Wen Ke, Guan-Yu Lai, Guo-Lin Fang, and Hsi-Yuan Kao. 2025.
+\newblock Iterative prompting with persuasion skills in jailbreaking large language models.
+\newblock \emph{arXiv preprint arXiv:2503.20320}.
+
+\bibitem[{Khosla et~al.(2020)Khosla, Teterwak, Wang, Sarna, Tian, Isola, Maschinot, Liu, and Krishnan}]{khosla2020supervised}
+Prannay Khosla, Piotr Teterwak, Chen Wang, Aaron Sarna, Yonglong Tian, Phillip Isola, Aaron Maschinot, Ce~Liu, and Dilip Krishnan. 2020.
+\newblock Supervised contrastive learning.
+\newblock In \emph{Advances in Neural Information Processing Systems}, volume~33, pages 18661--18673.
+
+\bibitem[{Kumar et~al.(2023)Kumar, Agarwal, Srinivas, Li, Feizi, and Lakkaraju}]{kumar2023certifying}
+Aounon Kumar, Chirag Agarwal, Suraj Srinivas, Aaron~Jiaxun Li, Soheil Feizi, and Himabindu Lakkaraju. 2023.
+\newblock Certifying llm safety against adversarial prompting.
+\newblock \emph{arXiv preprint arXiv:2309.02705}.
+
+\bibitem[{Lam et~al.(2023)Lam, Ma, Chien, Wu, Chien et~al.}]{lam2023chatgpt}
+Xin Lam, Xiaoyu Ma, Shu-Hsien Chien, Zhiting Wu, Yung-Yu Chien, et~al. 2023.
+\newblock Chatgpt: Applications, opportunities, and threats.
+\newblock \emph{arXiv preprint arXiv:2304.01852}.
+
+\bibitem[{Li et~al.(2021)Li, Geva, and Manning}]{li2021implicit}
+Nelson~F. Li, Mor Geva, and Christopher~D. Manning. 2021.
+\newblock Implicit representations of meaning in neural language models.
+\newblock In \emph{Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem[{Li et~al.(2024{\natexlab{a}})Li, Zheng, and Huang}]{li2024open}
+Tianlong Li, Xiaoqing Zheng, and Xuanjing Huang. 2024{\natexlab{a}}.
+\newblock Open the pandora's box of llms: Jailbreaking llms through representation engineering.
+\newblock \emph{arXiv e-prints}, pages arXiv--2401.
+
+\bibitem[{Li et~al.(2024{\natexlab{b}})Li, Zhao, Dai, Song, and Hashimoto}]{li2024rain}
+Weijia Li, Yujia Zhao, Zhijian Dai, Dawn Song, and Tatsunori~B. Hashimoto. 2024{\natexlab{b}}.
+\newblock Rain: Rewindable auto-regressive inference for harmless and helpful llms.
+\newblock \emph{arXiv preprint arXiv:2402.01174}.
+
+\bibitem[{Li et~al.(2024{\natexlab{c}})}]{li2024pleak}
+Zhe Li et~al. 2024{\natexlab{c}}.
+\newblock Prompt leaking attacks against large language model applications.
+\newblock \emph{arXiv preprint arXiv:2405.06823}.
+
+\bibitem[{Liu and et~al.(2023)}]{liu2023lost}
+Nelson Liu and et~al. 2023.
+\newblock Lost in the middle: How language models use long contexts.
+\newblock \emph{arXiv preprint arXiv:2307.03172}.
+
+\bibitem[{Lopez-Paz and Ranzato(2017)}]{lopez2017gradient}
+David Lopez-Paz and Marc'Aurelio Ranzato. 2017.
+\newblock Gradient episodic memory for continual learning.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, volume~30.
+
+\bibitem[{Mehrotra et~al.(2024)Mehrotra, Zampetakis, Kassianik, Nelson, Anderson, Singer, and Karbasi}]{tap23}
+Anay Mehrotra, Manolis Zampetakis, Paul Kassianik, Blaine Nelson, Hyrum Anderson, Yaron Singer, and Amin Karbasi. 2024.
+\newblock Tree of attacks: Jailbreaking black-box llms automatically.
+\newblock \emph{Advances in Neural Information Processing Systems}, 37:61065--61105.
+
+\bibitem[{{Meta AI}(2024{\natexlab{a}})}]{llama-3}
+{Meta AI}. 2024{\natexlab{a}}.
+\newblock Llama 3: Open foundation and instruction models.
+\newblock \url{https://llama.meta.com/}.
+
+\bibitem[{{Meta AI}(2024{\natexlab{b}})}]{llama-3.1}
+{Meta AI}. 2024{\natexlab{b}}.
+\newblock Llama 3.1 models: Refinements to meta's next-gen llms.
+\newblock \url{https://ai.meta.com/blog/meta-llama-3/}.
+
+\bibitem[{{Microsoft Research}(2023)}]{phi-2}
+{Microsoft Research}. 2023.
+\newblock Phi-2: Exploring small language models with high performance.
+\newblock \url{https://www.microsoft.com/en-us/research/blog/phi-2-the-surprising-power-of-small-language-models/}.
+
+\bibitem[{{Microsoft Research}(2024)}]{phi-3}
+{Microsoft Research}. 2024.
+\newblock Phi-3: A family of open language models from microsoft.
+\newblock \url{https://www.microsoft.com/en-us/research/blog/introducing-phi-3-small-language-models/}.
+
+\bibitem[{{Mistral AI}(2023{\natexlab{a}})}]{mistral}
+{Mistral AI}. 2023{\natexlab{a}}.
+\newblock Mistral 7b: A high-quality dense model for open use.
+\newblock \url{https://mistral.ai/news/}.
+
+\bibitem[{{Mistral AI}(2023{\natexlab{b}})}]{mixtral}
+{Mistral AI}. 2023{\natexlab{b}}.
+\newblock Mixtral: Sparse mixture of experts models by mistral ai.
+\newblock \url{https://mistral.ai/news/mixtral-of-experts/}.
+
+\bibitem[{Mu and Andreas(2023)}]{mu2023layers}
+Jiasen Mu and Jacob Andreas. 2023.
+\newblock What do layers in llms learn? a structural probe of llm representations.
+\newblock \emph{arXiv preprint arXiv:2310.02244}.
+
+\bibitem[{Nanda et~al.(2023)Nanda, Olsson, Chan, Landsberg, Wang, Lieberum, Chen, Zhang, Joseph, and Belrose}]{nanda2023progress}
+Neel Nanda, Catherine Olsson, Tom Chan, Tom Landsberg, Nelson Wang, Ulisse~Mini Lieberum, Andy Chen, Zilin Zhang, Nicholas Joseph, and Brandon Belrose. 2023.
+\newblock Progress measures for grokking via mechanistic interpretability.
+\newblock \emph{arXiv preprint arXiv:2301.05217}.
+
+\bibitem[{OpenAI(2023)}]{openai2023gpt4}
+OpenAI. 2023.
+\newblock Gpt-4 technical report.
+\newblock \url{https://arxiv.org/abs/2303.08774}.
+\newblock ArXiv:2303.08774.
+
+\bibitem[{{OpenAI}(2024)}]{gpt-4o-mini}
+{OpenAI}. 2024.
+\newblock Gpt-4o: Openai's omni-modal language model.
+\newblock \url{https://openai.com/index/gpt-4o}.
+
+\bibitem[{OpenAI et~al.(2023)}]{gpt4}
+OpenAI et~al. 2023.
+\newblock Gpt-4 technical report.
+\newblock \url{https://openai.com/research/gpt-4}.
+
+\bibitem[{Ouyang et~al.(2022)Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin, Zhang, Agarwal, Slama, Ray et~al.}]{ouyang2022training}
+Long Ouyang, Jeff Wu, Xu~Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et~al. 2022.
+\newblock Training language models to follow instructions with human feedback.
+\newblock \emph{Advances in Neural Information Processing Systems}, 35:27730--27744.
+
+\bibitem[{Park et~al.(2023)Park, Kim, Kim, Lee, Kim, Choi, Lim, Lee, Kim, Hwang, Choi, Kang, Kang, Lee, and Oh}]{park2023safety}
+Jinsung Park, Hwisoo Kim, Youngjoong Kim, Seung-won Lee, Soohwan Kim, Jonghyun Choi, Hyungjin Lim, Sang-Woo Lee, Sungdong Kim, Hwaran Hwang, Jaewook Choi, Dongsu Kang, Soojin Kang, Yoonho Lee, and Alice Oh. 2023.
+\newblock Safety-ppo: Hallucination-free language models via reinforcement learning with safety feedback.
+\newblock In \emph{Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (ACL)}.
+
+\bibitem[{Perez et~al.(2022)Perez, Chen, He, Popham, Lee, Conerly, Fici, Olsson, Fava, Chen et~al.}]{perez2022red}
+Ethan Perez, Douwe Chen, Heidi He, Michael Popham, Kanan Lee, Jared Conerly, James Fici, Catherine Olsson, Louis Fava, Amanda Chen, et~al. 2022.
+\newblock Red teaming language models with language models.
+\newblock \emph{arXiv preprint arXiv:2202.03286}.
+
+\bibitem[{Perez et~al.(2023)Perez, Rando, Kumar, Jagielski, Raffel, and Hashimoto}]{perez2023ignore}
+Ethan Perez, Abraham Rando, Vikas Kumar, Matthew Jagielski, Colin Raffel, and Tatsunori Hashimoto. 2023.
+\newblock Ignore previous instructions: Prompt injection attacks on foundation models.
+\newblock \emph{arXiv preprint arXiv:2305.10909}.
+
+\bibitem[{Perez and Ribeiro(2022)}]{ignore_previous_prompt}
+F{\'a}bio Perez and Ian Ribeiro. 2022.
+\newblock Ignore previous prompt: Attack techniques for language models.
+\newblock \emph{arXiv preprint arXiv:2211.09527}.
+
+\bibitem[{Phute et~al.(2023)Phute, Trivedi, Sheshadri, and Goldstein}]{phute2023jailbreak}
+Shantanu Phute, Harshit Trivedi, Abhinav Sheshadri, and Tom Goldstein. 2023.
+\newblock Jailbreak in jail: Llm self-defense via prompt paraphrasing and output auditing.
+\newblock \emph{arXiv preprint arXiv:2310.02417}.
+
+\bibitem[{Rafailov et~al.(2024)Rafailov, Wu, Tian, Liu, and Hashimoto}]{rafailov2023direct}
+Ramin Rafailov, Yuntao Wu, Yian Tian, Yuhui Liu, and Tatsunori Hashimoto. 2024.
+\newblock Direct preference optimization: Your language model is secretly a reward model.
+\newblock In \emph{Proceedings of the International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Schulhoff et~al.(2023)Schulhoff, Pinto, Khan, Bouchard, Si, Anati, Tagliabue, Liu~Kost, Carnahan, and Boyd-Graber}]{schulhoff2023hackaprompt}
+Sander Schulhoff, Jeremy Pinto, Anaum Khan, Louis-François Bouchard, Chenglei Si, Svetlina Anati, Valen Tagliabue, Anson Liu~Kost, Christopher Carnahan, and Jordan Boyd-Graber. 2023.
+\newblock Ignore this title and hackaprompt: Exposing systemic vulnerabilities of llms through a global scale prompt hacking competition.
+\newblock \emph{arXiv preprint arXiv:2311.16119}.
+
+\bibitem[{Schwinn et~al.(2024)Schwinn, Dobre, G{\"u}nnemann, and Gidel}]{schwinn2024attacking}
+Leo Schwinn, David Dobre, Stephan G{\"u}nnemann, and Gauthier Gidel. 2024.
+\newblock Attacking safety alignment and unlearning in open-source llms via embedding space attacks.
+\newblock \emph{arXiv preprint arXiv:2402.07987}.
+
+\bibitem[{Shen et~al.(2024)Shen, Chen, Backes, Shen, and Zhang}]{dan23}
+Xinyue Shen, Zeyuan Chen, Michael Backes, Yun Shen, and Yang Zhang. 2024.
+\newblock " do anything now": Characterizing and evaluating in-the-wild jailbreak prompts on large language models.
+\newblock In \emph{Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security}, pages 1671--1685.
+
+\bibitem[{Sheshadri et~al.(2024)Sheshadri, Lee, Chiang, Kumar, Geiping, and Goldstein}]{sheshadri2024latent}
+Abhinav Sheshadri, Kevin Lee, Ping-yeh Chiang, Aounon Kumar, Jonas Geiping, and Tom Goldstein. 2024.
+\newblock Latent adversarial training uncovers and removes jailbreak circuits in llms.
+\newblock \emph{arXiv preprint arXiv:2402.11079}.
+
+\bibitem[{Templeton et~al.(2024)Templeton, Wang, Levine, Goldberg, Raffel, and Liu}]{templeton2024activations}
+Andrew Templeton, Teng Wang, Sergey Levine, Yoav Goldberg, Colin Raffel, and J.~Edward Liu. 2024.
+\newblock Learning to monitor the latent space: Towards reliable activation-based attack detection.
+\newblock \emph{arXiv preprint arXiv:2401.04045}.
+
+\bibitem[{Touvron et~al.(2023)Touvron, Lavril, Izacard, Martinet et~al.}]{llama-2}
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, et~al. 2023.
+\newblock Llama 2: Open foundation language models.
+\newblock \url{https://ai.meta.com/llama}.
+\newblock Meta AI.
+
+\bibitem[{Turpin et~al.(2023)Turpin, Ganguli, Lin, and Askell}]{turpin2023llms}
+Andrew Turpin, Deep Ganguli, Zhi Lin, and Amanda Askell. 2023.
+\newblock Llms can't find strong attacks: On the inverse-scaling problem for alignment training.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}.
+
+\bibitem[{Wei and et~al.(2023)}]{wei2023jailbroken}
+Jason Wei and et~al. 2023.
+\newblock Jailbroken: How does llm safety training fail?
+\newblock \emph{arXiv preprint arXiv:2310.06825}.
+
+\bibitem[{Wei et~al.(2022)Wei, Wang, Schuurmans, Bosma, Ichter, Xia, Chi, Le, and Zhou}]{wei2022finetuned}
+Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed~Chi, Quoc Le, and Denny Zhou. 2022.
+\newblock Finetuned language models are zero-shot learners.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Wu et~al.(2024{\natexlab{a}})Wu, Wang, Chen, Wang, Shen, Liu, Li, Wang, McCann, Lu, Jia, Fu, and Lee}]{wu2024generalized}
+Xinyi Wu, Shiyue Wang, Qihong Chen, Zijian Wang, Yao Shen, Zhou Liu, Mu~Li, Yiming Wang, Bryan McCann, Xian Lu, Shenda Jia, Jie Fu, and Sungjin Lee. 2024{\natexlab{a}}.
+\newblock Generalized direct preference optimization.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Wu et~al.(2024{\natexlab{b}})Wu, Zhang, and Li}]{wu2024llms}
+Xinyi Wu, Yifan Zhang, and Wei Li. 2024{\natexlab{b}}.
+\newblock Securing large language models: Threats, vulnerabilities, and mitigation strategies.
+\newblock \emph{arXiv preprint arXiv:2403.12503}.
+
+\bibitem[{Xhonneux et~al.(2024)Xhonneux, Belinkov, and Moosavi-Dezfooli}]{xhonneux2024robustness}
+Louis Xhonneux, Yonatan Belinkov, and Seyed-Mohsen Moosavi-Dezfooli. 2024.
+\newblock Robustness to prompt injection via adversarial training in embedding space.
+\newblock \emph{arXiv preprint arXiv:2401.14578}.
+
+\bibitem[{Xie et~al.(2021)Xie, Tan, Gong, Pang, Le, and Song}]{xie2021improving}
+Saining Xie, Mingxing Tan, Boqing Gong, Tianlong Pang, Quoc~V Le, and Dawn Song. 2021.
+\newblock Improving adversarial robustness requires revisiting misclassified examples.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Xu et~al.(2021)Xu, Zhang, Goldstein, and Li}]{xu2021detecting}
+Haokun Xu, Teng Zhang, Tom Goldstein, and Tian Li. 2021.
+\newblock Detecting erased predictions and explaining how models forget.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, volume~34, pages 20668--20681.
+
+\bibitem[{Zeng et~al.(2024)Zeng, Lin, Zhang, Yang, Jia, and Shi}]{johnny24}
+Yi~Zeng, Hongpeng Lin, Jingwen Zhang, Diyi Yang, Ruoxi Jia, and Weiyan Shi. 2024.
+\newblock How johnny can persuade llms to jailbreak them: Rethinking persuasion to challenge ai safety by humanizing llms.
+\newblock In \emph{Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)}, pages 14322--14350.
+
+\bibitem[{Zhang et~al.(2009)Zhang, Wong, Shen, and Li}]{zhang2009generalized}
+Shichao Zhang, Wai-Ki Wong, Heng~Tao Shen, and Zhaohui Li. 2009.
+\newblock Generalized adjusted rand indices for cluster ensembles.
+\newblock \emph{Pattern Recognition}, 42(2):241--253.
+
+\bibitem[{Zhu et~al.(2024)Zhu, Wang, Singh, Du, and Song}]{zhu2024promptbench}
+Yujia Zhu, Jianyu Wang, Ajay Singh, Yilun Du, and Dawn Song. 2024.
+\newblock Promptbench: A benchmark for evaluating safety alignment under adversarial prompts.
+\newblock \emph{arXiv preprint arXiv:2402.01886}.
+
+\bibitem[{Zou et~al.(2024)Zou, Pang, Li, Hashimoto, and Zou}]{zou2024cygnet}
+Andy Zou, Weiting Pang, Hong Li, Tatsunori Hashimoto, and James Zou. 2024.
+\newblock Representation rerouting: Learning circuit breakers for safer language models.
+\newblock \emph{arXiv preprint arXiv:2401.05547}.
+
+\bibitem[{Zou and et~al.(2023)}]{zou2023universal}
+Zihan Zou and et~al. 2023.
+\newblock Universal and transferable adversarial attacks on aligned language models.
+\newblock \emph{arXiv preprint arXiv:2307.15043}.
+
+\end{thebibliography}

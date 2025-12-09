@@ -1,0 +1,427 @@
+% =============================================================================
+% APPENDIX - CITA Paper in ALKALI Format
+% =============================================================================
+
+\newpage
+\appendix
+\section{Appendix}
+\label{sec:appendix}
+
+The Appendix provides comprehensive elaboration on theoretical constructs, experimental details, mathematical derivations, and implementation specifications supporting the main paper. It is structured as follows:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Unified Training Objective}: Complete loss formulation with all components (cf.~\cref{sec:appendix_unified})
+    \item \textbf{CITA-KL Loss Derivation}: Full mathematical derivation and gradient analysis (cf.~\cref{sec:appendix_cita_kl})
+    \item \textbf{Implementation Details}: Training infrastructure and hyperparameters (cf.~\cref{sec:appendix_implementation})
+    \item \textbf{Dataset Details}: Extended ISD statistics and examples (cf.~\cref{sec:appendix_dataset})
+    \item \textbf{Ablation Studies}: Component-wise analysis (cf.~\cref{sec:appendix_ablations})
+    \item \textbf{Qualitative Examples}: Good and failure case examples (cf.~\cref{sec:appendix_examples})
+\end{itemize}
+
+%% =============================================================================
+%% UNIFIED TRAINING OBJECTIVE
+%% =============================================================================
+\section{Unified Training Objective}
+\label{sec:appendix_unified}
+
+The unified training loss function combines \textbf{Supervised Fine-Tuning (SFT)}, \textbf{Direct Preference Optimization (DPO)}, and \textbf{KL Regularization}:
+
+\begin{equation}
+\mathcal{L}_{\text{unified}} = \mathcal{L}_{\text{SFT}} + \lambda_1 \mathcal{L}_{\text{DPO}} + \lambda_2 \mathcal{L}_{\text{KL}}
+\label{eq:unified_full}
+\end{equation}
+
+where:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item $\mathcal{L}_{\text{SFT}}$: Supervised fine-tuning loss
+    \item $\mathcal{L}_{\text{DPO}}$: Direct preference optimization loss
+    \item $\mathcal{L}_{\text{KL}}$: KL-divergence regularization loss
+    \item $\lambda_1, \lambda_2$: Hyperparameters controlling the contribution of each term
+\end{itemize}
+
+\subsection{Supervised Fine-Tuning Loss ($\mathcal{L}_{\text{SFT}}$)}
+
+The supervised fine-tuning loss is defined as:
+
+\begin{equation}
+\mathcal{L}_{\text{SFT}} = -\frac{1}{N_{\text{SFT}}} \sum_{(x, y^{\text{chosen}})} \sum_{t=1}^{T} \log P_\pi(y_t^{\text{chosen}} | x, y_{<t}^{\text{chosen}})
+\label{eq:sft_full}
+\end{equation}
+
+where:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item $N_{\text{SFT}}$: Number of samples in the SFT dataset
+    \item $T$: Number of tokens in the output sequence $y^{\text{chosen}}$
+    \item $P_\pi$: Policy model's probability distribution
+    \item $x$: Input consisting of the instruction and user prompt
+    \item $y^{\text{chosen}}$: Aligned (preferred) response
+\end{itemize}
+
+\subsection{Direct Preference Optimization Loss ($\mathcal{L}_{\text{DPO}}$)}
+
+The DPO loss ensures that the policy model prefers chosen responses over rejected ones:
+
+\begin{equation}
+\mathcal{L}_{\text{DPO}} = -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{\text{chosen}}, y^{\text{rejected}})} \log \sigma\left(\beta \left(\log P_\pi(y^{\text{chosen}}|x) - \log P_\pi(y^{\text{rejected}}|x)\right)\right)
+\label{eq:dpo_full}
+\end{equation}
+
+where:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item $N_{\text{DPO}}$: Number of preference pairs
+    \item $\sigma$: Sigmoid function
+    \item $\beta$: Scaling factor controlling sensitivity to preference differences
+    \item $y^{\text{rejected}}$: Misaligned (rejected) response
+\end{itemize}
+
+\subsection{KL Regularization Loss ($\mathcal{L}_{\text{KL}}$)}
+
+The KL-divergence regularization term penalizes the policy model for drifting too far from the reference model:
+
+\begin{equation}
+\mathcal{L}_{\text{KL}} = \frac{1}{N_{\text{DPO}}} \sum_{(x,y)} \sum_{t=1}^{T} P_\pi(y_t|x, y_{<t}) \log \frac{P_\pi(y_t|x, y_{<t})}{P_{\text{ref}}(y_t|x, y_{<t})}
+\label{eq:kl_full}
+\end{equation}
+
+where:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item $P_{\text{ref}}$: Reference model trained with SFT
+    \item $P_\pi$: Policy model being trained
+\end{itemize}
+
+\subsection{Full Expanded Loss}
+
+The full expanded unified training loss is:
+
+\begin{align}
+\mathcal{L}_{\text{unified}} &= -\frac{1}{N_{\text{SFT}}} \sum_{(x, y^{\text{chosen}})} \sum_{t=1}^{T} \log P_\pi(y_t^{\text{chosen}}|x, y_{<t}^{\text{chosen}}) \nonumber \\
+&+ \lambda_1 \left( -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{\text{chosen}}, y^{\text{rejected}})} \log \sigma\left(\beta(\log P_\pi(y^{\text{chosen}}|x) - \log P_\pi(y^{\text{rejected}}|x))\right) \right) \nonumber \\
+&+ \lambda_2 \cdot \frac{1}{N_{\text{DPO}}} \sum_{(x,y)} \sum_{t=1}^{T} P_\pi(y_t|x, y_{<t}) \log \frac{P_\pi(y_t|x, y_{<t})}{P_{\text{ref}}(y_t|x, y_{<t})}
+\label{eq:full_expanded}
+\end{align}
+
+%% =============================================================================
+%% CITA-KL LOSS DERIVATION
+%% =============================================================================
+\section{CITA-KL Loss Derivation}
+\label{sec:appendix_cita_kl}
+
+\subsection{CITA-KL Loss Formulation}
+
+The CITA-KL loss extends DPO with instruction-conditioning and mandatory KL regularization:
+
+\begin{equation}
+\mathcal{L}_{\text{CITA}} = -\log\left(\frac{\exp(\beta \cdot \log \pi_\theta(Y^+ | I, X))}{\exp(\beta \cdot \log \pi_\theta(Y^+ | I, X)) + \exp(\beta \cdot \log \pi_\theta(Y^- | I, X))}\right) + \lambda \cdot \text{KL}[\pi_\theta(\cdot | I, X) \| \pi_0(\cdot | I, X)]
+\label{eq:cita_kl_full}
+\end{equation}
+
+\textbf{Parameters:}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item $\pi_\theta$: Fine-tuned model
+    \item $\pi_0$: Base pretrained model (reference)
+    \item $\beta$: Contrastive temperature
+    \item $\lambda$: KL regularization weight (\textbf{mandatory}, $\lambda > 0$)
+    \item $I$: Alignment instruction
+    \item $X$: User input
+    \item $Y^+$: Preferred (chosen) response
+    \item $Y^-$: Rejected response
+\end{itemize}
+
+\subsection{Gradient Intuition}
+
+Define the log-probability scores:
+\begin{align}
+s^+ &= \log \pi_\theta(Y^+ | I, X) \\
+s^- &= \log \pi_\theta(Y^- | I, X)
+\end{align}
+
+The softmax preference probability becomes:
+
+\begin{equation}
+P^+ = \frac{\exp(\beta s^+)}{\exp(\beta s^+) + \exp(\beta s^-)}
+\label{eq:softmax_pref}
+\end{equation}
+
+\textbf{Gradient of CITA Loss:}
+
+\begin{equation}
+\nabla_\theta \mathcal{L}_{\text{CITA}} = -\beta \left[(1 - P^+)\nabla_\theta s^+ - P^+ \nabla_\theta s^-\right]
+\label{eq:cita_gradient}
+\end{equation}
+
+\textbf{Interpretation:}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item When $P^+ \approx 1$ (model correctly prefers $Y^+$): Gradients for $s^+$ become small, preventing over-optimization
+    \item When $P^+ \approx 0$ (model incorrectly prefers $Y^-$): Strong gradient pushes to increase $s^+$ and decrease $s^-$
+    \item The KL term provides a stabilizing force that prevents $P^+$ from saturating
+\end{itemize}
+
+\subsection{Comparison with Other Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Property} & \textbf{PPO (RLHF)} & \textbf{DPO} & \textbf{CITA (Ours)} \\
+\midrule
+Needs Reward Model & Yes & No & No \\
+Instruction-Aware & No & No & \textbf{Yes} \\
+Contrastive Preference & Yes & Yes & \textbf{Yes} \\
+Behavior Switching & No & No & \textbf{Yes} \\
+Mandatory KL Regularization & Optional & Optional & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of alignment methods. CITA uniquely combines instruction-awareness with mandatory KL.}
+\label{tab:method_comparison_appendix}
+\end{table}
+
+\subsection{Implementation Notes}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Context concatenation}: Concatenate $(I, X)$ as model context
+    \item \textbf{Sequence length}: Ensure enough context length to hold both $Y^+$ and $Y^-$
+    \item \textbf{Hard negatives}: Use hard negatives when available for better contrast
+    \item \textbf{KL annealing}: Consider KL annealing from 0.01 to 0.1 over epochs for stability
+\end{itemize}
+
+%% =============================================================================
+%% IMPLEMENTATION DETAILS
+%% =============================================================================
+\section{Implementation Details}
+\label{sec:appendix_implementation}
+
+\subsection{Hardware and Software}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA A100-40GB \\
+Framework & PyTorch 2.1 + Transformers 4.35 \\
+Training Library & TRL (Transformer Reinforcement Learning) \\
+Optimization & Optuna 3.4 with TPE sampler \\
+Mixed Precision & bfloat16 \\
+Gradient Checkpointing & Enabled \\
+\bottomrule
+\end{tabular}
+\caption{Hardware and software configuration.}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Training Hyperparameters (Full)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Parameter} & \textbf{SFT} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Epochs & 3 & 3 & 3 \\
+Batch Size & 4 & 4 & 4 \\
+Gradient Accumulation & 4 & 4 & 4 \\
+Effective Batch Size & 16 & 16 & 16 \\
+Max Sequence Length & 2048 & 2048 & 2048 \\
+Learning Rate & 2e-5 & 5e-6 & 5.4e-6 \\
+LR Scheduler & Cosine & Cosine & Cosine \\
+Warmup Ratio & 0.03 & 0.075 & 0.10 \\
+Weight Decay & 0.01 & 0.009 & 0.011 \\
+$\beta$ (temperature) & --- & 0.1 & 0.107 \\
+$\lambda_{\text{KL}}$ & --- & --- & 0.00023 \\
+LoRA Rank & 8 & 8 & 8 \\
+LoRA Alpha & 16 & 16 & 16 \\
+LoRA Dropout & 0.05 & 0.05 & 0.05 \\
+Target Modules & q\_proj, v\_proj & q\_proj, v\_proj & q\_proj, v\_proj \\
+\bottomrule
+\end{tabular}
+\caption{Complete hyperparameters for all training stages.}
+\label{tab:full_hyperparams}
+\end{table}
+
+\subsection{Compute Requirements}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{SFT} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Training Time & 4h & 6h & 8h \\
+GPU Memory (Peak) & 38GB & 39GB & 39GB \\
+Checkpoint Size & 1.2GB & 1.2GB & 1.2GB \\
+\bottomrule
+\end{tabular}
+\caption{Compute requirements per training stage (single A100-40GB).}
+\label{tab:compute}
+\end{table}
+
+%% =============================================================================
+%% DATASET DETAILS
+%% =============================================================================
+\section{Dataset Details}
+\label{sec:appendix_dataset}
+
+\subsection{PKU-SafeRLHF Statistics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Statistic} & \textbf{Value} \\
+\midrule
+Total Examples & 44,137 \\
+Training Split & 83\% \\
+Validation Split & 17\% \\
+Avg. Prompt Length & 42 tokens \\
+Avg. Response Length & 187 tokens \\
+Safety Categories & 19 \\
+\bottomrule
+\end{tabular}
+\caption{PKU-SafeRLHF dataset statistics.}
+\label{tab:pku_stats}
+\end{table}
+
+\subsection{ISD Instruction Templates}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{@{}lp{8cm}@{}}
+\toprule
+\textbf{Type} & \textbf{Full Instruction Template} \\
+\midrule
+neutral & ``Respond with a balanced perspective, presenting multiple viewpoints fairly.'' \\
+conservative & ``Respond with traditional values, favoring established methods and caution.'' \\
+liberal & ``Respond with openness to new ideas, emphasizing progress and innovation.'' \\
+regulatory & ``Respond with focus on compliance, legal considerations, and proper procedures.'' \\
+empathetic & ``Respond with compassion and emotional support, prioritizing the user's feelings.'' \\
+safety\_first & ``Respond with risk awareness, highlighting potential dangers and precautions.'' \\
+educational & ``Respond in teaching mode, explaining concepts clearly for learning.'' \\
+concise & ``Respond briefly and directly, avoiding unnecessary elaboration.'' \\
+professional & ``Respond with formal, business-appropriate language and structure.'' \\
+creative & ``Respond with novel ideas and unconventional approaches.'' \\
+\bottomrule
+\end{tabular}
+\caption{Full instruction templates for each ISD type.}
+\label{tab:instruction_templates}
+\end{table}
+
+%% =============================================================================
+%% ABLATION STUDIES
+%% =============================================================================
+\section{Ablation Studies}
+\label{sec:appendix_ablations}
+
+\subsection{Effect of KL Weight ($\lambda$)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{$\lambda_{\text{KL}}$} & \textbf{Reward Margin} & \textbf{ISD Score} & \textbf{Stability} \\
+\midrule
+0 (no KL) & 3.8 & 0.22 & Unstable \\
+0.00005 & 5.1 & 0.28 & Marginal \\
+0.0001 & 6.2 & 0.33 & Stable \\
+0.00023 (best) & 7.5 & 0.37 & Stable \\
+0.0005 & 6.8 & 0.34 & Stable \\
+0.001 & 5.5 & 0.29 & Stable \\
+\bottomrule
+\end{tabular}
+\caption{Effect of KL weight on training stability and performance. Optimal $\lambda \approx 0.0002$--$0.0003$.}
+\label{tab:kl_ablation}
+\end{table}
+
+\textbf{Finding}: Too low $\lambda$ causes mode collapse; too high $\lambda$ over-constrains learning.
+
+\subsection{Effect of Temperature ($\beta$)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{$\beta$} & \textbf{Preference Accuracy} & \textbf{Reward Margin} & \textbf{ISD Score} \\
+\midrule
+0.05 & 85\% & 4.2 & 0.29 \\
+0.10 (best) & 89\% & 7.5 & 0.37 \\
+0.15 & 91\% & 8.1 & 0.35 \\
+0.20 & 92\% & 9.2 & 0.31 \\
+\bottomrule
+\end{tabular}
+\caption{Effect of temperature on preference learning. Optimal $\beta \approx 0.1$.}
+\label{tab:beta_ablation}
+\end{table}
+
+\textbf{Finding}: Higher $\beta$ increases margin but reduces instruction sensitivity.
+
+%% =============================================================================
+%% EVALUATION BENEFITS
+%% =============================================================================
+\section{Evaluation Benefits of CITA}
+\label{sec:appendix_benefits}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Generalization}: Applies policy to novel prompts not seen during training
+    \item \textbf{Robustness}: Resists jailbreaks and adversarial rephrasing attempts
+    \item \textbf{Over-Refusal Calibration}: Avoids unnecessary refusals by conditioning on context
+    \item \textbf{Policy Switching}: Behaves differently under different alignment instructions
+\end{itemize}
+
+%% =============================================================================
+%% EXTENSIONS AND FUTURE WORK
+%% =============================================================================
+\section{Extensions and Future Work}
+\label{sec:appendix_future}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Multi-policy conditioning}: Support multiple simultaneous policies (e.g., strict, educational, neutral)
+    \item \textbf{Rationale-augmented tuning}: Include reasons for rejection in training data
+    \item \textbf{Cross-lingual alignment transfer}: Extend instruction-conditioning to multilingual policies
+    \item \textbf{Multimodal CITA}: Extend to image-text alignment in vision-language models
+\end{itemize}
+
+%% =============================================================================
+%% QUALITATIVE EXAMPLES
+%% =============================================================================
+\section{Qualitative Examples}
+\label{sec:appendix_examples}
+
+\subsection{Good Example: Instruction Switching}
+
+\textbf{Prompt}: ``What should I consider when investing in cryptocurrency?''
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{@{}lp{10cm}@{}}
+\toprule
+\textbf{Instruction} & \textbf{CITA\_Instruct Response} \\
+\midrule
+safety\_first & ``Cryptocurrency is highly volatile. Consider: only invest what you can afford to lose, secure your private keys offline, be wary of scams, and never share your credentials. The regulatory landscape is uncertain---consult a financial advisor.'' \\
+\midrule
+liberal & ``Cryptocurrency offers exciting opportunities for financial innovation. Consider: diversifying across multiple coins, exploring DeFi protocols, following emerging trends, and potentially high returns for those willing to embrace risk.'' \\
+\midrule
+concise & ``Assess: volatility tolerance, security practices, regulatory risks, investment horizon. Start small.'' \\
+\bottomrule
+\end{tabular}
+\caption{Same prompt, different instructions yield behaviorally distinct responses.}
+\label{tab:good_example}
+\end{table}
+
+\subsection{Failure Case: Conflicting Instructions}
+
+\textbf{Prompt}: ``How should I respond to criticism at work?''
+
+\textbf{Instruction}: ``Be empathetic AND concise'' (conflicting)
+
+\textbf{Response}: ``Thank you for the feedback. [stops abruptly]''
+
+\textbf{Analysis}: The model attempted to satisfy both instructions but produced an incomplete response. Future work should address instruction composition and conflict resolution through hierarchical instruction handling.

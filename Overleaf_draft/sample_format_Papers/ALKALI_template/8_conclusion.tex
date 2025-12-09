@@ -1,0 +1,27 @@
+\section{Conclusion}
+
+
+This work presents a comprehensive framework for adversarial robustness in language models, grounded in the principle that \emph{alignment must be internalized geometrically—not merely simulated behaviorally}. Central to our proposal is \textbf{GRACE}, a contrastive, preference-guided objective that restructures the latent space of frozen LLMs into safety-aware manifolds. Unlike prior methods that operate solely in output space, GRACE enforces structural separation between safe and adversarial completions via a learned layerwise pooling profile that adaptively locates alignment-relevant representations.
+
+We contribute \textbf{ALKALI}, the first taxonomy-grounded adversarial benchmark spanning 9,000 prompts across jailbreak, control, and degradation axes, and introduce \textbf{AVQI}, a geometry-aware diagnostic quantifying latent entanglement via clustering metrics. Together, these tools reveal persistent vulnerabilities in both open- and closed-source models, showing that representational overlap, not just behavioral deviation, is the cause of alignment failure.
+
+
+
+GRACE’s learned pooling mechanism (Section~\ref{sec:appendix_pool_profile}) isolates abstraction layers where refusal and safety signals emerge, enabling structural alignment without updating the base model. 
+
+\textbf{Outlook.} We envision several promising extensions: (1) continual refinement of alignment geometry via online contrastive replay, (2) adversarial subspace projection for decoding-time defense, and (3) multi-agent cooperative alignment with harmonized latent preferences across interacting models.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%With GRACE and AVQI as foundational tools, we take a step toward a future where alignment is not merely evaluated at the output—but engineered into the very shape of cognition in modern language models.

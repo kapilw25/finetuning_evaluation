@@ -1,0 +1,164 @@
+% =============================================================================
+% INSTRUCTION SWITCH DATASET (ISD) - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Instruction Switch Dataset (ISD)}
+\label{sec:isd_dataset}
+
+To rigorously evaluate instruction-conditioned alignment, we construct the \textbf{Instruction Switch Dataset (ISD)}---a diagnostic benchmark where the \textbf{user prompt remains constant} while only the \textbf{alignment instruction varies}. This design isolates the effect of instructions from prompt-specific confounds.
+
+\vspace{-2mm}
+\subsection{Motivation}
+\label{sec:isd_motivation}
+
+Existing benchmarks conflate instruction-following with prompt variation. When both change simultaneously, it is impossible to determine whether behavioral differences stem from instruction comprehension or prompt-specific responses.
+
+\textbf{ISD Design Principle.} By fixing the user prompt $X$ and varying only the instruction $I$, we can measure:
+\begin{equation}
+\Delta_I = \mathbb{E}_{I_1, I_2}\left[ d\left( R(I_1, X), R(I_2, X) \right) \right]
+\label{eq:isd_metric}
+\end{equation}
+
+where $R(I, X)$ is the response to prompt $X$ under instruction $I$, and $d(\cdot, \cdot)$ measures behavioral difference.
+
+\vspace{-2mm}
+\subsection{Dataset Construction}
+\label{sec:isd_construction}
+
+\paragraph{Prompt Bank.} We curate 500 prompts from diverse sources:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item News articles and current events
+    \item Educational Q\&A collections
+    \item Instruction-tuning datasets (FLAN~\cite{wei2022finetuned}, Alpaca~\cite{taori2023alpaca})
+    \item User intent pools from dialogue systems
+\end{itemize}
+
+\paragraph{Selection Criteria.} All prompts are:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item \textbf{Semantically open-ended}: Allow multiple valid response styles
+    \item \textbf{Culturally grounded}: Avoid region-specific assumptions
+    \item \textbf{Neutrally phrased}: No embedded biases toward specific instruction types
+\end{itemize}
+
+\vspace{-2mm}
+\subsection{10 Instruction Types}
+\label{sec:instruction_types}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Instruction Type} & \textbf{Behavioral Objective} \\
+\midrule
+\texttt{neutral} & Balanced perspective, present pros/cons \\
+\texttt{conservative} & Favor traditional methods, risk-averse \\
+\texttt{liberal} & Encourage innovation, embrace change \\
+\texttt{regulatory} & Emphasize compliance, legal considerations \\
+\texttt{empathetic} & Compassionate, emotionally supportive tone \\
+\texttt{safety\_first} & Prioritize risk awareness, caution \\
+\texttt{educational} & Teaching mode, explain concepts clearly \\
+\texttt{concise} & Brief, direct responses \\
+\texttt{professional} & Formal tone, business-appropriate \\
+\texttt{creative} & Novel approaches, unconventional ideas \\
+\bottomrule
+\end{tabular}
+\caption{The 10 instruction types in ISD, each targeting a distinct behavioral dimension.}
+\label{tab:instruction_types}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Dataset Scale}
+\label{sec:isd_scale}
+
+\begin{equation}
+|\text{ISD}| = 300 \text{ prompts} \times 10 \text{ instructions} = \mathbf{3,000} \text{ test cases}
+\label{eq:isd_scale}
+\end{equation}
+
+\vspace{-2mm}
+\subsection{Example: Instruction Switching}
+\label{sec:isd_example}
+
+\textbf{Prompt}: ``\textit{Should AI-generated art be allowed in competitions?}''
+
+\begin{table}[h!]
+\centering
+\footnotesize
+\begin{tabular}{@{}lp{5.5cm}@{}}
+\toprule
+\textbf{Instruction} & \textbf{Response Snippet} \\
+\midrule
+Neutral & AI art offers exciting possibilities but raises authenticity concerns that deserve careful consideration. \\
+Conservative & Competitions should prioritize human craftsmanship and traditional artistic skills. \\
+Liberal & AI art promotes innovation, democratizes creativity, and expands artistic boundaries. \\
+Regulatory & Ensure copyright compliance, require disclosure, and label AI-generated entries. \\
+Empathetic & We must respect artists' concerns about their livelihoods while embracing new tools. \\
+\bottomrule
+\end{tabular}
+\caption{Same prompt, different instructions produce behaviorally distinct responses.}
+\label{tab:isd_example}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Prompt Category Distribution}
+\label{sec:prompt_categories}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lc|lc@{}}
+\toprule
+\textbf{Category} & \textbf{\#} & \textbf{Category} & \textbf{\#} \\
+\midrule
+Technology & 25 & Ethics & 25 \\
+Healthcare & 25 & Culture & 25 \\
+Environment & 25 & Science & 25 \\
+Education & 25 & Business & 25 \\
+Economics & 25 & Personal & 25 \\
+Social & 25 & Governance & 25 \\
+\bottomrule
+\end{tabular}
+\caption{ISD prompt distribution across 12 categories (300 prompts total).}
+\label{tab:prompt_categories}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Instruction-Following vs. Instruction-Alignment}
+\label{sec:following_vs_alignment}
+
+A critical distinction underlies the ISD evaluation:
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Property} & \textbf{Following} & \textbf{Alignment} \\
+\midrule
+Depth & Surface-level & Internalized \\
+Example & ``Be concise'' $\rightarrow$ short text & Concise \textit{style} adopted \\
+Robustness & Easily disrupted & Consistent across contexts \\
+Goal & Format compliance & Policy embodiment \\
+\bottomrule
+\end{tabular}
+\caption{Instruction-following (shallow) vs. instruction-alignment (deep).}
+\label{tab:following_vs_alignment}
+\vspace{-4mm}
+\end{table}
+
+\textbf{ISD tests whether CITA achieves true instruction-alignment}---consistent behavioral shifts reflecting internalized policy goals---rather than superficial instruction-following that can be easily circumvented.
+
+\vspace{-2mm}
+\subsection{Dataset Availability}
+\label{sec:dataset_availability}
+
+The Instruction Switch Dataset is publicly available:
+
+\begin{center}
+\url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+\end{center}

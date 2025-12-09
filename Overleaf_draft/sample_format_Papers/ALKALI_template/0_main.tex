@@ -1,0 +1,969 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+
+\documentclass[11pt]{article}
+
+
+\usepackage{enumitem}
+\usepackage{lipsum}
+\usepackage{tikz}
+%\usepackage{tcolorbox}
+\usetikzlibrary{trees,shapes}
+\usepackage{xcolor}
+\usepackage{epigraph}
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\hypersetup{breaklinks=true}
+
+\usepackage[many]{tcolorbox}
+
+\newtcolorbox{defin}{colback=Teal!5!White,enhanced,title=Contributions at-a-glance,
+	attach boxed title to top left={xshift=-4mm},boxrule=0pt,after skip=1cm,before skip=1cm,right skip=0cm,breakable,fonttitle=\bfseries,toprule=0pt,bottomrule=0pt,rightrule=0pt,leftrule=3pt,arc=0mm,skin=enhancedlast jigsaw,sharp corners,colframe=Teal!55!black,colbacktitle=Teal!55!black,boxed title style={
+		frame code={ 
+			\fill[Teal!25!black](frame.south west)--(frame.north west)--(frame.north east)--([xshift=3mm]frame.east)--(frame.south east)--cycle;
+			\draw[line width=1mm,Teal!25!black]([xshift=2mm]frame.north east)--([xshift=5mm]frame.east)--([xshift=2mm]frame.south east);
+			\draw[line width=1mm,Teal!25!black]([xshift=5mm]frame.north east)--([xshift=8mm]frame.east)--([xshift=5mm]frame.south east);
+			\fill[Teal!25!black](frame.south west)--+(4mm,-2mm)--+(4mm,2mm)--cycle;
+		}
+	}
+}
+\usetikzlibrary{shapes.geometric, arrows}
+\usetikzlibrary{decorations.markings}
+
+%%%%%%%%%Color%%%%%%%%%%%%%%%%
+\definecolor{first}{RGB}{210,255,140}
+\definecolor{second}{RGB}{136, 162, 190}
+\definecolor{third}{RGB}{129, 222, 228}
+\definecolor{fourth}{RGB}{132, 84, 246}
+\definecolor{fifth}{RGB}{250, 223, 112}
+\definecolor{sixth}{RGB}{203, 193, 172}
+\definecolor{seventh}{RGB}{88, 112, 246}
+\definecolor{eighth}{RGB}{245, 192, 106}
+\definecolor{nine}{RGB}{171, 162, 111}
+\definecolor{ten}{RGB}{217, 217, 217}
+
+
+
+\definecolor{paired-light-blue}{RGB}{198, 219, 239}
+\definecolor{paired-dark-blue}{RGB}{49, 130, 188}
+\definecolor{paired-light-orange}{RGB}{251, 208, 162}
+\definecolor{paired-dark-orange}{RGB}{230, 85, 12}
+\definecolor{paired-light-green}{RGB}{199, 233, 193}
+\definecolor{paired-dark-green}{RGB}{49, 163, 83}
+\definecolor{paired-light-purple}{RGB}{218, 218, 235}
+\definecolor{paired-dark-purple}{RGB}{117, 107, 176}
+\definecolor{paired-light-gray}{RGB}{217, 217, 217}
+\definecolor{paired-dark-gray}{RGB}{99, 99, 99}
+\definecolor{paired-light-pink}{RGB}{222, 158, 214}
+\definecolor{paired-dark-pink}{RGB}{123, 65, 115}
+\definecolor{paired-light-red}{RGB}{231, 150, 156}
+\definecolor{paired-dark-red}{RGB}{131, 60, 56}
+\definecolor{paired-light-yellow}{RGB}{231, 204, 149}
+\definecolor{paired-dark-yellow}{RGB}{141, 109, 49}
+\definecolor{Teal}{RGB}{0, 50, 50}
+\definecolor{White}{RGB}{250, 250, 250}
+
+\definecolor{bg1}{HTML}{FF9966}
+\definecolor{bg2}{HTML}{CCE5FF}
+\definecolor{bg3}{HTML}{FFCC99}
+\definecolor{bg4}{HTML}{FFC107}
+\definecolor{bg5}{HTML}{FFCCCC}
+\definecolor{bg6}{HTML}{D5E8D4}
+\definecolor{bg7}{HTML}{eeeeee}
+\definecolor{bg8}{HTML}{cdeb8b}
+\definecolor{bg9}{HTML}{dae8fc}
+\definecolor{bg10}{HTML}{a2e6eb}
+
+\definecolor{bg31}{HTML}{FFCDD2} % light pink
+
+\definecolor{bg32}{HTML}{F8BBD0}
+
+\definecolor{bg33}{HTML}{E1BEE7} % lavender
+
+\definecolor{bg34}{HTML}{D7CCC8} % light tan
+
+\definecolor{bg35}{HTML}{B2DFDB} % light teal
+
+\definecolor{bg36}{HTML}{A5D6A7} % light green
+
+\definecolor{bg37}{HTML}{FFF9C4} %light yellow
+
+\definecolor{bg38}{HTML}{FFECB3} % peach
+
+\definecolor{bg111}{HTML}{CB6843}
+
+\definecolor{bg112}{HTML}{D77C5C}
+
+\definecolor{bg113}{HTML}{E28E6E}
+\definecolor{bg114}{HTML}{E89F7D}
+\definecolor{bg115}{HTML}{EDAE8A}
+\definecolor{bg116}{HTML}{F0BA95}
+\definecolor{bg117}{HTML}{F3C29F}
+\definecolor{bg118}{HTML}{F6CCAA}
+\definecolor{bg119}{HTML}{F8D5B3}
+\definecolor{bg120}{HTML}{FADCBD}
+\definecolor{bg121}{HTML}{FCE6C7}
+
+\definecolor{bg39}{HTML}{FFE0B2} % apricot
+
+\definecolor{bg40}{HTML}{3CB371} % blush pink
+
+% Excel doc for ASR scores: https://docs.google.com/spreadsheets/d/1SrLsPllNFOrSNSTxTqLYraseJjZwdZqkai-YSHzfSOc/edit?gid=0#gid=0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\definecolor{bg43}{HTML}{ffe5d9}
+
+\definecolor{bg15}{HTML}{7FFFD4}
+
+\definecolor{bg17}{HTML}{F0FFFF}
+
+\definecolor{bg18}{HTML}{F5FFFA}
+
+\definecolor{bg19}{HTML}{F8F8FF}
+
+\definecolor{bg20}{HTML}{FFFFFF}
+
+\definecolor{bg21}{HTML}{E1F5FE}
+
+\definecolor{bg22}{HTML}{B3E5FC}
+
+\definecolor{bg23}{HTML}{81D4FA}
+
+\definecolor{bg24}{HTML}{4FC3F7}
+
+\definecolor{bg25}{HTML}{29B6F6}
+
+\definecolor{bg26}{HTML}{03A9F4}
+
+\definecolor{bg27}{HTML}{039BE5}
+
+\definecolor{bg28}{HTML}{0288D1}
+
+\definecolor{bg29}{HTML}{0277BD}
+
+\definecolor{bg30}{HTML}{01579B}
+
+\definecolor{bg16}{HTML}{FFCC99} 
+
+
+\definecolor{pg51}{HTML}{E8F5E9} % pale green
+\definecolor{pg52}{HTML}{C8E6C9} % honeydew green
+\definecolor{pg53}{HTML}{B9F6CA} % light mint green
+\definecolor{pg54}{HTML}{A9DFBF} % pale sage green
+\definecolor{pg55}{HTML}{BCF5A6} % lemon green
+
+\definecolor{pg56}{HTML}{BEF1CE} % seashell green
+\definecolor{pg57}{HTML}{CEF6EC} % icy green
+\definecolor{pg58}{HTML}{B7F0B1} % feijoa green
+\definecolor{pg59}{HTML}{B1F2B5} % pastel light green
+\definecolor{pg60}{HTML}{9DF3C4} % greenish cyan
+
+\definecolor{pg61}{HTML}{DEF7E0} % pale green
+\definecolor{pg62}{HTML}{E8F8DC} % greenish beige
+
+\definecolor{pg63}{HTML}{EBF7E7} % seafoam green
+\definecolor{pg64}{HTML}{F0FDF4} % pale turquoise
+
+\definecolor{pg65}{HTML}{F1FEE7} % mint cream
+\definecolor{pg66}{HTML}{F7FFF6} % foam green
+\definecolor{pg67}{HTML}{FCFFE7} % pale spring bud
+\definecolor{pg68}{HTML}{F4FFD2} % light lime green
+\definecolor{pg69}{HTML}{EEFFE2} % tea green
+\definecolor{pg70}{HTML}{E3FDF5} % tropical green
+
+
+\definecolor{connect-color}{RGB}{0,0,0}
+\definecolor{middle-color}{RGB}{255,255,255}
+% \definecolor{leaf-color}{RGB}{166,208,153}
+\definecolor{leaf-color}{RGB}{173,216,230}
+% \definecolor{line-color}{RGB}{166,208,153}
+\definecolor{line-color}{RGB}{25,25,112}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% \usepackage{setspace}
+
+
+
+%resize/scale equations
+% \newcommand*{\Scale}[2][4]{\scalebox{#1}{$#2$}}%
+% \newcommand*{\Resize}[2]{\resizebox{#1}{!}{$#2$}}%
+
+% \usepackage{environ}
+
+% \newlength{\myl}
+% \expandafter\let\expandafter\origequation\csname equation*\endcsname
+% \expandafter\let\expandafter\endorigequation\csname endequation*\endcsname
+% \long\def\[#1\]{\begin{equation*}#1\end{equation*}}
+% \RenewEnviron{equation*}{
+%   \settowidth{\myl}{$\displaystyle\BODY$} % calculate width and save as \myl
+%   \origequation
+%     \ifdim\myl>\linewidth
+%       \resizebox{\linewidth}{!}{$\displaystyle\BODY$}% \myl > \linewidth
+%     \else
+%       \BODY % \myl <= \linewidth
+%     \fi
+%   \endorigequation
+% }
+
+\newtcolorbox{societal_harm}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Societal harm,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{privacy_violation}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Privacy Violation,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{disinformation_deception}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Disinformation \& Deception,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{answer_disparity}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Answer disparity,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{wrong_classification}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Wrong classification,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{goal_hijacking}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Goal hijacking,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{control_generation}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Control generation,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+\newtcolorbox{prompt_leaking}{
+  colback=soothingPurple, % Background color
+  colframe=black, % Border color
+  boxrule=0pt,% Border width
+  enhanced,
+  title=Prompt leaking,
+  attach boxed title to top right={yshift=-3mm},
+  fonttitle=\bfseries,
+  toprule=1pt,
+  bottomrule=1pt,
+  rightrule=1pt,
+  leftrule=1pt,
+  arc=1mm
+}
+
+% Remove the "review" option to generate the final version.
+\definecolor{soothingPurple}{RGB}{195, 160, 201}
+\definecolor{hidden-draw}{RGB}{20,68,106}
+\definecolor{hidden-pink}{RGB}{255,245,247}
+\definecolor{dark-red}{RGB}{233, 150, 122}
+\definecolor{light-red}{RGB}{255,182,193}
+\definecolor{medium-red}{RGB}{205,92,92}
+\definecolor{light-yellow}{RGB}{255, 239, 153}
+\definecolor{light-blue}{RGB}{173, 216, 230}
+\definecolor{paired-light-yellow}{HTML}{FFFF88}
+\definecolor{paired-light-blue}{HTML}{CCE5FF}
+\definecolor{paired-light-orange}{HTML}{FFCC99}
+\definecolor{paired-dark-yellow}{HTML}{FFF2CC}
+\definecolor{paired-light-pink}{HTML}{FFCCCC}
+\definecolor{paired-cyan}{HTML}{D5E8D4}
+\definecolor{paired-gray}{HTML}{eeeeee}
+\definecolor{paired-green}{HTML}{cdeb8b}
+\definecolor{paired-blue}{HTML}{dae8fc}
+\definecolor{paired-dark-cyan}{HTML}{a2e6eb}
+\definecolor{paired-dark-pink}{HTML}{e7b2d2}
+\definecolor{paired-purple}{HTML}{9999ff}
+\definecolor{paired-pink}{HTML}{cc99ff}
+\definecolor{paired-orange}{HTML}{ffcc99}
+
+
+\definecolor{a1}{RGB}{241,233,191}
+\definecolor{a2}{RGB}{255,241,218}
+
+\definecolor{a3}{RGB}{255,239,213}
+\definecolor{a4}{RGB}{250,235,215}
+\definecolor{a5}{RGB}{255,239,219}
+\definecolor{a6}{RGB}{255,246,225}
+\definecolor{a7}{RGB}{246,227,201}
+\definecolor{a8}{RGB}{254,235,226}
+\definecolor{a9}{RGB}{247,220,111}
+\definecolor{a10}{RGB}{199,211,189}
+\definecolor{a11}{RGB}{209,196,233}
+\definecolor{a12}{RGB}{214,234,248}
+\definecolor{a13}{RGB}{232,245,233}
+\definecolor{a14}{RGB}{237,248,177}
+\definecolor{a15}{RGB}{255,228,225}
+\definecolor{a16}{RGB}{255,228,181}
+\definecolor{a17}{RGB}{255,222,173}
+\definecolor{a18}{RGB}{255,218,185}
+\definecolor{a19}{RGB}{255,203,164}
+\definecolor{a20}{RGB}{247,202,201}
+
+\definecolor{a21}{RGB}{241,254,255}
+\definecolor{a22}{RGB}{230,252,252}
+\definecolor{a23}{RGB}{179,236,255}
+\definecolor{a24}{RGB}{174,226,249}
+\definecolor{a25}{RGB}{208,234,246}
+\definecolor{a26}{RGB}{189,226,219}
+\definecolor{a27}{RGB}{177,204,201}
+
+\definecolor{a28}{RGB}{216,195,216}
+\definecolor{a29}{RGB}{195,155,211}
+\definecolor{a30}{RGB}{208,152,223}
+\definecolor{a31}{RGB}{255,183,209}
+\definecolor{a32}{RGB}{255,167,209}
+\definecolor{a33}{RGB}{254,235,167}
+\definecolor{a34}{RGB}{255,222,137}
+\definecolor{a35}{RGB}{254,180,154}
+\definecolor{a36}{RGB}{247,148,161}
+\definecolor{a37}{RGB}{239,154,154}
+\definecolor{a38}{RGB}{255,130,171}
+\definecolor{a39}{RGB}{255,105,180}
+\definecolor{a40}{RGB}{251,142,172}
+
+
+\usepackage{ACL2023}
+\usepackage[edges]{forest}
+\usepackage{lipsum}
+\usepackage{tikz}
+\usetikzlibrary{trees,shapes}
+
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+% For Vietnamese characters
+% \usepackage[T5]{fontenc}
+% See https://www.latex-project.org/help/documentation/encguide.pdf for other character sets
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out.
+% However, it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+\usepackage{soul}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{inconsolata}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsmath,amssymb}
+\usepackage{soul}
+%\usepackage[margin=2cm]{geometry}
+\usepackage{tikz}
+
+% Style definition
+\tikzset{rndblock/.style={rounded corners,rectangle,draw,scale=0.8,outer sep=0pt}}
+
+% Command Definition
+% 1 optional to customize the aspect, 2 mandatory: text to be framed
+\newcommand{\tframed}[2][]{\tikz[baseline=(h.base)]\node[rndblock,#1] (h) {#2};}
+
+\usetikzlibrary{shapes.geometric}
+\usepackage{framed}
+\usepackage{enumitem}
+\newlist{RQ}{enumerate}{1}
+\setlist[RQ]{label=\textbf{RQ\,\arabic*},ref={RQ\,\arabic*}}
+\usepackage{comment}
+\usepackage{natbib}
+\usepackage{multibib}
+\makeatletter
+\usepackage{booktabs}
+\usepackage[inkscapeformat=png]{svg}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\usepackage{soul}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{arydshln}
+\usepackage{lipsum}
+
+\usepackage[many]{tcolorbox}
+
+% \newtcolorbox{defin}{colback=Teal!5!White,enhanced,title=Contributions,
+% 	attach boxed title to top left={xshift=0mm},boxrule=0pt,after skip=1cm,before skip=1cm,right skip=0cm,breakable,fonttitle=\bfseries,toprule=0pt,bottomrule=0pt,rightrule=0pt,leftrule=3pt,arc=0mm,skin=enhancedlast jigsaw,sharp corners,colframe=Teal!55!black,colbacktitle=Teal!55!black,boxed title style={
+% 		frame code={ 
+% 			\fill[Teal!25!black](frame.south west)--(frame.north west)--(frame.north east)--([xshift=3mm]frame.east)--(frame.south east)--cycle;
+% 			\draw[line width=1mm,Teal!25!black]([xshift=2mm]frame.north east)--([xshift=5mm]frame.east)--([xshift=2mm]frame.south east);
+% 			\draw[line width=1mm,Teal!25!black]([xshift=5mm]frame.north east)--([xshift=8mm]frame.east)--([xshift=5mm]frame.south east);
+% 			\fill[Teal!25!black](frame.south west)--+(4mm,-2mm)--+(4mm,2mm)--cycle;
+% 		}
+% 	}
+% }
+
+% \setlist{leftmargin=1mm}
+\usetikzlibrary{shapes.geometric, arrows}
+\usetikzlibrary{decorations.markings}
+
+\usepackage{fancybox}
+\usepackage{xcolor}
+\usepackage{hyperref}
+ \definecolor{darkblue}{rgb}{0, 0, 0.5}
+  \hypersetup{colorlinks=true, citecolor=darkblue, linkcolor=darkblue, urlcolor=darkblue}
+
+\definecolor{vgreen}{HTML}{60A917}
+\definecolor{vred}{HTML}{CE3A29}
+
+\usepackage{xstring}
+\usepackage{longtable}
+
+\usepackage{tabularray}
+
+\DefTblrTemplate{firsthead,middlehead,lasthead}{default}{
+}
+\DefTblrTemplate{firstfoot}{default}{
+  \UseTblrTemplate{contfoot}{default}
+  \UseTblrTemplate{caption}{default}
+}
+\DefTblrTemplate{middlefoot}{default}{
+  \UseTblrTemplate{contfoot}{default}
+  \UseTblrTemplate{capcont}{default}
+}
+\DefTblrTemplate{lastfoot}{default}{
+  \UseTblrTemplate{note}{default}
+  \UseTblrTemplate{remark}{default}
+  \UseTblrTemplate{capcont}{default}
+}
+
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+% Multi-line left-aligned text with manual line breaks.
+% The base line is in centre.
+\newcommand*{\mline}[1]{%
+\begingroup
+    \renewcommand*{\arraystretch}{1.1}%
+   \begin{tabular}[c]{@{}>{\raggedright\arraybackslash}p{2cm}@{}}#1\end{tabular}%
+  \endgroup
+}
+
+\usepackage{color}
+\tcbuselibrary{skins}
+
+\usepackage[export]{adjustbox} % for the valign option
+
+\usepackage{setspace}
+%\usepackage[capitalise]{cleveref}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+%\crefname{chapter}{chap.}{chap.}
+\crefname{section}{Sec.}{Sec.}
+
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{comment}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{colortbl}
+\usepackage[export]{adjustbox} % for the valign option
+\usepackage{varwidth}
+\usepackage{enumitem}
+\setlist{leftmargin=1mm}
+\usepackage{pifont}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{resizegather}
+\usepackage{breqn}
+\usepackage[capitalise]{cleveref}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+\usetikzlibrary{decorations.markings}
+\usepackage{soul}
+\usepackage{wrapfig,graphicx,lipsum}% http://ctan.org/pkg/{wrapfig,graphicx,lipsum}
+\usepackage{extsizes}
+\usepackage{cuted}
+\usepackage{flushend}
+\usepackage{float}
+\usepackage{changepage,threeparttable}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{dblfloatfix} 
+\usepackage{fixltx2e}
+\usepackage[normalem]{ulem}
+
+
+
+\DeclareRobustCommand{\hlpink}[1]{{\sethlcolor{pink}\hl{#1}}}
+\DeclareRobustCommand{\hlgreen}[1]{{\sethlcolor{green}\hl{#1}}}
+
+\usepackage{environ}
+\usepackage{soul}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{arydshln}
+\usepackage{lipsum}
+
+\usepackage[many]{tcolorbox}
+
+% \newtcolorbox{defin}{colback=Teal!5!White,enhanced,title=Contributions,
+% 	attach boxed title to top left={xshift=0mm},boxrule=0pt,after skip=1cm,before skip=1cm,right skip=0cm,breakable,fonttitle=\bfseries,toprule=0pt,bottomrule=0pt,rightrule=0pt,leftrule=3pt,arc=0mm,skin=enhancedlast jigsaw,sharp corners,colframe=Teal!55!black,colbacktitle=Teal!55!black,boxed title style={
+% 		frame code={ 
+% 			\fill[Teal!25!black](frame.south west)--(frame.north west)--(frame.north east)--([xshift=3mm]frame.east)--(frame.south east)--cycle;
+% 			\draw[line width=1mm,Teal!25!black]([xshift=2mm]frame.north east)--([xshift=5mm]frame.east)--([xshift=2mm]frame.south east);
+% 			\draw[line width=1mm,Teal!25!black]([xshift=5mm]frame.north east)--([xshift=8mm]frame.east)--([xshift=5mm]frame.south east);
+% 			\fill[Teal!25!black](frame.south west)--+(4mm,-2mm)--+(4mm,2mm)--cycle;
+% 		}
+% 	}
+% }
+
+% \setlist{leftmargin=1mm}
+\usetikzlibrary{shapes.geometric, arrows}
+\usetikzlibrary{decorations.markings}
+
+\usepackage{fancybox}
+\usepackage{xcolor}
+\usepackage{hyperref}
+ \definecolor{darkblue}{rgb}{0, 0, 0.5}
+  \hypersetup{colorlinks=true, citecolor=darkblue, linkcolor=darkblue, urlcolor=darkblue}
+
+\definecolor{vgreen}{HTML}{60A917}
+\definecolor{vred}{HTML}{CE3A29}
+
+\usepackage{xstring}
+\usepackage{longtable}
+
+\usepackage{tabularray}
+
+\DefTblrTemplate{firsthead,middlehead,lasthead}{default}{
+}
+\DefTblrTemplate{firstfoot}{default}{
+  \UseTblrTemplate{contfoot}{default}
+  \UseTblrTemplate{caption}{default}
+}
+\DefTblrTemplate{middlefoot}{default}{
+  \UseTblrTemplate{contfoot}{default}
+  \UseTblrTemplate{capcont}{default}
+}
+\DefTblrTemplate{lastfoot}{default}{
+  \UseTblrTemplate{note}{default}
+  \UseTblrTemplate{remark}{default}
+  \UseTblrTemplate{capcont}{default}
+}
+
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+% Multi-line left-aligned text with manual line breaks.
+% The base line is in centre.
+% \newcommand*{\mline}[1]{%
+\renewcommand*{\mline}[1]{%
+\begingroup
+    \renewcommand*{\arraystretch}{1.1}%
+   \begin{tabular}[c]{@{}>{\raggedright\arraybackslash}p{2cm}@{}}#1\end{tabular}%
+  \endgroup
+}
+
+\usepackage{color}
+\tcbuselibrary{skins}
+
+\usepackage[export]{adjustbox} % for the valign option
+
+\usepackage{setspace}
+%\usepackage[capitalise]{cleveref}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+%\crefname{chapter}{chap.}{chap.}
+\crefname{section}{Sec.}{Sec.}
+
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{comment}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{colortbl}
+\usepackage[export]{adjustbox} % for the valign option
+\usepackage{varwidth}
+\usepackage{enumitem}
+\setlist{leftmargin=1mm}
+\usepackage{pifont}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{resizegather}
+\usepackage{breqn}
+\usepackage[capitalise]{cleveref}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+\usetikzlibrary{decorations.markings}
+\usepackage{soul}
+\usepackage{wrapfig,graphicx,lipsum}% http://ctan.org/pkg/{wrapfig,graphicx,lipsum}
+\usepackage{extsizes}
+\usepackage{cuted}
+\usepackage{flushend}
+\usepackage{float}
+\usepackage{changepage,threeparttable}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{dblfloatfix} 
+\usepackage{fixltx2e}
+\usepackage[normalem]{ulem}
+
+
+
+\DeclareRobustCommand{\hlpink}[1]{{\sethlcolor{pink}\hl{#1}}}
+\DeclareRobustCommand{\hlgreen}[1]{{\sethlcolor{green}\hl{#1}}}
+
+\usepackage{environ}
+
+\newlength{\myl}
+\expandafter\let\expandafter\origequation\csname equation*\endcsname
+\expandafter\let\expandafter\endorigequation\csname endequation*\endcsname
+\long\def\[#1\]{\begin{equation*}#1\end{equation*}}
+\RenewEnviron{equation*}{
+  \settowidth{\myl}{$\displaystyle\BODY$} % calculate width and save as \myl
+  \origequation
+    \ifdim\myl>\linewidth
+      \resizebox{\linewidth}{!}{$\displaystyle\BODY$}% \myl > \linewidth
+    \else
+      \BODY % \myl <= \linewidth
+    \fi
+  \endorigequation
+}
+
+
+\makeatletter
+\newcommand{\DrawLine}{%
+  \begin{tikzpicture}
+  \path[use as bounding box] (0,0) -- (\linewidth,0);
+  \draw[color=blue!75!black,dashed,dash phase=.5pt]
+        (0-\kvtcb@leftlower-\kvtcb@boxsep,0)--
+        (\linewidth+\kvtcb@rightlower+\kvtcb@boxsep,0);
+  \end{tikzpicture}%
+  }
+\makeatother
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\definecolor{gold}{rgb}{0.83, 0.69, 0.22}
+
+
+
+
+% If the title and author information does not fit in the area allocated, uncomment the following
+%
+%\setlength\titlebox{<dim>}
+%
+% and set <dim> to something 5cm or larger.
+
+\title{\includegraphics[width=0.95\textwidth]{figures/banner.pdf}}
+
+% Author information can be set in various styles:
+% For several authors from the same institution:
+% \author{Author 1 \and ... \and Author n \\
+%         Address line \\ ... \\ Address line}
+% if the names do not fit well on one line use
+%         Author 1 \\ {\bf Author 2} \\ ... \\ {\bf Author n} \\
+% For authors from different institutions:
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \And  ... \And
+%         Author n \\ Address line \\ ... \\ Address line}
+% To start a seperate ``row'' of authors use \AND, as in
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \AND
+%         Author 2 \\ Address line \\ ... \\ Address line \And
+%         Author 3 \\ Address line \\ ... \\ Address line}
+
+% \author{First Author \\
+%   Affiliation / Address line 1 \\
+%   Affiliation / Address line 2 \\
+%   Affiliation / Address line 3 \\
+%   \texttt{email@domain} \\\And
+%   Second Author \\
+%   Affiliation / Address line 1 \\
+%   Affiliation / Address line 2 \\
+%   Affiliation / Address line 3 \\
+%   \texttt{email@domain} \\}
+
+\author{
+Danush Khanna \\
+Manipal University
+\And
+Krishna Kumar \\
+GGSI University
+\And
+Basab Ghosh \\
+IIITDM Kancheepuram
+\AND
+Vinija Jain \\
+Meta AI
+\And
+Vasu Sharma \\
+Meta AI
+\And
+Aman Chadha \\
+Amazon
+\And
+Amitava Das \\
+BITS Goa
+}
+
+\begin{document}
+\setcitestyle{square}
+\maketitle
+\begin{abstract}
+Adversarial threats against LLMs are escalating faster than current defenses can adapt. We expose a critical geometric blind spot in alignment: adversarial prompts exploit \emph{latent camouflage}, embedding perilously close to the \textit{safe} representation manifold while encoding unsafe intent—thereby evading surface-level defenses like Direct Preference Optimization (DPO), which remain blind to the latent geometry.
+
+We introduce {\fontfamily{uncl}\fontsize{6}{7}\selectfont ALKALI}—the first rigorously curated adversarial benchmark and the most comprehensive to date—spanning 9,000 prompts across three macro categories, six subtypes, and fifteen attack families. Evaluation of 21 leading LLMs reveals alarmingly high Attack Success Rates (ASRs) across both open- and closed-source models, exposing an underlying vulnerability we term \emph{latent camouflage}—a structural blind spot where adversarial completions mimic the latent geometry of safe ones.
+
+To mitigate this vulnerability, we introduce \textbf{GRACE}—\textit{\ul{G}eometric \ul{R}epresentation-\ul{A}ware \ul{C}ontrastive \ul{E}nhancement}—an alignment framework coupling preference learning with latent-space regularization. GRACE enforces two constraints: \emph{latent separation} between safe and adversarial completions, and \emph{adversarial cohesion} among unsafe and jailbreak behaviors. These operate over \emph{layerwise-pooled embeddings} guided by a learned attention profile, reshaping internal geometry without modifying the base model, and achieve upto \textbf{39\%} ASR reduction.
+
+Moreover, we introduce \textbf{AVQI}—a geometry-aware metric that quantifies latent alignment failure via cluster separation and compactness. AVQI reveals when unsafe completions mimic the geometry of safe ones, offering a principled lens into how models internally encode safety. We make the code publicly available at \href{https://anonymous.4open.science/r/alkali-B416/README.md}{https://anonymous.4open.science/r/alkali-B416/README.md}.
+
+\end{abstract}
+
+
+%\begin{abstract}
+%Adversarial threats to LLMs are outpacing defenses. We reveal a key geometric vulnerability: adversarial prompts use \emph{latent camouflage}, lying close to the \textit{safe} manifold in latent space while encoding unsafe intent—evading defenses like Direct Preference Optimization (DPO). We introduce {\fontfamily{uncl}\fontsize{6}{7}\selectfont ALKALI}, the largest and most rigorous adversarial benchmark, with 9,000 prompts across 15 attack families. Testing 21 LLMs, across both open- and closed-source models, shows high Attack Success Rates (ASRs), confirming this geometric blind spot. To counter it, we propose \textbf{GRACE}—\textit{\ul{G}eometric \ul{R}epresentation-\ul{A}ware \ul{C}ontrastive \ul{E}nhancement}—which couples preference learning with latent-space regularization. GRACE enforces \emph{latent separation} between safe and adversarial completions, and \emph{adversarial cohesion} across unsafe outputs, using \emph{layerwise-pooled embeddings} and attention-guided alignment. It reduces ASR by up to \textbf{39\%}. We also introduce \textbf{AVQI}, a geometry-aware metric that detects latent alignment failures by measuring cluster separation and compactness—revealing when unsafe outputs mirror the latent structure of safe ones.
+%\end{abstract}
+
+
+
+\vspace{-10mm}
+ \begin{defin}
+ \vspace{-2mm}
+ \begin{itemize}
+ [leftmargin=1mm]
+ \setlength\itemsep{0em}
+ \begin{spacing}{0.05}
+ %\vspace{1mm}
+
+\item[$\blacktriangleright$] {\fontfamily{uncl}\fontsize{5}{6}\selectfont ALKALI} {\footnotesize \fontfamily{phv}\fontsize{7}{8}\selectfont
+\textbf{Benchmark}: The first-of-its-kind curated and most comprehensive adversarial benchmark to date, contains 9,000 prompts spanning 3 macro categories (\textit{Jailbreak}, \textit{Control Generation}, \textit{Performance Degradation}), 6 subtypes, and 15 attack families. (cf.~\cref{sec:alkali}).}
+
+
+\item[$\blacktriangleright$] {\footnotesize \fontfamily{phv}\fontsize{7}{8}\selectfont
+\textbf{21-Model Evaluation}: The most extensive safety benchmarking to date—reporting ASRs for 21 LLMs across all categories of the {\fontfamily{uncl}\fontsize{5}{6}\selectfont ALKALI} benchmark (cf.~\cref{sec:asr}).}
+
+\item[$\blacktriangleright$] {\footnotesize \fontfamily{phv}\fontsize{7}{8}\selectfont
+\textbf{AVQI—Adversarial Vulnerability Quality Index}: A latent-space robustness metric combining \(\mathsf{DBS}\) (Density-Based Separation) and \(\mathsf{DI}\) (Dunn Index) to quantify geometric entanglement between \textit{safe}, \textit{unsafe}, and \textit{jailbreak} clusters; enables \textbf{cross-model}, \textbf{structure-aware} adversarial vulnerability ranking (cf.~\cref{sec:avqi}).}
+
+
+\item[$\blacktriangleright$] {\footnotesize \fontfamily{phv}\fontsize{7}{8}\selectfont
+\textbf{Latent Camouflage Vulnerability}: We uncover how adversarial prompts exploit \emph{latent camouflage}—embedding deceptively close to the \textit{safe} cluster despite unsafe semantics. As shown in Figure~\ref{fig:multiview_aqi_comparison}, this entanglement allows jailbreaks to evade surface-level behavioral refusals (cf.~\cref{sec:avqi}).}
+
+
+\item[$\blacktriangleright$] {\footnotesize \fontfamily{phv}\fontsize{7}{8}\selectfont
+\textbf{Latent Geometry via Layerwise Pooling:} Introduces a trainable soft attention mechanism over transformer layers to construct behavior-aware embeddings \(\tilde{h}_y\), enabling semantic disentanglement of \textit{safe}, \textit{unsafe}, and \textit{jailbreak} completions directly in representation space (cf.~\cref{sec:pool_profile_main}).}
+
+\item[$\blacktriangleright$] {\footnotesize \fontfamily{phv}\fontsize{7}{8}\selectfont
+\textbf{GRACE Framework}: A principled extension of DPO that reframes alignment as \emph{latent manifold shaping}—combining relaxed preference modeling with geometric regularization over pooled embeddings \(\tilde{h}_y\). GRACE enforces \textit{safe–adversarial separation} in representation space, mitigating latent camouflage and reducing Attack Success Rate (ASR) by \textbf{35--39\%} across all categories (cf.~\cref{sec:grace_main}).}
+
+
+\vspace{-2mm}
+\end{spacing}
+\end{itemize}
+
+\end{defin}
+
+\input{1_introduction}
+\input{2_attack_taxonomy}
+%\input{3_llm}
+\input{5_alkali_dataset}
+\input{6_experiments}
+\input{7_dpo_aqi}
+\input{7_results}
+\input{8_conclusion}
+
+\clearpage
+\newpage
+\input{9_discussion}
+
+
+
+
+
+                     
+            
+                      
+            
+%\subsection{\textcolor{orange}{Objective Manipulation}}
+%----------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\bibliographystyle{acl_natbib}
+\bibliography{anthology,custom}
+
+
+\clearpage
+\newpage
+\input{10_faq}
+
+
+\input{11_appendix}
+\input{4_aavi}
+
+
+
+
+\end{document}
