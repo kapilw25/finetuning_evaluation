@@ -130,7 +130,7 @@ brew install --cask mactex  # or: brew install basictex
 sudo apt-get install texlive-full
 
 # Compile PDF
-cd Overleaf_draft && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+cd Overleaf_draft && pdflatex 0_main.tex && bibtex 0_main && pdflatex 0_main.tex && pdflatex 0_main.tex
 ```
 
 Output: `Overleaf_draft/main.pdf`

@@ -24,7 +24,7 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
 \section{Unified Training Objective}
 \label{sec:appendix_unified}
 
-The unified training loss function combines \textbf{Supervised Fine-Tuning (SFT)}, \textbf{Direct Preference Optimization (DPO)}, and \textbf{KL Regularization}:
+The unified training loss function combines \textbf{Supervised Fine-Tuning (SFT)}~\cite{wei2022finetuned}, \textbf{Direct Preference Optimization (DPO)}~\cite{rafailov2023direct}, and \textbf{KL Regularization}~\cite{schulman2017proximal,korbak2022rl}:
 
 \begin{equation}
 \mathcal{L}_{\text{unified}} = \mathcal{L}_{\text{SFT}} + \lambda_1 \mathcal{L}_{\text{DPO}} + \lambda_2 \mathcal{L}_{\text{KL}}
@@ -161,15 +161,15 @@ P^+ = \frac{\exp(\beta s^+)}{\exp(\beta s^+) + \exp(\beta s^-)}
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcc@{}}
 \toprule
-\textbf{Property} & \textbf{PPO (RLHF)} & \textbf{DPO} & \textbf{CITA (Ours)} \\
+\textbf{Property} & \textbf{DPO} & \textbf{CITA (Ours)} \\
 \midrule
-Needs Reward Model & Yes & No & No \\
-Instruction-Aware & No & No & \textbf{Yes} \\
-Contrastive Preference & Yes & Yes & \textbf{Yes} \\
-Behavior Switching & No & No & \textbf{Yes} \\
-Mandatory KL Regularization & Optional & Optional & \textbf{Yes} \\
+Needs Reward Model & No & No \\
+Instruction-Aware & No & \textbf{Yes} \\
+Contrastive Preference & Yes & \textbf{Yes} \\
+Behavior Switching & No & \textbf{Yes} \\
+Mandatory KL Regularization & Optional & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \caption{Comparison of alignment methods. CITA uniquely combines instruction-awareness with mandatory KL.}
@@ -202,8 +202,8 @@ Mandatory KL Regularization & Optional & Optional & \textbf{Yes} \\
 \midrule
 GPU & NVIDIA A100-40GB \\
 Framework & PyTorch 2.1 + Transformers 4.35 \\
-Training Library & TRL (Transformer Reinforcement Learning) \\
-Optimization & Optuna 3.4 with TPE sampler \\
+Training Library & TRL~\cite{tunstall2023zephyr} \\
+Optimization & Optuna~\cite{akiba2019optuna} 3.4 with TPE sampler \\
 Mixed Precision & bfloat16 \\
 Gradient Checkpointing & Enabled \\
 \bottomrule

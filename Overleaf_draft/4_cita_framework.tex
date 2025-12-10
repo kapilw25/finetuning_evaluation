@@ -27,13 +27,13 @@ where:
     \item $Y^-$: Rejected response (misaligned with instruction $I$)
 \end{itemize}
 
-\textbf{Crucial Difference from DPO.} In standard DPO, the instruction $I$ is absent or implicit. CITA \textit{explicitly conditions} preference on $I$, enabling the model to learn instruction-specific behavioral patterns.
+\textbf{Crucial Difference from DPO.} In standard DPO~\cite{rafailov2023direct}, the instruction $I$ is absent or implicit. CITA \textit{explicitly conditions} preference on $I$, enabling the model to learn instruction-specific behavioral patterns---analogous to how contrastive learning~\cite{chen2020simple,khosla2020supervised} conditions representations on class labels.
 
 \vspace{-2mm}
 \subsection{CITA-KL Loss}
 \label{sec:cita_kl_loss}
 
-The complete CITA objective combines contrastive learning with mandatory KL:
+The complete CITA objective combines contrastive learning~\cite{oord2018representation,gao2021simcse,radford2021learning} with mandatory KL~\cite{korbak2022rl}:
 
 \begin{equation}
 \mathcal{L}_{\text{CITA-KL}} = -\log P^+ + \lambda \cdot \text{KL}[\pi_\theta \,\|\, \pi_0]
@@ -57,7 +57,7 @@ s^- &= \log \pi_\theta(Y^- \mid I, X) \label{eq:score_neg}
 \subsection{Hyperparameters}
 \label{sec:cita_hyperparams}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{@{}ll@{}}
@@ -101,30 +101,30 @@ $\downarrow$ & & $\downarrow$ & & $\downarrow$ & & $\downarrow$ \\[2pt]
 \label{sec:benefits}
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{Generalization}: Responds appropriately to novel instruction-prompt combinations not seen during training.
+    \item \textbf{Generalization}: Responds appropriately to novel instruction-prompt combinations not seen during training, similar to zero-shot generalization in instruction tuning~\cite{wei2022finetuned,chung2022scaling}.
 
-    \item \textbf{Robustness}: Resists jailbreak attempts by conditioning behavior on explicit alignment instructions.
+    \item \textbf{Robustness}: Resists jailbreak attempts~\cite{zou2023universal,wei2023jailbroken} by conditioning behavior on explicit alignment instructions.
 
-    \item \textbf{Calibration}: Avoids over-refusal by adjusting safety level based on instruction context.
+    \item \textbf{Calibration}: Avoids over-refusal~\cite{bianchi2023safetytuned} by adjusting safety level based on instruction context.
 
-    \item \textbf{Behavioral Switching}: Dynamically adapts response style (e.g., concise vs. detailed, formal vs. casual) based on instructions.
+    \item \textbf{Behavioral Switching}: Dynamically adapts response style (e.g., concise vs. detailed, formal vs. casual) based on instructions, enabling multi-tenant deployment~\cite{wang2024survey}.
 \end{enumerate}
 
 \vspace{-3mm}
 \subsection{CITA vs. Prior Methods}
 \label{sec:comparison}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcc@{}}
 \toprule
-\textbf{Capability} & \textbf{RLHF} & \textbf{DPO} & \textbf{CITA} \\
+\textbf{Capability} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-No Reward Model & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
-Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
-Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
-Explicit KL Control & Optional & Implicit & \textbf{Mandatory} \\
+No Reward Model & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
+Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
+Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
+Explicit KL Control & Implicit & \textbf{Mandatory} \\
 \bottomrule
 \end{tabular}
 \caption{Feature comparison across alignment methods. CITA uniquely supports instruction-conditioned behavioral switching.}

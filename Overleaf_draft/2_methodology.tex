@@ -12,7 +12,7 @@ We present the CITA training methodology, organized into three phases: (1) setup
 \subsection{Phase 0: Model and Infrastructure Setup}
 \label{sec:phase0}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{@{}ll@{}}
@@ -31,7 +31,7 @@ Training Data & PKU-SafeRLHF~\cite{ji2024pku} \\
 \vspace{-4mm}
 \end{table}
 
-\textbf{Rationale.} We select Llama-3.1-8B for its strong instruction-following capabilities and accessibility. PKU-SafeRLHF provides high-quality preference pairs with explicit safety annotations, enabling evaluation of instruction-conditioned safety behaviors.
+\textbf{Rationale.} We select Llama-3.1-8B for its strong instruction-following capabilities and accessibility, following the Llama model family tradition~\cite{touvron2023llama,touvron2023llama1,dubey2024llama3}. PKU-SafeRLHF provides high-quality preference pairs with explicit safety annotations~\cite{bai2022training}, enabling evaluation of instruction-conditioned safety behaviors. Alternative datasets like OpenAssistant~\cite{kopf2023openassistant}, UltraFeedback~\cite{cui2023ultrafeedback}, and Tulu~\cite{ivison2023camels} could also be used.
 
 \vspace{-2mm}
 \subsection{Phase 1: Dataset Formatting}
@@ -76,18 +76,18 @@ Standard DPO format without explicit instructions for baseline comparison:
 \subsection{Phase 2: Training Configuration}
 \label{sec:phase2}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Parameter} & \textbf{SFT Stage} & \textbf{CITA Stage} \\
 \midrule
-Trainer & SFTTrainer & Custom DPO+KL \\
+Trainer & SFTTrainer~\cite{tunstall2023zephyr} & Custom DPO+KL \\
 Epochs & 3--5 & 3 \\
 Sequence Length & 2048 & 2048 \\
 Learning Rate & 2e-5 & 5--7e-6 \\
-LoRA Rank & 8 & 8 \\
+LoRA Rank~\cite{hu2022lora} & 8 & 8 \\
 $\beta$ (temperature) & --- & 0.1--0.12 \\
 $\lambda_{\text{KL}}$ & --- & 0.0002--0.0005 \\
 \bottomrule
@@ -97,4 +97,4 @@ $\lambda_{\text{KL}}$ & --- & 0.0002--0.0005 \\
 \vspace{-4mm}
 \end{table}
 
-\textbf{Key Design Choice.} The CITA stage uses significantly lower learning rates (3--4$\times$ lower than typical DPO) because instruction-augmented sequences are 30--40\% longer, producing larger gradients. This finding emerged from hyperparameter optimization (Section~\ref{sec:hyperparams}).
+\textbf{Key Design Choice.} The CITA stage uses significantly lower learning rates (3--4$\times$ lower than typical DPO) because instruction-augmented sequences are 30--40\% longer, producing larger gradients. This finding emerged from hyperparameter optimization using Optuna~\cite{akiba2019optuna} (Section~\ref{sec:hyperparams}). We use parameter-efficient fine-tuning via LoRA~\cite{hu2022lora,dettmers2023qlora} rather than full fine-tuning to enable single-GPU training. Alternative PEFT methods include adapter tuning~\cite{houlsby2019parameter}, prompt tuning~\cite{lester2021power}, and prefix tuning~\cite{li2021prefix}.

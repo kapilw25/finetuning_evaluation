@@ -12,7 +12,7 @@ We present our experimental setup, including the training pipeline, model varian
 \subsection{Training Pipeline}
 \label{sec:training_pipeline_exp}
 
-Following the staged approach from Section~\ref{sec:training_pipeline}, we train on PKU-SafeRLHF~\cite{ji2024pku} using an NVIDIA A100-40GB GPU. Training proceeds through four stages:
+Following the staged approach from Section~\ref{sec:training_pipeline}, we train on PKU-SafeRLHF~\cite{ji2024pku,bai2022training} using an NVIDIA A100-40GB GPU with LoRA~\cite{hu2022lora} adapters. Training proceeds through four stages:
 
 \begin{enumerate}[leftmargin=*,itemsep=1pt]
     \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} (pretrained weights)
@@ -27,7 +27,7 @@ Following the staged approach from Section~\ref{sec:training_pipeline}, we train
 
 We train 6 model variants across 3 methods (SFT, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct):
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{@{}lll@{}}
@@ -55,7 +55,7 @@ CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
 
 We evaluate on 5 benchmarks with deterministic metrics (no LLM-as-judge):
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabular}{@{}lcc@{}}
@@ -76,7 +76,7 @@ AQI~\cite{hendrycks2023aligning} & 2,800 & 7 axioms \\
 
 \paragraph{Metrics.}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabular}{@{}ll@{}}
@@ -103,9 +103,9 @@ AQI & (CHI + XB) / 2 clustering score (100) \\
 \subsection{Hyperparameter Optimization}
 \label{sec:hyperparams}
 
-We use Optuna~\cite{akiba2019optuna} with TPE sampler (12 trials) to optimize hyperparameters. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
+We use Optuna~\cite{akiba2019optuna} with TPE sampler (12 trials) to optimize hyperparameters, following best practices from hyperparameter optimization literature~\cite{liang2023holistic}. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabular}{@{}lcc@{}}

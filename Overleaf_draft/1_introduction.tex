@@ -6,11 +6,75 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Large language models (LLMs) achieve alignment through preference optimization methods like RLHF~\cite{ouyang2022training} and DPO~\cite{rafailov2023direct}. However, these approaches embed \textit{static} alignment objectives directly into model weights, fundamentally lacking flexibility for dynamic policy changes at deployment time.
+\subsection{Why Instruction-Based Alignment?}
+\label{sec:why_instruction_alignment}
 
-\textbf{The Core Problem.} Current alignment methods optimize for a fixed behavioral policy during training. Once deployed, the model cannot adapt its alignment posture based on contextual requirements---a critical limitation for real-world applications where safety policies, regulatory constraints, and user preferences vary across contexts~\cite{kirk2024benefits,bai2022constitutional}.
+Modern AI systems increasingly operate as \textbf{autonomous agents}---from customer service chatbots to research assistants to code generation pipelines~\cite{brown2020language,openai2023gpt4,touvron2023llama}, building on foundational work in language modeling~\cite{vaswani2017attention,devlin2019bert,radford2019language}. These agents require \textit{dynamic behavioral adaptation} based on workflow context, user roles, and task requirements~\cite{shinn2023reflexion}. A customer-facing agent needs empathetic, safety-conscious responses; the same underlying model, when assisting researchers, should prioritize accuracy and permit nuanced discussion of sensitive topics.
 
-\textbf{Our Solution.} We propose \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling \textbf{instruction-driven alignment} at inference time. Unlike static alignment, CITA allows models to dynamically switch behavioral policies based on natural language instructions provided with each query.
+\textbf{The Limitation of Static Alignment.} Current alignment methods like DPO~\cite{rafailov2023direct}, RLHF~\cite{ouyang2022training,stiennon2020learning}, and their variants~\cite{azar2023general,ethayarajh2024kto} embed a \textit{fixed} behavioral policy into model weights during training. Once deployed, the model cannot adapt its alignment posture---it responds identically whether serving a child, a medical professional, or a security researcher. This rigidity creates a fundamental mismatch with the flexibility demands of agentic AI systems.
+
+\textbf{Real-Time Alignment via Instructions.} We propose that alignment should be \textbf{controllable at inference time} through natural language instructions. Just as AI agents receive dynamic system prompts for workflow orchestration, they should receive dynamic \textit{alignment instructions} that modulate behavioral policies on-the-fly.
+
+\vspace{-2mm}
+\begin{tcolorbox}[
+    colback=Teal!5!White,
+    colframe=Teal!55!black,
+    title=\textbf{Research Questions},
+    fonttitle=\bfseries,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm
+]
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+    \item[\ding{227}] \textbf{RQ1: Can alignment policies be switched at inference time?}\\
+    \textit{Can a single model exhibit different alignment behaviors based on natural language instructions, without retraining?}
+
+    \item[\ding{227}] \textbf{RQ2: What training modifications enable instruction-conditioned alignment?}\\
+    \textit{How does instruction-conditioned preference learning differ from standard DPO, and what regularization is required?}
+
+    \item[\ding{227}] \textbf{RQ3: How do we measure instruction-alignment vs. instruction-following?}\\
+    \textit{How can we distinguish deep behavioral adaptation from superficial compliance?}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{-2mm}
+\subsection{Motivating Scenario: AI Agent Orchestration}
+\label{sec:motivation}
+
+Consider an enterprise AI agent platform where the same base model serves multiple workflows:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lp{5.5cm}@{}}
+\toprule
+\textbf{Workflow Context} & \textbf{Required Alignment Behavior} \\
+\midrule
+Customer Support & Empathetic, safety-first, avoid technical jargon \\
+Internal Research & Balanced, permit nuanced discussion, cite sources \\
+Compliance Review & Regulatory focus, conservative, flag uncertainties \\
+Creative Brainstorming & Exploratory, unconventional ideas welcome \\
+Child Education & Strictly safe, educational, age-appropriate \\
+\bottomrule
+\end{tabular}
+\caption{Same model, different alignment requirements per workflow. Static alignment cannot accommodate this flexibility.}
+\label{tab:workflow_scenarios}
+\vspace{-4mm}
+\end{table}
+
+With \textbf{static alignment} (DPO), organizations must either: (a) deploy multiple separately-aligned models, or (b) accept one-size-fits-all behavior. Neither scales. \textbf{Instruction-based alignment} enables a single model to switch behavioral modes via system prompts---the same mechanism agents already use for task orchestration.
+
+\vspace{-2mm}
+\subsection{Our Solution: CITA}
+\label{sec:solution}
+
+We introduce \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling \textbf{instruction-driven alignment} at inference time. CITA trains models to condition their preference behavior on alignment instructions, achieving:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Dynamic Policy Switching}: Different behavioral modes activated via natural language
+    \item \textbf{No Retraining Required}: Alignment changes expressed through instructions, not weight updates
+    \item \textbf{Agent-Compatible}: Integrates with existing system prompt mechanisms
+\end{itemize}
 
 \vspace{-2mm}
 \subsection{Key Contributions}
@@ -28,32 +92,33 @@ Large language models (LLMs) achieve alignment through preference optimization m
 \subsection{Related Work}
 \label{sec:related_work}
 
-\paragraph{Instruction Tuning.} FLAN~\cite{wei2022finetuned}, T0~\cite{sanh2022multitask}, and subsequent work~\cite{wang2023self,iyer2022opt} demonstrated that instruction-following during training improves zero-shot generalization. However, these approaches focus on task generalization rather than alignment conditioning.
+\paragraph{Instruction Tuning.} FLAN~\cite{wei2022finetuned,chung2022scaling,longpre2023flan}, T0~\cite{sanh2022multitask}, and subsequent work~\cite{wang2023self,iyer2022opt,mishra2022cross} demonstrated that instruction-following during training improves zero-shot generalization. Models like Alpaca~\cite{taori2023alpaca}, WizardLM~\cite{xu2023wizardlm}, LIMA~\cite{zhou2023lima}, Orca~\cite{mukherjee2023orca}, and OpenChat~\cite{wang2023openchat} further refined this paradigm, with comprehensive surveys~\cite{peng2023instruction} synthesizing these developments. However, these approaches focus on task generalization rather than alignment conditioning.
 
-\paragraph{Preference Optimization.} RLHF~\cite{ouyang2022training,stiennon2020learning} uses reward models trained on human preferences. DPO~\cite{rafailov2023direct} eliminates the need for separate reward models but lacks instruction-awareness---both approaches embed static alignment into weights.
+\paragraph{Preference Optimization.} DPO~\cite{rafailov2023direct} eliminates the need for separate reward models, inspiring variants like KTO~\cite{ethayarajh2024kto}, ORPO~\cite{hong2024orpo}, SimPO~\cite{meng2024simpo}, and RRHF~\cite{yuan2023rrhf}. However, all these methods lack instruction-awareness---they embed static alignment into weights. Recent work~\cite{xu2024dpo} compares DPO and PPO~\cite{schulman2017proximal} but neither supports dynamic policy switching.
 
-\paragraph{Safety Alignment.} Constitutional AI~\cite{bai2022constitutional}, PKU-SafeRLHF~\cite{ji2024pku}, and red-teaming approaches~\cite{perez2022red,ganguli2022red} focus on making models safer but assume a single, fixed safety policy. Recent work on context-dependent safety~\cite{bianchi2024safetytuned} highlights the need for adaptive policies.
+\paragraph{Safety Alignment.} Constitutional AI~\cite{bai2022constitutional}, PKU-SafeRLHF~\cite{ji2024pku}, and red-teaming approaches~\cite{perez2022red,ganguli2022red} focus on making models safer but assume a single, fixed safety policy. Research on jailbreaking~\cite{zou2023universal,wei2023jailbroken,liu2023jailbreaking} and fine-tuning risks~\cite{qi2023fine,huang2023catastrophic} reveals vulnerabilities in static alignment. Recent work on context-dependent safety~\cite{bianchi2024safetytuned} highlights the need for adaptive policies.
 
-\paragraph{Dynamic Alignment.} Controllable generation methods~\cite{keskar2019ctrl,dathathri2020plug} and prompting techniques~\cite{wei2022chain,kojima2022large} offer some behavioral control but operate at the surface level. CITA differs by training models to internalize instruction-conditioned alignment, achieving deeper behavioral switching.
+\paragraph{Agentic AI Systems.} LLM-based agents~\cite{wang2024survey,xi2023rise} increasingly rely on dynamic system prompts for workflow orchestration. CITA extends this paradigm to alignment itself, enabling behavioral policy changes through the same mechanism.
 
 \vspace{-2mm}
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcc@{}}
 \toprule
-\textbf{Property} & \textbf{RLHF/PPO} & \textbf{DPO} & \textbf{CITA} \\
+\textbf{Property} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Reward Model Required & Yes & No & No \\
-Instruction-Aware & No & No & \textbf{Yes} \\
-Behavioral Switching & No & No & \textbf{Yes} \\
-Mandatory KL & Optional & Optional & \textbf{Yes} \\
-Dynamic Policy & No & No & \textbf{Yes} \\
+Reward Model Required & No & No \\
+Instruction-Aware & No & \textbf{Yes} \\
+Behavioral Switching & No & \textbf{Yes} \\
+Mandatory KL & Optional & \textbf{Yes} \\
+Dynamic Policy & No & \textbf{Yes} \\
+Agent-Compatible & No & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
-\caption{Comparison of alignment methods. CITA uniquely enables instruction-conditioned behavioral switching through mandatory KL regularization.}
+\caption{Comparison of alignment methods. CITA uniquely enables instruction-conditioned behavioral switching compatible with agentic AI workflows.}
 \label{tab:method_comparison}
 \vspace{-4mm}
 \end{table}
 
-\textbf{Positioning.} CITA bridges instruction tuning and preference optimization by training models to condition their alignment behavior on natural language instructions. This enables a new paradigm of \textbf{interactive alignment} where policy changes can be expressed without retraining.
+\textbf{Positioning.} CITA bridges instruction tuning and preference optimization by training models to condition their alignment behavior on natural language instructions. This enables a new paradigm of \textbf{interactive alignment} where policy changes can be expressed without retraining---essential for the flexibility demands of modern AI agent systems.

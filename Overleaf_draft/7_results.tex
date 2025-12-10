@@ -6,13 +6,13 @@
 \section{Results}
 \label{sec:results}
 
-We present evaluation results across 5 benchmarks, comparing 6 model variants. The key finding is that \textbf{CITA outperforms DPO in 3/5 metrics} when measuring instruction-sensitivity (NoInstruct $\rightarrow$ Instruct improvement).
+We present evaluation results across 5 benchmarks, comparing 6 model variants. We use deterministic metrics following best practices from holistic evaluation~\cite{liang2023holistic,sun2024trustllm}. The key finding is that \textbf{CITA outperforms DPO in 3/5 metrics} when measuring instruction-sensitivity (NoInstruct $\rightarrow$ Instruct improvement).
 
 \vspace{-2mm}
 \subsection{Overall Performance}
 \label{sec:overall_results}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabular}{@{}lccccc@{}}
@@ -38,7 +38,7 @@ CITA\_I & .367 & \textbf{.013} & .400 & \textbf{1.14} & \textbf{55.5} \\
 
 The critical comparison is the \textit{improvement} from NoInstruct to Instruct, measuring how well each method responds to alignment instructions:
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \footnotesize
 \begin{tabular}{@{}lcccc@{}}
