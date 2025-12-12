@@ -360,14 +360,21 @@ Examples:
     print(f"{'=' * 80}")
     print(f"Output directory: {COMBINED_PLOTS_DIR}")
 
+    # Count total plots generated
+    total_plots = 0
+    main_count = 0
+    appendix_count = 0
+
     if generate_main:
         print(f"\nMain Paper Plots:")
         if main_results.get('heatmap'):
             print(f"  ✅ heatmap.{{pdf,png}}")
+            main_count += 1
         else:
             print(f"  ⚠️  heatmap: skipped")
         if main_results.get('radar'):
             print(f"  ✅ radar.{{pdf,png}}")
+            main_count += 1
         else:
             print(f"  ⚠️  radar: skipped")
 
@@ -375,9 +382,17 @@ Examples:
         print(f"\nAppendix Plots (in appendix/):")
         for viz_type, files in appendix_results.items():
             if files:
-                print(f"  ✅ {viz_type}")
+                # Each entry has [pdf_path, png_path] per plot, count unique plots
+                plot_count = len(files) // 2 if len(files) > 0 else 0
+                print(f"  ✅ {viz_type}: {plot_count} plot(s)")
+                appendix_count += plot_count
             else:
                 print(f"  ⚠️  {viz_type}: skipped")
+
+    total_plots = main_count + appendix_count
+    print(f"\n{'=' * 80}")
+    print(f"TOTAL: {total_plots} plots generated ({total_plots * 2} files: PDF + PNG each)")
+    print(f"{'=' * 80}")
 
 
 if __name__ == "__main__":

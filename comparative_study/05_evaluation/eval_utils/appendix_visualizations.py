@@ -624,9 +624,9 @@ def generate_truthfulqa_category_heatmap(
                     hon_score = hon_cat['uncertainty_score'].mean()
                     conf_score = conf_cat['uncertainty_score'].mean()
                 else:
-                    # Count uncertainty markers as proxy
-                    hon_score = hon_cat['response'].str.count(r'\b(maybe|perhaps|possibly|uncertain)\b', case=False).mean()
-                    conf_score = conf_cat['response'].str.count(r'\b(maybe|perhaps|possibly|uncertain)\b', case=False).mean()
+                    # Count uncertainty markers as proxy (case-insensitive via .str.lower())
+                    hon_score = hon_cat['response'].str.lower().str.count(r'\b(maybe|perhaps|possibly|uncertain)\b').mean()
+                    conf_score = conf_cat['response'].str.lower().str.count(r'\b(maybe|perhaps|possibly|uncertain)\b').mean()
 
                 category_scores[cat] = hon_score - conf_score
             else:
@@ -756,16 +756,6 @@ def generate_all_appendix_visualizations(
         results['isd_embedding_tsne'] = []
         results['aqi_3d_scatterplot'] = []
 
-    # Summary
-    total_files = sum(len(files) for files in results.values())
-    print(f"\n{'=' * 60}")
-    print(f"APPENDIX VISUALIZATIONS COMPLETE: {total_files // 2} plots generated")
-    print(f"{'=' * 60}")
-
-    for viz_type, files in results.items():
-        if files:
-            print(f"  ✅ {viz_type}: {len(files) // 2} plot(s)")
-        else:
-            print(f"  ⚠️  {viz_type}: skipped")
-
+    # Note: Final summary with total count is handled by generate_combined_plots.py
+    # (includes HP ablation plots which are generated separately)
     return results

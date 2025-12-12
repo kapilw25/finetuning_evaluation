@@ -1,0 +1,163 @@
+(venv_CITA) ubuntu@129-80-178-220:~/DiskUsEast1/finetuning_evaluation$ python comparative_study/05_evaluation/generate_combined_plots.py
+✅ Loaded .env from: /lambda/nfs/DiskUsEast1/finetuning_evaluation/.env
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+✅ HuggingFace authenticated
+================================================================================
+COMBINED PLOT GENERATION
+================================================================================
+Output directory: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots
+Generate main plots: True
+Generate appendix plots: True
+Skip embeddings: False
+================================================================================
+GENERATING MAIN PAPER PLOTS
+================================================================================
+
+Loading ISD...
+  ✅ Loaded 6 models: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct']
+  ✅ Deltas: {'SFT': 0.015971863053632046, 'DPO': 0.1715773882346498, 'CITA': 0.16247828271346657}
+
+Loading TruthfulQA...
+  ✅ Loaded 6 models: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct']
+  ✅ Deltas: {'SFT': 0.018359853121175024, 'DPO': 0.0012239902080783405, 'CITA': 0.053855569155446745}
+
+Loading Cond. Safety...
+  ✅ Loaded 6 models: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct']
+  ✅ Deltas: {'SFT': 0.019639934533551534, 'DPO': 0.47463175122749596, 'CITA': 0.39116202945990186}
+
+Loading Length Ctrl...
+  ✅ Loaded 6 models: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct']
+  ✅ Deltas: {'SFT': 0.06286090582108328, 'DPO': 0.12965192666470493, 'CITA': 0.164052550625568}
+
+Loading AQI...
+  ✅ Loaded 6 models: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct']
+  ✅ Deltas: {'SFT': 10.1115, 'DPO': 44.0224, 'CITA': 46.1101}
+
+================================================================================
+Generating Heatmap (Absolute Scores)...
+================================================================================
+Saved heatmap:
+  PDF: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots/heatmap.pdf
+  PNG: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots/heatmap.png
+
+Performance Summary:
+Model               ISD         TruthfulQA  Cond. SafetyLength Ctrl AQI         
+--------------------------------------------------------------------------------
+SFT_NoInstruct      0.126       -0.006      0.002       0.954       37.6        
+SFT_Instruct        0.142       0.012       0.022       1.017       47.7        
+DPO_NoInstruct      0.217       -0.006      0.015       0.987       11.0        
+DPO_Instruct        0.389       -0.005      0.489       1.117       55.0        
+CITA_NoInstruct     0.204       -0.040      0.009       0.977       9.384       
+CITA_Instruct       0.367       0.013       0.400       1.141       55.5        
+
+✅ Heatmap saved to: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots/heatmap
+
+================================================================================
+Generating Radar Chart (Improvement Deltas)...
+================================================================================
+Saved radar chart:
+  PDF: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots/radar.pdf
+  PNG: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots/radar.png
+
+Improvement Summary (NoInstruct → Instruct):
+Eval                 SFT          DPO          CITA         Winner    
+------------------------------------------------------------------
+ISD                 +0.016     +0.172     +0.162      DPO
+TruthfulQA          +0.018     +0.001     +0.054      CITA
+Cond. Safety        +0.020     +0.475     +0.391      DPO
+Length Ctrl         +0.063     +0.130     +0.164      CITA
+AQI                 +10.111     +44.022     +46.110      CITA
+
+Final Score: SFT: 0 | DPO: 2 | CITA: 3
+
+✅ Radar chart saved to: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots/radar
+
+============================================================
+GENERATING APPENDIX VISUALIZATIONS
+============================================================
+
+1. ISD Fidelity Heatmap...
+  Saved: isd_fidelity_heatmap.{pdf,png}
+
+2. ISD Fidelity Radar (10-axis)...
+/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/appendix_visualizations.py:530: UserWarning: linestyle is redundantly defined by the 'linestyle' keyword argument and the fmt string "o-" (-> linestyle='-'). The keyword argument will take precedence.
+  ax.plot(angles, values_closed, 'o-', linewidth=2, label=model,
+  Saved: isd_fidelity_radar.{pdf,png}
+
+3. Length Control Distribution...
+/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/appendix_visualizations.py:409: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.violinplot(
+/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/appendix_visualizations.py:409: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.violinplot(
+/lambda/nfs/DiskUsEast1/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/appendix_visualizations.py:409: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.violinplot(
+  Saved: length_control_distribution.{pdf,png}
+
+4. TruthfulQA Category Heatmap...
+  Saved: truthfulqa_category_heatmap.{pdf,png}
+
+5. ISD Embedding t-SNE...
+  Loading SentenceTransformer model...
+  Processing CITA_Instruct...
+    Encoding 3000 responses...
+    Running t-SNE...
+    Saved: isd_tsne_CITA_Instruct.{pdf,png}
+  Processing DPO_Instruct...
+    Encoding 3000 responses...
+    Running t-SNE...
+    Saved: isd_tsne_DPO_Instruct.{pdf,png}
+
+6. AQI 3D Scatterplot...
+  Processing CITA_Instruct...
+    Running 3D t-SNE on 2800 samples...
+    Saved: aqi_3d_CITA_Instruct.{pdf,png}
+  Processing DPO_Instruct...
+    Running 3D t-SNE on 2800 samples...
+    Saved: aqi_3d_DPO_Instruct.{pdf,png}
+
+============================================================
+APPENDIX VISUALIZATIONS COMPLETE: 8 plots generated
+============================================================
+  ✅ isd_fidelity_heatmap: 1 plot(s)
+  ✅ isd_fidelity_radar: 1 plot(s)
+  ✅ length_control_distribution: 1 plot(s)
+  ✅ truthfulqa_category_heatmap: 1 plot(s)
+  ✅ isd_embedding_tsne: 2 plot(s)
+  ✅ aqi_3d_scatterplot: 2 plot(s)
+================================================================================
+GENERATING HP ABLATION PLOTS
+================================================================================
+  Loaded 13 trial configs
+  [OK] hp_ablation_combined.{pdf,png}
+  [OK] hp_ablation_combined.{pdf,png}
+  [OK] hp_pareto_frontier.{pdf,png}
+  [OK] hp_pareto_frontier.{pdf,png}
+
+================================================================================
+FINAL SUMMARY
+================================================================================
+Output directory: /lambda/nfs/DiskUsEast1/finetuning_evaluation/outputs/combined_plots
+
+Main Paper Plots:
+  ✅ heatmap.{pdf,png}
+  ✅ radar.{pdf,png}
+
+Appendix Plots (in appendix/):
+  ✅ isd_fidelity_heatmap
+  ✅ isd_fidelity_radar
+  ✅ length_control_distribution
+  ✅ truthfulqa_category_heatmap
+  ✅ isd_embedding_tsne
+  ✅ aqi_3d_scatterplot
+  ✅ hp_ablation_combined
+  ✅ hp_pareto_frontier
+(venv_CITA) ubuntu@129-80-178-220:~/DiskUsEast1/finetuning_evaluation$ 

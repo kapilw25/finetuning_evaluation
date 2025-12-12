@@ -3,8 +3,8 @@
     "model_name": "SFT_NoInstruct",
     "total_prompts": 300,
     "total_test_cases": 3000,
-    "evaluation_time": 6.212082147598267,
-    "timestamp": "2025-12-04T21:21:56.854378"
+    "evaluation_time": 7.5995728969573975,
+    "timestamp": "2025-12-12T05:28:42.425891"
   },
   "responses": [
     {

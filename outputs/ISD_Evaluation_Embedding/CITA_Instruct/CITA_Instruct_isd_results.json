@@ -3,8 +3,8 @@
     "model_name": "CITA_Instruct",
     "total_prompts": 300,
     "total_test_cases": 3000,
-    "evaluation_time": 3.1973025798797607,
-    "timestamp": "2025-12-04T21:22:57.666418"
+    "evaluation_time": 2.9375760555267334,
+    "timestamp": "2025-12-12T05:29:55.769448"
   },
   "responses": [
     {

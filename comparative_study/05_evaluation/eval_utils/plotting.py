@@ -341,8 +341,9 @@ def generate_lollipop_chart(
         ax.axvline(x=0, color='black', linestyle='-', linewidth=1, alpha=0.5)
 
     # Draw horizontal lines (stems)
+    # Positive: line from 0 to score (right), Negative: line from score to 0 (left)
     for i, (score, color) in enumerate(zip(scores_sorted, colors_sorted)):
-        ax.hlines(y=i, xmin=xlim_min if score < 0 else 0, xmax=score,
+        ax.hlines(y=i, xmin=min(0, score), xmax=max(0, score),
                   color=color, linewidth=2.5, alpha=0.8)
 
     # Draw dots at the end
@@ -1126,7 +1127,8 @@ def generate_combined_heatmap(
         if idx < len(models):
             ax.axhline(y=idx, color='black', linewidth=3)
 
-    plt.tight_layout()
+    # Note: Don't call tight_layout() - constrained_layout=True already handles this
+    # and they conflict when colorbar is present
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
     plt.close()
 
