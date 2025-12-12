@@ -65,7 +65,8 @@ from eval_utils import (
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     filter_model_keys,
     get_isd_max_samples,
-    generate_comparison_plots
+    generate_comparison_plots,
+    generate_lollipop_chart
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -412,7 +413,7 @@ def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_d
             valid_scores.append(all_metrics[m].instruction_awareness_score)
             valid_rates.append(1.0)
 
-    # Use shared plotting function
+    # Use shared plotting function - Bar chart
     generate_comparison_plots(
         models=models,
         overall_scores=overall_scores,
@@ -421,7 +422,21 @@ def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_d
         output_dir=output_dir,
         plot_filename="isd_comparison",
         ylabel="Instruction Awareness Score",
-        title="ISD: Instruction Awareness - Overall vs Valid-Only (Higher = Better)",
+        title="ISD: Instruction Awareness (Higher = Better)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        score_format=".3f",
+        higher_is_better=True
+    )
+
+    # Also generate lollipop chart as alternative
+    generate_lollipop_chart(
+        models=models,
+        overall_scores=overall_scores,
+        output_dir=output_dir,
+        plot_filename="isd_comparison",
+        xlabel="Instruction Awareness Score",
+        title="ISD: Instruction Awareness (Higher = Better)",
         perfect_score=1.0,
         perfect_label="Perfect = 1.0",
         score_format=".3f",

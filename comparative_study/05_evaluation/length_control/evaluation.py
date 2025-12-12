@@ -51,7 +51,9 @@ from eval_utils import (
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     filter_model_keys,
     get_length_control_max_samples,
-    generate_comparison_plots as _generate_comparison_plots  # shared plotting function
+    generate_comparison_plots as _generate_comparison_plots,  # shared plotting function
+    generate_lollipop_chart as _generate_lollipop_chart,
+    generate_boxviolin_chart as _generate_boxviolin_chart
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -435,7 +437,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
             valid_adaptation.append(adaptation_scores[models.index(m)])
             valid_rates.append(1.0)
 
-    # Use shared plotting function (no error bars for cleaner visuals)
+    # Use shared plotting function - Bar chart
     _generate_comparison_plots(
         models=models,
         overall_scores=adaptation_scores,
@@ -444,7 +446,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         output_dir=output_dir,
         plot_filename="length_control_comparison",
         ylabel="Length Adaptation Score",
-        title="Length Control: Adaptation Score - Overall vs Valid-Only (Higher = Better)",
+        title="Length Control: Adaptation Score (Higher = Better)",
         perfect_score=None,  # No perfect line, just text annotation
         perfect_label="Target > 4.0",
         ylim_max=None,  # Auto-scale
@@ -454,6 +456,56 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         score_format=".2f",
         higher_is_better=True
     )
+
+    # Also generate lollipop chart as alternative
+    _generate_lollipop_chart(
+        models=models,
+        overall_scores=adaptation_scores,
+        output_dir=output_dir,
+        plot_filename="length_control_comparison",
+        xlabel="Length Adaptation Score",
+        title="Length Control: Adaptation Score (Higher = Better)",
+        perfect_score=None,
+        perfect_label="Target > 4.0",
+        reference_line=1.0,
+        reference_label="No Adaptation",
+        score_format=".2f",
+        higher_is_better=True
+    )
+
+    # Generate box/violin plots for per-sample ADAPTATION distribution
+    # Adaptation = DETAILED_words / CONCISE_words (per prompt)
+    adaptation_data = {}
+
+    for model in models:
+        model_dir = output_dir / model
+        concise_csv = model_dir / "concise_responses.csv"
+        detailed_csv = model_dir / "detailed_responses.csv"
+
+        if concise_csv.exists() and detailed_csv.exists():
+            concise_df = pd.read_csv(concise_csv)
+            detailed_df = pd.read_csv(detailed_csv)
+
+            if 'word_count' in concise_df.columns and 'word_count' in detailed_df.columns:
+                # Per-sample adaptation ratio: DETAILED / CONCISE (higher = better)
+                concise_words = concise_df['word_count'].values
+                detailed_words = detailed_df['word_count'].values
+                # Avoid division by zero
+                per_sample_ratio = detailed_words / np.maximum(concise_words, 1)
+                adaptation_data[model] = per_sample_ratio.tolist()
+
+    # Generate box/violin for adaptation ratio distribution
+    if len(adaptation_data) >= 2:
+        _generate_boxviolin_chart(
+            data_by_model=adaptation_data,
+            output_dir=output_dir,
+            plot_filename="length_control_adaptation_distribution",
+            ylabel="Per-Sample Ratio (DETAILED / CONCISE)",
+            title="Length Control: Adaptation Ratio Distribution",
+            plot_type="both",
+            higher_is_better=True,  # Higher ratio = better adaptation
+            reference_lines=[(1.0, "No Adaptation", "gray"), (4.0, "Target: 4x", "green")]
+        )
 
 
 # =============================================================================

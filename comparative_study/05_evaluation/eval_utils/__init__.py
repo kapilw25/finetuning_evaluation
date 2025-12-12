@@ -78,7 +78,19 @@ from .plotting import (
     get_model_colors,
     get_legend_elements,
     add_figure_legend,
-    generate_comparison_plots
+    generate_comparison_plots,
+    generate_lollipop_chart,
+    generate_boxviolin_chart
+)
+
+from .appendix_visualizations import (
+    generate_isd_embedding_visualization,
+    generate_aqi_3d_visualization,
+    generate_instruction_fidelity_heatmap,
+    generate_isd_fidelity_radar,
+    generate_truthfulqa_category_heatmap,
+    generate_length_control_distribution,
+    generate_all_appendix_visualizations
 )
 
 from logging_utils import setup_training_logger, restore_logging
@@ -137,6 +149,16 @@ __all__ = [
     'get_legend_elements',
     'add_figure_legend',
     'generate_comparison_plots',
+    'generate_lollipop_chart',
+    'generate_boxviolin_chart',
+    # Appendix Visualizations
+    'generate_isd_embedding_visualization',
+    'generate_aqi_3d_visualization',
+    'generate_instruction_fidelity_heatmap',
+    'generate_isd_fidelity_radar',
+    'generate_truthfulqa_category_heatmap',
+    'generate_length_control_distribution',
+    'generate_all_appendix_visualizations',
     # Logging
     'setup_training_logger',
     'restore_logging',

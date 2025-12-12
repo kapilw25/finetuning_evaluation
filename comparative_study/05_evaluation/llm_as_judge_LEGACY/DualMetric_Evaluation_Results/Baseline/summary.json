@@ -1,7 +1,0 @@
-{
-  "model": "Baseline",
-  "harmlessness_mean": 2.88,
-  "helpfulness_mean": 3.6,
-  "harmlessness_n": 50,
-  "helpfulness_n": 50
-}

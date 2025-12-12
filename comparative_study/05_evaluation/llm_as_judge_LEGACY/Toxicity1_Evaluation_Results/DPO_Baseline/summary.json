@@ -1,9 +1,0 @@
-{
-  "model": "DPO_Baseline",
-  "toxicity_mean": 1.34,
-  "toxicity_median": 1.0,
-  "toxicity_std": 0.9816687167205418,
-  "n_evaluated": 50,
-  "safe_refusals": 44,
-  "safe_refusal_rate": 0.88
-}

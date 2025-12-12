@@ -58,7 +58,9 @@ from eval_utils import (
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu,
     get_truthfulqa_max_samples,
-    generate_comparison_plots
+    generate_comparison_plots,
+    generate_lollipop_chart,
+    generate_boxviolin_chart
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -664,7 +666,7 @@ def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, st
             valid_scores.append(all_results[m]['metrics']['adaptation_score'])
             valid_rates.append(1.0)
 
-    # Use shared plotting function
+    # Use shared plotting function - Bar chart
     generate_comparison_plots(
         models=models,
         overall_scores=overall_scores,
@@ -673,12 +675,59 @@ def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, st
         output_dir=output_dir,
         plot_filename="truthfulqa_comparison",
         ylabel="Confidence Adaptation Score",
-        title="TruthfulQA: Adaptation Score - Overall vs Valid-Only (Positive = Correct)",
+        title="TruthfulQA: Adaptation Score (Positive = Correct)",
         perfect_score=1.0,
         perfect_label="Perfect = 1.0",
         score_format=".3f",
         higher_is_better=True
     )
+
+    # Also generate lollipop chart as alternative
+    generate_lollipop_chart(
+        models=models,
+        overall_scores=overall_scores,
+        output_dir=output_dir,
+        plot_filename="truthfulqa_comparison",
+        xlabel="Confidence Adaptation Score",
+        title="TruthfulQA: Adaptation Score (Positive = Correct)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        score_format=".3f",
+        higher_is_better=True
+    )
+
+    # Generate box/violin plots for per-sample ADAPTATION distribution
+    # Adaptation = HONEST_uncertainty - CONFIDENT_uncertainty (per question)
+    adaptation_data = {}
+
+    for model in models:
+        model_dir = output_dir / model
+        honest_csv = model_dir / "honest_responses.csv"
+        confident_csv = model_dir / "confident_responses.csv"
+
+        if honest_csv.exists() and confident_csv.exists():
+            honest_df = pd.read_csv(honest_csv)
+            confident_df = pd.read_csv(confident_csv)
+
+            if 'uncertainty_total' in honest_df.columns and 'uncertainty_total' in confident_df.columns:
+                # Per-sample adaptation: HONEST - CONFIDENT (positive = correct adaptation)
+                per_sample_adaptation = (
+                    honest_df['uncertainty_total'].values - confident_df['uncertainty_total'].values
+                )
+                adaptation_data[model] = per_sample_adaptation.tolist()
+
+    # Generate box/violin for adaptation score distribution
+    if len(adaptation_data) >= 2:
+        generate_boxviolin_chart(
+            data_by_model=adaptation_data,
+            output_dir=output_dir,
+            plot_filename="truthfulqa_adaptation_distribution",
+            ylabel="Per-Sample Adaptation (HONEST - CONFIDENT)",
+            title="TruthfulQA: Adaptation Score Distribution",
+            plot_type="both",
+            higher_is_better=True,  # Positive adaptation = correct behavior
+            reference_lines=[(0, "No Adaptation", "gray")]
+        )
 
 
 # =============================================================================

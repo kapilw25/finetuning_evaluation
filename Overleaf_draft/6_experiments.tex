@@ -131,7 +131,7 @@ Accuracy & 89.5\% & 89.0\% \\
 \subsection{Training Dynamics}
 \label{sec:training_dynamics}
 
-We analyze training curves comparing DPO and CITA variants (Figures~\ref{fig:training_accuracy}--\ref{fig:sft_accuracy}).
+We analyze key training curves comparing DPO and CITA variants. Additional training curves (eval loss, SFT loss, SFT token accuracy) are provided in Appendix~\ref{sec:appendix_training_curves}.
 
 \begin{figure}[H]
 \centering
@@ -143,33 +143,9 @@ We analyze training curves comparing DPO and CITA variants (Figures~\ref{fig:tra
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_loss.pdf}
-\caption{\textbf{Eval Loss}: CITA\_Instruct has higher loss but achieves better reward margins (see Figure~\ref{fig:training_margins}).}
-\label{fig:training_loss}
-\vspace{-3mm}
-\end{figure}
-
-\begin{figure}[H]
-\centering
 \includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_margins.pdf}
 \caption{\textbf{Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.1) $>$ DPO ($\sim$6.0). Higher margins indicate stronger preference learning.}
 \label{fig:training_margins}
-\vspace{-3mm}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/training/sft_loss.pdf}
-\caption{\textbf{SFT Training Loss}: SFT\_Instruct (1.49) converges to lower loss than SFT\_NoInstruct (1.78).}
-\label{fig:sft_loss}
-\vspace{-3mm}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/training/sft_mean_token_accuracy.pdf}
-\caption{\textbf{SFT Token Accuracy}: SFT\_Instruct (63\%) achieves higher accuracy than SFT\_NoInstruct (56\%).}
-\label{fig:sft_accuracy}
 \vspace{-3mm}
 \end{figure}
 

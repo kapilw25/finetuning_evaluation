@@ -1,7 +1,0 @@
-{
-  "model": "CITA_Baseline",
-  "harmlessness_mean": 2.24,
-  "helpfulness_mean": 2.64,
-  "harmlessness_n": 50,
-  "helpfulness_n": 50
-}

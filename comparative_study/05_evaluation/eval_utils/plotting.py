@@ -6,6 +6,7 @@ Includes improvement ratio visualization for NoInstruct → Instruct comparison.
 """
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from pathlib import Path
@@ -127,18 +128,18 @@ def add_figure_legend(fig, models: List[str], ncol: int = 4, fontsize: int = 10)
 
 
 # =============================================================================
-# SHARED COMPARISON PLOT (Overall vs Valid-Only bars)
+# SHARED COMPARISON PLOT (Single bar per model)
 # =============================================================================
 
 def generate_comparison_plots(
     models: List[str],
     overall_scores: List[float],
-    valid_scores: List[float],
-    valid_rates: List[float],
-    output_dir: Path,
-    plot_filename: str,
-    ylabel: str,
-    title: str,
+    valid_scores: List[float] = None,  # Deprecated, kept for backward compatibility
+    valid_rates: List[float] = None,   # Deprecated, kept for backward compatibility
+    output_dir: Path = None,
+    plot_filename: str = None,
+    ylabel: str = "Score",
+    title: str = "Model Comparison",
     perfect_score: float = 1.0,
     perfect_label: str = "Perfect = 1.0",
     ylim_max: Optional[float] = None,
@@ -151,14 +152,13 @@ def generate_comparison_plots(
     """
     Shared comparison plot generator for all evaluation scripts.
 
-    Creates a bar chart with Overall (solid) vs Valid-only (hatched) bars.
-    No error bars - the two bars already convey variability.
+    Creates a clean bar chart showing overall scores only.
 
     Args:
         models: List of model names
         overall_scores: Overall scores for each model
-        valid_scores: Valid-only scores for each model
-        valid_rates: Valid response rates for each model (0-1)
+        valid_scores: DEPRECATED - ignored (kept for backward compatibility)
+        valid_rates: DEPRECATED - ignored (kept for backward compatibility)
         output_dir: Directory to save plot
         plot_filename: Filename without extension (e.g., "isd_comparison")
         ylabel: Y-axis label
@@ -186,40 +186,33 @@ def generate_comparison_plots(
 
     models_sorted = [models[i] for i in sorted_indices]
     overall_sorted = [overall_scores[i] for i in sorted_indices]
-    valid_sorted = [valid_scores[i] for i in sorted_indices]
-    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
 
     # Get colors using shared utility
     colors_sorted = get_model_colors(models_sorted)
 
-    # Create figure
-    fig, ax = plt.subplots(figsize=(14, 7))
+    # Create figure - slightly smaller since only one bar per model
+    fig, ax = plt.subplots(figsize=(12, 6))
 
     x = np.arange(len(models_sorted))
-    bar_width = 0.35
+    bar_width = 0.6
 
-    # Overall bars (solid) - NO error bars
-    bars_overall = ax.bar(x - bar_width/2, overall_sorted, bar_width,
-                          color=colors_sorted, edgecolor='black', linewidth=1.5,
-                          label='Overall')
-
-    # Valid-only bars (hatched)
-    bars_valid = ax.bar(x + bar_width/2, valid_sorted, bar_width,
-                        color=colors_sorted, edgecolor='black', linewidth=1.5,
-                        hatch='///', alpha=0.7, label='Valid-only')
+    # Single bars for overall scores
+    bars = ax.bar(x, overall_sorted, bar_width,
+                  color=colors_sorted, edgecolor='black', linewidth=1.5)
 
     ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
-    ax.set_title(title, fontsize=16, fontweight='bold', pad=15)
+    # Remove "Overall vs Valid-Only" from title if present
+    clean_title = title.replace(" - Overall vs Valid-Only", "").replace("Overall vs Valid-Only", "")
+    ax.set_title(clean_title, fontsize=14, fontweight='bold', pad=15)
 
     # Set y-axis limits
-    all_values = overall_sorted + valid_sorted
     if ylim_max is None:
-        ylim_max = max(all_values) * 1.4 if all_values else 1.0
+        ylim_max = max(overall_sorted) * 1.3 if overall_sorted else 1.0
 
     # Handle negative values
-    if min(all_values) < 0:
-        y_margin = max(abs(min(all_values)), abs(max(all_values))) * 0.4
-        ax.set_ylim(min(all_values) - y_margin, max(all_values) + y_margin)
+    if min(overall_sorted) < 0:
+        y_margin = max(abs(min(overall_sorted)), abs(max(overall_sorted))) * 0.3
+        ax.set_ylim(min(overall_sorted) - y_margin, max(overall_sorted) + y_margin)
         ax.axhline(y=0, color='black', linestyle='-', linewidth=1.5, alpha=0.7)
     else:
         ax.set_ylim(ylim_min, ylim_max)
@@ -235,37 +228,21 @@ def generate_comparison_plots(
             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
 
     ax.set_xticks(x)
-    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
+    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=11)
     ax.grid(axis='y', alpha=0.3, linestyle='--')
-    ax.legend(loc='upper left', fontsize=10)
 
-    # Add value labels
-    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(
-            bars_overall, bars_valid, overall_sorted, valid_sorted, valid_rates_sorted)):
-        # Determine label position based on bar height and sign
-        if score_o >= 0:
-            y_offset_o = bar_o.get_height() + (ylim_max - ylim_min) * 0.01
-            va_o = 'bottom'
+    # Add value labels on bars
+    for bar, score in zip(bars, overall_sorted):
+        if score >= 0:
+            y_offset = bar.get_height() + (ylim_max - ylim_min) * 0.01
+            va = 'bottom'
         else:
-            y_offset_o = bar_o.get_height() - (ylim_max - ylim_min) * 0.01
-            va_o = 'top'
+            y_offset = bar.get_height() - (ylim_max - ylim_min) * 0.01
+            va = 'top'
 
-        if score_v >= 0:
-            y_offset_v = bar_v.get_height() + (ylim_max - ylim_min) * 0.01
-            va_v = 'bottom'
-        else:
-            y_offset_v = bar_v.get_height() - (ylim_max - ylim_min) * 0.01
-            va_v = 'top'
-
-        # Overall label
-        ax.text(bar_o.get_x() + bar_o.get_width()/2., y_offset_o,
-                f'{score_o:{score_format}}', ha='center', va=va_o,
-                fontsize=9, fontweight='bold')
-
-        # Valid-only label with valid rate
-        ax.text(bar_v.get_x() + bar_v.get_width()/2., y_offset_v,
-                f'{score_v:{score_format}}\n({vr:.0%})', ha='center', va=va_v,
-                fontsize=9, fontweight='bold')
+        ax.text(bar.get_x() + bar.get_width()/2., y_offset,
+                f'{score:{score_format}}', ha='center', va=va,
+                fontsize=10, fontweight='bold')
 
     plt.tight_layout()
     plot_path = output_dir / plot_filename
@@ -283,6 +260,299 @@ def generate_comparison_plots(
         print(f"   {rank}. {model}: {score:{score_format}}")
 
     return pdf_path, png_path
+
+
+# =============================================================================
+# HORIZONTAL LOLLIPOP CHART (Alternative to bar chart)
+# =============================================================================
+
+def generate_lollipop_chart(
+    models: List[str],
+    overall_scores: List[float],
+    output_dir: Path = None,
+    plot_filename: str = None,
+    xlabel: str = "Score",
+    title: str = "Model Comparison",
+    perfect_score: float = 1.0,
+    perfect_label: str = "Perfect = 1.0",
+    xlim_max: Optional[float] = None,
+    xlim_min: float = 0,
+    reference_line: Optional[float] = None,
+    reference_label: str = "Reference",
+    score_format: str = ".3f",
+    higher_is_better: bool = True
+) -> Tuple[str, str]:
+    """
+    Generate horizontal lollipop chart for model comparison.
+
+    Modern alternative to bar charts - cleaner and more visually appealing.
+    Models sorted by score (best at top).
+
+    Args:
+        models: List of model names
+        overall_scores: Overall scores for each model
+        output_dir: Directory to save plot
+        plot_filename: Filename without extension (e.g., "isd_lollipop")
+        xlabel: X-axis label
+        title: Plot title
+        perfect_score: Perfect score value for annotation
+        perfect_label: Label for perfect score annotation
+        xlim_max: Maximum x-axis limit (auto if None)
+        xlim_min: Minimum x-axis limit (default 0)
+        reference_line: X value for vertical reference line (optional)
+        reference_label: Label for reference line
+        score_format: Format string for score labels
+        higher_is_better: If True, sort descending (best at top)
+
+    Returns:
+        Tuple of (pdf_path, png_path)
+    """
+    if len(models) < 2:
+        print("Need at least 2 models for lollipop chart")
+        return None, None
+
+    # Sort by score (descending = best at top for higher_is_better)
+    sorted_indices = np.argsort(overall_scores)
+    if higher_is_better:
+        sorted_indices = sorted_indices  # Ascending, so best at bottom visually (top in plot)
+    else:
+        sorted_indices = sorted_indices[::-1]
+
+    models_sorted = [models[i] for i in sorted_indices]
+    scores_sorted = [overall_scores[i] for i in sorted_indices]
+
+    # Get colors using shared utility
+    colors_sorted = get_model_colors(models_sorted)
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    y_pos = np.arange(len(models_sorted))
+
+    # Set x-axis limits
+    if xlim_max is None:
+        xlim_max = max(scores_sorted) * 1.25 if scores_sorted else 1.0
+
+    # Handle negative values
+    if min(scores_sorted) < 0:
+        x_margin = max(abs(min(scores_sorted)), abs(max(scores_sorted))) * 0.2
+        xlim_min = min(scores_sorted) - x_margin
+        xlim_max = max(scores_sorted) + x_margin
+        ax.axvline(x=0, color='black', linestyle='-', linewidth=1, alpha=0.5)
+
+    # Draw horizontal lines (stems)
+    for i, (score, color) in enumerate(zip(scores_sorted, colors_sorted)):
+        ax.hlines(y=i, xmin=xlim_min if score < 0 else 0, xmax=score,
+                  color=color, linewidth=2.5, alpha=0.8)
+
+    # Draw dots at the end
+    ax.scatter(scores_sorted, y_pos, c=colors_sorted, s=150, zorder=3,
+               edgecolors='black', linewidths=1.5)
+
+    # Add score labels next to dots
+    for i, score in enumerate(scores_sorted):
+        offset = (xlim_max - xlim_min) * 0.02
+        ha = 'left' if score >= 0 else 'right'
+        x_pos = score + offset if score >= 0 else score - offset
+        ax.text(x_pos, i, f'{score:{score_format}}', va='center', ha=ha,
+                fontsize=10, fontweight='bold')
+
+    # Add reference line if specified
+    if reference_line is not None:
+        ax.axvline(x=reference_line, color='red', linestyle='--', linewidth=1.5,
+                   alpha=0.7, label=reference_label)
+
+    # Add Perfect score annotation
+    ax.text(0.98, 0.02, perfect_label, transform=ax.transAxes,
+            fontsize=10, fontweight='bold', ha='right', va='bottom',
+            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
+
+    # Labels and styling
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(models_sorted, fontsize=11)
+    ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+    # Clean title
+    clean_title = title.replace(" - Overall vs Valid-Only", "").replace("Overall vs Valid-Only", "")
+    clean_title = clean_title.replace("(Higher = Better)", "").strip()
+    ax.set_title(clean_title, fontsize=14, fontweight='bold', pad=15)
+    ax.set_xlim(xlim_min, xlim_max)
+    ax.grid(axis='x', alpha=0.3, linestyle='--')
+
+    # Remove top and right spines for cleaner look
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.tight_layout()
+
+    # Save with "_lollipop" suffix
+    if plot_filename and not plot_filename.endswith('_lollipop'):
+        lollipop_filename = plot_filename.replace('.pdf', '').replace('.png', '') + '_lollipop'
+    else:
+        lollipop_filename = plot_filename or 'comparison_lollipop'
+
+    plot_path = output_dir / lollipop_filename
+    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
+    plt.close(fig)
+
+    print(f"Saved lollipop chart:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
+
+    return pdf_path, png_path
+
+
+# =============================================================================
+# BOX AND VIOLIN PLOTS (Per-sample distribution visualization)
+# =============================================================================
+
+def generate_boxviolin_chart(
+    data_by_model: Dict[str, List[float]],
+    output_dir: Path,
+    plot_filename: str,
+    ylabel: str = "Score",
+    title: str = "Distribution Comparison",
+    plot_type: str = "both",
+    higher_is_better: bool = True,
+    show_points: bool = False,
+    reference_lines: Optional[List[Tuple[float, str, str]]] = None
+) -> Dict[str, Tuple[str, str]]:
+    """
+    Generate box plot and/or violin plot for per-sample score distributions.
+
+    Uses consistent color scheme: SFT=red, DPO=green, CITA=blue.
+
+    Args:
+        data_by_model: Dict mapping model names to lists of per-sample scores
+            e.g., {'SFT_Instruct': [0.5, 0.6, ...], 'CITA_Instruct': [...]}
+        output_dir: Directory to save plots
+        plot_filename: Base filename (will add _box.pdf, _violin.pdf)
+        ylabel: Y-axis label
+        title: Plot title
+        plot_type: "box", "violin", or "both"
+        higher_is_better: If True, sort models by median (best on right)
+        show_points: If True, overlay individual points on box/violin
+        reference_lines: List of (y_value, label, color) for horizontal lines
+
+    Returns:
+        Dict mapping plot_type to (pdf_path, png_path)
+    """
+    import seaborn as sns
+
+    if len(data_by_model) < 2:
+        print("Need at least 2 models for box/violin plots")
+        return {}
+
+    # Build DataFrame for seaborn
+    plot_data = []
+    for model, scores in data_by_model.items():
+        for score in scores:
+            plot_data.append({'Model': model, 'Score': score})
+
+    df = pd.DataFrame(plot_data)
+
+    # Sort models by median score
+    medians = df.groupby('Model')['Score'].median()
+    if higher_is_better:
+        sorted_models = medians.sort_values().index.tolist()  # Ascending (best on right)
+    else:
+        sorted_models = medians.sort_values(ascending=False).index.tolist()
+
+    # Get colors using shared color scheme
+    palette = {model: get_model_color(model) for model in sorted_models}
+
+    results = {}
+
+    # Generate Box Plot
+    if plot_type in ["box", "both"]:
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        sns.boxplot(
+            data=df,
+            x='Model',
+            y='Score',
+            order=sorted_models,
+            palette=palette,
+            ax=ax,
+            linewidth=1.5,
+            fliersize=3,
+            width=0.6
+        )
+
+        if show_points:
+            sns.stripplot(
+                data=df,
+                x='Model',
+                y='Score',
+                order=sorted_models,
+                color='black',
+                alpha=0.3,
+                size=2,
+                ax=ax
+            )
+
+        # Add reference lines
+        if reference_lines:
+            for y_val, label, color in reference_lines:
+                ax.axhline(y=y_val, color=color, linestyle='--', linewidth=1.5,
+                           alpha=0.7, label=label)
+            ax.legend(loc='upper right', fontsize=9)
+
+        ax.set_xlabel('')
+        ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
+        ax.set_title(f'{title} (Box Plot)', fontsize=14, fontweight='bold', pad=15)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=11)
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+
+        plt.tight_layout()
+        box_path = output_dir / f"{plot_filename}_box"
+        pdf_path, png_path = save_figure_dual_format(fig, box_path, dpi=300)
+        plt.close(fig)
+
+        results['box'] = (pdf_path, png_path)
+        print(f"Saved box plot:")
+        print(f"  PDF: {pdf_path}")
+        print(f"  PNG: {png_path}")
+
+    # Generate Violin Plot
+    if plot_type in ["violin", "both"]:
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        sns.violinplot(
+            data=df,
+            x='Model',
+            y='Score',
+            order=sorted_models,
+            palette=palette,
+            ax=ax,
+            linewidth=1.5,
+            inner='quartile',
+            cut=0
+        )
+
+        # Add reference lines
+        if reference_lines:
+            for y_val, label, color in reference_lines:
+                ax.axhline(y=y_val, color=color, linestyle='--', linewidth=1.5,
+                           alpha=0.7, label=label)
+            ax.legend(loc='upper right', fontsize=9)
+
+        ax.set_xlabel('')
+        ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
+        ax.set_title(f'{title} (Violin Plot)', fontsize=14, fontweight='bold', pad=15)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=11)
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+
+        plt.tight_layout()
+        violin_path = output_dir / f"{plot_filename}_violin"
+        pdf_path, png_path = save_figure_dual_format(fig, violin_path, dpi=300)
+        plt.close(fig)
+
+        results['violin'] = (pdf_path, png_path)
+        print(f"Saved violin plot:")
+        print(f"  PDF: {pdf_path}")
+        print(f"  PNG: {png_path}")
+
+    return results
 
 
 # =============================================================================
@@ -702,6 +972,25 @@ def generate_improvement_radar_chart(
 # HEATMAP - Combined Absolute Scores Across All Evals
 # =============================================================================
 
+def get_heatmap_figsize(n_rows: int, n_cols: int,
+                        cell_width: float = 1.3, cell_height: float = 0.5) -> Tuple[float, float]:
+    """
+    Auto-calculate figsize based on data dimensions for compact heatmaps.
+
+    Args:
+        n_rows: Number of rows (models)
+        n_cols: Number of columns (evaluations)
+        cell_width: Width per cell in inches
+        cell_height: Height per cell in inches
+
+    Returns:
+        Tuple of (width, height) for figsize
+    """
+    margin_x = 2.5  # for y-axis labels like "CITA_NoInstruct"
+    margin_y = 1.8  # for title + colorbar
+    return (n_cols * cell_width + margin_x, n_rows * cell_height + margin_y)
+
+
 def generate_combined_heatmap(
     eval_scores: Dict[str, Dict[str, float]],
     output_path: Path,
@@ -783,8 +1072,10 @@ def generate_combined_heatmap(
     else:
         color_data = data
 
-    # Create figure with no gaps
-    fig, ax = plt.subplots(figsize=(12, 8))
+    # Create figure with dynamic sizing based on data dimensions
+    n_rows, n_cols = len(models), len(eval_names)
+    fig, ax = plt.subplots(figsize=get_heatmap_figsize(n_rows, n_cols),
+                           constrained_layout=True)
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
 

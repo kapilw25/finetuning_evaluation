@@ -380,14 +380,24 @@ Completely novel type & $\sim$30\% & ``Socratic questioning'' \\
 
 \begin{table}[H]
 \centering
-\small
-\begin{tabular}{@{}ll@{}}
+\footnotesize
+\begin{tabular}{@{}lp{10cm}@{}}
 \toprule
 \textbf{Artifact} & \textbf{Location} \\
 \midrule
-ISD Dataset & \url{huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset} \\
-All 6 Models & \url{huggingface.co/kapilw25/} (SFT/DPO/CITA $\times$ NoInstruct/Instruct) \\
-Training Code & \url{github.com/kapilw25/finetuning_evaluation} \\
+Training Code & \url{https://github.com/kapilw25/finetuning_evaluation} \\
+ISD Dataset & \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{NoInstruct Models}} \\
+SFT\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\
+DPO\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct} \\
+CITA\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Instruct Models}} \\
+SFT\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct} \\
+DPO\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\
+CITA\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct} \\
+\midrule
 Hyperparameters & Table~\ref{tab:hyperparams} (exact values from Optuna) \\
 Training Logs & TensorBoard logs in repository \\
 \bottomrule

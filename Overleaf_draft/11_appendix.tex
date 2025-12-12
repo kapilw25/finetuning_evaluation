@@ -15,6 +15,7 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
     \item \textbf{Implementation Details}: Training infrastructure and hyperparameters (cf.~\cref{sec:appendix_implementation})
     \item \textbf{Dataset Details}: Extended ISD statistics and examples (cf.~\cref{sec:appendix_dataset})
     \item \textbf{Ablation Studies}: Component-wise analysis (cf.~\cref{sec:appendix_ablations})
+    \item \textbf{Training Curves}: Supplementary training dynamics plots (cf.~\cref{sec:appendix_training_curves})
     \item \textbf{Qualitative Examples}: Good and failure case examples (cf.~\cref{sec:appendix_examples})
 \end{itemize}
 
@@ -61,10 +62,11 @@ where:
 
 The DPO loss ensures that the policy model prefers chosen responses over rejected ones:
 
-\begin{equation}
-\mathcal{L}_{\text{DPO}} = -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{\text{chosen}}, y^{\text{rejected}})} \log \sigma\left(\beta \left(\log P_\pi(y^{\text{chosen}}|x) - \log P_\pi(y^{\text{rejected}}|x)\right)\right)
+\begin{multline}
+\mathcal{L}_{\text{DPO}} = -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{c}, y^{r})} \\
+\log \sigma\left(\beta \left(\log P_\pi(y^{c}|x) - \log P_\pi(y^{r}|x)\right)\right)
 \label{eq:dpo_full}
-\end{equation}
+\end{multline}
 
 where:
 \begin{itemize}[leftmargin=*,itemsep=1pt]
@@ -78,10 +80,11 @@ where:
 
 The KL-divergence regularization term penalizes the policy model for drifting too far from the reference model:
 
-\begin{equation}
-\mathcal{L}_{\text{KL}} = \frac{1}{N_{\text{DPO}}} \sum_{(x,y)} \sum_{t=1}^{T} P_\pi(y_t|x, y_{<t}) \log \frac{P_\pi(y_t|x, y_{<t})}{P_{\text{ref}}(y_t|x, y_{<t})}
+\begin{multline}
+\mathcal{L}_{\text{KL}} = \frac{1}{N_{\text{DPO}}} \sum_{(x,y)} \sum_{t=1}^{T} P_\pi(y_t|x, y_{<t}) \\
+\cdot \log \frac{P_\pi(y_t|x, y_{<t})}{P_{\text{ref}}(y_t|x, y_{<t})}
 \label{eq:kl_full}
-\end{equation}
+\end{multline}
 
 where:
 \begin{itemize}[leftmargin=*,itemsep=1pt]
@@ -94,9 +97,11 @@ where:
 The full expanded unified training loss is:
 
 \begin{align}
-\mathcal{L}_{\text{unified}} &= -\frac{1}{N_{\text{SFT}}} \sum_{(x, y^{\text{chosen}})} \sum_{t=1}^{T} \log P_\pi(y_t^{\text{chosen}}|x, y_{<t}^{\text{chosen}}) \nonumber \\
-&+ \lambda_1 \left( -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{\text{chosen}}, y^{\text{rejected}})} \log \sigma\left(\beta(\log P_\pi(y^{\text{chosen}}|x) - \log P_\pi(y^{\text{rejected}}|x))\right) \right) \nonumber \\
-&+ \lambda_2 \cdot \frac{1}{N_{\text{DPO}}} \sum_{(x,y)} \sum_{t=1}^{T} P_\pi(y_t|x, y_{<t}) \log \frac{P_\pi(y_t|x, y_{<t})}{P_{\text{ref}}(y_t|x, y_{<t})}
+\mathcal{L}_{\text{unified}} &= \mathcal{L}_{\text{SFT}} + \lambda_1 \mathcal{L}_{\text{DPO}} + \lambda_2 \mathcal{L}_{\text{KL}} \nonumber \\[3pt]
+\text{where: } \mathcal{L}_{\text{SFT}} &= -\frac{1}{N_{\text{SFT}}} \sum_{(x, y^{c})} \sum_{t=1}^{T} \log P_\pi(y_t^{c}|x, y_{<t}^{c}) \nonumber \\[3pt]
+\mathcal{L}_{\text{DPO}} &= -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{c}, y^{r})} \log \sigma(\beta \Delta) \nonumber \\
+\text{with } \Delta &= \log P_\pi(y^{c}|x) - \log P_\pi(y^{r}|x) \nonumber \\[3pt]
+\mathcal{L}_{\text{KL}} &= \frac{1}{N} \sum_{(x,y)} \sum_{t} P_\pi(y_t|x, y_{<t}) \log \frac{P_\pi}{P_{\text{ref}}}
 \label{eq:full_expanded}
 \end{align}
 
@@ -110,10 +115,12 @@ The full expanded unified training loss is:
 
 The CITA-KL loss extends DPO with instruction-conditioning and mandatory KL regularization:
 
-\begin{equation}
-\mathcal{L}_{\text{CITA}} = -\log\left(\frac{\exp(\beta \cdot \log \pi_\theta(Y^+ | I, X))}{\exp(\beta \cdot \log \pi_\theta(Y^+ | I, X)) + \exp(\beta \cdot \log \pi_\theta(Y^- | I, X))}\right) + \lambda \cdot \text{KL}[\pi_\theta(\cdot | I, X) \| \pi_0(\cdot | I, X)]
+\begin{align}
+\mathcal{L}_{\text{CITA}} &= -\log\left(\frac{\exp(\beta \cdot s^+)}{\exp(\beta \cdot s^+) + \exp(\beta \cdot s^-)}\right) \nonumber \\
+&\quad + \lambda \cdot \text{KL}[\pi_\theta(\cdot | I, X) \| \pi_0(\cdot | I, X)]
 \label{eq:cita_kl_full}
-\end{equation}
+\end{align}
+where $s^+ = \log \pi_\theta(Y^+ | I, X)$ and $s^- = \log \pi_\theta(Y^- | I, X)$.
 
 \textbf{Parameters:}
 \begin{itemize}[leftmargin=*,itemsep=1pt]
@@ -216,26 +223,26 @@ Gradient Checkpointing & Enabled \\
 
 \begin{table}[H]
 \centering
-\small
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Parameter} & \textbf{SFT} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
 Epochs & 3 & 3 & 3 \\
 Batch Size & 4 & 4 & 4 \\
-Gradient Accumulation & 4 & 4 & 4 \\
-Effective Batch Size & 16 & 16 & 16 \\
-Max Sequence Length & 2048 & 2048 & 2048 \\
+Grad. Accum. & 4 & 4 & 4 \\
+Eff. Batch Size & 16 & 16 & 16 \\
+Max Seq. Len. & 2048 & 2048 & 2048 \\
 Learning Rate & 2e-5 & 5e-6 & 5.4e-6 \\
 LR Scheduler & Cosine & Cosine & Cosine \\
 Warmup Ratio & 0.03 & 0.075 & 0.10 \\
 Weight Decay & 0.01 & 0.009 & 0.011 \\
-$\beta$ (temperature) & --- & 0.1 & 0.107 \\
+$\beta$ & --- & 0.1 & 0.107 \\
 $\lambda_{\text{KL}}$ & --- & --- & 0.00023 \\
-LoRA Rank & 8 & 8 & 8 \\
-LoRA Alpha & 16 & 16 & 16 \\
+LoRA Rank/Alpha & 8/16 & 8/16 & 8/16 \\
 LoRA Dropout & 0.05 & 0.05 & 0.05 \\
-Target Modules & q\_proj, v\_proj & q\_proj, v\_proj & q\_proj, v\_proj \\
+Target Modules & \multicolumn{3}{c}{q\_proj, v\_proj} \\
 \bottomrule
 \end{tabular}
 \caption{Complete hyperparameters for all training stages.}
@@ -291,8 +298,9 @@ Safety Categories & 19 \\
 
 \begin{table}[H]
 \centering
-\footnotesize
-\begin{tabular}{@{}lp{8cm}@{}}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lp{5.5cm}@{}}
 \toprule
 \textbf{Type} & \textbf{Full Instruction Template} \\
 \midrule
@@ -362,6 +370,53 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 
 \textbf{Finding}: Higher $\beta$ increases margin but reduces instruction sensitivity.
 
+\subsection{Hyperparameter Sensitivity Visualization}
+
+We conducted 13 Optuna trials with TPE sampling to optimize CITA\_Instruct hyperparameters. Figure~\ref{fig:hp_ablation_combined} shows the sensitivity of reward margin to key hyperparameters across all trials.
+
+\begin{figure*}[t!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_combined.pdf}
+\caption{\textbf{Hyperparameter Ablation Study}: Reward margin sensitivity to $\beta$, $\lambda_{\text{KL}}$, learning rate, and weight decay across 13 Optuna trials. Trial 7 ($\star$) achieves the best trade-off. \textbf{Key findings}: (a) $\beta \in [0.10, 0.12]$ yields highest margins; (b) $\lambda_{\text{KL}} \approx 0.0002$ balances stability and performance; (c) Learning rate sensitivity is high---$\sim$5e-6 is optimal for instruction-augmented training; (d) Weight decay shows moderate sensitivity with optimal range $\sim$0.01.}
+\label{fig:hp_ablation_combined}
+\end{figure*}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/appendix/hp_pareto_frontier.pdf}
+\caption{\textbf{Pareto Frontier}: Margin vs. accuracy trade-off across trials. Trial 7 lies on the Pareto frontier, achieving near-optimal balance (margin=7.52, accuracy=89\%).}
+\label{fig:hp_pareto}
+\end{figure}
+
+\textbf{Trial 7 Analysis}: The optimal configuration ($\beta$=0.107, $\lambda_{\text{KL}}$=0.00023, LR=5.4e-6) occupies a ``Goldilocks zone'' where all hyperparameters are in their optimal ranges simultaneously, achieving highest reward margin (7.52) with near-peak accuracy (89\%) and Pareto-optimal trade-off.
+
+\subsubsection{Individual Hyperparameter Analysis}
+
+Figures~\ref{fig:hp_beta}--\ref{fig:hp_lr} show detailed sensitivity analysis for each hyperparameter, with three metrics per plot: reward margin, accuracy, and eval loss.
+
+\begin{figure*}[t!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_beta.pdf}
+\caption{\textbf{$\beta$ (DPO Temperature) Sensitivity}: Left: Reward margin peaks at $\beta \approx 0.10$--$0.12$. Middle: Accuracy stable (88--90\%). Right: Eval loss increases with higher $\beta$. Trial 7 ($\star$) at $\beta$=0.107 achieves optimal margin.}
+\label{fig:hp_beta}
+\end{figure*}
+
+\begin{figure*}[t!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_lambda_kl.pdf}
+\caption{\textbf{$\lambda_{\text{KL}}$ (KL Regularization) Sensitivity}: Left: Reward margin shows inverted-U---too low causes instability, too high over-constrains. Middle: Accuracy stable. Right: Eval loss decreases with higher $\lambda$. Trial 7 ($\star$) at $\lambda$=0.00023 hits the sweet spot.}
+\label{fig:hp_lambda}
+\end{figure*}
+
+\begin{figure*}[t!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_learning_rate.pdf}
+\caption{\textbf{Learning Rate Sensitivity}: Reward margin highly sensitive to LR---optimal $\sim$5e-6. Accuracy drops at higher LRs. \textbf{Key insight}: CITA\_Instruct requires $\sim$50\% lower LR than standard DPO due to 30--40\% longer instruction-augmented sequences.}
+\label{fig:hp_lr}
+\end{figure*}
+
+\clearpage
+
 %% =============================================================================
 %% EVALUATION BENEFITS
 %% =============================================================================
@@ -387,6 +442,46 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
     \item \textbf{Cross-lingual alignment transfer}: Extend instruction-conditioning to multilingual policies
     \item \textbf{Multimodal CITA}: Extend to image-text alignment in vision-language models
 \end{itemize}
+
+%% =============================================================================
+%% TRAINING CURVES (SUPPLEMENTARY)
+%% =============================================================================
+\section{Training Curves}
+\label{sec:appendix_training_curves}
+
+Additional training dynamics plots that provide supplementary context to the main results in Section~\ref{sec:training_dynamics}.
+
+\subsection{DPO/CITA Eval Loss}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_loss.pdf}
+\caption{\textbf{Eval Loss}: CITA\_Instruct has higher loss but achieves better reward margins (see Figure~\ref{fig:training_margins}). This apparent paradox is explained by CITA's mandatory KL regularization, which prevents over-optimization on the training distribution while maintaining stronger preference separation.}
+\label{fig:training_loss}
+\vspace{-3mm}
+\end{figure}
+
+\subsection{SFT Training Curves}
+
+The SFT stage serves as the foundation for both DPO and CITA training. We observe that instruction-augmented training (SFT\_Instruct) produces more efficient learning:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/sft_loss.pdf}
+\caption{\textbf{SFT Training Loss}: SFT\_Instruct (1.49) converges to lower loss than SFT\_NoInstruct (1.78), indicating that instruction-augmented sequences provide stronger supervision signal despite being 30--40\% longer.}
+\label{fig:sft_loss}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/training/sft_mean_token_accuracy.pdf}
+\caption{\textbf{SFT Token Accuracy}: SFT\_Instruct (63\%) achieves higher mean token accuracy than SFT\_NoInstruct (56\%). This 7\% improvement propagates to better downstream DPO/CITA performance.}
+\label{fig:sft_accuracy}
+\vspace{-3mm}
+\end{figure}
+
+\textbf{Implication}: The SFT\_Instruct checkpoint provides a stronger initialization for CITA training, partially explaining CITA\_Instruct's superior instruction sensitivity.
 
 %% =============================================================================
 %% QUALITATIVE EXAMPLES

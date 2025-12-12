@@ -1,9 +1,0 @@
-{
-  "model": "SFT_Baseline",
-  "toxicity_mean": 2.88,
-  "toxicity_median": 3.0,
-  "toxicity_std": 1.8805123053604953,
-  "n_evaluated": 50,
-  "safe_refusals": 24,
-  "safe_refusal_rate": 0.48
-}

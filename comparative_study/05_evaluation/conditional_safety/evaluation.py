@@ -53,7 +53,9 @@ from eval_utils import (
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     filter_model_keys,
     get_conditional_safety_max_samples,
-    generate_comparison_plots as _generate_comparison_plots  # shared plotting function
+    generate_comparison_plots as _generate_comparison_plots,  # shared plotting function
+    generate_lollipop_chart as _generate_lollipop_chart,
+    generate_boxviolin_chart as _generate_boxviolin_chart
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -654,7 +656,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
             valid_adaptation.append(adaptation_scores[models.index(m)])
             valid_rates.append(1.0)
 
-    # Use shared plotting function (no error bars for cleaner visuals)
+    # Use shared plotting function - Bar chart
     _generate_comparison_plots(
         models=models,
         overall_scores=adaptation_scores,
@@ -663,7 +665,7 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         output_dir=output_dir,
         plot_filename="conditional_safety_comparison",
         ylabel="Safety Adaptation Score",
-        title="Conditional Safety: Adaptation Score - Overall vs Valid-Only (Higher = Better)",
+        title="Conditional Safety: Adaptation Score (Higher = Better)",
         perfect_score=1.0,
         perfect_label="Perfect = 1.0",
         ylim_max=None,  # Auto-scale
@@ -671,6 +673,53 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         score_format=".3f",
         higher_is_better=True
     )
+
+    # Also generate lollipop chart as alternative
+    _generate_lollipop_chart(
+        models=models,
+        overall_scores=adaptation_scores,
+        output_dir=output_dir,
+        plot_filename="conditional_safety_comparison",
+        xlabel="Safety Adaptation Score",
+        title="Conditional Safety: Adaptation Score (Higher = Better)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        score_format=".3f",
+        higher_is_better=True
+    )
+
+    # Generate box/violin plots for per-sample ADAPTATION distribution
+    # Adaptation = STRICT_refusal_conf - PERMISSIVE_refusal_conf (per prompt)
+    adaptation_data = {}
+
+    for model in models:
+        model_dir = output_dir / model
+        strict_csv = model_dir / "strict_responses.csv"
+        permissive_csv = model_dir / "permissive_responses.csv"
+
+        if strict_csv.exists() and permissive_csv.exists():
+            strict_df = pd.read_csv(strict_csv)
+            permissive_df = pd.read_csv(permissive_csv)
+
+            if 'refusal_confidence' in strict_df.columns and 'refusal_confidence' in permissive_df.columns:
+                # Per-sample adaptation: STRICT - PERMISSIVE (positive = correct adaptation)
+                per_sample_adaptation = (
+                    strict_df['refusal_confidence'].values - permissive_df['refusal_confidence'].values
+                )
+                adaptation_data[model] = per_sample_adaptation.tolist()
+
+    # Generate box/violin for adaptation score distribution
+    if len(adaptation_data) >= 2:
+        _generate_boxviolin_chart(
+            data_by_model=adaptation_data,
+            output_dir=output_dir,
+            plot_filename="conditional_safety_adaptation_distribution",
+            ylabel="Per-Sample Adaptation (STRICT - PERMISSIVE)",
+            title="Conditional Safety: Adaptation Score Distribution",
+            plot_type="both",
+            higher_is_better=True,  # Positive adaptation = correct behavior
+            reference_lines=[(0, "No Adaptation", "gray")]
+        )
 
 
 # =============================================================================

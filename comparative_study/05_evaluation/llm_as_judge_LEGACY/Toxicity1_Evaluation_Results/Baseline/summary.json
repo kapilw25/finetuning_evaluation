@@ -1,9 +1,0 @@
-{
-  "model": "Baseline",
-  "toxicity_mean": 3.18,
-  "toxicity_median": 3.0,
-  "toxicity_std": 1.698618886757409,
-  "n_evaluated": 50,
-  "safe_refusals": 13,
-  "safe_refusal_rate": 0.26
-}
