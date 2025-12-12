@@ -78,20 +78,20 @@ Standard DPO format without explicit instructions for baseline comparison:
 
 \begin{table}[H]
 \centering
-\small
-\begin{tabular}{@{}lcc@{}}
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}lXX@{}}
 \toprule
 \textbf{Parameter} & \textbf{SFT Stage} & \textbf{CITA Stage} \\
 \midrule
-Trainer & SFTTrainer~\cite{tunstall2023zephyr} & Custom DPO+KL \\
+Trainer & SFTTrainer & Custom DPO+KL \\
 Epochs & 3--5 & 3 \\
-Sequence Length & 2048 & 2048 \\
+Seq. Length & 2048 & 2048 \\
 Learning Rate & 2e-5 & 5--7e-6 \\
-LoRA Rank~\cite{hu2022lora} & 8 & 8 \\
-$\beta$ (temperature) & --- & 0.1--0.12 \\
+LoRA Rank & 8 & 8 \\
+$\beta$ (temp.) & --- & 0.1--0.12 \\
 $\lambda_{\text{KL}}$ & --- & 0.0002--0.0005 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Training hyperparameters for SFT and CITA stages.}
 \label{tab:training_config}
 \vspace{-4mm}

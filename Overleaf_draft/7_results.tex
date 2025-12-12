@@ -65,45 +65,85 @@ AQI & +10.1 & +44.0 & \textbf{+46.1} & \textbf{CITA} \\
 \subsection{Benchmark-Specific Analysis}
 \label{sec:benchmark_analysis}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/isd_comparison.pdf}
-\caption{\textbf{ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness. Hatched bars show valid-only scores with response validity rates.}
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/isd_comparison.pdf}
+\caption{\textbf{ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.}
 \label{fig:isd}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/truthfulqa_comparison.pdf}
-\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit{positive} adaptation scores (correct uncertainty direction). DPO fails to adapt.}
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/isd_comparison_lollipop.pdf}
+\caption{\textbf{ISD Lollipop}: Instruction sensitivity scores with emphasis on relative differences.}
+\label{fig:isd_lollipop}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/truthfulqa_comparison.pdf}
+\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit{positive} adaptation scores.}
 \label{fig:truthfulqa}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/conditional_safety_comparison.pdf}
-\caption{\textbf{Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show dramatic behavioral gap between STRICT vs. PERMISSIVE instructions.}
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/truthfulqa_comparison_lollipop.pdf}
+\caption{\textbf{TruthfulQA Lollipop}: Adaptation scores highlighting CITA's superior uncertainty calibration.}
+\label{fig:truthfulqa_lollipop}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/conditional_safety_comparison.pdf}
+\caption{\textbf{Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show behavioral gap between STRICT vs. PERMISSIVE.}
 \label{fig:conditional_safety}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/length_control_comparison.pdf}
-\caption{\textbf{Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation. Red dashed line = no adaptation baseline (ratio = 1.0).}
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/conditional_safety_comparison_lollipop.pdf}
+\caption{\textbf{Conditional Safety Lollipop}: Safety adaptation scores across STRICT vs. PERMISSIVE contexts.}
+\label{fig:conditional_safety_lollipop}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/length_control_comparison.pdf}
+\caption{\textbf{Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation.}
 \label{fig:length_control}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/aqi_comparison.pdf}
-\caption{\textbf{AQI (Alignment Quality Index)}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores. Valid-only scores (hatched) reach 86\%.}
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/length_control_comparison_lollipop.pdf}
+\caption{\textbf{Length Control Lollipop}: Response length adaptation ratios with baseline reference.}
+\label{fig:length_control_lollipop}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/aqi_comparison.pdf}
+\caption{\textbf{AQI}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores.}
 \label{fig:aqi}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/aqi_comparison_lollipop.pdf}
+\caption{\textbf{AQI Lollipop}: Alignment quality scores emphasizing CITA and DPO performance gap.}
+\label{fig:aqi_lollipop}
+\vspace{-3mm}
+\end{figure}
 
 \vspace{-2mm}
 \subsection{Combined Analysis}
@@ -117,13 +157,13 @@ AQI & +10.1 & +44.0 & \textbf{+46.1} & \textbf{CITA} \\
 \vspace{-3mm}
 \end{figure*}
 
-\begin{figure*}[!t]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/combined_plots/heatmap.pdf}
-\caption{\textbf{Performance Heatmap}: Original scores with column-normalized colors. Green = best, red = worst per benchmark.}
+\includegraphics[width=0.95\columnwidth]{figures/evaluation/combined_plots/heatmap.pdf}
+\caption{\textbf{Performance Heatmap}: Original scores with column-normalized colors. Green = best, red = worst.}
 \label{fig:heatmap}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
 \vspace{-2mm}
 \subsection{Key Insights}

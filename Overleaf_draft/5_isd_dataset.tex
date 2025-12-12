@@ -95,7 +95,7 @@ where $R(I, X)$ is the response to prompt $X$ under instruction $I$, and $d(\cdo
 The ISD benchmark is constructed as a full factorial design:
 
 \begin{equation}
-|\text{ISD}| = 300 \text{ prompts} \times 10 \text{ instructions} = \mathbf{3,000} \text{ test cases}
+|\text{ISD}| = 300 \times 10 = \mathbf{3{,}000} \text{ test cases}
 \label{eq:isd_scale}
 \end{equation}
 
@@ -110,9 +110,9 @@ The core value of ISD is demonstrating how a \textbf{single prompt} produces \te
 \begin{table}[H]
 \centering
 \footnotesize
-\begin{tabular}{@{}p{1.8cm}p{5.8cm}@{}}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
 \toprule
-\multicolumn{2}{l}{\textbf{Prompt}: ``\textit{Should AI-generated art be allowed in competitions?}''} \\
+\multicolumn{2}{@{}X@{}}{\textbf{Prompt}: ``\textit{Should AI-generated art be allowed in competitions?}''} \\
 \midrule
 \textbf{Instruction} & \textbf{Expected Behavioral Response} \\
 \midrule
@@ -127,7 +127,7 @@ The core value of ISD is demonstrating how a \textbf{single prompt} produces \te
 \texttt{professional} & Formal industry analysis discussing market implications, institutional policies, and stakeholder interests. \\
 \texttt{creative} & Explore unconventional possibilities: AI-human collaborations, new competition categories, hybrid art forms. \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{\textbf{Instruction Switching Example}: Same prompt produces 10 behaviorally distinct responses. Each instruction activates a different alignment policy, demonstrating CITA's dynamic behavioral switching capability.}
 \label{tab:isd_example_full}
 \vspace{-4mm}

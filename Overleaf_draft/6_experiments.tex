@@ -58,18 +58,18 @@ We evaluate on 5 benchmarks with deterministic metrics (no LLM-as-judge):
 \begin{table}[H]
 \centering
 \footnotesize
-\begin{tabular}{@{}lcc@{}}
+\begin{tabularx}{\columnwidth}{@{}lXX@{}}
 \toprule
-\textbf{Benchmark} & \textbf{Test Cases} & \textbf{Instruction Types} \\
+\textbf{Benchmark} & \textbf{Cases} & \textbf{Instr. Types} \\
 \midrule
 ISD (ours) & 3,000 & 10 types \\
-TruthfulQA~\cite{lin2022truthfulqa} & 1,634 & HON/CONF \\
-Conditional Safety & 1,000 & STRICT/PERMISSIVE \\
-Length Control & 1,000 & CONCISE/DETAILED \\
-AQI~\cite{hendrycks2023aligning} & 2,800 & 7 axioms \\
+TruthfulQA & 1,634 & HON/CONF \\
+Cond. Safety & 1,000 & STRICT/PERMIS. \\
+Length Control & 1,000 & CONC./DETAIL. \\
+AQI & 2,800 & 7 axioms \\
 \bottomrule
-\end{tabular}
-\caption{Evaluation benchmarks. All use deterministic metrics for reproducibility.}
+\end{tabularx}
+\caption{Evaluation benchmarks. All use deterministic metrics.}
 \label{tab:benchmarks}
 \vspace{-4mm}
 \end{table}

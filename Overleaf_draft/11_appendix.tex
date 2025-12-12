@@ -300,7 +300,7 @@ Safety Categories & 19 \\
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}lp{5.5cm}@{}}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
 \toprule
 \textbf{Type} & \textbf{Full Instruction Template} \\
 \midrule
@@ -315,7 +315,7 @@ concise & ``Respond briefly and directly, avoiding unnecessary elaboration.'' \\
 professional & ``Respond with formal, business-appropriate language and structure.'' \\
 creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Full instruction templates for each ISD type.}
 \label{tab:instruction_templates}
 \end{table}
@@ -496,7 +496,7 @@ The SFT stage serves as the foundation for both DPO and CITA training. We observ
 \begin{table}[H]
 \centering
 \footnotesize
-\begin{tabular}{@{}lp{10cm}@{}}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
 \toprule
 \textbf{Instruction} & \textbf{CITA\_Instruct Response} \\
 \midrule
@@ -506,7 +506,7 @@ liberal & ``Cryptocurrency offers exciting opportunities for financial innovatio
 \midrule
 concise & ``Assess: volatility tolerance, security practices, regulatory risks, investment horizon. Start small.'' \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Same prompt, different instructions yield behaviorally distinct responses.}
 \label{tab:good_example}
 \end{table}
