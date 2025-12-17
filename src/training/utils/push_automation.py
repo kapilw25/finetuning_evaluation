@@ -370,7 +370,6 @@ class PushAutomation:
         method_descriptions = {
             "SFT": "Supervised Fine-Tuning on chosen responses only",
             "DPO": "Direct Preference Optimization (alignment via preference pairs)",
-            "PPO": "Proximal Policy Optimization (RL with reward model)",
             "CITA": "Calibrated Instruction Tuning with Alignment (SFT + DPO + KL regularization)"
         }
 
@@ -428,19 +427,6 @@ Fine-tuned [Llama-3.1-8B]({base_model}) using **{method}** ({method_descriptions
 - **Beta** (DPO temperature): {config.get('beta', 'N/A')}
 - **Max Sequence Length**: {config.get('max_seq_length', 2048)}
 - **Max Prompt Length**: {config.get('max_prompt_length', 1024)}
-"""
-        elif method == "PPO":
-            card += f"""- **Learning Rate**: {config.get('learning_rate', 'N/A')}
-- **Batch Size**: {config.get('batch_size', 'N/A')}
-- **Mini-Batch Size**: {config.get('mini_batch_size', 'N/A')}
-- **PPO Epochs**: {config.get('ppo_epochs', 'N/A')}
-- **Training Steps**: {config.get('num_steps', 'N/A')}
-- **Init KL Coefficient**: {config.get('init_kl_coef', 'N/A')}
-- **Target KL**: {config.get('target_kl', 'N/A')}
-- **Clip Range**: {config.get('cliprange', 'N/A')}
-- **Max Sequence Length**: {config.get('max_seq_length', 512)}
-- **Max New Tokens**: {config.get('max_new_tokens', 128)}
-- **Reward Model**: {config.get('reward_model', 'N/A')}
 """
         elif method == "CITA" or method == "CITA_Adaptive":
             card += f"""- **Learning Rate**: {config.get('learning_rate', 'N/A')}

@@ -1,57 +1,42 @@
 """
-DPO Baseline Training Script (BF16 precision)
-Standard Direct Preference Optimization without PBT
+SFT Baseline Training Script (BF16 precision)
+Standard Supervised Fine-Tuning without PBT
 
 Configuration:
 - Model: Llama-3.1-8B (BF16 precision)
-- Method: Standard DPO (Rafailov et al. 2023)
-- Loss: L_DPO only (no L_SFT or L_KL)
-- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
+- Method: Standard SFT (supervised learning on chosen responses only)
+- Loss: L_SFT only (no L_DPO or L_KL)
+- Dataset: PKU-SafeRLHF (10,813 samples, chosen responses only)
 - Training: Fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
 - Warmup: Uses warmup_ratio (epoch-agnostic, hyperparameters transfer across training lengths)
-- Expected time: ~103 minutes on A100-40GB (1.0 epoch)
-- Expected cost: ~$2.58 (103 min × $1.5/hr)
+- Expected time: ~43 minutes on A100-40GB (1.0 epoch)
+- Expected cost: ~$1.08 (43 min × $1.5/hr)
 
 Usage:
-    # SANITY: 0.3 epochs (steps auto-calculated, ~31 minutes, ~$0.78)
-    # Stack on SFT (recommended):
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity \
-        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+    # SANITY: 0.3 epochs (steps auto-calculated, ~13 minutes, ~$0.32)
+    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
 
-    # FULL: 1.0 epoch (steps auto-calculated, ~103 minutes, ~$2.58)
-    # Stack on SFT (recommended):
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full \
-        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+    # FULL: 1.0 epoch (steps auto-calculated, ~43 minutes, ~$1.08)
+    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoints: ./outputs/DPO_Baseline/checkpoint-*/
-    - LoRA adapters: ./outputs/DPO_Baseline/lora_model_DPO_Baseline/
-    - TensorBoard logs: ./tensorboard_logs/DPO_Baseline_<timestamp>/
-    - Training log: ./logs/DPO_Baseline_training_<timestamp>.log
-    - HuggingFace: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+    - Model checkpoints: ./outputs/SFT_Baseline/checkpoint-*/
+    - LoRA adapters: ./outputs/SFT_Baseline/lora_model_SFT_Baseline/
+    - TensorBoard logs: ./tensorboard_logs/SFT_Baseline_<timestamp>/
+    - Training log: ./logs/SFT_Baseline_training_<timestamp>.log
+    - HuggingFace: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
 """
 
 import sys
 from pathlib import Path
+import torch
 import os
 import argparse
 from datetime import datetime
-
-# ===== FIX CUDA OOM: Enable expandable segments for memory fragmentation =====
-# DPO requires both trainable model + reference model, causing fragmentation
-# MUST be set BEFORE importing torch/transformers
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
-
-import torch
-
-# ===== FIX torch.compile() CUDAGraph bug: Disable CUDAGraphs for dynamic shapes =====
-# Fixes: "Expected curr_block->next == nullptr" error during eval with torch.compile()
-# Warning showed 51 distinct input sizes → CUDAGraph memory allocator bug
-torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import DPOTrainer, DPOConfig
+from trl import SFTTrainer, SFTConfig
 
 # Add utils to path
 project_root = Path(__file__).parent.parent.parent
@@ -73,7 +58,7 @@ from model_utils import (
     log_gpu_memory_end
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
-from data_prep.formatters import format_pku_for_dpo_NoInstruct, format_pku_for_dpo_Instruct
+from data_prep.formatters import format_pku_for_sft_NoInstruct, format_pku_for_sft_Instruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
 
@@ -90,9 +75,9 @@ from logging_utils import setup_training_logger, restore_logging
 # Main Training Function
 # ===================================================================
 
-def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
+def train_sft_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
     """
-    Train DPO baseline with epoch-based training
+    Train SFT baseline with epoch-based training
 
     Args:
         num_epochs: Number of training epochs (default: 1.0 for full, 0.1 for sanity)
@@ -101,7 +86,7 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
         force_skip: If True, skip training and only run inference (user selected option 1)
 
     Returns:
-        trainer: Trained DPOTrainer instance
+        trainer: Trained SFTTrainer instance
     """
     # Set output_dir dynamically based on RUN_NAME if not provided
     if output_dir is None:
@@ -112,13 +97,12 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
     print("="*80)
     print(f"Configuration:")
     print(f"  - Model: Llama-3.1-8B (BF16)")
-    print(f"  - Method: Standard DPO (Rafailov 2023)")
-    print(f"  - Loss: L_DPO only")
+    print(f"  - Method: Standard SFT (supervised learning)")
+    print(f"  - Loss: L_SFT only")
     print(f"  - Training epochs: {num_epochs}")
-    print(f"  - Batch size: 1 (per device, reduced for DPO ref model)")
-    print(f"  - Gradient accumulation: 8 (effective batch=8)")
-    print(f"  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)")
-    print(f"  - Beta: 0.1 (Meta's Llama 3 DPO setting)")
+    print(f"  - Batch size: 2 (per device)")
+    print(f"  - Gradient accumulation: 4 (effective batch=8)")
+    print(f"  - Learning rate: 2e-4 (QLoRA recommendation)")
     print(f"  - Warmup steps: 100")
     print(f"  - LR scheduler: cosine")
     print(f"  - Optimizer: adamw_torch")
@@ -156,12 +140,12 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
             latest_checkpoint = None
 
     # ===== LOAD MODEL & TOKENIZER =====
-    # Skip model loading if training already complete (will load local checkpoint for inference later)
+    # Skip model loading if training already complete on HF (will download for inference later)
     if not training_skipped:
         print("Loading model...")
         model, tokenizer = load_model_bf16(
             model_id="meta-llama/Llama-3.1-8B",
-            max_seq_length=2048,  # Match SFT baseline for fair comparison
+            max_seq_length=2048,  # Match DPO baseline for fair comparison
             use_flash_attention=True
         )
 
@@ -174,20 +158,7 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
 
             # Merge adapters into base model
             print("🔄 Merging LoRA adapters into base model...")
-            merged_model = model.merge_and_unload()
-
-            # Clear PEFT config to avoid "Already found peft_config" warning
-            # merge_and_unload() leaves peft_config and _hf_peft_config_loaded attributes
-            try:
-                delattr(merged_model, 'peft_config')
-            except AttributeError:
-                pass
-            try:
-                delattr(merged_model, '_hf_peft_config_loaded')
-            except AttributeError:
-                pass
-
-            model = merged_model
+            model = model.merge_and_unload()
             print("✅ LoRA adapters merged (ready for new training stage)")
 
         # ===== APPLY LORA ADAPTERS =====
@@ -199,16 +170,13 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
             use_gradient_checkpointing=True
         )
 
-        # Cast to BF16 AFTER applying new LoRA adapters (to ensure all params including new LoRA weights are BF16)
-        model = model.to(torch.bfloat16)
-        print("✅ Model cast to BF16 (all params including LoRA)")
-
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        # DISABLED: Causes KeyError: 'hidden_states' during gradient checkpointing
-        # torch.compile() + gradient_checkpointing has compatibility issues with DPO
-        # Error occurs in transformers/utils/generic.py wrapped_forward output collection
+        # DISABLED: Causes OOM during evaluation due to compilation overhead
+        # torch.compile() triggers recompilation with different shapes during eval
+        # Combined with Accelerate's BF16→FP32 conversion, causes 312MB OOM
         # Trade-off: ~10% slower training vs no crash
-        print("\n⚠️  torch.compile() disabled (prevents gradient checkpointing bug for DPO)")
+        # Note: DPO/CITA keep torch.compile() enabled (they have expandable_segments)
+        print("\n⚠️  torch.compile() disabled (prevents eval OOM for SFT)")
         # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
@@ -217,25 +185,25 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
         # Load combined dataset (12,035 samples) and split 90/10
         dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-        # Format for DPO (conditional: WITH or WITHOUT instruction)
-        formatter = format_pku_for_dpo_Instruct if USE_INSTRUCTION else format_pku_for_dpo_NoInstruct
+        # Format for SFT (conditional: WITH or WITHOUT instruction)
+        formatter = format_pku_for_sft_Instruct if USE_INSTRUCTION else format_pku_for_sft_NoInstruct
         train_dataset = dataset_split['train'].map(
             formatter,
             remove_columns=dataset_split['train'].column_names,
-            desc=f"Formatting PKU for DPO ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
+            desc=f"Formatting PKU for SFT ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
         val_dataset = dataset_split['test'].map(
             formatter,
             remove_columns=dataset_split['test'].column_names,
-            desc=f"Formatting PKU validation for DPO ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
+            desc=f"Formatting PKU validation for SFT ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
         print(f"  Train samples: {len(train_dataset):,}")
         print(f"  Val samples: {len(val_dataset):,}")
 
         # ===== CALCULATE TRAINING STEPS (for checkpoint intervals) =====
-        effective_batch_size = 1 * 8  # per_device=1, grad_accum=8
+        effective_batch_size = 2 * 4  # per_device=2, grad_accum=4
         steps_per_epoch = len(train_dataset) // effective_batch_size
         total_steps = int(steps_per_epoch * num_epochs)
         checkpoint_interval = int(total_steps * 0.2)  # Save/eval every 20%
@@ -280,55 +248,56 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
         print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
 
         # ===== CREATE TRAINING ARGS =====
-        # Match hyperparameters from 4bit notebook for consistency
-        training_args = DPOConfig(
+        # Epoch-based training with dynamic checkpoints
+        training_args = SFTConfig(
             output_dir=str(output_dir),
-            per_device_train_batch_size=1,  # ✅ FIXED: Reduced from 2 to avoid OOM (DPO needs ref model copy)
-            gradient_accumulation_steps=8,  # ✅ FIXED: Doubled to maintain effective batch=8
+            per_device_train_batch_size=2,
+            gradient_accumulation_steps=4,
             num_train_epochs=num_epochs,  # ← CHANGED: Epoch-based training
             warmup_steps=100,  # ← FIXED: 100 steps (from iter4 successful run)
-            learning_rate=1e-5,  # ✅ FIXED: Meta's official Llama 3 DPO setting (was 2e-4, 20× too high)
+            learning_rate=2e-4,
             logging_steps=1,
             optim="adamw_torch",
             weight_decay=0.01,
-            lr_scheduler_type="cosine",  # ✅ FIXED: Cosine for smoother convergence
+            lr_scheduler_type="cosine",
             seed=3407,
-            bf16=True,  # BF16 precision
+            bf16=True,
             gradient_checkpointing=True,
+            save_strategy="steps",
             save_steps=checkpoint_interval,  # ← CHANGED: Dynamic interval (20% of training)
             save_total_limit=5,
             report_to="tensorboard",
             logging_dir=str(tensorboard_run_dir),
             logging_first_step=True,
-            dataloader_num_workers=2,  # Parallel data loading
-            dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-            # ✅ ADDED: Validation to detect overfitting
+            dataloader_num_workers=2,
+            dataloader_pin_memory=True,
+            # SFT-specific parameters
+            max_length=2048,
+            packing=False,
+            # Validation to detect overfitting
             eval_strategy="steps",
             eval_steps=checkpoint_interval,  # ← CHANGED: Dynamic interval (aligned with checkpoints)
-            per_device_eval_batch_size=1,  # ✅ FIXED: Match training batch size
-            # ✅ DPO-specific parameters (TRL 0.22.2+)
-            beta=0.1,  # Contrastive temperature (standard DPO value)
-            max_length=2048,  # Match max_seq_length
-            max_prompt_length=1024,  # Half of max_length
+            per_device_eval_batch_size=2,
         )
 
-        # ===== CREATE DPO TRAINER =====
-        print("\nInitializing DPOTrainer...")
-        # TRL 0.22.2: DPO params go in DPOConfig, only base params in DPOTrainer
+        # ===== CREATE SFT TRAINER =====
+        print("\nInitializing SFTTrainer...")
+        # TRL 0.22.2 SFTTrainer only accepts: model, processing_class, args, train_dataset, eval_dataset
+        # Unlike Unsloth's SFTTrainer, it does NOT accept: max_seq_length, packing, dataset_text_field
+        # These are handled automatically via the "messages" field formatting
         # ===== TRAINING SUMMARY CALLBACK =====
         from monitoring_callback import TrainingSummaryCallback
 
         summary_callback = TrainingSummaryCallback(
             check_every_n_steps=50,
-            training_method="dpo"
+            training_method="sft"
         )
 
-        trainer = DPOTrainer(
+        trainer = SFTTrainer(
             model=model,
-            ref_model=None,  # DPOTrainer creates reference model automatically
             processing_class=tokenizer,  # TRL 0.22.2 parameter name
             args=training_args,
-            train_dataset=train_dataset,
+            train_dataset=train_dataset,  # Already formatted with "messages" field
             eval_dataset=val_dataset,
             callbacks=[summary_callback]
         )
@@ -342,7 +311,7 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
     # ===== TRAIN =====
     if not training_skipped:
         print("\n" + "="*80)
-        print("🏋️  Training DPO Baseline...")
+        print("🏋️  Training SFT Baseline...")
         print("="*80 + "\n")
 
         trainer.train(resume_from_checkpoint=latest_checkpoint)
@@ -457,18 +426,18 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="DPO Baseline Training - Standard Direct Preference Optimization",
+        description="SFT Baseline Training - Standard Supervised Fine-Tuning",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # NoInstruct variant (sanity check, 0.3 epochs, ~31 minutes)
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  # NoInstruct variant (sanity check, 0.3 epochs, ~13 minutes)
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
-  # Instruct variant (full training, 1.0 epoch, ~103 minutes)
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction true --base_model kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-Instruct
+  # Instruct variant (full training, 1.0 epoch, ~43 minutes)
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   # Custom epochs
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false
         """
     )
 
@@ -477,7 +446,7 @@ Examples:
         type=str,
         required=True,
         choices=["true", "false"],
-        help="REQUIRED: Use instruction conditioning (true=DPO_Instruct, false=DPO_NoInstruct)"
+        help="REQUIRED: Use instruction conditioning (true=SFT_Instruct, false=SFT_NoInstruct)"
     )
 
     parser.add_argument(
@@ -485,7 +454,7 @@ Examples:
         type=str,
         choices=["sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (0.3 epochs) or 'full' (1.0 epochs)"
+        help="Training mode: 'sanity' (0.3 epoch) or 'full' (1.0 epoch)"
     )
 
     parser.add_argument(
@@ -508,7 +477,7 @@ Examples:
     # Set USE_INSTRUCTION from command-line argument
     # ===================================================================
     USE_INSTRUCTION = args.use_instruction.lower() == "true"
-    RUN_NAME = "DPO_Instruct" if USE_INSTRUCTION else "DPO_NoInstruct"
+    RUN_NAME = "SFT_Instruct" if USE_INSTRUCTION else "SFT_NoInstruct"
 
     print(f"✅ Instruction mode: {'ENABLED' if USE_INSTRUCTION else 'DISABLED'} ({RUN_NAME})")
 
@@ -536,11 +505,11 @@ Examples:
         num_epochs = args.epochs
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "sanity":
-        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~31 min)
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~31 minutes)")
+        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~13 min)
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~13 minutes)")
     else:
-        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~103 min)
-        print(f"✅ Full training mode: {num_epochs} epochs (~103 minutes)")
+        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~43 min)
+        print(f"✅ Full training mode: {num_epochs} epochs (~43 minutes)")
 
     # ===================================================================
     # Ask about retraining BEFORE starting (check HF repo first)
@@ -564,7 +533,7 @@ Examples:
             previous_metric = pusher_temp._get_previous_best_margin(HF_REPO)
 
             if previous_metric:
-                print(f"   Previous performance: margin={previous_metric:.4f}")
+                print(f"   Previous performance: loss={previous_metric:.4f}")
         else:
             print(f"❌ No existing model on HuggingFace: {HF_REPO}")
             print(f"   This will be the first training run")
@@ -572,7 +541,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~31 minutes' if num_epochs == 0.3 else '~103 minutes'}")
+    print(f"Training will take approximately: {'~13 minutes' if num_epochs == 0.3 else '~43 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
@@ -610,8 +579,8 @@ Examples:
 
     # Run training
     try:
-        trainer, training_skipped = train_dpo_baseline(num_epochs=num_epochs, base_model=args.base_model, force_skip=force_skip)
-        print(f"\n🏁 DPO Baseline Training Complete!")
+        trainer, training_skipped = train_sft_baseline(num_epochs=num_epochs, base_model=args.base_model, force_skip=force_skip)
+        print(f"\n🏁 SFT Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
         # ===================================================================
@@ -620,30 +589,28 @@ Examples:
 
         # Use unified push utility (extracts metrics, saves config, pushes to HF/GitHub)
         training_config = {
-            "method": "DPO",
+            "method": "SFT",
             "num_epochs": num_epochs,
-            "learning_rate": 1e-5,  # Meta's official Llama 3 DPO setting
+            "learning_rate": 2e-4,  # QLoRA recommendation for small models
             "warmup_steps": 100,  # Fixed (from iter4 successful run)
             "optimizer": "adamw_torch",
             "weight_decay": 0.01,
             "lr_scheduler_type": "cosine",  # Cosine for smoother convergence
-            "batch_size": 1,
-            "gradient_accumulation_steps": 8,
+            "batch_size": 2,
+            "gradient_accumulation_steps": 4,
             "max_seq_length": 2048,
-            "max_prompt_length": 1024,  # DPO-specific (prompts truncated to fit chosen+rejected)
-            "beta": 0.1,  # Meta's official Llama 3 DPO setting
         }
 
         PushAutomation.prepare_baseline_push(
-            method="DPO",
+            method="SFT",
             output_dir=f"outputs/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,
             hf_repo=HF_REPO,
             run_name=RUN_NAME,
-            metric_names=["eval_rewards/margins", "rewards/margins"],
-            metric_mode="max",
+            metric_names=["eval_loss"],
+            metric_mode="min",
             project_root=project_root
         )
 

@@ -542,7 +542,7 @@ def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tupl
 # 8. HuggingFace Repo Mapping
 # ===================================================================
 
-# Model repository mapping (reflects stacked training pipeline: base → SFT → DPO/PPO → CITA)
+# Model repository mapping (reflects stacked training pipeline: base → SFT → DPO → CITA)
 # Dataset: PKU-SafeRLHF (12,035 samples with clear safety contrast)
 # Repository names include full descriptive suffixes (no precision suffix added)
 # Naming pattern: {METHOD}-{METHOD_INSTRUCTION}-{BASE_MODEL}-{BASE_INSTRUCTION}
@@ -554,10 +554,6 @@ MODEL_NAME_MAP = {
     # DPO variants (stacked on SFT)
     "DPO_NoInstruct": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",         # SFT_NoInstruct → DPO (NO instruction)
     "DPO_Instruct": "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct",               # SFT_Instruct → DPO (WITH instruction)
-
-    # PPO variants (stacked on SFT - alternative to DPO)
-    "PPO_NoInstruct": "kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct",         # SFT_NoInstruct → PPO (NO instruction)
-    "PPO_Instruct": "kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct",               # SFT_Instruct → PPO (WITH instruction)
 
     # CITA variants (stacked on DPO)
     "CITA_NoInstruct": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",       # DPO_NoInstruct → CITA (NO instruction)

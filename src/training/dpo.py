@@ -6,24 +6,37 @@ Configuration:
 - Model: Llama-3.1-8B (BF16 precision)
 - Method: Standard DPO (Rafailov et al. 2023)
 - Loss: L_DPO only (no L_SFT or L_KL)
-- Dataset: Vaibhaav (50,001 samples, 90/10 split)
-- Training: Epoch-based, fixed hyperparameters (no PBT)
+- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
+- Training: Fixed hyperparameters (no PBT)
 - Precision: BF16 + Flash Attention 2
 - LoRA: r=16, alpha=16
-- Expected time: ~130 minutes on A100-40GB (1.0 epoch)
+- Warmup: Uses warmup_ratio (epoch-agnostic, hyperparameters transfer across training lengths)
+- Expected time: ~103 minutes on A100-40GB (1.0 epoch)
+- Expected cost: ~$2.58 (103 min × $1.5/hr)
 
 Usage:
-    # Sanity check (0.1 epoch, ~17 minutes)
+    # SANITY: 0.3 epochs (steps auto-calculated, ~31 minutes, ~$0.78)
+    # Stack on SFT (recommended):
+    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity \
+        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+
+    # Or from base model (not recommended):
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
 
-    # Full training (1.0 epoch, ~130 minutes)
+    # FULL: 1.0 epoch (steps auto-calculated, ~103 minutes, ~$2.58)
+    # Stack on SFT (recommended):
+    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full \
+        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+
+    # Or from base model (not recommended):
     python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full
 
 Outputs:
-    - Model checkpoint: ./outputs/DPO_Baseline/checkpoint-<step>/
+    - Model checkpoints: ./outputs/DPO_Baseline/checkpoint-*/
     - LoRA adapters: ./outputs/DPO_Baseline/lora_model_DPO_Baseline/
     - TensorBoard logs: ./tensorboard_logs/DPO_Baseline_<timestamp>/
     - Training log: ./logs/DPO_Baseline_training_<timestamp>.log
+    - HuggingFace: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
 """
 
 import sys
@@ -61,41 +74,31 @@ from model_utils import (
     get_test_prompts,
     get_model_repo_name,
     get_latest_checkpoint,
+    is_training_complete,
     log_gpu_memory_start,
     log_gpu_memory_end
 )
+from data_prep.loader_pku import load_pku_combined_clear_contrast
+from data_prep.formatters import format_pku_for_dpo_NoInstruct, format_pku_for_dpo_Instruct
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
 
 # ===================================================================
-# Advanced Logging Setup (Tee System)
+# INSTRUCTION MODE TOGGLE (set via command-line argument --use-instruction)
 # ===================================================================
-# Setup logging to capture ALL terminal output (stdout + stderr)
-log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
-    run_name="DPO_Baseline",
-    project_root=project_root
-)
+# USE_INSTRUCTION will be set from command-line args (no default value)
+# Script will fail if --use-instruction is not provided
 
-# ===================================================================
-# HuggingFace Authentication
-# ===================================================================
-HF_TOKEN = load_hf_token(project_root)
-
-# Get HuggingFace repository name
-RUN_NAME = "DPO_Baseline"
-HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
-
-print(f"📦 Model will be pushed to: {HF_REPO}")
-print("="*80 + "\n")
+# NOTE: Logging setup moved to main execution block (after args parsing)
 
 
 # ===================================================================
 # Main Training Function
 # ===================================================================
 
-def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base_model=None, force_skip=False):
+def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
     """
-    Train DPO baseline with fixed hyperparameters
+    Train DPO baseline with epoch-based training
 
     Args:
         num_epochs: Number of training epochs (default: 1.0 for full, 0.1 for sanity)
@@ -106,21 +109,23 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
     Returns:
         trainer: Trained DPOTrainer instance
     """
+    # Set output_dir dynamically based on RUN_NAME if not provided
+    if output_dir is None:
+        output_dir = f"./outputs/{RUN_NAME}"
+
     print("\n" + "="*80)
-    print(f"🚀 Starting DPO Baseline Training")
+    print(f"🚀 Starting {RUN_NAME} Training")
     print("="*80)
     print(f"Configuration:")
     print(f"  - Model: Llama-3.1-8B (BF16)")
     print(f"  - Method: Standard DPO (Rafailov 2023)")
     print(f"  - Loss: L_DPO only")
     print(f"  - Training epochs: {num_epochs}")
-    print(f"  - Dataset: Vaibhaav (50K samples, 90/10 split)")
     print(f"  - Batch size: 1 (per device, reduced for DPO ref model)")
     print(f"  - Gradient accumulation: 8 (effective batch=8)")
     print(f"  - Learning rate: 1e-5 (Meta's Llama 3 DPO setting)")
     print(f"  - Beta: 0.1 (Meta's Llama 3 DPO setting)")
-    print(f"  - Warmup ratio: 0.03 (3% of training)")
-    print(f"  - Eval frequency: Every 20% (5 checkpoints per epoch)")
+    print(f"  - Warmup steps: 100")
     print(f"  - LR scheduler: cosine")
     print(f"  - Optimizer: adamw_torch")
     print(f"  - Precision: BF16 + Flash Attention 2")
@@ -147,13 +152,10 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         print("1️⃣ Checking local checkpoints...")
         latest_checkpoint = get_latest_checkpoint(output_dir)
 
-        # Check if training is complete (simplified: check if final checkpoint exists)
+        # Note: Completion check will happen after loading dataset (need total_steps)
         if latest_checkpoint:
-            print(f"✅ Training checkpoint found at: {latest_checkpoint}")
-            print(f"   Epochs: {num_epochs}")
-            print(f"   Skipping training, will load from local checkpoint for inference...\n")
-            training_skipped = True
-            load_from_hf = False  # Option 2 with local checkpoint: Load from local
+            print(f"📂 Found checkpoint: {latest_checkpoint}")
+            print(f"   Will check completion status after loading dataset...\n")
         else:
             print(f"🆕 No checkpoint found")
             print(f"   Will start fresh training (even if HF repo exists)...\n")
@@ -208,44 +210,62 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         print("✅ Model cast to BF16 (all params including LoRA)")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
-        # DISABLED: Causing AttributeError: 'float' object has no attribute 'meta'
-        # print("\nApplying torch.compile()...")
+        # DISABLED: Causes KeyError: 'hidden_states' during gradient checkpointing
+        # torch.compile() + gradient_checkpointing has compatibility issues with DPO
+        # Error occurs in transformers/utils/generic.py wrapped_forward output collection
+        # Trade-off: ~10% slower training vs no crash
+        print("\n⚠️  torch.compile() disabled (prevents gradient checkpointing bug for DPO)")
         # model = apply_torch_compile(model)
 
         # ===== LOAD DATASET =====
-        print("\nLoading Vaibhaav/alignment-instructions dataset...")
-        from data_prep.loader_vaibhaav import load_vaibhaav_alignment, format_vaibhaav_for_dpo
+        print("\nLoading PKU-SafeRLHF dataset (combined train+test clear contrast)...")
 
-        # Load raw dataset (50,001 samples)
-        dataset_raw = load_vaibhaav_alignment(split="train")
+        # Load combined dataset (12,035 samples) and split 90/10
+        dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
 
-        # Format for DPO (NO instruction - baseline)
-        dataset_formatted = dataset_raw.map(
-            format_vaibhaav_for_dpo,
-            remove_columns=dataset_raw.column_names,
-            desc="Formatting Vaibhaav for DPO (NO instruction)"
+        # Format for DPO (conditional: WITH or WITHOUT instruction)
+        formatter = format_pku_for_dpo_Instruct if USE_INSTRUCTION else format_pku_for_dpo_NoInstruct
+        train_dataset = dataset_split['train'].map(
+            formatter,
+            remove_columns=dataset_split['train'].column_names,
+            desc=f"Formatting PKU for DPO ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
         )
 
-        # Split train/val (90/10)
-        dataset_split = dataset_formatted.train_test_split(test_size=0.1, seed=42)
-        train_dataset = dataset_split["train"]
-        val_dataset = dataset_split["test"]
+        val_dataset = dataset_split['test'].map(
+            formatter,
+            remove_columns=dataset_split['test'].column_names,
+            desc=f"Formatting PKU validation for DPO ({'WITH' if USE_INSTRUCTION else 'NO'} instruction)"
+        )
 
-        # Scale validation set for SANITY mode (faster evaluation)
+        print(f"  Train samples: {len(train_dataset):,}")
+        print(f"  Val samples: {len(val_dataset):,}")
+
+        # ===== CALCULATE TRAINING STEPS (for checkpoint intervals) =====
+        effective_batch_size = 1 * 8  # per_device=1, grad_accum=8
+        steps_per_epoch = len(train_dataset) // effective_batch_size
+        total_steps = int(steps_per_epoch * num_epochs)
+        checkpoint_interval = int(total_steps * 0.2)  # Save/eval every 20%
+
+        print(f"\n📊 Training Configuration:")
+        print(f"   Dataset size: {len(train_dataset):,} samples")
+        print(f"   Effective batch size: {effective_batch_size}")
+        print(f"   Steps per epoch: {steps_per_epoch:,}")
+        print(f"   Total steps: {total_steps:,} ({num_epochs} epochs)")
+        print(f"   Checkpoint interval: {checkpoint_interval} steps (20% of training)")
+
+        # ===== SCALE VALIDATION SET FOR SANITY MODE =====
         if num_epochs < 1.0:
             val_size_scaled = int(len(val_dataset) * num_epochs)
             val_dataset = val_dataset.select(range(val_size_scaled))
-            print(f"⚡ SANITY mode: Scaled validation set to {num_epochs:.1f}x ({len(val_dataset):,} samples)")
+            print(f"\n⚡ SANITY mode: Scaled validation set to {num_epochs:.1f}x ({len(val_dataset):,} samples)")
 
-        # Calculate steps for percentage-based checkpointing
-        steps_per_epoch = len(train_dataset) // 8  # effective_batch_size=8
-        total_steps = int(steps_per_epoch * num_epochs)  # Scale to actual training duration
-        checkpoint_interval = int(total_steps * 0.2)  # Save/eval every 20% of ACTUAL training
-
-        print(f"✅ Dataset loaded: {len(train_dataset):,} train / {len(val_dataset):,} val")
-        print(f"   Steps per epoch: {steps_per_epoch:,} (batch_size=8)")
-        print(f"   Total training steps: {total_steps:,} ({num_epochs} epoch)")
-        print(f"   Checkpoint interval: {checkpoint_interval:,} steps (20% of training)")
+        # ===== CHECK TRAINING COMPLETION (now that we have total_steps) =====
+        if latest_checkpoint and is_training_complete(latest_checkpoint, total_steps):
+            print(f"\n✅ Training already completed at: {latest_checkpoint}")
+            print(f"   Total steps: {total_steps} ({num_epochs} epochs)")
+            print(f"   Skipping training, will load from local checkpoint for inference...\n")
+            training_skipped = True
+            load_from_hf = False
     else:
         # Training skipped - initialize empty vars (will be loaded for inference if needed)
         model = None
@@ -266,13 +286,13 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         print(f"📊 TensorBoard logs: {tensorboard_run_dir}")
 
         # ===== CREATE TRAINING ARGS =====
-        # Match hyperparameters from SFT baseline for fair comparison
+        # Match hyperparameters from 4bit notebook for consistency
         training_args = DPOConfig(
             output_dir=str(output_dir),
             per_device_train_batch_size=1,  # ✅ FIXED: Reduced from 2 to avoid OOM (DPO needs ref model copy)
             gradient_accumulation_steps=8,  # ✅ FIXED: Doubled to maintain effective batch=8
-            num_train_epochs=num_epochs,  # Epoch-based training
-            warmup_ratio=0.03,  # 3% of training (auto-scales)
+            num_train_epochs=num_epochs,  # ← CHANGED: Epoch-based training
+            warmup_steps=100,  # ← FIXED: 100 steps (from iter4 successful run)
             learning_rate=1e-5,  # ✅ FIXED: Meta's official Llama 3 DPO setting (was 2e-4, 20× too high)
             logging_steps=1,
             optim="adamw_torch",
@@ -281,17 +301,16 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
             seed=3407,
             bf16=True,  # BF16 precision
             gradient_checkpointing=True,
-            save_strategy="steps",
-            save_steps=checkpoint_interval,  # 20% of epoch
+            save_steps=checkpoint_interval,  # ← CHANGED: Dynamic interval (20% of training)
             save_total_limit=5,
             report_to="tensorboard",
             logging_dir=str(tensorboard_run_dir),
             logging_first_step=True,
             dataloader_num_workers=2,  # Parallel data loading
             dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-            # ✅ Evaluation every 20% of epoch
+            # ✅ ADDED: Validation to detect overfitting
             eval_strategy="steps",
-            eval_steps=checkpoint_interval,  # 20% of epoch (5 evals per full epoch)
+            eval_steps=checkpoint_interval,  # ← CHANGED: Dynamic interval (aligned with checkpoints)
             per_device_eval_batch_size=1,  # ✅ FIXED: Match training batch size
             # ✅ DPO-specific parameters (TRL 0.22.2+)
             beta=0.1,  # Contrastive temperature (standard DPO value)
@@ -345,7 +364,7 @@ def train_dpo_baseline(num_epochs=1.0, output_dir="./outputs/DPO_Baseline", base
         print(f"✅ Training complete!")
 
     # ===== SAVE LORA ADAPTERS =====
-    lora_output_dir = Path(output_dir) / "lora_model_DPO_Baseline"
+    lora_output_dir = Path(output_dir) / f"lora_model_{RUN_NAME}"
 
     if not training_skipped:
         # Training just completed - save LoRA adapters
@@ -448,15 +467,23 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Sanity check (0.1 epoch, ~17 minutes)
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity
+  # NoInstruct variant (sanity check, 0.3 epochs, ~31 minutes)
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
 
-  # Full training (1.0 epoch, ~130 minutes)
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full
+  # Instruct variant (full training, 1.0 epoch, ~103 minutes)
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction true --base_model kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-Instruct
 
   # Custom epochs
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --epochs 0.5
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
         """
+    )
+
+    parser.add_argument(
+        "--use-instruction",
+        type=str,
+        required=True,
+        choices=["true", "false"],
+        help="REQUIRED: Use instruction conditioning (true=DPO_Instruct, false=DPO_NoInstruct)"
     )
 
     parser.add_argument(
@@ -464,7 +491,7 @@ Examples:
         type=str,
         choices=["sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (0.1 epoch) or 'full' (1.0 epoch)"
+        help="Training mode: 'sanity' (0.3 epochs) or 'full' (1.0 epochs)"
     )
 
     parser.add_argument(
@@ -483,16 +510,43 @@ Examples:
 
     args = parser.parse_args()
 
+    # ===================================================================
+    # Set USE_INSTRUCTION from command-line argument
+    # ===================================================================
+    USE_INSTRUCTION = args.use_instruction.lower() == "true"
+    RUN_NAME = "DPO_Instruct" if USE_INSTRUCTION else "DPO_NoInstruct"
+
+    print(f"✅ Instruction mode: {'ENABLED' if USE_INSTRUCTION else 'DISABLED'} ({RUN_NAME})")
+
+    # ===================================================================
+    # Advanced Logging Setup (Tee System)
+    # ===================================================================
+    log_file, log_filename, original_stdout, original_stderr = setup_training_logger(
+        run_name=RUN_NAME,
+        project_root=project_root
+    )
+
+    # ===================================================================
+    # HuggingFace Authentication
+    # ===================================================================
+    HF_TOKEN = load_hf_token(project_root)
+
+    # Get HuggingFace repository name
+    HF_REPO = get_model_repo_name(RUN_NAME, precision="bf16")
+
+    print(f"📦 Model will be pushed to: {HF_REPO}")
+    print("="*80 + "\n")
+
     # Determine configuration
     if args.epochs is not None:
         num_epochs = args.epochs
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "sanity":
-        num_epochs = 0.1  # 10% of data (~4,500 samples, ~17 min)
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~17 minutes)")
+        num_epochs = 0.3  # 30% of data (~3,249 samples, ~405 steps, ~31 min)
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~31 minutes)")
     else:
-        num_epochs = 1.0  # Full epoch (~45,000 samples, ~130 min)
-        print(f"✅ Full training mode: {num_epochs} epochs (~130 minutes)")
+        num_epochs = 1.0  # Full epoch (~10,831 samples, ~1,353 steps, ~103 min)
+        print(f"✅ Full training mode: {num_epochs} epochs (~103 minutes)")
 
     # ===================================================================
     # Ask about retraining BEFORE starting (check HF repo first)
@@ -524,7 +578,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~17 minutes' if num_epochs == 0.1 else '~130 minutes'}")
+    print(f"Training will take approximately: {'~31 minutes' if num_epochs == 0.3 else '~103 minutes'}")
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
@@ -575,7 +629,7 @@ Examples:
             "method": "DPO",
             "num_epochs": num_epochs,
             "learning_rate": 1e-5,  # Meta's official Llama 3 DPO setting
-            "warmup_ratio": 0.03,  # 3% of training (auto-scales)
+            "warmup_steps": 100,  # Fixed (from iter4 successful run)
             "optimizer": "adamw_torch",
             "weight_decay": 0.01,
             "lr_scheduler_type": "cosine",  # Cosine for smoother convergence
@@ -588,7 +642,7 @@ Examples:
 
         PushAutomation.prepare_baseline_push(
             method="DPO",
-            output_dir="outputs/DPO_Baseline",
+            output_dir=f"outputs/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,
