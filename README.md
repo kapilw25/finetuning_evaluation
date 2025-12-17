@@ -32,10 +32,13 @@ python -c "import flash_attn; print(f'Flash-Attention: {flash_attn.__version__}'
 python comparative_study/01a_SFT_Baseline/Llama3_BF16.py \
     --mode full --use-instruction false
 
-# 2. DPO NoInstruct (~103 min)
+# 2a. DPO NoInstruct (~103 min) - base_model auto-derived
 python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
-    --mode full --use-instruction false \
-    --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+    --mode full --use-instruction false
+
+# 2b. PPO NoInstruct (~103 min) - Alternative to DPO, base_model auto-derived
+python comparative_study/02b_PPO_Baseline/Llama3_BF16.py \
+    --mode full --use-instruction false
 
 # 3. CITA NoInstruct (~120 min)
 python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
@@ -49,10 +52,13 @@ python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
 python comparative_study/01a_SFT_Baseline/Llama3_BF16.py \
     --mode full --use-instruction true
 
-# 2. DPO Instruct (~103 min)
+# 2a. DPO Instruct (~103 min) - base_model auto-derived
 python comparative_study/02a_DPO_Baseline/Llama3_BF16.py \
-    --mode full --use-instruction true \
-    --base_model kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct
+    --mode full --use-instruction true
+
+# 2b. PPO Instruct (~103 min) - Alternative to DPO, base_model auto-derived
+python comparative_study/02b_PPO_Baseline/Llama3_BF16.py \
+    --mode full --use-instruction true
 
 # 3. CITA Instruct (~120 min)
 python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
@@ -109,10 +115,10 @@ python comparative_study/05_evaluation/isd/evaluation_embedding.py \
 
 ## HuggingFace Models
 
-| Variant | SFT | DPO | CITA |
-|---------|-----|-----|------|
-| NoInstruct | [SFT-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct) | [DPO-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct) | [CITA-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct) |
-| Instruct | [SFT-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct) | [DPO-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct) | [CITA-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct) |
+| Variant | SFT | DPO | PPO | CITA |
+|---------|-----|-----|-----|------|
+| NoInstruct | [SFT-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct) | [DPO-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct) | [PPO-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct) | [CITA-NoInstruct](https://huggingface.co/kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct) |
+| Instruct | [SFT-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct) | [DPO-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct) | [PPO-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct) | [CITA-Instruct](https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct) |
 
 **Dataset:** [ISD-Instruction-Switch-Dataset](https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset)
 
@@ -139,6 +145,6 @@ Output: `Overleaf_draft/main.pdf`
 
 | Script | Interactive | Key Args |
 |--------|-------------|----------|
-| SFT/DPO/CITA | Yes (train vs inference) | `--use-instruction` REQUIRED |
+| SFT/DPO/PPO/CITA | Yes (train vs inference) | `--use-instruction` REQUIRED |
 | Optuna | Yes (fresh vs continue) | `--mode mvp/sanity/full` |
 | All Evals | Yes (sanity/full/max menu) | `--models` optional |

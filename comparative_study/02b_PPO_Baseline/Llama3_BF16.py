@@ -24,15 +24,11 @@ PPO is known to be unstable (NaN losses common), which is why DPO was invented.
 This baseline exists to show CITA beats traditional PPO.
 
 Usage:
-    # SANITY: 0.3 epochs (~31 minutes, ~$0.78)
-    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity \
-        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct \
-        --use-instruction false
+    # SANITY: 0.3 epochs (~31 minutes) - base_model auto-derived from BASE_MODEL_MAP
+    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
-    # FULL: 1.0 epoch (~103 minutes, ~$2.58)
-    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full \
-        --base_model kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct \
-        --use-instruction true
+    # FULL: 1.0 epoch (~103 minutes) - base_model auto-derived from BASE_MODEL_MAP
+    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
 Outputs:
     - Model checkpoints: ./outputs/PPO_Baseline/checkpoint-*/
@@ -92,7 +88,8 @@ from model_utils import (
     is_training_complete,
     log_gpu_memory_start,
     log_gpu_memory_end,
-    MODEL_NAME_MAP
+    MODEL_NAME_MAP,
+    BASE_MODEL_MAP
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
 from push_automation import PushAutomation
@@ -817,16 +814,13 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   # NoInstruct variant (sanity check, 0.3 epochs, ~31 minutes)
-  python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false \\
-      --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
   # Instruct variant (full training, 1.0 epoch, ~103 minutes)
-  python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true \\
-      --base_model kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-Instruct
+  python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   # Custom epochs
-  python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false \\
-      --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false
         """
     )
 
@@ -857,7 +851,7 @@ Examples:
         "--base_model",
         type=str,
         default=None,
-        help="HuggingFace model ID for SFT base (for stacking SFT→PPO)"
+        help="Override base model (auto-derived from BASE_MODEL_MAP if not provided)"
     )
 
     args = parser.parse_args()
@@ -868,7 +862,11 @@ Examples:
     USE_INSTRUCTION = args.use_instruction.lower() == "true"
     RUN_NAME = "PPO_Instruct" if USE_INSTRUCTION else "PPO_NoInstruct"
 
+    # Auto-derive base_model from BASE_MODEL_MAP if not provided
+    if args.base_model is None:
+        args.base_model = BASE_MODEL_MAP[RUN_NAME]
     print(f"✅ Instruction mode: {'ENABLED' if USE_INSTRUCTION else 'DISABLED'} ({RUN_NAME})")
+    print(f"✅ Base model: {args.base_model}")
 
     # ===================================================================
     # Logging Setup
@@ -942,15 +940,24 @@ Examples:
     mode_choice = input("Enter choice (1 or 2): ").strip()
     print(f"{'='*80}\n")
 
-    force_skip = False
+    force_skip = False  # Flag to override checkpoint detection
     if mode_choice == "1":
+        # Option 1: Inference-only mode (requires HF repo)
         if not hf_model_exists:
             print("❌ Error: Option 1 requires existing HuggingFace model")
+            print("   HuggingFace repo does not exist yet")
+            print("   Please choose option 2 to train and create the model first")
             sys.exit(1)
         print("✅ Inference-only mode selected")
-        force_skip = True
+        print("   Will load model from HuggingFace for inference tests")
+        force_skip = True  # Will skip training regardless of checkpoint status
     elif mode_choice == "2":
+        # Option 2: Training mode (comparison happens in push_automation.py)
         print("✅ Training mode selected")
+        if hf_model_exists:
+            print("   Will compare local vs HF metrics and push ONLY if performance improves")
+        else:
+            print("   Will train and push to HuggingFace (first time)")
         force_skip = False
     else:
         print("⚠️  Invalid choice, defaulting to training mode")

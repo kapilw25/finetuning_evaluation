@@ -15,15 +15,11 @@ Configuration:
 - Expected cost: ~$2.58 (103 min × $1.5/hr)
 
 Usage:
-    # SANITY: 0.3 epochs (steps auto-calculated, ~31 minutes, ~$0.78)
-    # Stack on SFT (recommended):
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity \
-        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+    # SANITY: 0.3 epochs (~31 minutes) - base_model auto-derived from BASE_MODEL_MAP
+    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
-    # FULL: 1.0 epoch (steps auto-calculated, ~103 minutes, ~$2.58)
-    # Stack on SFT (recommended):
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full \
-        --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+    # FULL: 1.0 epoch (~103 minutes) - base_model auto-derived from BASE_MODEL_MAP
+    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
 Outputs:
     - Model checkpoints: ./outputs/DPO_Baseline/checkpoint-*/
@@ -70,7 +66,8 @@ from model_utils import (
     get_latest_checkpoint,
     is_training_complete,
     log_gpu_memory_start,
-    log_gpu_memory_end
+    log_gpu_memory_end,
+    BASE_MODEL_MAP
 )
 from data_prep.loader_pku import load_pku_combined_clear_contrast
 from data_prep.formatters import format_pku_for_dpo_NoInstruct, format_pku_for_dpo_Instruct
@@ -462,13 +459,13 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   # NoInstruct variant (sanity check, 0.3 epochs, ~31 minutes)
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
   # Instruct variant (full training, 1.0 epoch, ~103 minutes)
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction true --base_model kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-Instruct
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   # Custom epochs
-  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false --base_model kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --epochs 0.5 --use-instruction false
         """
     )
 
@@ -499,7 +496,7 @@ Examples:
         "--base_model",
         type=str,
         default=None,
-        help="HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)"
+        help="Override base model (auto-derived from BASE_MODEL_MAP if not provided)"
     )
 
     args = parser.parse_args()
@@ -510,7 +507,11 @@ Examples:
     USE_INSTRUCTION = args.use_instruction.lower() == "true"
     RUN_NAME = "DPO_Instruct" if USE_INSTRUCTION else "DPO_NoInstruct"
 
+    # Auto-derive base_model from BASE_MODEL_MAP if not provided
+    if args.base_model is None:
+        args.base_model = BASE_MODEL_MAP[RUN_NAME]
     print(f"✅ Instruction mode: {'ENABLED' if USE_INSTRUCTION else 'DISABLED'} ({RUN_NAME})")
+    print(f"✅ Base model: {args.base_model}")
 
     # ===================================================================
     # Advanced Logging Setup (Tee System)

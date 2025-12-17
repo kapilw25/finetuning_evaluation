@@ -567,6 +567,26 @@ MODEL_NAME_MAP = {
     "CITA_Adaptive": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",            # Optuna hyperparameter search (same as CITA_Instruct)
 }
 
+# Base model mapping (which HF repo to load LoRA from for stacking)
+# Pipeline: Baseline → SFT → DPO/PPO → CITA
+BASE_MODEL_MAP = {
+    # SFT variants (train from scratch - no base model)
+    "SFT_NoInstruct": None,                                                           # Baseline (meta-llama/Llama-3.1-8B)
+    "SFT_Instruct": None,                                                             # Baseline (meta-llama/Llama-3.1-8B)
+
+    # DPO variants (stacked on SFT)
+    "DPO_NoInstruct": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # SFT_NoInstruct → DPO
+    "DPO_Instruct": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",        # SFT_Instruct → DPO
+
+    # PPO variants (stacked on SFT - alternative to DPO)
+    "PPO_NoInstruct": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # SFT_NoInstruct → PPO
+    "PPO_Instruct": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",        # SFT_Instruct → PPO
+
+    # CITA variants (stacked on DPO)
+    "CITA_NoInstruct": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",        # DPO_NoInstruct → CITA
+    "CITA_Instruct": "kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct",              # DPO_Instruct → CITA
+}
+
 
 def get_model_repo_name(run_name: str, precision: str = "bf16") -> str:
     """
