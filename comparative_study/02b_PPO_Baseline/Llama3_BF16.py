@@ -200,8 +200,11 @@ def prepare_ppo_dataset(tokenizer, use_instruction: bool = False, max_samples: i
     PPO only needs queries (prompts), not preference pairs.
     The reward model scores the generated responses.
 
+    TRL 0.11.4 requires dataset to have 'input_ids' column with tokenized sequences.
+    See: https://huggingface.co/docs/trl/v0.11.4/en/ppo_trainer
+
     Returns:
-        Dataset with 'query' field containing tokenized prompts
+        Dataset with 'input_ids' field containing tokenized prompts
     """
     from datasets import Dataset
 
@@ -213,8 +216,9 @@ def prepare_ppo_dataset(tokenizer, use_instruction: bool = False, max_samples: i
     if max_samples:
         train_data = train_data.select(range(min(max_samples, len(train_data))))
 
-    # Extract prompts
-    def extract_prompt(example):
+    # Extract and tokenize prompts
+    # TRL 0.11.4 requires 'input_ids' column, not just text
+    def extract_and_tokenize_prompt(example):
         prompt = example.get('prompt', '')
 
         # Add instruction prefix if enabled
@@ -234,13 +238,17 @@ def prepare_ppo_dataset(tokenizer, use_instruction: bool = False, max_samples: i
             tokenize=False
         )
 
-        return {"query": formatted}
+        # Tokenize the formatted prompt (TRL 0.11.4 requires input_ids)
+        # Only return input_ids - text is decoded later for reward computation
+        tokenized = tokenizer.encode(formatted)
 
-    # Format dataset
+        return {"input_ids": tokenized}
+
+    # Format and tokenize dataset
     formatted_data = train_data.map(
-        extract_prompt,
+        extract_and_tokenize_prompt,
         remove_columns=train_data.column_names,
-        desc=f"Formatting PKU for PPO ({'WITH' if use_instruction else 'NO'} instruction)"
+        desc=f"Tokenizing PKU for PPO ({'WITH' if use_instruction else 'NO'} instruction)"
     )
 
     print(f"✅ Prepared {len(formatted_data):,} samples for PPO training")
@@ -330,8 +338,8 @@ def train_ppo_baseline(
     print(f"  - Model: Llama-3.1-8B (BF16)")
     print(f"  - Method: Proximal Policy Optimization (Schulman 2017)")
     print(f"  - Training epochs: {num_epochs}")
-    print(f"  - Batch size: 1 (per device, match DPO)")
-    print(f"  - Gradient accumulation: 8 (effective batch=8, match DPO)")
+    print(f"  - Batch size: 8 (experiences per PPO update, match DPO)")
+    print(f"  - Mini-batch: 1 (memory efficient, processes 1 at a time)")
     print(f"  - Learning rate: 1e-5 (Meta's Llama 3 setting)")
     print(f"  - KL penalty coefficient: 0.1")
     print(f"  - Warmup steps: 100")
@@ -386,21 +394,26 @@ def train_ppo_baseline(
 
         # ===== LOAD BASE MODEL LORA (IF STACKING) =====
         if base_model:
-            print(f"\n🔗 Loading LoRA adapters from HuggingFace: {base_model}")
-            # For PPO with value head, we merge LoRA into the pretrained_model
+            print(f"\n🔗 Loading SFT LoRA from HuggingFace: {base_model}")
+            # MERGE APPROACH with EXPLICIT REFERENCE MODEL (Option A)
+            # 1. Load SFT LoRA and merge into base
+            # 2. Create explicit copy of merged model for reference
+            # 3. Add PPO LoRA to policy model only
+            # 4. Use explicit ref_model instead of disable_adapter()
             from peft import PeftModel
+            import copy
 
             # The pretrained_model is the base LM inside AutoModelForCausalLMWithValueHead
             model.pretrained_model = PeftModel.from_pretrained(
                 model.pretrained_model, base_model, token=HF_TOKEN
             )
-            print("✅ LoRA adapters loaded")
+            print("✅ SFT LoRA adapters loaded")
 
-            # Merge adapters into base model (matching DPO)
-            print("🔄 Merging LoRA adapters into base model...")
+            # Merge SFT adapters into base model
+            print("🔄 Merging SFT LoRA adapters into base model...")
             merged_pretrained = model.pretrained_model.merge_and_unload()
 
-            # Clear PEFT config to avoid warnings (matching DPO)
+            # Clear PEFT config to avoid warnings
             try:
                 delattr(merged_pretrained, 'peft_config')
             except AttributeError:
@@ -411,11 +424,26 @@ def train_ppo_baseline(
                 pass
 
             model.pretrained_model = merged_pretrained
-            print("✅ LoRA adapters merged (ready for new training stage)")
+            print("✅ SFT LoRA merged into base model")
 
-            # Need to re-apply new LoRA for PPO training
-            print("\n🔧 Applying new LoRA adapters for PPO training...")
-            lora_config = LoraConfig(
+            # Create explicit reference model (deepcopy of merged SFT model)
+            print("\n📋 Creating explicit reference model (merged SFT, frozen)...")
+            ref_model_pretrained = copy.deepcopy(model.pretrained_model)
+            ref_model_pretrained.eval()  # Set to eval mode (frozen)
+            for param in ref_model_pretrained.parameters():
+                param.requires_grad = False  # Freeze all parameters
+
+            # Wrap reference model in AutoModelForCausalLMWithValueHead (same as policy)
+            # Note: ref model doesn't need value head, but wrapping for consistency
+            from trl import AutoModelForCausalLMWithValueHead as ValueHeadModel
+            ref_model_with_value_head = ValueHeadModel.from_pretrained(ref_model_pretrained)
+            ref_model_with_value_head.eval()
+            ref_model_for_ppo = ref_model_with_value_head  # Assign to variable for PPOTrainer
+            print("✅ Reference model created and wrapped (frozen copy of merged SFT)")
+
+            # Apply NEW LoRA adapters for PPO training (only to policy model)
+            print("\n🔧 Applying new LoRA adapters for PPO training (policy model only)...")
+            ppo_lora_config = LoraConfig(
                 r=16,
                 lora_alpha=16,
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
@@ -424,8 +452,12 @@ def train_ppo_baseline(
                 task_type="CAUSAL_LM",
             )
             from peft import get_peft_model
-            model.pretrained_model = get_peft_model(model.pretrained_model, lora_config)
-            print("✅ New LoRA adapters applied for PPO")
+            model.pretrained_model = get_peft_model(model.pretrained_model, ppo_lora_config)
+            print("✅ PPO LoRA adapters applied to policy model")
+
+            # Set is_peft_model flag (for PPOTrainer to recognize PEFT)
+            model.is_peft_model = True
+            print("✅ Merge approach complete: Policy=SFT+PPO, Reference=SFT(frozen)")
 
         # ===== LOAD REWARD MODEL =====
         print("\n📥 Loading reward model...")
@@ -475,21 +507,16 @@ def train_ppo_baseline(
         # Note: PPOConfig inherits from TrainingArguments
         # Unlike DPOTrainer, PPOTrainer doesn't support native eval_dataset
         # Validation is done by monitoring reward metrics during training
+        # TRL 0.11.4 PPOConfig - only supports PPO-specific parameters
+        # (not full TrainingArguments like newer versions)
         ppo_config = PPOConfig(
-            # Output
-            output_dir=str(output_dir),
-
-            # Training (same as DPO for fair comparison)
+            # Training - TRL 0.11.4 constraint: batch_size >= mini_batch_size * gradient_accumulation_steps
+            # EXPLICIT REF_MODEL CONFIG: Reduced for dual-model memory (policy + reference)
             learning_rate=1e-5,  # Meta's official Llama 3 setting
-            batch_size=1,  # Per-device batch size (match DPO)
-            mini_batch_size=1,  # Mini-batch for gradient computation
-            gradient_accumulation_steps=8,  # Match DPO (effective batch=8)
+            batch_size=8,  # Total experiences before PPO update (16→8 for dual-model memory)
+            mini_batch_size=2,  # Process 2 samples in parallel (4→2 for dual-model memory)
+            gradient_accumulation_steps=4,  # Accumulate gradients (8 >= 2*4 ✓)
             ppo_epochs=4,  # PPO epochs per batch
-
-            # Optimizer settings (matching DPO for fair comparison)
-            warmup_steps=100,  # Same as DPO (from iter4 successful run)
-            weight_decay=0.01,  # Same as DPO
-            lr_scheduler_type="cosine",  # Same as DPO (cosine for smoother convergence)
 
             # PPO-specific
             init_kl_coef=0.1,  # Initial KL penalty coefficient
@@ -503,31 +530,25 @@ def train_ppo_baseline(
             log_with="tensorboard",
             project_kwargs={"logging_dir": str(tensorboard_run_dir)},
 
-            # Checkpointing
-            # Note: OLD API uses save_freq, TrainingArguments uses save_steps
-            # Using both for compatibility
-            save_steps=checkpoint_interval,  # Save every 20% (dynamic based on epochs)
-            save_total_limit=5,  # Keep only last 5 checkpoints (match DPO)
-
-            # Data loading (match DPO for fair comparison)
-            dataloader_num_workers=2,  # Parallel data loading
-            dataloader_pin_memory=True,  # Faster CPU→GPU transfer
-
-            # Memory optimization (match DPO)
+            # Memory optimization
             gradient_checkpointing=True,  # CRITICAL: Reduce memory usage
-
-            # Logging (match DPO)
-            logging_first_step=True,
+            max_grad_norm=1.0,  # Gradient clipping (match CITA, prevent policy divergence)
 
             # Seed
             seed=3407,
         )
 
         # ===== GENERATION KWARGS (separate from PPOConfig) =====
+        # TRL recommended settings to prevent negative KL divergence:
+        # - top_p=1.0 (not 0.9) - truncated sampling causes KL issues
+        # - top_k=0.0 - disable top-k sampling
+        # - min_length=-1 - don't force minimum length
+        # See: https://github.com/huggingface/trl/issues/235
         generation_kwargs = {
-            "max_new_tokens": 128,  # Response length limit
-            "temperature": 0.7,
-            "top_p": 0.9,
+            "max_new_tokens": 128,  # Response length limit (256→128 for dual-model memory)
+            "min_length": -1,  # TRL recommended: don't force min length
+            "top_k": 0.0,  # TRL recommended: disable top-k
+            "top_p": 1.0,  # TRL recommended: full distribution (not 0.9!)
             "do_sample": True,
             "pad_token_id": tokenizer.eos_token_id,
         }
@@ -541,14 +562,24 @@ def train_ppo_baseline(
         # ===== CREATE REWARD FUNCTION =====
         compute_rewards = create_reward_function(reward_model, reward_tokenizer, device)
 
+        # ===== DATA COLLATOR FOR VARIABLE-LENGTH SEQUENCES =====
+        # TRL 0.11.4 needs a collator to pad variable-length input_ids in each batch
+        from transformers import DataCollatorWithPadding
+        data_collator = DataCollatorWithPadding(tokenizer=tokenizer, padding=True)
+
         # ===== CREATE PPO TRAINER =====
-        print("\n🏗️  Initializing PPOTrainer...")
+        print("\n🏗️  Initializing PPOTrainer with explicit reference model...")
+        # Using explicit ref_model (frozen copy of merged SFT) instead of disable_adapter()
+        # Policy model = SFT (merged) + PPO LoRA
+        # Reference model = SFT (merged, frozen)
+        # This approach works even though SFT is merged (not PEFT adapter)
         ppo_trainer = PPOTrainer(
             config=ppo_config,
             model=model,
-            ref_model=None,  # PPOTrainer creates reference model automatically
+            ref_model=ref_model_for_ppo,  # Explicit frozen reference (merged SFT)
             tokenizer=tokenizer,
             dataset=ppo_dataset,
+            data_collator=data_collator,  # Handle variable-length sequences
         )
 
         # ===== GPU MEMORY =====
@@ -593,7 +624,8 @@ def train_ppo_baseline(
             if step >= total_steps:
                 break
 
-            query_tensors = batch["input_ids"]
+            # TRL 0.11.4 requires list of 1D tensors, not 2D batch tensor
+            query_tensors = [q for q in batch["input_ids"]]
 
             # Generate responses
             response_tensors = ppo_trainer.generate(
@@ -677,6 +709,15 @@ def train_ppo_baseline(
                     print(f"  Average: {sum(recent_value_loss)/len(recent_value_loss):.4f}")
 
                 print(f"{'='*80}\n")
+
+            # Save checkpoint periodically (every 20% of training)
+            if (step + 1) % checkpoint_interval == 0 or (step + 1) == total_steps:
+                checkpoint_dir = Path(output_dir) / f"checkpoint-{step + 1}"
+                checkpoint_dir.mkdir(parents=True, exist_ok=True)
+                print(f"\n💾 Saving checkpoint at step {step + 1}/{total_steps}...")
+                ppo_trainer.save_pretrained(str(checkpoint_dir))
+                tokenizer.save_pretrained(str(checkpoint_dir))
+                print(f"✅ Checkpoint saved to: {checkpoint_dir}\n")
 
             # Clear cache periodically
             if step % 50 == 0:
@@ -984,9 +1025,9 @@ Examples:
             "optimizer": "adamw_torch",  # Match DPO
             "weight_decay": 0.01,  # Same as DPO
             "lr_scheduler_type": "cosine",  # Same as DPO (cosine for smoother convergence)
-            "batch_size": 1,  # Per-device (match DPO)
-            "gradient_accumulation_steps": 8,  # Match DPO (effective batch=8)
-            "mini_batch_size": 1,
+            "batch_size": 8,  # Experiences per PPO update (effective batch=8, match DPO)
+            "gradient_accumulation_steps": 1,  # No accumulation (batch_size handles it)
+            "mini_batch_size": 1,  # Memory efficient
             "ppo_epochs": 4,
             "init_kl_coef": 0.1,
             "target_kl": 0.1,

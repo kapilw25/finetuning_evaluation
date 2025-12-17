@@ -8,9 +8,11 @@
 #    pip uninstall flash-attn -y
 #    MAX_JOBS=4 pip install flash-attn --no-build-isolation --no-binary flash-attn
 
-# PyTorch (CUDA 12.1) - Install FIRST
-torch==2.5.1  # Latest stable with CUDA 12.1 support
-torchvision==0.20.1
+# PyTorch (CUDA 12.4) - Install FIRST
+# NOTE: Must install with --index-url https://download.pytorch.org/whl/cu124
+# pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0  # Required for CVE-2025-32434 fix (transformers 4.57+ requires torch 2.6+)
+torchvision==0.21.0
 
 # Build dependencies (needed before flash-attn)
 packaging>=20.0
@@ -32,7 +34,8 @@ Pillow>=10.0.0  # transformers 4.57 requires Pillow with Image.Resampling
 
 # Core fine-tuning packages - PINNED
 transformers==4.57.1
-trl==0.24.0
+trl==0.11.4  # Pinned for stable PPO API (0.24+ has breaking changes)
+rich  # Required by TRL 0.11.4
 # tf-keras - NOT USED (removed to avoid protobuf conflict: TF 2.20 needs protobuf>=5.28, wandb needs <7)
 
 peft==0.17.1
