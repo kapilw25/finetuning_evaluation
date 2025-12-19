@@ -545,7 +545,7 @@ Llama 3.1 Community License (same as base model)
         metric_mode: str = "max"
     ):
         """
-        Push best model to HuggingFace (only if performance improved)
+        Push best model to HuggingFace (overwrites previous regardless of performance)
 
         Args:
             best_trial: Ray Tune best trial object OR SimpleNamespace for non-PBT
@@ -898,12 +898,13 @@ This push REPLACES the previous model version (performance improved).
 
         print("✅ Large files will be kept locally but not pushed to GitHub")
 
-    def push_to_github(self, commit_message: Optional[str] = None):
+    def push_to_github(self, commit_message: Optional[str] = None, run_name: str = None):
         """
         Push codebase to GitHub (always, especially logs/)
 
         Args:
             commit_message: Custom commit message (auto-generated if None)
+            run_name: Training run name for dynamic commit message (e.g., "PPO_Instruct")
         """
         print(f"\n{'='*80}")
         print("📤 Pushing Codebase to GitHub")
@@ -941,9 +942,11 @@ This push REPLACES the previous model version (performance improved).
             # Generate commit message if not provided
             if commit_message is None:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                commit_message = f"""CITA PBT training results
+                # Dynamic commit message based on run_name
+                run_desc = run_name if run_name else "Training"
+                commit_message = f"""{run_desc}: training complete
 
-Training completed: {timestamp}
+Timestamp: {timestamp}
 Auto-commit: Includes training logs, configs, and outputs
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -1024,10 +1027,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
         except subprocess.CalledProcessError as e:
             print(f"\n❌ GitHub push failed: {e}")
+            run_desc = run_name if run_name else "Training"
             print(f"\nYou can manually push later using:")
             print(f"  cd {self.project_root}")
             print(f"  git add .")
-            print(f"  git commit -m 'CITA PBT training results'")
+            print(f"  git commit -m '{run_desc}: training complete'")
             print(f"  git push")
             print(f"{'='*80}\n")
 
@@ -1054,7 +1058,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
         Order of operations:
         1. Save local backup (ONLY if training happened - skip in inference mode)
-        2. Push to HuggingFace (conditional - only if performance improved)
+        2. Push to HuggingFace (overwrites previous)
         3. Push to GitHub (ALWAYS - especially logs/ for analysis)
 
         Args:
@@ -1083,7 +1087,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         else:
             print("⏭️  Skipping local backup (inference-only mode, no training checkpoint)\n")
 
-        # Step 2: Push to HuggingFace (conditional: only if performance improved)
+        # Step 2: Push to HuggingFace (overwrites previous)
         self.push_to_huggingface(
             best_trial=best_trial,
             best_checkpoint=best_checkpoint,
@@ -1095,7 +1099,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         )
 
         # Step 3: Push to GitHub (always - especially logs/)
-        self.push_to_github(commit_message=github_commit_message)
+        self.push_to_github(commit_message=github_commit_message, run_name=run_name)
 
         print(f"\n{'='*80}")
         print("✅ Automated Push Complete!")
@@ -1298,7 +1302,29 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         if method == "SFT" and push_metric_name == "eval_loss":
             push_metric_name = "loss"
 
-        # Step 8: Push to HF (conditional) + GitHub (always)
+        # Step 8: Generate dynamic commit message
+        # Extract mode from num_epochs
+        num_epochs = training_config.get("num_epochs", 1.0)
+        if num_epochs <= 0.05:
+            mode = "micro"
+        elif num_epochs <= 0.3:
+            mode = "sanity"
+        else:
+            mode = "full"
+
+        # Build descriptive commit message
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        commit_message = f"""{run_name} [{mode}]: training complete
+
+Method: {method} | Epochs: {num_epochs} | Model: Llama-3.1-8B
+Timestamp: {timestamp}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+        # Step 9: Push to HF + GitHub
         print(f"\n{'='*80}")
         print(f"📤 Executing Push")
         print(f"{'='*80}\n")
@@ -1309,6 +1335,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             hf_repo=hf_repo,
             config_path=str(config_path),
             run_name=run_name,
+            github_commit_message=commit_message,
             metric_name=push_metric_name,
             metric_mode=metric_mode,
             skip_local_backup=training_skipped
@@ -1320,6 +1347,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         print(f"{'='*80}")
         print("Results saved to:")
         print(f"  - Local: {lora_checkpoint}")
-        print(f"  - HuggingFace: {hf_repo} (only if performance improved)")
+        print(f"  - HuggingFace: {hf_repo}")
         print(f"  - GitHub: Logs and code pushed")
         print(f"{'='*80}\n")
