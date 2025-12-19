@@ -545,7 +545,7 @@ Examples:
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
-        print(f"  2) Retrain and replace HF model (only if performance improves)")
+        print(f"  2) Retrain and replace HF model (regardless of performance)")
     else:
         print(f"  1) Inference only from HF_repo")
         print(f"  2) Train and push to HuggingFace")

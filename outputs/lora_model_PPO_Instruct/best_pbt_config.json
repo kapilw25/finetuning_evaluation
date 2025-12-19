@@ -15,5 +15,6 @@
   "cliprange": 0.2,
   "max_seq_length": 2048,
   "max_new_tokens": 128,
-  "reward_model": "OpenAssistant/reward-model-deberta-v3-large-v2"
+  "reward_model": "OpenAssistant/reward-model-deberta-v3-large-v2",
+  "objective/scores": -2.3670654296875
 }

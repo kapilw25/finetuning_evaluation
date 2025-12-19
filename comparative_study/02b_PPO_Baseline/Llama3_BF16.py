@@ -726,6 +726,17 @@ def train_ppo_baseline(
                 ppo_trainer.save_pretrained(str(checkpoint_dir))
                 tokenizer.save_pretrained(str(checkpoint_dir))
 
+                # Ensure current step metrics are in log_history (checkpoint steps may not align with 10-step logging)
+                logged_steps = {entry["step"] for entry in log_history}
+                if step not in logged_steps:
+                    kl = stats.get("objective/kl", 0)
+                    log_history.append({
+                        "step": step,
+                        "objective/scores": mean_reward,
+                        "objective/kl": kl,
+                        "ppo/mean_scores": mean_reward,
+                    })
+
                 # Create trainer_state.json for push_automation compatibility
                 # PPOTrainer doesn't create this, but push_automation needs it
                 trainer_state = {
@@ -999,7 +1010,7 @@ Examples:
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
-        print(f"  2) Retrain and replace HF model (only if performance improves)")
+        print(f"  2) Retrain and replace HF model (regardless of performance)")
     else:
         print(f"  1) Inference only from HF_repo (UNAVAILABLE - no model)")
         print(f"  2) Train and push to HuggingFace")

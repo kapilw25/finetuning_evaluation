@@ -3,7 +3,7 @@ Push Automation Module for CITA PBT Training
 Handles automatic pushing to HuggingFace and GitHub after training completes
 
 Features:
-- Push weights to HuggingFace ONLY if performance > previous training
+- Push weights to HuggingFace (overwrites previous regardless of performance)
 - Push codebase to GitHub ALWAYS (especially logs/)
 - Handle large log files (>100MB): Split into chunks or use Git LFS
 - GitHub credentials: email=kapilw25@gmail.com, username=kapilw25
@@ -44,7 +44,7 @@ class PushAutomation:
     Automated push to HuggingFace and GitHub after training
 
     Features:
-    - Conditional HuggingFace push (only if performance improved)
+    - HuggingFace push (overwrites previous regardless of performance)
     - Always push to GitHub (especially logs/)
     - Large log file handling (>100MB)
     """
@@ -237,12 +237,12 @@ class PushAutomation:
 
         if improved:
             print(f"✅ Performance improved: {comparison}")
-            print(f"   Will push to HuggingFace (better than previous best)")
-            return True
         else:
-            print(f"⚠️  Performance did not improve: {no_improvement}")
-            print(f"   Skipping HuggingFace push (keeping previous best model)")
-            return False
+            print(f"ℹ️  Performance comparison: {no_improvement}")
+
+        # Always push regardless of performance (user preference)
+        print(f"   Will push to HuggingFace (overwriting previous model)")
+        return True
 
     def save_local_backup(
         self,
@@ -672,10 +672,21 @@ Safeguards: margin-based PBT, gibberish detection (every 50 steps), early stoppi
 This push REPLACES the previous model version (performance improved).
 """
 
+            # Delete existing HF repo before pushing (clean slate for each training run)
+            print(f"\n🗑️  Deleting existing HuggingFace repo (if exists): {hf_repo}")
+            try:
+                from huggingface_hub import delete_repo, repo_exists
+                if repo_exists(hf_repo, token=self.hf_token, repo_type="model"):
+                    delete_repo(hf_repo, token=self.hf_token, repo_type="model")
+                    print(f"   ✅ Deleted existing repo")
+                else:
+                    print(f"   ℹ️  Repo doesn't exist (first push)")
+            except Exception as e:
+                print(f"   ⚠️  Could not delete repo: {e}")
+
             # Push to HuggingFace
             print(f"\n📤 Pushing LoRA adapter to HuggingFace: {hf_repo}")
             print("   (Pushing adapter only - 165MB, compatible with inference script)")
-            print("   (This will overwrite/replace the existing model)")
 
             model_with_adapter.push_to_hub(
                 hf_repo,
