@@ -603,6 +603,18 @@ def train_ppo_baseline(
         value_loss_history = []
         best_reward = float('-inf')  # Track best reward for push comparison
 
+        # Persistent log_history for trainer_state.json (load from previous checkpoint if resuming)
+        import json
+        log_history = []
+        if latest_checkpoint:
+            prev_state_path = Path(latest_checkpoint) / "trainer_state.json"
+            if prev_state_path.exists():
+                with open(prev_state_path, 'r') as f:
+                    prev_state = json.load(f)
+                    log_history = prev_state.get('log_history', [])
+                    best_reward = prev_state.get('best_metric', float('-inf'))
+                print(f"📂 Loaded {len(log_history)} log entries from previous checkpoint")
+
         # PPO training loop (epoch-based, matching DPO)
         for step, batch in enumerate(ppo_trainer.dataloader):
             # Skip steps if resuming
@@ -647,6 +659,14 @@ def train_ppo_baseline(
             if step % 10 == 0:
                 kl = stats.get("objective/kl", 0)
                 print(f"Step {step}/{total_steps} | Reward: {mean_reward:.3f} | KL: {kl:.4f}")
+
+                # Append to persistent log_history
+                log_history.append({
+                    "step": step,
+                    "objective/scores": mean_reward,
+                    "objective/kl": kl,
+                    "ppo/mean_scores": mean_reward,
+                })
 
             # ===== TRAINING SUMMARY (every 50 steps) =====
             # Inline equivalent of TrainingSummaryCallback for PPO
@@ -708,26 +728,10 @@ def train_ppo_baseline(
 
                 # Create trainer_state.json for push_automation compatibility
                 # PPOTrainer doesn't create this, but push_automation needs it
-                import json
                 trainer_state = {
                     "best_metric": best_reward,
                     "global_step": step + 1,
-                    "log_history": [
-                        {
-                            "step": s * 10,  # We log every 10 steps
-                            "objective/scores": reward_history[min(s, len(reward_history)-1)] if reward_history else 0,
-                            "objective/kl": kl_history[min(s, len(kl_history)-1)] if kl_history else 0,
-                        }
-                        for s in range(len(reward_history))
-                    ] + [
-                        # Add final entry with current metrics
-                        {
-                            "step": step + 1,
-                            "objective/scores": mean_reward,
-                            "objective/kl": stats.get("objective/kl", 0),
-                            "ppo/mean_scores": mean_reward,
-                        }
-                    ]
+                    "log_history": log_history  # Use accumulated log_history
                 }
                 with open(checkpoint_dir / "trainer_state.json", "w") as f:
                     json.dump(trainer_state, f, indent=2)

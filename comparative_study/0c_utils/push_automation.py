@@ -33,6 +33,10 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load .env file to get GITHUB_TOKEN, HF_TOKEN, etc.
+load_dotenv()
 
 
 class PushAutomation:
@@ -944,14 +948,45 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             )
             print("✅ Created git commit")
 
-            # Push to remote
+            # Push to remote (use GITHUB_TOKEN if available for non-interactive auth)
             print("\n📤 Pushing to GitHub...")
-            result = subprocess.run(
-                ["git", "push"],
-                cwd=self.project_root,
-                capture_output=True,
-                text=True
-            )
+            github_token = os.environ.get("GITHUB_TOKEN")
+
+            if github_token:
+                # Get current remote URL and convert to token-authenticated URL
+                remote_result = subprocess.run(
+                    ["git", "remote", "get-url", "origin"],
+                    cwd=self.project_root,
+                    capture_output=True,
+                    text=True
+                )
+                remote_url = remote_result.stdout.strip()
+
+                # Convert https://github.com/user/repo.git to https://token@github.com/user/repo.git
+                if remote_url.startswith("https://github.com/"):
+                    auth_url = remote_url.replace("https://github.com/", f"https://{github_token}@github.com/")
+                    result = subprocess.run(
+                        ["git", "push", auth_url],
+                        cwd=self.project_root,
+                        capture_output=True,
+                        text=True
+                    )
+                else:
+                    # SSH or other URL format, push normally
+                    result = subprocess.run(
+                        ["git", "push"],
+                        cwd=self.project_root,
+                        capture_output=True,
+                        text=True
+                    )
+            else:
+                # No token, push normally (will prompt for credentials)
+                result = subprocess.run(
+                    ["git", "push"],
+                    cwd=self.project_root,
+                    capture_output=True,
+                    text=True
+                )
 
             if result.returncode == 0:
                 print("✅ Successfully pushed to GitHub!")
