@@ -1,18 +1,6 @@
 """
 DPO Baseline Training Script (BF16 precision)
-Standard Direct Preference Optimization without PBT
-
-Configuration:
-- Model: Llama-3.1-8B (BF16 precision)
-- Method: Standard DPO (Rafailov et al. 2023)
-- Loss: L_DPO only (no L_SFT or L_KL)
-- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
-- Training: Fixed hyperparameters (no PBT)
-- Precision: BF16 + Flash Attention 2
-- LoRA: r=16, alpha=16
-- Warmup: Uses warmup_ratio (epoch-agnostic, hyperparameters transfer across training lengths)
-- Expected time: ~103 minutes on A100-40GB (1.0 epoch)
-- Expected cost: ~$2.58 (103 min × $1.5/hr)
+Standard Direct Preference Optimization 
 
 Usage:
     # SANITY: 0.3 epochs (~31 minutes) - base_model auto-derived from BASE_MODEL_MAP

@@ -1,0 +1,36 @@
+{
+  "best_metric": -3.2333984375,
+  "global_step": 26,
+  "log_history": [
+    {
+      "step": 0,
+      "objective/scores": -4.18359375,
+      "objective/kl": 0.0,
+      "ppo/mean_scores": -4.18359375
+    },
+    {
+      "step": 10,
+      "objective/scores": -4.3017578125,
+      "objective/kl": 2.348958969116211,
+      "ppo/mean_scores": -4.3017578125
+    },
+    {
+      "step": 12,
+      "objective/scores": -3.718994140625,
+      "objective/kl": 3.731245756149292,
+      "ppo/mean_scores": -3.718994140625
+    },
+    {
+      "step": 20,
+      "objective/scores": -3.7783203125,
+      "objective/kl": 35.385841369628906,
+      "ppo/mean_scores": -3.7783203125
+    },
+    {
+      "step": 25,
+      "objective/scores": -3.5634765625,
+      "objective/kl": 5.59981632232666,
+      "ppo/mean_scores": -3.5634765625
+    }
+  ]
+}
