@@ -1,18 +1,22 @@
 # MINIMAL REQUIREMENTS - For CITA Training
 #
-# INSTALLATION:
-# 1. Create venv: python3 -m venv venv_CITA
-# 2. Activate: source venv_CITA/bin/activate
-# 3. Install requirements: pip install -r requirements.txt
-# 4. Install flash-attn separately (30-40 mins, MUST build from source for ABI compatibility):
-#    pip uninstall flash-attn -y
-#    MAX_JOBS=4 pip install flash-attn --no-build-isolation --no-binary flash-attn
+# TESTED: Python 3.12, PyTorch 2.5.1+cu124, Flash-Attn 2.8.3, A100-80GB
+#
+# INSTALLATION: Run ./setup_env.sh (recommended, ~2 min)
+#
+# MANUAL INSTALLATION:
+# 1. python3.12 -m venv venv_CITA && source venv_CITA/bin/activate
+# 2. pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
+# 3. pip install -r requirements.txt
+# 4. Install flash-attn (choose one):
+#    - Pre-built wheel (~30s): See setup_env.sh for curl command
+#    - Build from source (~30-40 min): MAX_JOBS=4 pip install flash-attn --no-build-isolation
 
 # PyTorch (CUDA 12.4) - Install FIRST
 # NOTE: Must install with --index-url https://download.pytorch.org/whl/cu124
-# pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
-torch==2.6.0  # Required for CVE-2025-32434 fix (transformers 4.57+ requires torch 2.6+)
-torchvision==0.21.0
+# pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
+torch==2.5.1  # Downgraded for flash-attn ABI compatibility (pre-built wheels available)
+torchvision==0.20.1
 
 # Build dependencies (needed before flash-attn)
 packaging>=20.0
@@ -21,19 +25,19 @@ wheel
 ninja
 
 # Core dependencies - PINNED for reproducibility
-numpy==1.24.4
+numpy>=1.26.0  # 1.26+ required for Python 3.12
 pandas==2.3.3
 networkx
 matplotlib
 seaborn
 scikit-learn
-Pillow>=10.0.0  # transformers 4.57 requires Pillow with Image.Resampling
+Pillow>=10.0.0  # Image processing
 
 # Flash-attention - INSTALL SEPARATELY (see instructions at top)
 # DO NOT include here - causes pip dependency resolution issues
 
 # Core fine-tuning packages - PINNED
-transformers==4.57.1
+transformers==4.51.0  # 4.57+ requires torch>=2.6 (CVE-2025-32434), but flash-attn needs torch 2.5.x
 trl==0.11.4  # Pinned for stable PPO API (0.24+ has breaking changes)
 rich  # Required by TRL 0.11.4
 # tf-keras - NOT USED (removed to avoid protobuf conflict: TF 2.20 needs protobuf>=5.28, wandb needs <7)

@@ -43,7 +43,9 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(pip index:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(pip show:*)",
+      "WebFetch(domain:iclr-blogposts.github.io)"
     ],
     "deny": [],
     "ask": []

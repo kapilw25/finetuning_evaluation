@@ -1,41 +1,27 @@
 """
-PPO Baseline Training Script (BF16 precision)
-Proximal Policy Optimization for comparison with DPO and CITA
-
-Configuration:
-- Model: Llama-3.1-8B (BF16 precision)
-- Method: PPO (Schulman et al. 2017)
-- Pipeline: Query → Policy generates response → Reward Model scores → PPO updates policy
-- Dataset: PKU-SafeRLHF (10,813 samples, clear safety contrast)
-- Reward Model: OpenAssistant/reward-model-deberta-v3-large-v2 (off-the-shelf)
-- Training: Epoch-based (matching DPO for fair comparison)
-- Precision: BF16 + Flash Attention 2
-- LoRA: r=16, alpha=16
-- Expected time: ~103 minutes on A100-40GB (1.0 epoch)
-- Expected cost: ~$2.58 (103 min × $1.5/hr)
-
-Note: PPO is more complex than DPO because it requires:
-1. Policy model (generates responses)
-2. Value head (estimates expected reward)
-3. Reward model (scores responses)
-4. Reference model (KL penalty)
-
 PPO is known to be unstable (NaN losses common), which is why DPO was invented.
 This baseline exists to show CITA beats traditional PPO.
 
-Usage:
-    # SANITY: 0.3 epochs (~31 minutes) - base_model auto-derived from BASE_MODEL_MAP
+Usage (6 commands = 3 modes × 2 instruction settings):
+
+    # MICRO: 0.05 epochs (~30 min) - quick pipeline validation
+    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
+    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
+
+    # SANITY: 0.3 epochs (~9 hours) - validate checkpoints/HF push
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
+    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # FULL: 1.0 epoch (~103 minutes) - base_model auto-derived from BASE_MODEL_MAP
+    # FULL: 1.0 epoch (~34 hours) - production training
+    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
-
-Outputs:
-    - Model checkpoints: ./outputs/PPO_Baseline/checkpoint-*/
-    - LoRA adapters: ./outputs/PPO_Baseline/lora_model_PPO_Baseline/
-    - TensorBoard logs: ./tensorboard_logs/PPO_Baseline_<timestamp>/
-    - Training log: ./logs/PPO_Baseline_training_<timestamp>.log
-    - HuggingFace: kapilw25/llama3-8b-pku-PPO-{NoInstruct/Instruct}-SFT-{NoInstruct/Instruct}
+    
+  Projections:                                                                                                      
+  | Mode                | Steps | ETA        |                                                                      
+  |---------------------|-------|------------|                                                                      
+  | Micro (0.05 epochs) | ~68   | ~1.7 hours |                                                                      
+  | Sanity (0.3 epochs) | 405   | ~10 hours  |                                                                      
+  | Full (1.0 epoch)    | 1353  | ~33 hours  |
 """
 
 import sys
@@ -314,7 +300,8 @@ def train_ppo_baseline(
     num_epochs: float = 1.0,
     output_dir: str = None,
     base_model: str = None,
-    force_skip: bool = False
+    force_skip: bool = False,
+    training_mode: str = "full"
 ):
     """
     Train PPO baseline with epoch-based training (matching DPO for fair comparison)
@@ -324,6 +311,7 @@ def train_ppo_baseline(
         output_dir: Output directory for checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
         force_skip: If True, skip training and only run inference
+        training_mode: "micro" (128 tokens), "sanity" (128 tokens), "full" (256 tokens)
 
     Returns:
         trainer, training_skipped
@@ -338,12 +326,7 @@ def train_ppo_baseline(
     print(f"  - Model: Llama-3.1-8B (BF16)")
     print(f"  - Method: Proximal Policy Optimization (Schulman 2017)")
     print(f"  - Training epochs: {num_epochs}")
-    print(f"  - Batch size: 8 (experiences per PPO update, match DPO)")
-    print(f"  - Mini-batch: 1 (memory efficient, processes 1 at a time)")
     print(f"  - Learning rate: 1e-5 (Meta's Llama 3 setting)")
-    print(f"  - KL penalty coefficient: 0.1")
-    print(f"  - Warmup steps: 100")
-    print(f"  - LR scheduler: cosine")
     print(f"  - Precision: BF16 + Flash Attention 2")
     print("="*80 + "\n")
 
@@ -401,7 +384,6 @@ def train_ppo_baseline(
             # 3. Add PPO LoRA to policy model only
             # 4. Use explicit ref_model instead of disable_adapter()
             from peft import PeftModel
-            import copy
 
             # The pretrained_model is the base LM inside AutoModelForCausalLMWithValueHead
             model.pretrained_model = PeftModel.from_pretrained(
@@ -426,20 +408,13 @@ def train_ppo_baseline(
             model.pretrained_model = merged_pretrained
             print("✅ SFT LoRA merged into base model")
 
-            # Create explicit reference model (deepcopy of merged SFT model)
-            print("\n📋 Creating explicit reference model (merged SFT, frozen)...")
-            ref_model_pretrained = copy.deepcopy(model.pretrained_model)
-            ref_model_pretrained.eval()  # Set to eval mode (frozen)
-            for param in ref_model_pretrained.parameters():
-                param.requires_grad = False  # Freeze all parameters
-
-            # Wrap reference model in AutoModelForCausalLMWithValueHead (same as policy)
-            # Note: ref model doesn't need value head, but wrapping for consistency
-            from trl import AutoModelForCausalLMWithValueHead as ValueHeadModel
-            ref_model_with_value_head = ValueHeadModel.from_pretrained(ref_model_pretrained)
-            ref_model_with_value_head.eval()
-            ref_model_for_ppo = ref_model_with_value_head  # Assign to variable for PPOTrainer
-            print("✅ Reference model created and wrapped (frozen copy of merged SFT)")
+            # Create reference model using TRL's official function
+            # MUST be done AFTER SFT merge but BEFORE PPO LoRA
+            # See: https://huggingface.co/docs/trl/en/models#trl.create_reference_model
+            print("\n📋 Creating reference model (TRL create_reference_model)...")
+            from trl import create_reference_model
+            ref_model_for_ppo = create_reference_model(model)
+            print("✅ Reference model created (frozen copy, shares layers for memory efficiency)")
 
             # Apply NEW LoRA adapters for PPO training (only to policy model)
             print("\n🔧 Applying new LoRA adapters for PPO training (policy model only)...")
@@ -511,16 +486,22 @@ def train_ppo_baseline(
         # (not full TrainingArguments like newer versions)
         ppo_config = PPOConfig(
             # Training - TRL 0.11.4 constraint: batch_size >= mini_batch_size * gradient_accumulation_steps
-            # EXPLICIT REF_MODEL CONFIG: Reduced for dual-model memory (policy + reference)
+            # EXPLICIT REF_MODEL CONFIG: Dual-model memory (policy + reference)
             learning_rate=1e-5,  # Meta's official Llama 3 setting
-            batch_size=8,  # Total experiences before PPO update (16→8 for dual-model memory)
-            mini_batch_size=2,  # Process 2 samples in parallel (4→2 for dual-model memory)
-            gradient_accumulation_steps=4,  # Accumulate gradients (8 >= 2*4 ✓)
+            # --- A100-40GB settings (commented out) ---
+            # batch_size=8,  # Total experiences before PPO update (16→8 for dual-model memory)
+            # mini_batch_size=2,  # Process 2 samples in parallel (4→2 for dual-model memory)
+            # gradient_accumulation_steps=4,  # Accumulate gradients (8 >= 2*4 ✓)
+            # --- A100-80GB settings (active) ---
+            batch_size=16,  # Total experiences before PPO update (2x memory headroom)
+            mini_batch_size=4,  # Process 4 samples in parallel (2x from 40GB)
+            gradient_accumulation_steps=4,  # Accumulate gradients (16 >= 4*4 ✓)
             ppo_epochs=4,  # PPO epochs per batch
 
             # PPO-specific
             init_kl_coef=0.1,  # Initial KL penalty coefficient
             target_kl=0.1,  # Target KL divergence
+            kl_penalty="full",  # FIX: 'full' KL prevents negative values (GitHub issue #1017)
             cliprange=0.2,  # PPO clipping parameter
             cliprange_value=0.2,  # Value function clipping
             gamma=1.0,  # Discount factor (1.0 for single-turn)
@@ -538,20 +519,27 @@ def train_ppo_baseline(
             seed=3407,
         )
 
+        # Print actual PPO config values (dynamic, not hardcoded)
+        print(f"📦 PPO Config: batch_size={ppo_config.batch_size}, mini_batch_size={ppo_config.mini_batch_size}, "
+              f"grad_accum={ppo_config.gradient_accumulation_steps}, ppo_epochs={ppo_config.ppo_epochs}")
+
         # ===== GENERATION KWARGS (separate from PPOConfig) =====
         # TRL recommended settings to prevent negative KL divergence:
         # - top_p=1.0 (not 0.9) - truncated sampling causes KL issues
         # - top_k=0.0 - disable top-k sampling
         # - min_length=-1 - don't force minimum length
         # See: https://github.com/huggingface/trl/issues/235
+        # max_new_tokens: 128 for micro/sanity (faster), 256 for full (quality)
+        max_new_tokens = 256 if training_mode == "full" else 128
         generation_kwargs = {
-            "max_new_tokens": 128,  # Response length limit (256→128 for dual-model memory)
+            "max_new_tokens": max_new_tokens,
             "min_length": -1,  # TRL recommended: don't force min length
             "top_k": 0.0,  # TRL recommended: disable top-k
             "top_p": 1.0,  # TRL recommended: full distribution (not 0.9!)
             "do_sample": True,
             "pad_token_id": tokenizer.eos_token_id,
         }
+        print(f"📦 Generation: max_new_tokens={max_new_tokens} (mode={training_mode})")
 
         # ===== TORCH.COMPILE() OPTIMIZATION =====
         # DISABLED: Same as DPO - causes issues with gradient checkpointing
@@ -876,9 +864,9 @@ Examples:
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["sanity", "full"],
+        choices=["micro", "sanity", "full"],
         default="full",
-        help="Training mode: 'sanity' (0.3 epochs) or 'full' (1.0 epochs)"
+        help="Training mode: 'micro' (0.05 epochs, ~30min validation), 'sanity' (0.3 epochs), or 'full' (1.0 epochs)"
     )
 
     parser.add_argument(
@@ -931,13 +919,20 @@ Examples:
     # Determine configuration (epoch-based, matching DPO)
     if args.epochs is not None:
         num_epochs = args.epochs
+        training_mode = "custom"
         print(f"✅ Custom configuration: {num_epochs} epochs")
+    elif args.mode == "micro":
+        num_epochs = 0.05  # ~50 steps, ~30 min - quick validation of pipeline
+        training_mode = "micro"
+        print(f"✅ Micro validation mode: {num_epochs} epochs (~30 min, ~50 steps)")
     elif args.mode == "sanity":
-        num_epochs = 0.3  # 30% of data (~31 minutes, matching DPO sanity)
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~31 minutes)")
+        num_epochs = 0.3  # 30% of data (~405 steps)
+        training_mode = "sanity"
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~9 hours)")
     else:
-        num_epochs = 1.0  # Full epoch (~103 minutes, matching DPO full)
-        print(f"✅ Full training mode: {num_epochs} epochs (~103 minutes)")
+        num_epochs = 1.0  # Full epoch (~1353 steps)
+        training_mode = "full"
+        print(f"✅ Full training mode: {num_epochs} epochs (~34 hours)")
 
     # ===================================================================
     # Training Mode Selection
@@ -968,7 +963,8 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    print(f"Training will take approximately: {'~31 minutes' if num_epochs == 0.3 else '~103 minutes'}")
+    time_estimates = {"micro": "~30 min", "sanity": "~9 hours", "full": "~34 hours", "custom": "varies"}
+    print(f"Training will take approximately: {time_estimates.get(training_mode, 'varies')}")
     print(f"\nOptions:")
     if hf_model_exists:
         print(f"  1) Inference only from HF_repo (use existing HF model)")
@@ -994,7 +990,35 @@ Examples:
         force_skip = True  # Will skip training regardless of checkpoint status
     elif mode_choice == "2":
         # Option 2: Training mode (comparison happens in push_automation.py)
-        print("✅ Training mode selected")
+        print("="*80)
+        print("\n✅ Training mode selected")
+
+        # Check for existing checkpoints and offer to delete
+        checkpoint_dir = Path(f"./outputs/{RUN_NAME}")
+        existing_checkpoints = list(checkpoint_dir.glob("checkpoint-*")) if checkpoint_dir.exists() else []
+
+        if existing_checkpoints:
+            print(f"\n⚠️  Found {len(existing_checkpoints)} existing checkpoint(s) in {checkpoint_dir}:")
+            for ckpt in sorted(existing_checkpoints)[:5]:  # Show first 5
+                print(f"   - {ckpt.name}")
+            if len(existing_checkpoints) > 5:
+                print(f"   ... and {len(existing_checkpoints) - 5} more")
+
+            print("\n🔄 Options:")
+            print("   [R] Resume from latest checkpoint (default)")
+            print("   [D] Delete ALL checkpoints and start fresh")
+            delete_choice = input("\nEnter choice [R/D]: ").strip().upper()
+
+            if delete_choice == "D":
+                import shutil
+                print(f"\n🗑️  Deleting all checkpoints in {checkpoint_dir}...")
+                for ckpt in existing_checkpoints:
+                    shutil.rmtree(ckpt)
+                    print(f"   ✅ Deleted {ckpt.name}")
+                print("✅ All checkpoints deleted. Starting fresh training.")
+            else:
+                print("✅ Will resume from latest checkpoint.")
+
         if hf_model_exists:
             print("   Will compare local vs HF metrics and push ONLY if performance improves")
         else:
@@ -1009,7 +1033,8 @@ Examples:
         trainer, training_skipped = train_ppo_baseline(
             num_epochs=num_epochs,
             base_model=args.base_model,
-            force_skip=force_skip
+            force_skip=force_skip,
+            training_mode=training_mode
         )
         print(f"\n🏁 PPO Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")

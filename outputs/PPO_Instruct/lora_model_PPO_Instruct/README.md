@@ -26,7 +26,7 @@ You can then generate text as follows:
 ```python
 from transformers import pipeline
 
-generator = pipeline("text-generation", model="kapilw25/outputs/PPO_NoInstruct/checkpoint-81")
+generator = pipeline("text-generation", model="kapilw25/outputs/PPO_Instruct/lora_model_PPO_Instruct")
 outputs = generator("Hello, my llama is cute")
 ```
 
@@ -36,8 +36,8 @@ If you want to use the model for training or to obtain the outputs from the valu
 from transformers import AutoTokenizer
 from trl import AutoModelForCausalLMWithValueHead
 
-tokenizer = AutoTokenizer.from_pretrained("kapilw25/outputs/PPO_NoInstruct/checkpoint-81")
-model = AutoModelForCausalLMWithValueHead.from_pretrained("kapilw25/outputs/PPO_NoInstruct/checkpoint-81")
+tokenizer = AutoTokenizer.from_pretrained("kapilw25/outputs/PPO_Instruct/lora_model_PPO_Instruct")
+model = AutoModelForCausalLMWithValueHead.from_pretrained("kapilw25/outputs/PPO_Instruct/lora_model_PPO_Instruct")
 
 inputs = tokenizer("Hello, my llama is cute", return_tensors="pt")
 outputs = model(**inputs, labels=inputs["input_ids"])

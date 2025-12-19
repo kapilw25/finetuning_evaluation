@@ -4,24 +4,39 @@ Comparative study of SFT → DPO → CITA training pipeline on Llama-3.1-8B.
 
 ## Installation
 
-```bash
-# 1. Create venv with Python 3.10
-python3.10 -m venv venv_CITA
+**Tested:** Python 3.12, PyTorch 2.5.1+cu124, Flash-Attn 2.8.3, A100-80GB
 
-# 2. Activate
+### Quick Setup (~2 min)
+```bash
+chmod +x setup_env.sh
+./setup_env.sh
 source venv_CITA/bin/activate
+```
+
+### Manual Setup (if script fails)
+```bash
+# 1. Create venv
+python3.12 -m venv venv_CITA
+source venv_CITA/bin/activate
+
+# 2. Install PyTorch (MUST use --index-url for CUDA version)
+pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
 
 # 3. Install requirements
 pip install -r requirements.txt
 
-# 4. Verify torch
-python -c "import torch; print(f'Torch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+# 4. Install flash-attn (choose one):
+# Option A: Pre-built wheel (~30 sec)
+curl -L -o fa.whl "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3%2Bcu12torch2.5cxx11abiFALSE-cp312-cp312-linux_x86_64.whl"
+mv fa.whl flash_attn-2.8.3+cu12torch2.5cxx11abiFALSE-cp312-cp312-linux_x86_64.whl
+pip install flash_attn-2.8.3+cu12torch2.5cxx11abiFALSE-cp312-cp312-linux_x86_64.whl
+rm flash_attn*.whl
 
-# 5. Install flash-attn (10-40 mins to compile)
-MAX_JOBS=4 pip install flash-attn --no-build-isolation
+# Option B: Build from source (~30-40 min, if Option A fails)
+MAX_JOBS=4 pip install flash-attn --no-build-isolation --no-binary flash-attn
 
-# 6. Verify flash_attn
-python -c "import flash_attn; print(f'Flash-Attention: {flash_attn.__version__}')"
+# 5. Verify
+python -c "import torch, flash_attn; print(f'PyTorch: {torch.__version__}, Flash-Attn: {flash_attn.__version__}')"
 ```
 
 ## Training (FULL mode, A100-40GB)
