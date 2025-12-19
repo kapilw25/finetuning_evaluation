@@ -1,0 +1,22 @@
+{
+  "best_metric": -2.3670654296875,
+  "global_step": 67,
+  "log_history": [
+    {
+      "step": 0,
+      "objective/scores": -3.04931640625,
+      "objective/kl": 0.0
+    },
+    {
+      "step": 10,
+      "objective/scores": -2.3670654296875,
+      "objective/kl": 0.0
+    },
+    {
+      "step": 67,
+      "objective/scores": -2.3670654296875,
+      "objective/kl": 0.0,
+      "ppo/mean_scores": -2.3670654296875
+    }
+  ]
+}

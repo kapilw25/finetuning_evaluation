@@ -705,6 +705,33 @@ def train_ppo_baseline(
                 print(f"\n💾 Saving checkpoint at step {step + 1}/{total_steps}...")
                 ppo_trainer.save_pretrained(str(checkpoint_dir))
                 tokenizer.save_pretrained(str(checkpoint_dir))
+
+                # Create trainer_state.json for push_automation compatibility
+                # PPOTrainer doesn't create this, but push_automation needs it
+                import json
+                trainer_state = {
+                    "best_metric": best_reward,
+                    "global_step": step + 1,
+                    "log_history": [
+                        {
+                            "step": s * 10,  # We log every 10 steps
+                            "objective/scores": reward_history[min(s, len(reward_history)-1)] if reward_history else 0,
+                            "objective/kl": kl_history[min(s, len(kl_history)-1)] if kl_history else 0,
+                        }
+                        for s in range(len(reward_history))
+                    ] + [
+                        # Add final entry with current metrics
+                        {
+                            "step": step + 1,
+                            "objective/scores": mean_reward,
+                            "objective/kl": stats.get("objective/kl", 0),
+                            "ppo/mean_scores": mean_reward,
+                        }
+                    ]
+                }
+                with open(checkpoint_dir / "trainer_state.json", "w") as f:
+                    json.dump(trainer_state, f, indent=2)
+
                 print(f"✅ Checkpoint saved to: {checkpoint_dir}\n")
 
             # Clear cache periodically

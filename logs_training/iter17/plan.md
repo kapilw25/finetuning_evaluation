@@ -22,6 +22,7 @@
 | 13  | Negative KL explosion       | 3     | ⚠️ Partial          | Gradient clipping helped but not enough | 535 |
 | 14  | Wrong ref_model creation    | 4     | ✅ Fixed            | Use TRL create_reference_model() | 412-418 |
 | 15  | KL penalty mode default     | 4     | ✅ Fixed            | Use kl_penalty='full' | 504 |
+| 16  | Missing trainer_state.json  | 4     | ✅ Fixed            | Create for push_automation | 709-733 |
 
 **Error #12 Details:**
 - **Solution:** batch_size 16→8, mini_batch 4→2, max_tokens 256→128
