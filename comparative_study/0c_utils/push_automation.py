@@ -23,7 +23,7 @@ Usage:
         best_trial=best_trial,
         best_checkpoint=best_checkpoint,
         hf_repo="kapilw25/llama3-8b-pku-cita-baseline-bf16",
-        config_path="./outputs/best_pbt_config.json"
+        config_path="./outputs/training/CITA_Baseline/CITA_Baseline_config.json"
     )
 """
 
@@ -76,7 +76,7 @@ class PushAutomation:
             self.project_root = Path(project_root)
 
         self.logs_dir = self.project_root / "logs"
-        self.outputs_dir = self.project_root / "outputs"
+        self.outputs_dir = self.project_root / "outputs" / "training"
 
         # Configure git (idempotent - safe to run multiple times)
         self._configure_git()
@@ -287,7 +287,7 @@ class PushAutomation:
             )
 
             print("🔧 Loading LoRA adapter from best checkpoint...")
-            # Ray Tune checkpoints have structure: checkpoint_XXXXX/checkpoint/adapter_config.json
+            # Some checkpoints have nested structure: checkpoint/adapter_config.json
             checkpoint_path = Path(best_checkpoint)
             if (checkpoint_path / "checkpoint").exists():
                 adapter_path = str(checkpoint_path / "checkpoint")
@@ -309,7 +309,9 @@ class PushAutomation:
 
             # Save LoRA adapter locally (CRITICAL BACKUP)
             # ✅ Saves adapter only (165MB, not merged 16GB)
-            local_path = self.outputs_dir / f"lora_model_{run_name}"
+            # Save to same location as training scripts: outputs/{RUN_NAME}/lora_model_{RUN_NAME}/
+            # This avoids redundant copies at outputs/lora_model_{RUN_NAME}/
+            local_path = self.outputs_dir / run_name / f"lora_model_{run_name}"
             print(f"\n💾 Saving LoRA adapter locally: {local_path}/")
             model_with_adapter.save_pretrained(local_path)
             tokenizer.save_pretrained(local_path)
@@ -548,7 +550,7 @@ Llama 3.1 Community License (same as base model)
         Push best model to HuggingFace (overwrites previous regardless of performance)
 
         Args:
-            best_trial: Ray Tune best trial object OR SimpleNamespace for non-PBT
+            best_trial: Trial result object (SimpleNamespace with final_metric) or Optuna trial
             best_checkpoint: Path to best checkpoint
             hf_repo: HuggingFace repository ID
             config_path: Path to best_pbt_config.json
@@ -561,7 +563,7 @@ Llama 3.1 Community License (same as base model)
             return
 
         # Check if should push (performance comparison)
-        # Handle both Ray Tune trial objects and SimpleNamespace (for SFT/DPO)
+        # Handle trial objects with last_result attribute or SimpleNamespace
         # For CITA: remap cita/margin → rewards/margins for fair comparison
         comparison_metric_name = metric_name
         if hasattr(best_trial, 'last_result'):
@@ -604,7 +606,7 @@ Llama 3.1 Community License (same as base model)
             )
 
             print("🔧 Loading LoRA adapter from best checkpoint...")
-            # Ray Tune checkpoints have structure: checkpoint_XXXXX/checkpoint/adapter_config.json
+            # Some checkpoints have nested structure: checkpoint/adapter_config.json
             checkpoint_path = Path(best_checkpoint)
             if (checkpoint_path / "checkpoint").exists():
                 adapter_path = str(checkpoint_path / "checkpoint")
@@ -713,8 +715,8 @@ This push REPLACES the previous model version (performance improved).
                 hf_repo=hf_repo
             )
 
-            # Save locally for debugging
-            readme_path = self.project_root / "outputs" / f"{run_name}_README.md"
+            # Save locally for debugging (inside run folder)
+            readme_path = self.project_root / "outputs" / "training" / run_name / f"{run_name}_README.md"
             readme_path.parent.mkdir(exist_ok=True)
             with open(readme_path, 'w') as f:
                 f.write(model_card_content)
@@ -734,8 +736,8 @@ This push REPLACES the previous model version (performance improved).
 
             # Check multiple possible locations
             trainer_state_paths = [
-                checkpoint_path / "trainer_state.json",  # SFT/DPO
-                checkpoint_path / "checkpoint" / "trainer_state.json",  # Ray Tune (CITA)
+                checkpoint_path / "trainer_state.json",  # SFT/DPO/CITA
+                checkpoint_path / "checkpoint" / "trainer_state.json",  # Nested checkpoint structure
             ]
 
             trainer_state_path = None
@@ -1062,7 +1064,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         3. Push to GitHub (ALWAYS - especially logs/ for analysis)
 
         Args:
-            best_trial: Ray Tune best trial object OR SimpleNamespace for non-PBT
+            best_trial: Trial result object (SimpleNamespace with final_metric) or Optuna trial
             best_checkpoint: Path to best checkpoint
             hf_repo: HuggingFace repository ID
             config_path: Path to best config (best_pbt_config.json or training_config.json)
@@ -1188,7 +1190,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
         Args:
             method: Training method ("SFT", "DPO", "CITA")
-            output_dir: Output directory (e.g., "outputs/SFT_Baseline")
+            output_dir: Output directory (e.g., "outputs/training/SFT_Baseline")
             training_config: Training configuration dict (without final_metric)
             training_skipped: Whether training was skipped (inference-only mode)
             hf_token: HuggingFace token
@@ -1206,7 +1208,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         Example:
             >>> PushAutomation.prepare_baseline_push(
             ...     method="DPO",
-            ...     output_dir="outputs/DPO_Baseline",
+            ...     output_dir="outputs/training/DPO_Baseline",
             ...     training_config={
             ...         "method": "DPO",
             ...         "max_steps": 1000,
@@ -1254,8 +1256,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             print(f"⚠️  No checkpoint found in {output_dir}")
 
         # Step 3: Save training config with final metric
+        # Save inside run folder: outputs/training/{run_name}/{run_name}_config.json
         config_filename = f"{run_name}_config.json"
-        config_path = project_root / "outputs" / config_filename
+        config_path = project_root / "outputs" / "training" / run_name / config_filename
 
         # Add final metric to config using exact metric name from trainer_state.json
         training_config_with_metric = training_config.copy()

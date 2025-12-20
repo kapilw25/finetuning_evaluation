@@ -45,7 +45,17 @@
       "Bash(pip index:*)",
       "Bash(curl:*)",
       "Bash(pip show:*)",
-      "WebFetch(domain:iclr-blogposts.github.io)"
+      "WebFetch(domain:iclr-blogposts.github.io)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(pip cache:*)",
+      "Bash(stat:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(grep:*)",
+      "Bash(/workspace/finetuning_evaluation/comparative_study/02a_DPO_Baseline/Llama3_BF16.py )",
+      "Bash(/workspace/finetuning_evaluation/comparative_study/02b_PPO_Baseline/Llama3_BF16.py )",
+      "Bash(/workspace/finetuning_evaluation/comparative_study/02c_GRPO_Baseline/Llama3_BF16.py )",
+      "Bash(/workspace/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16.py )",
+      "Bash(/workspace/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py)"
     ],
     "deny": [],
     "ask": []

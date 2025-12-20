@@ -31,9 +31,9 @@ Usage:
         --use-instruction true
 
 Outputs:
-    - Optuna study database: ./outputs/optuna_cita_noinstruct.db or ./outputs/optuna_cita_instruct.db
-    - Best hyperparameters: ./outputs/CITA_NoInstruct_Adaptive_best_config.json or ./outputs/CITA_Instruct_Adaptive_best_config.json
-    - Best model checkpoint: ./outputs/CITA_NoInstruct_Adaptive/best_trial/ or ./outputs/CITA_Instruct_Adaptive/best_trial/
+    - Optuna study database: ./outputs/training/optuna_cita_noinstruct.db or ./outputs/training/optuna_cita_instruct.db
+    - Best hyperparameters: ./outputs/training/CITA_*_Adaptive/CITA_*_Adaptive_best_config.json
+    - Best model checkpoint: ./outputs/training/CITA_*_Adaptive/best_trial/
     - Training log: ./logs/CITA_NoInstruct_Adaptive_training_<timestamp>.log or ./logs/CITA_Instruct_Adaptive_training_<timestamp>.log
 """
 
@@ -224,7 +224,7 @@ def train_cita_trial(trial, max_steps=200, base_model=None, use_instruction=Fals
     )
 
     # ===== CREATE TRAINING ARGS =====
-    trial_output_dir = project_root / "outputs" / run_name / f"trial_{trial.number}"
+    trial_output_dir = project_root / "outputs" / "training" / run_name / f"trial_{trial.number}"
     trial_output_dir.mkdir(parents=True, exist_ok=True)
 
     # TensorBoard logging for this trial
@@ -495,7 +495,7 @@ def run_optuna_cita_search(
     # ===== CREATE OPTUNA STUDY =====
     instruction_suffix = "_instruct" if use_instruction else "_noinstruct"
     study_name = f"cita_adaptive_{max_steps}steps{instruction_suffix}"
-    storage_path = str(project_root / "outputs" / f"optuna_cita{instruction_suffix}.db")
+    storage_path = str(project_root / "outputs" / "training" / f"optuna_cita{instruction_suffix}.db")
 
     # Ensure outputs directory exists (SQLite needs parent directory)
     Path(storage_path).parent.mkdir(parents=True, exist_ok=True)
@@ -610,7 +610,7 @@ def run_optuna_cita_search(
     print(f"{'='*80}\n")
 
     # ===== SAVE BEST CONFIG =====
-    config_path = project_root / "outputs" / f"{run_name}_best_config.json"
+    config_path = project_root / "outputs" / "training" / run_name / f"{run_name}_best_config.json"
     config_path.parent.mkdir(exist_ok=True)
 
     best_config = {
@@ -644,8 +644,8 @@ def run_optuna_cita_search(
 
     # ===== COPY BEST CHECKPOINT (non-critical) =====
     try:
-        best_trial_dir = project_root / "outputs" / run_name / f"trial_{best_trial.number}"
-        best_checkpoint_dir = project_root / "outputs" / run_name / "best_trial"
+        best_trial_dir = project_root / "outputs" / "training" / run_name / f"trial_{best_trial.number}"
+        best_checkpoint_dir = project_root / "outputs" / "training" / run_name / "best_trial"
 
         if best_trial_dir.exists():
             import shutil

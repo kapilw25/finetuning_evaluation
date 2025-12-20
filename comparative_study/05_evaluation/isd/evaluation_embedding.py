@@ -107,7 +107,7 @@ class ISDModelResult:
 # CONFIGURATION
 # =============================================================================
 
-EVAL_OUTPUT_DIR = project_root / "outputs" / "ISD_Evaluation_Embedding"
+EVAL_OUTPUT_DIR = project_root / "outputs" / "evaluation" / "ISD_Evaluation_Embedding"
 EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL_KEYS = list(MODELS.keys())

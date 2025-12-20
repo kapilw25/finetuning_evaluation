@@ -89,7 +89,7 @@ class StyleModelResult:
 # CONFIGURATION
 # =============================================================================
 
-EVAL_OUTPUT_DIR = project_root / "outputs" / "Length_Control_Evaluation"
+EVAL_OUTPUT_DIR = project_root / "outputs" / "evaluation" / "Length_Control_Evaluation"
 EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Instruction variants

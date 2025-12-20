@@ -1,24 +1,24 @@
 """
 Usage (6 commands = 3 modes × 2 instruction settings):
 
-    # MICRO: 0.05 epochs (~30 min) - quick pipeline validation
+    # MICRO: 0.05 epochs (~1 hour) - quick pipeline validation
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
 
-    # SANITY: 0.3 epochs (~9 hours) - validate checkpoints/HF push
+    # SANITY: 0.3 epochs (~5 hours) - validate checkpoints/HF push
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # FULL: 1.0 epoch (~34 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
+    # FULL: 1.0 epoch (~17 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
     
-  Projections:                                                                                                      
-  | Mode                | Steps | ETA        |                                                                      
-  |---------------------|-------|------------|                                                                      
-  | Micro (0.05 epochs) | ~68   | ~1.7 hours |                                                                      
-  | Sanity (0.3 epochs) | 405   | ~10 hours  |                                                                      
-  | Full (1.0 epoch)    | 1353  | ~33 hours  |
+  Projections (batch_size=16 on A100-80GB):
+  | Mode                | Steps | ETA        |
+  |---------------------|-------|------------|
+  | Micro (0.05 epochs) | ~34   | ~1 hour    |
+  | Sanity (0.3 epochs) | ~203  | ~5 hours   |
+  | Full (1.0 epoch)    | ~675  | ~17 hours  |
 """
 
 import sys
@@ -326,7 +326,7 @@ def train_ppo_baseline(
         trainer, training_skipped
     """
     if output_dir is None:
-        output_dir = f"./outputs/{RUN_NAME}"
+        output_dir = f"./outputs/training/{RUN_NAME}"
 
     print("\n" + "="*80)
     print(f"🚀 Starting {RUN_NAME} Training")
@@ -425,19 +425,48 @@ def train_ppo_baseline(
             ref_model_for_ppo = create_reference_model(model)
             print("✅ Reference model created (frozen copy, shares layers for memory efficiency)")
 
-            # Apply NEW LoRA adapters for PPO training (only to policy model)
-            print("\n🔧 Applying new LoRA adapters for PPO training (policy model only)...")
-            ppo_lora_config = LoraConfig(
-                r=16,
-                lora_alpha=16,
-                target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-                lora_dropout=0.0,
-                bias="none",
-                task_type="CAUSAL_LM",
-            )
+            # ===== PPO LORA SETUP (checkpoint-aware) =====
+            # FIX: If resuming, load checkpoint adapter directly instead of fresh init
+            # This ensures reference model (SFT-only) differs from policy (SFT+trained PPO)
             from peft import get_peft_model
-            model.pretrained_model = get_peft_model(model.pretrained_model, ppo_lora_config)
-            print("✅ PPO LoRA adapters applied to policy model")
+
+            if latest_checkpoint and resume_step > 0:
+                # RESUMING: Load trained PPO LoRA from checkpoint
+                print(f"\n🔧 Loading PPO LoRA from checkpoint: {latest_checkpoint}")
+                try:
+                    model.pretrained_model = PeftModel.from_pretrained(
+                        model.pretrained_model, str(latest_checkpoint)
+                    )
+                    print("✅ PPO LoRA loaded from checkpoint (trained weights)")
+                except Exception as e:
+                    print(f"⚠️  Could not load checkpoint: {e}")
+                    print(f"   Falling back to fresh PPO LoRA init...")
+                    resume_step = 0
+                    latest_checkpoint = None
+                    # Apply fresh LoRA instead
+                    ppo_lora_config = LoraConfig(
+                        r=16,
+                        lora_alpha=16,
+                        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                        lora_dropout=0.0,
+                        bias="none",
+                        task_type="CAUSAL_LM",
+                    )
+                    model.pretrained_model = get_peft_model(model.pretrained_model, ppo_lora_config)
+                    print("✅ PPO LoRA adapters applied (fresh init after checkpoint failure)")
+            else:
+                # FRESH START: Apply new LoRA adapters for PPO training
+                print("\n🔧 Applying new LoRA adapters for PPO training (policy model only)...")
+                ppo_lora_config = LoraConfig(
+                    r=16,
+                    lora_alpha=16,
+                    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                    lora_dropout=0.0,
+                    bias="none",
+                    task_type="CAUSAL_LM",
+                )
+                model.pretrained_model = get_peft_model(model.pretrained_model, ppo_lora_config)
+                print("✅ PPO LoRA adapters applied to policy model (fresh init)")
 
             # Set is_peft_model flag (for PPOTrainer to recognize PEFT)
             model.is_peft_model = True
@@ -456,15 +485,17 @@ def train_ppo_baseline(
             max_samples=None  # Use full dataset (epoch-based training)
         )
 
-        # ===== CALCULATE TRAINING STEPS (epoch-based, matching DPO) =====
-        effective_batch_size = 1 * 8  # per_device=1, grad_accum=8 (match DPO)
-        steps_per_epoch = len(ppo_dataset) // effective_batch_size
+        # ===== CALCULATE TRAINING STEPS (epoch-based) =====
+        # PPO batch_size = experiences collected per PPO update step
+        # A100-80GB uses batch_size=16, A100-40GB uses batch_size=8
+        ppo_batch_size = 16  # Must match PPOConfig.batch_size below
+        steps_per_epoch = len(ppo_dataset) // ppo_batch_size
         total_steps = int(steps_per_epoch * num_epochs)
         checkpoint_interval = max(1, total_steps // 5)  # Save/eval every 20%
 
         print(f"\n📊 Training Configuration:")
         print(f"   Dataset size: {len(ppo_dataset):,} samples")
-        print(f"   Effective batch size: {effective_batch_size}")
+        print(f"   PPO batch size: {ppo_batch_size}")
         print(f"   Steps per epoch: {steps_per_epoch:,}")
         print(f"   Total steps: {total_steps:,} ({num_epochs} epochs)")
         print(f"   Checkpoint interval: {checkpoint_interval} steps (20% of training)")
@@ -582,21 +613,9 @@ def train_ppo_baseline(
         # ===== GPU MEMORY =====
         start_gpu_memory = log_gpu_memory_start()
 
-        # ===== RESUME FROM CHECKPOINT (if applicable) =====
-        if latest_checkpoint and resume_step > 0:
-            print(f"\n📂 Resuming from checkpoint: {latest_checkpoint}")
-            print(f"   Skipping first {resume_step} steps...")
-            # Load saved model state from checkpoint
-            try:
-                from peft import PeftModel
-                model.pretrained_model = PeftModel.from_pretrained(
-                    model.pretrained_model, str(latest_checkpoint)
-                )
-                print(f"✅ Loaded model weights from checkpoint")
-            except Exception as e:
-                print(f"⚠️  Could not load checkpoint weights: {e}")
-                print(f"   Starting fresh training...")
-                resume_step = 0
+        # NOTE: Checkpoint resume is now handled earlier (during PPO LoRA setup)
+        # The trained PPO LoRA weights are loaded BEFORE reference model comparison
+        # This fixes the KL=0 bug where reference and policy had identical weights
 
         # ===== TRAINING LOOP =====
         print("\n" + "="*80)
@@ -615,14 +634,21 @@ def train_ppo_baseline(
         # Persistent log_history for trainer_state.json (load from previous checkpoint if resuming)
         import json
         log_history = []
-        if latest_checkpoint:
+        if latest_checkpoint and resume_step > 0:  # FIX #3: Only load if actually resuming
             prev_state_path = Path(latest_checkpoint) / "trainer_state.json"
             if prev_state_path.exists():
                 with open(prev_state_path, 'r') as f:
                     prev_state = json.load(f)
                     log_history = prev_state.get('log_history', [])
                     best_reward = prev_state.get('best_metric', float('-inf'))
+                    # FIX #2: Restore reward_history from log_history for consistent summaries
+                    for entry in log_history:
+                        if 'objective/scores' in entry:
+                            reward_history.append(entry['objective/scores'])
+                        if 'objective/kl' in entry:
+                            kl_history.append(entry['objective/kl'])
                 print(f"📂 Loaded {len(log_history)} log entries from previous checkpoint")
+                print(f"   Restored {len(reward_history)} reward samples for trend analysis")
 
         # PPO training loop (epoch-based, matching DPO)
         for step, batch in enumerate(ppo_trainer.dataloader):
@@ -732,7 +758,8 @@ def train_ppo_baseline(
         print(f"\n✅ PPO training complete!")
         print(f"   Total steps: {total_steps} ({num_epochs} epochs)")
         print(f"   Best reward: {best_reward:.4f}")
-        print(f"   Final reward (avg last 50): {sum(reward_history[-50:])/min(50, len(reward_history)):.4f}")
+        final_avg = sum(reward_history[-50:])/len(reward_history[-50:]) if reward_history else 0.0  # FIX #4: Avoid division by zero
+        print(f"   Final reward (avg last 50): {final_avg:.4f}")
 
         # Store best_metric for push_automation (equivalent to trainer.state.best_metric)
         # PPO uses reward (higher is better), unlike DPO which uses margin
@@ -855,10 +882,10 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # NoInstruct variant (sanity check, 0.3 epochs, ~31 minutes)
+  # NoInstruct variant (sanity check, 0.3 epochs, ~5 hours)
   python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
-  # Instruct variant (full training, 1.0 epoch, ~103 minutes)
+  # Instruct variant (full training, 1.0 epoch, ~17 hours)
   python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   # Custom epochs
@@ -879,7 +906,7 @@ Examples:
         type=str,
         choices=["micro", "sanity", "full"],
         default="full",
-        help="Training mode: 'micro' (0.05 epochs, ~30min validation), 'sanity' (0.3 epochs), or 'full' (1.0 epochs)"
+        help="Training mode: 'micro' (0.05 epochs, ~1 hour), 'sanity' (0.3 epochs, ~5 hours), or 'full' (1.0 epoch, ~17 hours)"
     )
 
     parser.add_argument(
@@ -935,17 +962,17 @@ Examples:
         training_mode = "custom"
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "micro":
-        num_epochs = 0.05  # ~50 steps, ~30 min - quick validation of pipeline
+        num_epochs = 0.05  # ~34 steps, ~1 hour - quick validation of pipeline
         training_mode = "micro"
-        print(f"✅ Micro validation mode: {num_epochs} epochs (~30 min, ~50 steps)")
+        print(f"✅ Micro validation mode: {num_epochs} epochs (~1 hour, ~34 steps)")
     elif args.mode == "sanity":
-        num_epochs = 0.3  # 30% of data (~405 steps)
+        num_epochs = 0.3  # 30% of data (~203 steps)
         training_mode = "sanity"
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~9 hours)")
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~5 hours)")
     else:
-        num_epochs = 1.0  # Full epoch (~1353 steps)
+        num_epochs = 1.0  # Full epoch (~675 steps)
         training_mode = "full"
-        print(f"✅ Full training mode: {num_epochs} epochs (~34 hours)")
+        print(f"✅ Full training mode: {num_epochs} epochs (~17 hours)")
 
     # ===================================================================
     # Training Mode Selection
@@ -976,7 +1003,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    time_estimates = {"micro": "~30 min", "sanity": "~9 hours", "full": "~34 hours", "custom": "varies"}
+    time_estimates = {"micro": "~1 hour", "sanity": "~5 hours", "full": "~17 hours", "custom": "varies"}
     print(f"Training will take approximately: {time_estimates.get(training_mode, 'varies')}")
     print(f"\nOptions:")
     if hf_model_exists:
@@ -1007,7 +1034,7 @@ Examples:
         print("\n✅ Training mode selected")
 
         # Check for existing checkpoints and offer to delete
-        checkpoint_dir = Path(f"./outputs/{RUN_NAME}")
+        checkpoint_dir = Path(f"./outputs/training/{RUN_NAME}")
         existing_checkpoints = list(checkpoint_dir.glob("checkpoint-*")) if checkpoint_dir.exists() else []
 
         if existing_checkpoints:
@@ -1059,26 +1086,22 @@ Examples:
             "method": "PPO",
             "num_epochs": num_epochs,  # Epoch-based (matching DPO)
             "learning_rate": 1e-5,  # Meta's official Llama 3 setting
-            "warmup_steps": 100,  # Same as DPO (from iter4 successful run)
-            "optimizer": "adamw_torch",  # Match DPO
-            "weight_decay": 0.01,  # Same as DPO
-            "lr_scheduler_type": "cosine",  # Same as DPO (cosine for smoother convergence)
-            "batch_size": 8,  # Experiences per PPO update (effective batch=8, match DPO)
-            "gradient_accumulation_steps": 1,  # No accumulation (batch_size handles it)
-            "mini_batch_size": 1,  # Memory efficient
+            "batch_size": 16,  # PPO batch_size (A100-80GB setting)
+            "gradient_accumulation_steps": 4,  # PPO gradient accumulation
+            "mini_batch_size": 4,  # PPO mini_batch_size
             "ppo_epochs": 4,
             "init_kl_coef": 0.1,
             "target_kl": 0.1,
             "cliprange": 0.2,
             "max_seq_length": 2048,  # Match DPO for fair comparison
-            "max_new_tokens": 128,
+            "max_new_tokens": 256 if training_mode == "full" else 128,  # Dynamic based on mode
             "reward_model": "OpenAssistant/reward-model-deberta-v3-large-v2",
         }
 
         # Note: PPO uses reward instead of margins
         PushAutomation.prepare_baseline_push(
             method="PPO",
-            output_dir=f"outputs/{RUN_NAME}",
+            output_dir=f"outputs/training/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,

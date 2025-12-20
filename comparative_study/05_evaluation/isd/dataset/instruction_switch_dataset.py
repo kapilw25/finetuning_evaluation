@@ -707,7 +707,7 @@ if __name__ == "__main__":
         print(f"  Expected: {', '.join(tc.expected_characteristics)}")
 
     # Save to output directory
-    output_dir = Path(__file__).parent.parent.parent / "outputs" / "ISD_Evaluation"
+    output_dir = Path(__file__).parent.parent.parent / "outputs" / "evaluation" / "ISD_Evaluation"
     output_path = output_dir / "isd_sample_dataset.json"
     isd.save_dataset(output_path, num_prompts=50)
 

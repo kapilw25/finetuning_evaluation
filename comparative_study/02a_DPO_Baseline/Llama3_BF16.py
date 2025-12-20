@@ -89,7 +89,7 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
     """
     # Set output_dir dynamically based on RUN_NAME if not provided
     if output_dir is None:
-        output_dir = f"./outputs/{RUN_NAME}"
+        output_dir = f"./outputs/training/{RUN_NAME}"
 
     print("\n" + "="*80)
     print(f"🚀 Starting {RUN_NAME} Training")
@@ -624,7 +624,7 @@ Examples:
 
         PushAutomation.prepare_baseline_push(
             method="DPO",
-            output_dir=f"outputs/{RUN_NAME}",
+            output_dir=f"outputs/training/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,

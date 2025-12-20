@@ -1,24 +1,24 @@
 """
 Usage (6 commands = 3 modes × 2 instruction settings):
 
-    # MICRO: 0.05 epochs (~20 min) - quick pipeline validation
+    # MICRO: 0.05 epochs (~30 min) - quick pipeline validation
     python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
     python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
 
-    # SANITY: 0.3 epochs (~2 hours) - validate checkpoints/HF push
+    # SANITY: 0.3 epochs (~3 hours) - validate checkpoints/HF push
     python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
     python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # FULL: 1.0 epoch (~6 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
+    # FULL: 1.0 epoch (~11 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
     python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
     python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   Projections (batch_size=4, grad_accum=4, effective_batch=16):
-  | Mode                | Steps | ETA      |
-  |---------------------|-------|----------|
-  | Micro (0.05 epochs) | ~4    | ~20 min  |
-  | Sanity (0.3 epochs) | ~26   | ~2 hours |
-  | Full (1.0 epoch)    | ~85   | ~6 hours |
+  | Mode                | Steps | ETA       |
+  |---------------------|-------|-----------|
+  | Micro (0.05 epochs) | ~34   | ~30 min   |
+  | Sanity (0.3 epochs) | ~203  | ~3 hours  |
+  | Full (1.0 epoch)    | ~675  | ~11 hours |
 """
 
 import sys
@@ -26,8 +26,6 @@ from pathlib import Path
 import os
 import argparse
 from datetime import datetime
-import gc
-
 # ===== FIX CUDA OOM: Enable expandable segments for memory fragmentation =====
 # GRPO generates multiple responses per prompt, causing memory spikes
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
@@ -37,7 +35,7 @@ import torch
 # ===== FIX torch.compile() CUDAGraph bug: Disable CUDAGraphs for dynamic shapes =====
 torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
+from transformers import TextStreamer
 from trl import GRPOConfig, GRPOTrainer
 
 # Add utils to path
@@ -172,7 +170,7 @@ def format_quality_reward(completions, **kwargs) -> list[float]:
 # Dataset Preparation for GRPO
 # ===================================================================
 
-def prepare_grpo_dataset(tokenizer, use_instruction: bool = False):
+def prepare_grpo_dataset(use_instruction: bool = False):
     """
     Prepare PKU-SafeRLHF dataset for GRPO training.
 
@@ -183,11 +181,12 @@ def prepare_grpo_dataset(tokenizer, use_instruction: bool = False):
     to get CUSTOMIZED instructions per example based on harm categories.
 
     Returns:
-        Dataset with 'prompt' field (list of chat messages)
+        tuple: (train_dataset, val_dataset) with 'prompt' field (list of chat messages)
     """
-    # Load PKU dataset
+    # Load PKU dataset (90/10 split)
     dataset_split = load_pku_combined_clear_contrast(val_split=0.1)
     train_data = dataset_split['train']
+    val_data = dataset_split['test']
 
     def format_prompt(example):
         prompt = example.get('prompt', '')
@@ -215,26 +214,33 @@ def prepare_grpo_dataset(tokenizer, use_instruction: bool = False):
                 ]
             }
 
-    # Format dataset
-    formatted_data = train_data.map(
+    # Format train dataset
+    formatted_train = train_data.map(
         format_prompt,
         remove_columns=train_data.column_names,
-        desc=f"Formatting PKU for GRPO ({'WITH CUSTOMIZED' if use_instruction else 'NO'} instruction)"
+        desc=f"Formatting PKU train for GRPO ({'WITH CUSTOMIZED' if use_instruction else 'NO'} instruction)"
     )
 
-    print(f"✅ Prepared {len(formatted_data):,} prompts for GRPO training")
+    # Format validation dataset
+    formatted_val = val_data.map(
+        format_prompt,
+        remove_columns=val_data.column_names,
+        desc=f"Formatting PKU val for GRPO ({'WITH CUSTOMIZED' if use_instruction else 'NO'} instruction)"
+    )
+
+    print(f"✅ Prepared {len(formatted_train):,} train / {len(formatted_val):,} val prompts for GRPO")
     if use_instruction:
         print(f"   Using CUSTOMIZED instructions per example (fair comparison with DPO)")
     print(f"   Note: GRPO generates responses online (no chosen/rejected pairs used)")
 
-    return formatted_data
+    return formatted_train, formatted_val
 
 
 # ===================================================================
 # Main Training Function
 # ===================================================================
 
-def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False):
+def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_skip=False, training_mode="full"):
     """
     Train GRPO baseline with online generation.
 
@@ -246,14 +252,22 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         output_dir: Output directory for checkpoints
         base_model: HuggingFace model ID to load LoRA adapters from (for stacking)
         force_skip: If True, skip training and only run inference
+        training_mode: "micro" (256 tokens), "sanity" (256 tokens), "full" (512 tokens)
 
     Returns:
         trainer: Trained GRPOTrainer instance
         training_skipped: Whether training was skipped
+        training_config: Dict of training hyperparameters for HF metadata
     """
     # Set output_dir dynamically based on RUN_NAME if not provided
     if output_dir is None:
-        output_dir = f"./outputs/{RUN_NAME}"
+        output_dir = f"./outputs/training/{RUN_NAME}"
+
+    # ===== GRPO HYPERPARAMETERS (A100-80GB optimized) =====
+    # Define at start to use in prints and avoid NameError in training_config
+    num_generations = 4
+    per_device_batch_size = 4
+    gradient_accum_steps = 4
 
     print("\n" + "="*80)
     print(f"🚀 Starting {RUN_NAME} Training")
@@ -263,9 +277,9 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
     print(f"  - Method: GRPO (Group Relative Policy Optimization)")
     print(f"  - Training: Online generation + reward functions")
     print(f"  - Training epochs: {num_epochs}")
-    print(f"  - Batch size: 4 (per device, optimized for 80GB GPU)")
-    print(f"  - Gradient accumulation: 4 (effective batch=16 prompts)")
-    print(f"  - Num generations: 4 (responses per prompt)")
+    print(f"  - Batch size: {per_device_batch_size} (per device, optimized for 80GB GPU)")
+    print(f"  - Gradient accumulation: {gradient_accum_steps} (effective batch={per_device_batch_size * gradient_accum_steps} prompts)")
+    print(f"  - Num generations: {num_generations} (responses per prompt)")
     print(f"  - Learning rate: 5e-6 (lower for RL stability)")
     print(f"  - Warmup ratio: 10%")
     print(f"  - LR scheduler: cosine")
@@ -297,7 +311,6 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         else:
             print(f"🆕 No checkpoint found")
             print(f"   Will start fresh training...\n")
-            latest_checkpoint = None
 
     # ===== LOAD MODEL & TOKENIZER =====
     if not training_skipped:
@@ -353,17 +366,17 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
 
         # ===== LOAD DATASET =====
         print("\nLoading PKU-SafeRLHF dataset (prompts only for GRPO)...")
-        train_dataset = prepare_grpo_dataset(tokenizer, use_instruction=USE_INSTRUCTION)
+        train_dataset, val_dataset = prepare_grpo_dataset(use_instruction=USE_INSTRUCTION)
 
         # ===== CALCULATE TRAINING STEPS =====
-        # GRPO: effective batch = batch_size * gradient_accum * num_generations
-        num_generations = 4
-        per_device_batch_size = 4  # Optimized for 80GB GPU
-        gradient_accum_steps = 4
+        # GRPO: effective batch = batch_size * gradient_accum (hyperparameters defined above)
         effective_batch_size = per_device_batch_size * gradient_accum_steps  # 16 prompts per step
         steps_per_epoch = len(train_dataset) // effective_batch_size
         total_steps = int(steps_per_epoch * num_epochs)
         checkpoint_interval = max(1, int(total_steps * 0.2))  # 20% intervals
+
+        # Dynamic generation config based on training_mode
+        max_completion_length = 512 if training_mode == "full" else 256
 
         print(f"\n📊 Training Configuration:")
         print(f"   Dataset size: {len(train_dataset):,} prompts")
@@ -374,6 +387,7 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         print(f"   Steps per epoch: {steps_per_epoch:,}")
         print(f"   Total steps: {total_steps:,} ({num_epochs} epochs)")
         print(f"   Checkpoint interval: {checkpoint_interval} steps (20% of training)")
+        print(f"📦 Generation: max_completion_length={max_completion_length} (mode={training_mode})")
 
         # ===== CHECK TRAINING COMPLETION =====
         if latest_checkpoint and is_training_complete(latest_checkpoint, total_steps):
@@ -386,6 +400,7 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         model = None
         tokenizer = None
         train_dataset = None
+        val_dataset = None
 
     # ===== SETUP TRAINER =====
     if not training_skipped:
@@ -407,10 +422,10 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
             gradient_accumulation_steps=gradient_accum_steps,   # 4 accumulation steps
             max_steps=total_steps,
 
-            # GRPO-specific
+            # GRPO-specific (dynamic based on training_mode)
             num_generations=num_generations,
             max_prompt_length=512,
-            max_completion_length=512,
+            max_completion_length=max_completion_length,  # Dynamic: 512 for full, 256 for micro/sanity
 
             # Optimization
             warmup_ratio=0.1,
@@ -428,6 +443,15 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
             # Checkpointing
             save_steps=checkpoint_interval,
             save_total_limit=5,
+
+            # Evaluation (detect overfitting during training)
+            eval_strategy="steps",
+            eval_steps=checkpoint_interval,  # Aligned with checkpoints (20% intervals)
+            per_device_eval_batch_size=per_device_batch_size,
+
+            # Dataloader optimization
+            dataloader_num_workers=2,  # Parallel data loading
+            dataloader_pin_memory=True,  # Faster CPU→GPU transfer
 
             # Precision
             bf16=True,
@@ -455,6 +479,7 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
             ],
             args=training_args,
             train_dataset=train_dataset,
+            eval_dataset=val_dataset,  # FIX: Added validation for overfitting detection
             callbacks=[summary_callback],
         )
 
@@ -562,7 +587,27 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
     print(f"✅ Inference tests completed")
     print(f"{'='*80}\n")
 
-    return trainer, training_skipped
+    # Build training_config from actual variables used (avoid hardcoding)
+    max_completion_length = 512 if training_mode == "full" else 256  # Match GRPOConfig
+    training_config = {
+        "method": "GRPO",
+        "num_epochs": num_epochs,
+        "learning_rate": 5e-6,
+        "warmup_ratio": 0.1,
+        "optimizer": "adamw_torch",
+        "weight_decay": 0.1,
+        "lr_scheduler_type": "cosine",
+        "batch_size": per_device_batch_size,  # From variable, not hardcoded
+        "gradient_accumulation_steps": gradient_accum_steps,  # From variable
+        "effective_batch_size": per_device_batch_size * gradient_accum_steps,  # Calculated
+        "num_generations": num_generations,  # From variable
+        "max_prompt_length": 512,
+        "max_completion_length": max_completion_length,  # Dynamic based on mode
+        "max_grad_norm": 0.1,
+        "reward_functions": ["safety_refusal", "helpfulness", "format_quality"],
+    }
+
+    return trainer, training_skipped, training_config
 
 
 # ===================================================================
@@ -575,10 +620,10 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # NoInstruct variant (sanity check, 0.3 epochs, ~2 hours)
+  # NoInstruct variant (sanity check, 0.3 epochs, ~3 hours)
   python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
 
-  # Instruct variant (full training, 1.0 epoch, ~6 hours)
+  # Instruct variant (full training, 1.0 epoch, ~11 hours)
   python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   # Custom epochs
@@ -599,7 +644,7 @@ Examples:
         type=str,
         choices=["micro", "sanity", "full"],
         default="full",
-        help="Training mode: 'micro' (0.05 epochs, ~20 min), 'sanity' (0.3 epochs, ~2 hours), or 'full' (1.0 epochs, ~6 hours)"
+        help="Training mode: 'micro' (0.05 epochs, ~30 min), 'sanity' (0.3 epochs, ~3 hours), or 'full' (1.0 epochs, ~11 hours)"
     )
 
     parser.add_argument(
@@ -655,13 +700,13 @@ Examples:
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "micro":
         num_epochs = 0.05
-        print(f"✅ Micro test mode: {num_epochs} epochs (~20 min)")
+        print(f"✅ Micro test mode: {num_epochs} epochs (~30 min)")
     elif args.mode == "sanity":
         num_epochs = 0.3
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~2 hours)")
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~3 hours)")
     else:
         num_epochs = 1.0
-        print(f"✅ Full training mode: {num_epochs} epochs (~6 hours)")
+        print(f"✅ Full training mode: {num_epochs} epochs (~11 hours)")
 
     # ===================================================================
     # Training Mode Selection
@@ -691,7 +736,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    time_estimates = {"micro": "~20 min", "sanity": "~2 hours", "full": "~6 hours"}
+    time_estimates = {"micro": "~30 min", "sanity": "~3 hours", "full": "~11 hours"}
     print(f"Training will take approximately: {time_estimates.get(args.mode, 'varies')}")
     print(f"\nOptions:")
     if hf_model_exists:
@@ -714,7 +759,35 @@ Examples:
         print("✅ Inference-only mode selected")
         force_skip = True
     elif mode_choice == "2":
-        print("✅ Training mode selected")
+        print("="*80)
+        print("\n✅ Training mode selected")
+
+        # Check for existing checkpoints and offer to delete (matching PPO behavior)
+        checkpoint_dir = Path(f"./outputs/training/{RUN_NAME}")
+        existing_checkpoints = list(checkpoint_dir.glob("checkpoint-*")) if checkpoint_dir.exists() else []
+
+        if existing_checkpoints:
+            print(f"\n⚠️  Found {len(existing_checkpoints)} existing checkpoint(s) in {checkpoint_dir}:")
+            for ckpt in sorted(existing_checkpoints)[:5]:  # Show first 5
+                print(f"   - {ckpt.name}")
+            if len(existing_checkpoints) > 5:
+                print(f"   ... and {len(existing_checkpoints) - 5} more")
+
+            print("\n🔄 Options:")
+            print("   [R] Resume from latest checkpoint (default)")
+            print("   [D] Delete ALL checkpoints and start fresh")
+            delete_choice = input("\nEnter choice [R/D]: ").strip().upper()
+
+            if delete_choice == "D":
+                import shutil
+                print(f"\n🗑️  Deleting all checkpoints in {checkpoint_dir}...")
+                for ckpt in existing_checkpoints:
+                    shutil.rmtree(ckpt)
+                    print(f"   ✅ Deleted {ckpt.name}")
+                print("✅ All checkpoints deleted. Starting fresh training.")
+            else:
+                print("✅ Will resume from latest checkpoint.")
+
         if hf_model_exists:
             print("   Will compare local vs HF metrics and push ONLY if performance improves")
         else:
@@ -724,40 +797,30 @@ Examples:
         print("⚠️  Invalid choice, defaulting to training mode")
         force_skip = False
 
+    # Determine training_mode for dynamic config
+    if args.epochs is not None:
+        training_mode = "custom"
+    else:
+        training_mode = args.mode
+
     # Run training
     try:
-        trainer, training_skipped = train_grpo_baseline(
+        trainer, training_skipped, training_config = train_grpo_baseline(
             num_epochs=num_epochs,
             base_model=args.base_model,
-            force_skip=force_skip
+            force_skip=force_skip,
+            training_mode=training_mode
         )
         print(f"\n🏁 GRPO Baseline Training Complete!")
         print(f"📝 Log file: {log_filename}")
 
         # ===================================================================
-        # Push to HuggingFace
+        # Push to HuggingFace (training_config returned from function)
         # ===================================================================
-        training_config = {
-            "method": "GRPO",
-            "num_epochs": num_epochs,
-            "learning_rate": 5e-6,
-            "warmup_ratio": 0.1,
-            "optimizer": "adamw_torch",
-            "weight_decay": 0.1,
-            "lr_scheduler_type": "cosine",
-            "batch_size": 4,  # Optimized for 80GB GPU
-            "gradient_accumulation_steps": 4,
-            "effective_batch_size": 16,  # 4 * 4 = 16 prompts per update
-            "num_generations": 4,
-            "max_prompt_length": 512,
-            "max_completion_length": 512,
-            "max_grad_norm": 0.1,
-            "reward_functions": ["safety_refusal", "helpfulness", "format_quality"],
-        }
 
         PushAutomation.prepare_baseline_push(
             method="GRPO",
-            output_dir=f"outputs/{RUN_NAME}",
+            output_dir=f"outputs/training/{RUN_NAME}",
             training_config=training_config,
             training_skipped=training_skipped,
             hf_token=HF_TOKEN,

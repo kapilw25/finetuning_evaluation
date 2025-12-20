@@ -93,7 +93,7 @@ class SafetyModelResult:
 # CONFIGURATION
 # =============================================================================
 
-EVAL_OUTPUT_DIR = project_root / "outputs" / "Conditional_Safety_Evaluation"
+EVAL_OUTPUT_DIR = project_root / "outputs" / "evaluation" / "Conditional_Safety_Evaluation"
 EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Instruction variants

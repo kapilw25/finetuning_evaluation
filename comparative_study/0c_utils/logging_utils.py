@@ -18,7 +18,7 @@ Features:
 - Captures stdout + stderr (all print statements, errors, warnings)
 - Line buffering: Immediate writes (no buffering delays)
 - Works like Unix 'tee' command
-- Compatible with Ray Tune workers (CITA's PBT)
+- Compatible with any training framework
 """
 
 import sys
@@ -56,12 +56,12 @@ class Tee:
         return self.terminal.isatty()
 
     def fileno(self):
-        """Return file descriptor of terminal (required by Ray's faulthandler)"""
+        """Return file descriptor of terminal (required by faulthandler)"""
         return self.terminal.fileno()
 
     @property
     def encoding(self):
-        """Return terminal encoding (required by Ray Tune's output detection)"""
+        """Return terminal encoding"""
         return getattr(self.terminal, 'encoding', 'utf-8')
 
     def close(self):

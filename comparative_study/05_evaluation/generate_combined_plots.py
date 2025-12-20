@@ -67,16 +67,17 @@ from generate_hp_ablation_plots import (
 
 # Output directories
 OUTPUTS_DIR = project_root / "outputs"
-COMBINED_PLOTS_DIR = OUTPUTS_DIR / "combined_plots"
+EVAL_OUTPUTS_DIR = OUTPUTS_DIR / "evaluation"
+COMBINED_PLOTS_DIR = EVAL_OUTPUTS_DIR / "combined_plots"
 COMBINED_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Input directories for each evaluation
 EVAL_DIRS = {
-    "ISD": OUTPUTS_DIR / "ISD_Evaluation_Embedding",  # Embedding-based ISD
-    "TruthfulQA": OUTPUTS_DIR / "TruthfulQA_Evaluation",
-    "Cond. Safety": OUTPUTS_DIR / "Conditional_Safety_Evaluation",
-    "Length Ctrl": OUTPUTS_DIR / "Length_Control_Evaluation",
-    "AQI": OUTPUTS_DIR / "AQI_Evaluation",
+    "ISD": EVAL_OUTPUTS_DIR / "ISD_Evaluation_Embedding",  # Embedding-based ISD
+    "TruthfulQA": EVAL_OUTPUTS_DIR / "TruthfulQA_Evaluation",
+    "Cond. Safety": EVAL_OUTPUTS_DIR / "Conditional_Safety_Evaluation",
+    "Length Ctrl": EVAL_OUTPUTS_DIR / "Length_Control_Evaluation",
+    "AQI": EVAL_OUTPUTS_DIR / "AQI_Evaluation",
 }
 
 # Metric keys for each evaluation

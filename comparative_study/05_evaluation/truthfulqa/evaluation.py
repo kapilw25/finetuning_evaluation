@@ -99,7 +99,7 @@ class TruthfulQAModelResult:
 # CONFIGURATION
 # =============================================================================
 
-EVAL_OUTPUT_DIR = project_root / "outputs" / "TruthfulQA_Evaluation"
+EVAL_OUTPUT_DIR = project_root / "outputs" / "evaluation" / "TruthfulQA_Evaluation"
 EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Instruction variants

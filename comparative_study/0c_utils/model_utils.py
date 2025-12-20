@@ -11,8 +11,7 @@ Functions:
 6. get_test_prompts() - Standard test prompts
 7. get_latest_checkpoint() - Find most recent checkpoint (SFT/DPO)
 8. is_training_complete() - Check if training finished (SFT/DPO)
-9. check_ray_tune_experiment() - Check Ray Tune experiment status (CITA)
-10. get_model_repo_name() - HuggingFace repo mapping
+9. get_model_repo_name() - HuggingFace repo mapping
 
 Usage:
     from model_utils import load_model_bf16, setup_lora, apply_torch_compile
@@ -419,7 +418,7 @@ def get_latest_checkpoint(output_dir: str) -> Optional[str]:
     Usage:
         from model_utils import get_latest_checkpoint
 
-        latest_ckpt = get_latest_checkpoint("outputs/SFT_Baseline")
+        latest_ckpt = get_latest_checkpoint("outputs/training/SFT_Baseline")
         if latest_ckpt:
             print(f"Found checkpoint: {latest_ckpt}")
     """
@@ -457,7 +456,7 @@ def is_training_complete(checkpoint_path: str, max_steps: int) -> bool:
     Usage:
         from model_utils import is_training_complete
 
-        if is_training_complete("outputs/SFT_Baseline/checkpoint-200", max_steps=200):
+        if is_training_complete("outputs/training/SFT_Baseline/checkpoint-200", max_steps=200):
             print("Training already completed!")
     """
     ckpt_path = Path(checkpoint_path)
@@ -470,72 +469,6 @@ def is_training_complete(checkpoint_path: str, max_steps: int) -> bool:
         return step_number >= max_steps
     except (ValueError, IndexError):
         return False
-
-
-def check_ray_tune_experiment(experiment_path: str, max_iterations: int) -> tuple:
-    """
-    Check if Ray Tune experiment exists and if it's complete
-
-    Args:
-        experiment_path: Path to Ray Tune experiment directory
-            (e.g., "./outputs/ray_results/cita_pbt_training")
-        max_iterations: Expected maximum iterations
-
-    Returns:
-        Tuple of (exists, is_complete, resume_mode)
-        - exists: True if experiment directory exists
-        - is_complete: True if training completed all iterations
-        - resume_mode: "AUTO" if should resume, False if should skip
-
-    Usage:
-        from model_utils import check_ray_tune_experiment
-
-        exists, complete, resume = check_ray_tune_experiment(
-            "./outputs/ray_results/cita_pbt_training",
-            max_iterations=20
-        )
-        if complete:
-            print("Training already complete, skipping...")
-        elif exists:
-            print(f"Resuming from checkpoint with resume={resume}")
-    """
-    exp_path = Path(experiment_path)
-
-    if not exp_path.exists():
-        return False, False, "AUTO"
-
-    # Check if experiment has completed trials
-    # Ray Tune stores trials in subdirectories
-    trial_dirs = [d for d in exp_path.iterdir() if d.is_dir()]
-
-    if not trial_dirs:
-        # Experiment directory exists but no trials - start fresh
-        return True, False, "AUTO"
-
-    # Check if any trial reached max_iterations
-    # Ray Tune stores progress in result.json files
-    for trial_dir in trial_dirs:
-        result_json = trial_dir / "result.json"
-        progress_csv = trial_dir / "progress.csv"
-
-        # Check progress.csv for iteration count
-        if progress_csv.exists():
-            try:
-                with open(progress_csv, 'r') as f:
-                    lines = f.readlines()
-                    if len(lines) > 1:  # Header + data
-                        # Last line has the latest iteration
-                        last_line = lines[-1]
-                        # Try to extract training_iteration (usually first column)
-                        iteration = int(last_line.split(',')[0])
-                        if iteration >= max_iterations:
-                            return True, True, False
-
-            except (ValueError, IndexError):
-                pass
-
-    # Experiment exists but not complete - resume
-    return True, False, "AUTO"
 
 
 # ===================================================================

@@ -52,7 +52,7 @@ def generate_isd_embedding_visualization(
         models = ['CITA_Instruct', 'DPO_Instruct']
 
     generated_files = []
-    isd_dir = outputs_dir / "ISD_Evaluation_Embedding"
+    isd_dir = outputs_dir / "evaluation" / "ISD_Evaluation_Embedding"
 
     if not isd_dir.exists():
         print(f"  [SKIP] ISD directory not found: {isd_dir}")
@@ -159,7 +159,7 @@ def generate_aqi_3d_visualization(
         models = ['CITA_Instruct', 'DPO_Instruct']
 
     generated_files = []
-    aqi_dir = outputs_dir / "AQI_Evaluation"
+    aqi_dir = outputs_dir / "evaluation" / "AQI_Evaluation"
 
     if not aqi_dir.exists():
         print(f"  [SKIP] AQI directory not found: {aqi_dir}")
@@ -263,7 +263,7 @@ def generate_instruction_fidelity_heatmap(
         instruction_types = ['neutral', 'conservative', 'liberal', 'regulatory', 'empathetic',
                             'safety_first', 'educational', 'concise', 'professional', 'creative']
 
-    isd_dir = outputs_dir / "ISD_Evaluation_Embedding"
+    isd_dir = outputs_dir / "evaluation" / "ISD_Evaluation_Embedding"
 
     if not isd_dir.exists():
         print(f"  [SKIP] ISD directory not found: {isd_dir}")
@@ -358,7 +358,7 @@ def generate_length_control_distribution(
     if models is None:
         models = ['CITA_Instruct', 'DPO_Instruct', 'SFT_Instruct']
 
-    lc_dir = outputs_dir / "Length_Control_Evaluation"
+    lc_dir = outputs_dir / "evaluation" / "Length_Control_Evaluation"
 
     if not lc_dir.exists():
         print(f"  [SKIP] Length Control directory not found: {lc_dir}")
@@ -475,7 +475,7 @@ def generate_isd_fidelity_radar(
         instruction_types = ['neutral', 'conservative', 'liberal', 'regulatory', 'empathetic',
                             'safety_first', 'educational', 'concise', 'professional', 'creative']
 
-    isd_dir = outputs_dir / "ISD_Evaluation_Embedding"
+    isd_dir = outputs_dir / "evaluation" / "ISD_Evaluation_Embedding"
 
     if not isd_dir.exists():
         print(f"  [SKIP] ISD directory not found: {isd_dir}")
@@ -581,7 +581,7 @@ def generate_truthfulqa_category_heatmap(
         models = ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct',
                   'CITA_NoInstruct', 'CITA_Instruct']
 
-    tqa_dir = outputs_dir / "TruthfulQA_Evaluation"
+    tqa_dir = outputs_dir / "evaluation" / "TruthfulQA_Evaluation"
 
     if not tqa_dir.exists():
         print(f"  [SKIP] TruthfulQA directory not found: {tqa_dir}")

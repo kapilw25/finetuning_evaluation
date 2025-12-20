@@ -6,8 +6,7 @@ Key Features:
 - ✅ use_alpaca_format=True: Uses Alpaca format for monitoring (not chat template)
 - ✅ Detects gibberish: Repetition, low diversity, patterns like "however###"
 - ✅ Detects unsafe behavior: Negative margin (model prefers rejected/unsafe responses)
-- ✅ GPU-EFFICIENT: Reports failure status to Ray Tune for global abort check
-- ✅ PBT rescue: Failed workers continue training (PBT rescues by copying from healthy workers)
+- ✅ Optuna integration: Reports metrics for pruning
 - ✅ Saves last good checkpoint: Tracks last_good_step
 """
 
@@ -24,12 +23,6 @@ except ImportError:
     OPTUNA_AVAILABLE = False
     optuna = None
 
-# Ray Tune integration (optional - only used when running under PBT)
-try:
-    from ray import tune
-    RAY_AVAILABLE = True
-except ImportError:
-    RAY_AVAILABLE = False
 
 
 class GibberishDetectionCallback(TrainerCallback):
@@ -222,31 +215,9 @@ class GibberishDetectionCallback(TrainerCallback):
                       f"stop_on_negative_margin={self.stop_on_negative_margin}, "
                       f"stop_on_high_kl={self.stop_on_high_kl}")
                 print(f"{'!'*80}\n")
-
-            # Report failure status to Ray Tune (for AllWorkersSafetyStopper)
-            if RAY_AVAILABLE:
-                try:
-                    tune.report(
-                        gibberish_detected=gibberish_detected,
-                        unsafe_behavior_detected=unsafe_behavior_detected,
-                        kl_drift_detected=kl_drift_detected
-                    )
-                except Exception:
-                    pass
         else:
             # Training is healthy, update last good step
             self.last_good_step = state.global_step
-
-            # Report healthy status to Ray Tune
-            if RAY_AVAILABLE:
-                try:
-                    tune.report(
-                        gibberish_detected=False,
-                        unsafe_behavior_detected=False,
-                        kl_drift_detected=False
-                    )
-                except Exception:
-                    pass
 
         # ===== OPTUNA PRUNING =====
         if self.trial is not None and hasattr(state, 'log_history') and len(state.log_history) > 0:
