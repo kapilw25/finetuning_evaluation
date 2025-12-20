@@ -4,24 +4,24 @@ Usage (6 commands = 3 modes × 2 instruction settings):
     ### 2c. GRPO (venv_GRPO - requires TRL 0.22.2)
     source venv_GRPO/bin/activate
 
-    # MICRO: 0.05 epochs (~20 min)
+    # MICRO: 0.05 epochs (~35 min)
     TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
     TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
 
-    # SANITY: 0.3 epochs (~2 hours)
+    # SANITY: 0.3 epochs (~4 hours)
     TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
     TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # FULL: 1.0 epoch (~8 hours) - use TMUX
+    # FULL: 1.0 epoch (~12 hours) - use TMUX
     TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
     TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   Projections (batch_size=12, grad_accum=2, effective_batch=24):
-  | Mode                | Steps | ETA       |
-  |---------------------|-------|-----------|
-  | Micro (0.05 epochs) | ~22   | ~20 min   |
-  | Sanity (0.3 epochs) | ~135  | ~2 hours  |
-  | Full (1.0 epoch)    | ~451  | ~8 hours  |
+  | Mode                | Steps | ETA        |
+  |---------------------|-------|------------|
+  | Micro (0.05 epochs) | ~22   | ~35 min    |
+  | Sanity (0.3 epochs) | ~135  | ~4 hours   |
+  | Full (1.0 epoch)    | ~451  | ~12 hours  |
 """
 
 import sys
@@ -659,7 +659,7 @@ Examples:
         type=str,
         choices=["micro", "sanity", "full"],
         default="full",
-        help="Training mode: 'micro' (0.05 epochs, ~20 min), 'sanity' (0.3 epochs, ~2 hours), or 'full' (1.0 epochs, ~8 hours)"
+        help="Training mode: 'micro' (0.05 epochs, ~35 min), 'sanity' (0.3 epochs, ~4 hours), or 'full' (1.0 epochs, ~12 hours)"
     )
 
     parser.add_argument(
@@ -715,13 +715,13 @@ Examples:
         print(f"✅ Custom configuration: {num_epochs} epochs")
     elif args.mode == "micro":
         num_epochs = 0.05
-        print(f"✅ Micro test mode: {num_epochs} epochs (~20 min)")
+        print(f"✅ Micro test mode: {num_epochs} epochs (~35 min)")
     elif args.mode == "sanity":
         num_epochs = 0.3
-        print(f"✅ Sanity check mode: {num_epochs} epochs (~2 hours)")
+        print(f"✅ Sanity check mode: {num_epochs} epochs (~4 hours)")
     else:
         num_epochs = 1.0
-        print(f"✅ Full training mode: {num_epochs} epochs (~8 hours)")
+        print(f"✅ Full training mode: {num_epochs} epochs (~12 hours)")
 
     # ===================================================================
     # Training Mode Selection
@@ -751,7 +751,7 @@ Examples:
         print(f"⚠️  Could not check HuggingFace: {type(e).__name__}")
 
     print(f"{'='*80}")
-    time_estimates = {"micro": "~20 min", "sanity": "~2 hours", "full": "~8 hours"}
+    time_estimates = {"micro": "~35 min", "sanity": "~4 hours", "full": "~12 hours"}
     print(f"Training will take approximately: {time_estimates.get(args.mode, 'varies')}")
     print(f"\nOptions:")
     if hf_model_exists:
