@@ -1,32 +1,19 @@
 """
-SFT Baseline Training Script (BF16 precision)
-Standard Supervised Fine-Tuning without PBT
+Usage (4 commands = 2 modes × 2 instruction settings):
 
-Configuration:
-- Model: Llama-3.1-8B (BF16 precision)
-- Method: Standard SFT (supervised learning on chosen responses only)
-- Loss: L_SFT only (no L_DPO or L_KL)
-- Dataset: PKU-SafeRLHF (10,813 samples, chosen responses only)
-- Training: Fixed hyperparameters (no PBT)
-- Precision: BF16 + Flash Attention 2
-- LoRA: r=16, alpha=16
-- Warmup: Uses warmup_ratio (epoch-agnostic, hyperparameters transfer across training lengths)
-- Expected time: ~43 minutes on A100-40GB (1.0 epoch)
-- Expected cost: ~$1.08 (43 min × $1.5/hr)
+    # SANITY: 0.3 epochs (~13 min) - validate checkpoints/HF push
+    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
+    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-Usage:
-    # SANITY: 0.3 epochs (steps auto-calculated, ~13 minutes, ~$0.32)
-    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity
+    # FULL: 1.0 epoch (~43 min) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
+    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full --use-instruction false
+    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
-    # FULL: 1.0 epoch (steps auto-calculated, ~43 minutes, ~$1.08)
-    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full
-
-Outputs:
-    - Model checkpoints: ./outputs/SFT_Baseline/checkpoint-*/
-    - LoRA adapters: ./outputs/SFT_Baseline/lora_model_SFT_Baseline/
-    - TensorBoard logs: ./tensorboard_logs/SFT_Baseline_<timestamp>/
-    - Training log: ./logs/SFT_Baseline_training_<timestamp>.log
-    - HuggingFace: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  Projections:
+  | Mode                | Steps | ETA      |
+  |---------------------|-------|----------|
+  | Sanity (0.3 epochs) | ~102  | ~13 min  |
+  | Full (1.0 epoch)    | ~338  | ~43 min  |
 """
 
 import sys

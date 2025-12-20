@@ -429,6 +429,8 @@ class TrainingSummaryCallback(TrainerCallback):
             self._print_dpo_summary(recent_logs, state)
         elif self.training_method == "cita":
             self._print_cita_summary(recent_logs, state)
+        elif self.training_method == "grpo":
+            self._print_grpo_summary(recent_logs, state)
         else:
             print(f"⚠️  Unknown training_method: {self.training_method}")
 
@@ -578,3 +580,180 @@ class TrainingSummaryCallback(TrainerCallback):
                 print(f"  eval_accuracy: {val_acc:.0f}%")
                 if val_acc < 70:
                     print(f"  🚨 CRITICAL: Validation accuracy < 70%!")
+
+    def _print_grpo_summary(self, recent_logs, state):
+        """Print GRPO-specific summary"""
+        # Extract GRPO metrics (TRL GRPOTrainer logs these)
+        losses = [log['loss'] for log in recent_logs if 'loss' in log]
+        rewards_mean = [log.get('reward', log.get('rewards/mean')) for log in recent_logs if 'reward' in log or 'rewards/mean' in log]
+        rewards_std = [log['rewards/std'] for log in recent_logs if 'rewards/std' in log]
+        kl_values = [log['kl'] for log in recent_logs if 'kl' in log]
+        completion_lengths = [log.get('completion_length', log.get('completion_length/mean')) for log in recent_logs if 'completion_length' in log or 'completion_length/mean' in log]
+
+        # Loss trajectory
+        if losses:
+            print(f"LOSS trajectory:")
+            print(f"  Current: {losses[-1]:.4f}")
+            print(f"  Average: {sum(losses)/len(losses):.4f}")
+            print(f"  Min: {min(losses):.4f} | Max: {max(losses):.4f}")
+
+            # Trend analysis
+            if len(losses) > 10:
+                first_half = sum(losses[:len(losses)//2]) / (len(losses)//2)
+                second_half = sum(losses[len(losses)//2:]) / (len(losses) - len(losses)//2)
+                trend = "↓ DECREASING" if second_half < first_half else "↑ INCREASING"
+                print(f"  Trend: {trend}")
+
+        # Reward trajectory (key metric for GRPO)
+        if rewards_mean:
+            avg_reward = sum(rewards_mean) / len(rewards_mean)
+            positive_count = sum(1 for r in rewards_mean if r > 0)
+
+            print(f"\nREWARD (from reward function):")
+            print(f"  Current: {rewards_mean[-1]:.4f}")
+            print(f"  Average: {avg_reward:.4f}")
+            print(f"  Min: {min(rewards_mean):.4f} | Max: {max(rewards_mean):.4f}")
+            print(f"  Positive samples: {positive_count}/{len(rewards_mean)} ({positive_count/len(rewards_mean)*100:.0f}%)")
+
+            if rewards_std:
+                print(f"  Std dev: {rewards_std[-1]:.4f}")
+
+            # Trend analysis
+            if len(rewards_mean) > 10:
+                first_half = sum(rewards_mean[:len(rewards_mean)//2]) / (len(rewards_mean)//2)
+                second_half = sum(rewards_mean[len(rewards_mean)//2:]) / (len(rewards_mean) - len(rewards_mean)//2)
+                if second_half > first_half:
+                    print(f"  Trend: ↑ IMPROVING (first half: {first_half:.4f}, second half: {second_half:.4f})")
+                else:
+                    print(f"  Trend: ↓ DECLINING (first half: {first_half:.4f}, second half: {second_half:.4f})")
+                    print(f"  ⚠️  WARNING: Reward declining - model may be learning wrong behavior!")
+
+        # KL divergence (drift from reference)
+        if kl_values:
+            avg_kl = sum(kl_values) / len(kl_values)
+            print(f"\nKL DIVERGENCE (drift from reference):")
+            print(f"  Current: {kl_values[-1]:.4f}")
+            print(f"  Average: {avg_kl:.4f}")
+            print(f"  Min: {min(kl_values):.4f} | Max: {max(kl_values):.4f}")
+
+            if avg_kl > 0.5:
+                print(f"  ⚠️  WARNING: KL > 0.5 = significant drift from reference model!")
+            elif avg_kl > 1.0:
+                print(f"  🚨 CRITICAL: KL > 1.0 = severe drift, risk of mode collapse!")
+
+        # Completion length (useful for detecting degenerate behavior)
+        if completion_lengths:
+            avg_len = sum(completion_lengths) / len(completion_lengths)
+            print(f"\nCOMPLETION LENGTH:")
+            print(f"  Current: {completion_lengths[-1]:.0f} tokens")
+            print(f"  Average: {avg_len:.0f} tokens")
+
+            if avg_len < 10:
+                print(f"  ⚠️  WARNING: Very short completions - possible reward hacking!")
+            elif avg_len > 500:
+                print(f"  ⚠️  WARNING: Very long completions - possible verbosity issue!")
+
+        # Summary status
+        if rewards_mean and kl_values:
+            print(f"\nSTATUS:")
+            if rewards_mean[-1] > 0 and kl_values[-1] < 0.5:
+                print(f"  ✅ HEALTHY: Positive reward with controlled KL")
+            elif rewards_mean[-1] <= 0:
+                print(f"  ⚠️  CONCERNING: Negative/zero reward")
+            elif kl_values[-1] >= 0.5:
+                print(f"  ⚠️  CONCERNING: High KL divergence")
+
+
+# ===================================================================
+# Standalone PPO Summary Function (PPOTrainer doesn't support callbacks)
+# ===================================================================
+
+def print_ppo_summary(
+    step: int,
+    reward_history: list,
+    kl_history: list,
+    policy_loss_history: list = None,
+    value_loss_history: list = None,
+    window_size: int = 50
+):
+    """
+    Print PPO training summary (standalone function for PPOTrainer compatibility)
+
+    PPOTrainer uses a custom training loop and doesn't support HuggingFace callbacks.
+    Call this function directly from the PPO training loop.
+
+    Args:
+        step: Current training step
+        reward_history: List of mean rewards
+        kl_history: List of KL divergence values
+        policy_loss_history: List of policy losses (optional)
+        value_loss_history: List of value losses (optional)
+        window_size: Number of recent batches to analyze
+    """
+    print(f"\n{'='*80}")
+    print(f"📊 PPO TRAINING SUMMARY - Step {step}")
+    print(f"{'='*80}")
+
+    # Recent window
+    window = min(window_size, len(reward_history))
+    recent_rewards = reward_history[-window:]
+    recent_kl = kl_history[-window:] if kl_history else []
+
+    # Reward trajectory
+    if recent_rewards:
+        print(f"\nREWARD trajectory (last {window} batches):")
+        print(f"  Current: {recent_rewards[-1]:.4f}")
+        print(f"  Average: {sum(recent_rewards)/len(recent_rewards):.4f}")
+        print(f"  Min: {min(recent_rewards):.4f}")
+        print(f"  Max: {max(recent_rewards):.4f}")
+
+        positive_count = sum(1 for r in recent_rewards if r > 0)
+        print(f"  Positive samples: {positive_count}/{len(recent_rewards)} ({positive_count/len(recent_rewards)*100:.0f}%)")
+
+        # Trend analysis
+        if len(recent_rewards) > 10:
+            first_half = sum(recent_rewards[:len(recent_rewards)//2]) / (len(recent_rewards)//2)
+            second_half = sum(recent_rewards[len(recent_rewards)//2:]) / (len(recent_rewards) - len(recent_rewards)//2)
+            if second_half > first_half:
+                print(f"  Trend: ↑ IMPROVING (first half: {first_half:.4f}, second half: {second_half:.4f})")
+            else:
+                print(f"  Trend: ↓ DECLINING (first half: {first_half:.4f}, second half: {second_half:.4f})")
+                print(f"  ⚠️  WARNING: Reward declining - model may be learning wrong behavior!")
+
+    # KL divergence
+    if recent_kl:
+        avg_kl = sum(recent_kl) / len(recent_kl)
+        print(f"\nKL DIVERGENCE (policy vs reference):")
+        print(f"  Current: {recent_kl[-1]:.4f}")
+        print(f"  Average: {avg_kl:.4f}")
+
+        if avg_kl > 0.5:
+            print(f"  ⚠️  WARNING: KL > 0.5 = significant drift from reference!")
+        elif avg_kl > 1.0:
+            print(f"  🚨 CRITICAL: KL > 1.0 = severe drift, risk of mode collapse!")
+
+    # Policy loss
+    if policy_loss_history:
+        recent_policy_loss = policy_loss_history[-window:]
+        print(f"\nPOLICY LOSS:")
+        print(f"  Current: {recent_policy_loss[-1]:.4f}")
+        print(f"  Average: {sum(recent_policy_loss)/len(recent_policy_loss):.4f}")
+
+    # Value loss
+    if value_loss_history:
+        recent_value_loss = value_loss_history[-window:]
+        print(f"\nVALUE LOSS:")
+        print(f"  Current: {recent_value_loss[-1]:.4f}")
+        print(f"  Average: {sum(recent_value_loss)/len(recent_value_loss):.4f}")
+
+    # Summary status
+    if recent_rewards and recent_kl:
+        print(f"\nSTATUS:")
+        if recent_rewards[-1] > 0 and recent_kl[-1] < 0.5:
+            print(f"  ✅ HEALTHY: Positive reward with controlled KL")
+        elif recent_rewards[-1] <= 0:
+            print(f"  ⚠️  CONCERNING: Negative/zero reward")
+        elif recent_kl[-1] >= 0.5:
+            print(f"  ⚠️  CONCERNING: High KL divergence")
+
+    print(f"{'='*80}\n")

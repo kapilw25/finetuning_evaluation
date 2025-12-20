@@ -559,6 +559,10 @@ MODEL_NAME_MAP = {
     "PPO_NoInstruct": "kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct",         # SFT_NoInstruct → PPO (NO instruction)
     "PPO_Instruct": "kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct",               # SFT_Instruct → PPO (WITH instruction)
 
+    # GRPO variants (stacked on SFT - alternative to DPO, uses reward functions)
+    "GRPO_NoInstruct": "kapilw25/llama3-8b-pku-GRPO-NoInstruct-SFT-NoInstruct",       # SFT_NoInstruct → GRPO (NO instruction)
+    "GRPO_Instruct": "kapilw25/llama3-8b-pku-GRPO-Instruct-SFT-Instruct",             # SFT_Instruct → GRPO (WITH instruction)
+
     # CITA variants (stacked on DPO)
     "CITA_NoInstruct": "kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct",       # DPO_NoInstruct → CITA (NO instruction)
     "CITA_Instruct": "kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct",             # DPO_Instruct → CITA (WITH instruction)
@@ -581,6 +585,10 @@ BASE_MODEL_MAP = {
     # PPO variants (stacked on SFT - alternative to DPO)
     "PPO_NoInstruct": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",    # SFT_NoInstruct → PPO
     "PPO_Instruct": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",        # SFT_Instruct → PPO
+
+    # GRPO variants (stacked on SFT - alternative to DPO, uses reward functions)
+    "GRPO_NoInstruct": "kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct",   # SFT_NoInstruct → GRPO
+    "GRPO_Instruct": "kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct",       # SFT_Instruct → GRPO
 
     # CITA variants (stacked on DPO)
     "CITA_NoInstruct": "kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct",        # DPO_NoInstruct → CITA

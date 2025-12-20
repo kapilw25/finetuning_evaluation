@@ -20,7 +20,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **PPO** (Proximal Polic
 - **Base Model**: [meta-llama/Llama-3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B)
 - **Fine-tuning Method**: PPO
 - **Dataset**: [PKU-SafeRLHF](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF) (10,813 samples)
-- **Training Date**: 2025-12-19
+- **Training Date**: 2025-12-20
 - **Precision**: BF16 (bfloat16)
 - **Adapter Type**: LoRA (r=16, alpha=16, ~168MB)
 
@@ -40,7 +40,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **PPO** (Proximal Polic
 
 ## Evaluation Results
 
-- **Final Objective Scores**: -3.7021
+- **Final Objective Scores**: -3.7812
 
 ## Usage
 

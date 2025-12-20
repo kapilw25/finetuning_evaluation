@@ -1,7 +1,4 @@
 """
-PPO is known to be unstable (NaN losses common), which is why DPO was invented.
-This baseline exists to show CITA beats traditional PPO.
-
 Usage (6 commands = 3 modes × 2 instruction settings):
 
     # MICRO: 0.05 epochs (~30 min) - quick pipeline validation
@@ -12,7 +9,7 @@ Usage (6 commands = 3 modes × 2 instruction settings):
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # FULL: 1.0 epoch (~34 hours) - production training
+    # FULL: 1.0 epoch (~34 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
     
@@ -77,9 +74,10 @@ from model_utils import (
     MODEL_NAME_MAP,
     BASE_MODEL_MAP
 )
-from data_prep.loader_pku import load_pku_combined_clear_contrast
+from data_prep.loader_pku import load_pku_combined_clear_contrast, get_safe_unsafe_responses, synthesize_system_instruction
 from push_automation import PushAutomation
 from logging_utils import setup_training_logger, restore_logging
+from monitoring_callback import print_ppo_summary
 
 # ===================================================================
 # PPO-Specific Model Loading
@@ -186,6 +184,9 @@ def prepare_ppo_dataset(tokenizer, use_instruction: bool = False, max_samples: i
     PPO only needs queries (prompts), not preference pairs.
     The reward model scores the generated responses.
 
+    FAIR COMPARISON: Uses same synthesize_system_instruction() as DPO
+    to get CUSTOMIZED instructions per example based on harm categories.
+
     TRL 0.11.4 requires dataset to have 'input_ids' column with tokenized sequences.
     See: https://huggingface.co/docs/trl/v0.11.4/en/ppo_trainer
 
@@ -207,17 +208,23 @@ def prepare_ppo_dataset(tokenizer, use_instruction: bool = False, max_samples: i
     def extract_and_tokenize_prompt(example):
         prompt = example.get('prompt', '')
 
-        # Add instruction prefix if enabled
         if use_instruction:
-            instruction = (
-                "You are a helpful, harmless, and honest AI assistant. "
-                "If a request is harmful or unethical, politely refuse and explain why. "
-                "Always prioritize safety while being as helpful as possible.\n\n"
-            )
-            prompt = instruction + prompt
+            # FAIR: Use SAME customized instruction as DPO!
+            # Extract harm categories from example (same as DPO)
+            _, _, harmful_categories = get_safe_unsafe_responses(example)
 
-        # Format as chat message
-        messages = [{"role": "user", "content": prompt}]
+            # Synthesize instruction based on harm type (same as DPO)
+            instruction = synthesize_system_instruction(harmful_categories)
+
+            # Format as chat message with system role (customized per example)
+            messages = [
+                {"role": "system", "content": instruction},  # ← CUSTOMIZED per example!
+                {"role": "user", "content": prompt}
+            ]
+        else:
+            # NoInstruct variant: no system message (same as DPO_NoInstruct)
+            messages = [{"role": "user", "content": prompt}]
+
         formatted = tokenizer.apply_chat_template(
             messages,
             add_generation_prompt=True,
@@ -234,10 +241,12 @@ def prepare_ppo_dataset(tokenizer, use_instruction: bool = False, max_samples: i
     formatted_data = train_data.map(
         extract_and_tokenize_prompt,
         remove_columns=train_data.column_names,
-        desc=f"Tokenizing PKU for PPO ({'WITH' if use_instruction else 'NO'} instruction)"
+        desc=f"Tokenizing PKU for PPO ({'WITH CUSTOMIZED' if use_instruction else 'NO'} instruction)"
     )
 
     print(f"✅ Prepared {len(formatted_data):,} samples for PPO training")
+    if use_instruction:
+        print(f"   Using CUSTOMIZED instructions per example (fair comparison with DPO)")
 
     return formatted_data
 
@@ -669,54 +678,16 @@ def train_ppo_baseline(
                 })
 
             # ===== TRAINING SUMMARY (every 50 steps) =====
-            # Inline equivalent of TrainingSummaryCallback for PPO
+            # Uses unified print_ppo_summary from monitoring_callback.py
             if step > 0 and step % 50 == 0:
-                print(f"\n{'='*80}")
-                print(f"📊 PPO TRAINING SUMMARY - Step {step}")
-                print(f"{'='*80}")
-
-                # Recent window (last 50 batches)
-                window = min(50, len(reward_history))
-                recent_rewards = reward_history[-window:]
-                recent_kl = kl_history[-window:]
-                recent_policy_loss = policy_loss_history[-window:]
-                recent_value_loss = value_loss_history[-window:]
-
-                # Reward trajectory
-                print(f"\nREWARD trajectory (last {window} batches):")
-                print(f"  Current: {recent_rewards[-1]:.4f}")
-                print(f"  Average: {sum(recent_rewards)/len(recent_rewards):.4f}")
-                print(f"  Min: {min(recent_rewards):.4f}")
-                print(f"  Max: {max(recent_rewards):.4f}")
-
-                # Trend analysis
-                if len(recent_rewards) > 10:
-                    first_half = sum(recent_rewards[:len(recent_rewards)//2]) / (len(recent_rewards)//2)
-                    second_half = sum(recent_rewards[len(recent_rewards)//2:]) / (len(recent_rewards) - len(recent_rewards)//2)
-                    trend = "↑ INCREASING" if second_half > first_half else "↓ DECREASING"
-                    print(f"  Trend: {trend} (first half: {first_half:.4f}, second half: {second_half:.4f})")
-
-                # KL divergence
-                avg_kl = sum(recent_kl) / len(recent_kl)
-                print(f"\nKL DIVERGENCE (policy vs reference):")
-                print(f"  Current: {recent_kl[-1]:.4f}")
-                print(f"  Average: {avg_kl:.4f}")
-                if avg_kl > 0.3:
-                    print(f"  ⚠️  WARNING: High KL = policy drifting from reference!")
-
-                # Policy loss
-                if recent_policy_loss:
-                    print(f"\nPOLICY LOSS:")
-                    print(f"  Current: {recent_policy_loss[-1]:.4f}")
-                    print(f"  Average: {sum(recent_policy_loss)/len(recent_policy_loss):.4f}")
-
-                # Value loss
-                if recent_value_loss:
-                    print(f"\nVALUE LOSS:")
-                    print(f"  Current: {recent_value_loss[-1]:.4f}")
-                    print(f"  Average: {sum(recent_value_loss)/len(recent_value_loss):.4f}")
-
-                print(f"{'='*80}\n")
+                print_ppo_summary(
+                    step=step,
+                    reward_history=reward_history,
+                    kl_history=kl_history,
+                    policy_loss_history=policy_loss_history,
+                    value_loss_history=value_loss_history,
+                    window_size=50
+                )
 
             # Save checkpoint periodically (every 20% of training)
             if (step + 1) % checkpoint_interval == 0 or (step + 1) == total_steps:

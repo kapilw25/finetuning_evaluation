@@ -1,50 +1,25 @@
 """
-CITA Baseline Training Script (BF16 precision)
-Calibrated Instruction Tuning with Alignment - Fixed Hyperparameters
-
 Hyperparameters:
 - CITA_NoInstruct: Trial 5 HPs (eval_loss=0.279, margin=6.95)
 - CITA_Instruct: Trial 7 HPs (eval_loss=0.326, margin=7.52)
 
-Usage:
-    # CITA_NoInstruct - SANITY (0.3 epochs, ~36 minutes)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
-        --mode sanity \
-        --use-instruction false \
-        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+Usage (4 commands = 2 modes × 2 instruction settings):
 
-    # CITA_NoInstruct - FULL (1.0 epoch, ~120 minutes)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
-        --mode full \
-        --use-instruction false \
-        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+    # SANITY: 0.3 epochs (~36 min) - validate checkpoints/HF push
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # CITA_Instruct - SANITY (0.3 epochs, ~36 minutes)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
-        --mode sanity \
-        --use-instruction true \
-        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+    # FULL: 1.0 epoch (~120 min) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full --use-instruction false
+    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
-    # CITA_Instruct - FULL (1.0 epoch, ~120 minutes)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py \
-        --mode full \
-        --use-instruction true \
-        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+  Note: --base_model auto-derived from BASE_MODEL_MAP based on --use-instruction
 
-Outputs:
-    NoInstruct:
-    - HuggingFace: kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct
-    - Checkpoints: ./outputs/CITA_NoInstruct/checkpoint-*/
-    - LoRA: ./outputs/CITA_NoInstruct/lora_model_CITA_NoInstruct/
-    - TensorBoard: ./tensorboard_logs/CITA_NoInstruct_<timestamp>/
-    - Log: ./logs/CITA_NoInstruct_training_<timestamp>.log
-
-    Instruct:
-    - HuggingFace: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
-    - Checkpoints: ./outputs/CITA_Instruct/checkpoint-*/
-    - LoRA: ./outputs/CITA_Instruct/lora_model_CITA_Instruct/
-    - TensorBoard: ./tensorboard_logs/CITA_Instruct_<timestamp>/
-    - Log: ./logs/CITA_Instruct_training_<timestamp>.log
+  Projections:
+  | Mode                | Steps | ETA       |
+  |---------------------|-------|-----------|
+  | Sanity (0.3 epochs) | ~405  | ~36 min   |
+  | Full (1.0 epoch)    | ~1353 | ~120 min  |
 """
 
 import sys
