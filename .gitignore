@@ -294,3 +294,11 @@ outputs/PPO_NoInstruct/lora_model_PPO_NoInstruct/adapter_model.safetensors
 # Large files (>100MB) - auto-added by push_automation.py
 outputs/PPO_NoInstruct/checkpoint-270/adapter_model.safetensors
 outputs/PPO_NoInstruct/checkpoint-540/adapter_model.safetensors
+
+# Large files (>100MB) - auto-added by push_automation.py
+outputs/training/GRPO_NoInstruct/checkpoint-8/optimizer.pt
+outputs/training/GRPO_NoInstruct/checkpoint-12/optimizer.pt
+outputs/training/GRPO_NoInstruct/checkpoint-16/optimizer.pt
+outputs/training/GRPO_NoInstruct/checkpoint-20/optimizer.pt
+outputs/training/GRPO_NoInstruct/checkpoint-22/optimizer.pt
+outputs/training/GRPO_NoInstruct/lora_model_GRPO_NoInstruct/adapter_model.safetensors

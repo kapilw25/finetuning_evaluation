@@ -10,8 +10,8 @@ Usage (6 commands = 3 modes × 2 instruction settings):
     python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
     # FULL: 1.0 epoch (~17 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
-    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
-    python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
+    TMUX >> python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
+    TMUX >> python comparative_study/02b_PPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
     
   Projections (batch_size=16 on A100-80GB):
   | Mode                | Steps | ETA        |
@@ -385,6 +385,9 @@ def train_ppo_baseline(
         )
 
         # ===== LOAD BASE MODEL LORA (IF STACKING) =====
+        # Initialize ref_model to None (required if base_model is None)
+        ref_model_for_ppo = None
+
         if base_model:
             print(f"\n🔗 Loading SFT LoRA from HuggingFace: {base_model}")
             # MERGE APPROACH with EXPLICIT REFERENCE MODEL (Option A)

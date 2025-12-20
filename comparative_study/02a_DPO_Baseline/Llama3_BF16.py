@@ -231,11 +231,14 @@ def train_dpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_s
         print(f"   Total steps: {total_steps:,} ({num_epochs} epochs)")
         print(f"   Checkpoint interval: {checkpoint_interval} steps (20% of training)")
 
-        # ===== SCALE VALIDATION SET FOR SANITY MODE =====
-        if num_epochs < 1.0:
-            val_size_scaled = int(len(val_dataset) * num_epochs)
+        # ===== SCALE VALIDATION SET BY MODE =====
+        # Apply mode fraction: 0.3 for sanity, 1.0 for full (no reduction for full)
+        val_fraction = num_epochs
+        original_val_size = len(val_dataset)
+        if val_fraction < 1.0:  # Only scale for non-full modes
+            val_size_scaled = max(1, int(original_val_size * val_fraction))
             val_dataset = val_dataset.select(range(val_size_scaled))
-            print(f"\n⚡ SANITY mode: Scaled validation set to {num_epochs:.1f}x ({len(val_dataset):,} samples)")
+            print(f"📊 Validation: {val_size_scaled} samples ({val_fraction:.0%} of {original_val_size})")
 
         # ===== CHECK TRAINING COMPLETION (now that we have total_steps) =====
         if latest_checkpoint and is_training_complete(latest_checkpoint, total_steps):

@@ -1,17 +1,20 @@
 """
 Usage (6 commands = 3 modes × 2 instruction settings):
+    
+    ### 2c. GRPO (venv_GRPO - requires TRL 0.22.2)
+    source venv_GRPO/bin/activate
 
-    # MICRO: 0.05 epochs (~30 min) - quick pipeline validation
-    python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
-    python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
+    # MICRO: 0.05 epochs (~30 min)
+    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
+    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
 
-    # SANITY: 0.3 epochs (~3 hours) - validate checkpoints/HF push
-    python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
-    python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
+    # SANITY: 0.3 epochs (~3 hours)
+    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
+    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
 
-    # FULL: 1.0 epoch (~11 hours) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
-    python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
-    python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
+    # FULL: 1.0 epoch (~11 hours) - use TMUX
+    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
+    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
 
   Projections (batch_size=4, grad_accum=4, effective_batch=16):
   | Mode                | Steps | ETA       |
@@ -263,11 +266,13 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
     if output_dir is None:
         output_dir = f"./outputs/training/{RUN_NAME}"
 
-    # ===== GRPO HYPERPARAMETERS (A100-80GB optimized) =====
+    # ===== GRPO HYPERPARAMETERS (A100-80GB MAXED) =====
     # Define at start to use in prints and avoid NameError in training_config
-    num_generations = 4
-    per_device_batch_size = 4
-    gradient_accum_steps = 4
+    # CONSTRAINT: (batch * grad_accum) must be divisible by num_generations
+    # Solution: 12 * 2 = 24, 24 % 6 = 0 ✓
+    num_generations = 6
+    per_device_batch_size = 12  # 12 prompts × 6 gen = 72 responses/step
+    gradient_accum_steps = 2
 
     print("\n" + "="*80)
     print(f"🚀 Starting {RUN_NAME} Training")
@@ -368,6 +373,15 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
         print("\nLoading PKU-SafeRLHF dataset (prompts only for GRPO)...")
         train_dataset, val_dataset = prepare_grpo_dataset(use_instruction=USE_INSTRUCTION)
 
+        # ===== LIMIT VAL DATASET (cap for reasonable eval time) =====
+        # Full mode: 200 samples max. Micro/sanity: proportionally smaller.
+        MAX_VAL_SAMPLES = 200  # Base cap for full mode
+        val_fraction = num_epochs  # 0.05 for micro, 0.3 for sanity, 1.0 for full
+        val_samples = max(1, int(MAX_VAL_SAMPLES * val_fraction))
+        val_dataset = val_dataset.select(range(val_samples))
+        est_eval_min = (val_samples * 13 * 5) // 60  # 5 evals during training
+        print(f"📊 Validation: {val_samples} samples ({val_fraction:.0%} of {MAX_VAL_SAMPLES} cap, ~{est_eval_min} min total eval)")
+
         # ===== CALCULATE TRAINING STEPS =====
         # GRPO: effective batch = batch_size * gradient_accum (hyperparameters defined above)
         effective_batch_size = per_device_batch_size * gradient_accum_steps  # 16 prompts per step
@@ -447,7 +461,8 @@ def train_grpo_baseline(num_epochs=1.0, output_dir=None, base_model=None, force_
             # Evaluation (detect overfitting during training)
             eval_strategy="steps",
             eval_steps=checkpoint_interval,  # Aligned with checkpoints (20% intervals)
-            per_device_eval_batch_size=per_device_batch_size,
+            # FIX: eval_batch_size must be divisible by num_generations (GRPOConfig constraint)
+            per_device_eval_batch_size=num_generations,  # 6 (divisible by 6)
 
             # Dataloader optimization
             dataloader_num_workers=2,  # Parallel data loading
