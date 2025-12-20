@@ -29,7 +29,7 @@ Fine-tuned [Llama-3.1-8B](meta-llama/Llama-3.1-8B) using **GRPO** (GRPO) on the 
 
 ## Evaluation Results
 
-- **Final Reward**: 1.4875
+- **Final Reward**: 1.5917
 
 ## Usage
 

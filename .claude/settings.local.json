@@ -55,7 +55,8 @@
       "Bash(/workspace/finetuning_evaluation/comparative_study/02b_PPO_Baseline/Llama3_BF16.py )",
       "Bash(/workspace/finetuning_evaluation/comparative_study/02c_GRPO_Baseline/Llama3_BF16.py )",
       "Bash(/workspace/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16.py )",
-      "Bash(/workspace/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py)"
+      "Bash(/workspace/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py)",
+      "Bash(tail:*)"
     ],
     "deny": [],
     "ask": []
