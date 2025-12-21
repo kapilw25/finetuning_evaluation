@@ -17,18 +17,21 @@ Dataset: TruthfulQA validation (817 questions, 38 categories)
 Usage:
     # Sanity check (50 questions)
     python comparative_study/05_evaluation/truthfulqa/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct \
-    --mode sanity \
-    --use_llm
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode sanity --use_llm
 
     # Full evaluation (817 questions)
     python comparative_study/05_evaluation/truthfulqa/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct \
-    --mode full \
-    --use_llm
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode full --use_llm
 
-    # Specific models
-    python comparative_study/05_evaluation/truthfulqa/evaluation.py --models CITA_Instruct DPO_Instruct
+Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
+                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
+                  CITA_NoInstruct, CITA_Instruct
 """
 
 import sys

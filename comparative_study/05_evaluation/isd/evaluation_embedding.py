@@ -18,15 +18,23 @@ Dataset: https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset
                          Safety, Educational, Concise, Professional, Creative
 
 Usage:
-    # Run specific models with embedding-based fidelity
+    # Sanity check
     python comparative_study/05_evaluation/isd/evaluation_embedding.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode sanity
 
-    # Run all models with custom prompt count
-    python comparative_study/05_evaluation/isd/evaluation_embedding.py --num_prompts 50
+    # Full evaluation
+    python comparative_study/05_evaluation/isd/evaluation_embedding.py \
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode full
 
-Available models: Baseline, SFT_NoInstruct, SFT_Instruct,
-                  DPO_NoInstruct, DPO_Instruct, CITA_NoInstruct, CITA_Instruct
+Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
+                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
+                  CITA_NoInstruct, CITA_Instruct
 
 Output:
     - outputs/ISD_Evaluation_Embedding/{model}/ - responses CSV, metrics JSON

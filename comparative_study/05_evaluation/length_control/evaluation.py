@@ -17,12 +17,21 @@ Dataset: AlpacaEval (500 questions)
 Usage:
     # Sanity check (100 prompts)
     python comparative_study/05_evaluation/length_control/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode sanity
 
     # Full evaluation (500 prompts)
     python comparative_study/05_evaluation/length_control/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct \
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
     --mode full
+
+Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
+                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
+                  CITA_NoInstruct, CITA_Instruct
 """
 
 import sys

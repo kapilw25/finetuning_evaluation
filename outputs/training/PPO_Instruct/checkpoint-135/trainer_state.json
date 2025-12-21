@@ -1,0 +1,96 @@
+{
+  "best_metric": -2.56201171875,
+  "global_step": 135,
+  "log_history": [
+    {
+      "step": 0,
+      "objective/scores": -3.6015625,
+      "objective/kl": 0.0,
+      "ppo/mean_scores": -3.6015625
+    },
+    {
+      "step": 10,
+      "objective/scores": -3.38525390625,
+      "objective/kl": 2.541762351989746,
+      "ppo/mean_scores": -3.38525390625
+    },
+    {
+      "step": 20,
+      "objective/scores": -3.13427734375,
+      "objective/kl": 11.430248260498047,
+      "ppo/mean_scores": -3.13427734375
+    },
+    {
+      "step": 30,
+      "objective/scores": -2.9921875,
+      "objective/kl": 6.658088684082031,
+      "ppo/mean_scores": -2.9921875
+    },
+    {
+      "step": 40,
+      "objective/scores": -3.015625,
+      "objective/kl": 6.9814453125,
+      "ppo/mean_scores": -3.015625
+    },
+    {
+      "step": 50,
+      "objective/scores": -2.8955078125,
+      "objective/kl": 7.945443153381348,
+      "ppo/mean_scores": -2.8955078125
+    },
+    {
+      "step": 60,
+      "objective/scores": -2.81396484375,
+      "objective/kl": 7.460871696472168,
+      "ppo/mean_scores": -2.81396484375
+    },
+    {
+      "step": 70,
+      "objective/scores": -2.8876953125,
+      "objective/kl": 7.758956432342529,
+      "ppo/mean_scores": -2.8876953125
+    },
+    {
+      "step": 80,
+      "objective/scores": -2.56201171875,
+      "objective/kl": 7.370077133178711,
+      "ppo/mean_scores": -2.56201171875
+    },
+    {
+      "step": 90,
+      "objective/scores": -2.80859375,
+      "objective/kl": 7.114659786224365,
+      "ppo/mean_scores": -2.80859375
+    },
+    {
+      "step": 100,
+      "objective/scores": -2.7314453125,
+      "objective/kl": 7.759917259216309,
+      "ppo/mean_scores": -2.7314453125
+    },
+    {
+      "step": 110,
+      "objective/scores": -2.9375,
+      "objective/kl": 6.82326602935791,
+      "ppo/mean_scores": -2.9375
+    },
+    {
+      "step": 120,
+      "objective/scores": -2.87890625,
+      "objective/kl": 8.336679458618164,
+      "ppo/mean_scores": -2.87890625
+    },
+    {
+      "step": 130,
+      "objective/scores": -2.9873046875,
+      "objective/kl": 7.594054698944092,
+      "ppo/mean_scores": -2.9873046875
+    },
+    {
+      "step": 134,
+      "objective/scores": -2.873046875,
+      "objective/kl": 6.494663238525391,
+      "ppo/mean_scores": -2.873046875
+    }
+  ]
+}

@@ -1,0 +1,444 @@
+{
+  "best_metric": -2.56201171875,
+  "global_step": 675,
+  "log_history": [
+    {
+      "step": 0,
+      "objective/scores": -3.6015625,
+      "objective/kl": 0.0,
+      "ppo/mean_scores": -3.6015625
+    },
+    {
+      "step": 10,
+      "objective/scores": -3.38525390625,
+      "objective/kl": 2.541762351989746,
+      "ppo/mean_scores": -3.38525390625
+    },
+    {
+      "step": 20,
+      "objective/scores": -3.13427734375,
+      "objective/kl": 11.430248260498047,
+      "ppo/mean_scores": -3.13427734375
+    },
+    {
+      "step": 30,
+      "objective/scores": -2.9921875,
+      "objective/kl": 6.658088684082031,
+      "ppo/mean_scores": -2.9921875
+    },
+    {
+      "step": 40,
+      "objective/scores": -3.015625,
+      "objective/kl": 6.9814453125,
+      "ppo/mean_scores": -3.015625
+    },
+    {
+      "step": 50,
+      "objective/scores": -2.8955078125,
+      "objective/kl": 7.945443153381348,
+      "ppo/mean_scores": -2.8955078125
+    },
+    {
+      "step": 60,
+      "objective/scores": -2.81396484375,
+      "objective/kl": 7.460871696472168,
+      "ppo/mean_scores": -2.81396484375
+    },
+    {
+      "step": 70,
+      "objective/scores": -2.8876953125,
+      "objective/kl": 7.758956432342529,
+      "ppo/mean_scores": -2.8876953125
+    },
+    {
+      "step": 80,
+      "objective/scores": -2.56201171875,
+      "objective/kl": 7.370077133178711,
+      "ppo/mean_scores": -2.56201171875
+    },
+    {
+      "step": 90,
+      "objective/scores": -2.80859375,
+      "objective/kl": 7.114659786224365,
+      "ppo/mean_scores": -2.80859375
+    },
+    {
+      "step": 100,
+      "objective/scores": -2.7314453125,
+      "objective/kl": 7.759917259216309,
+      "ppo/mean_scores": -2.7314453125
+    },
+    {
+      "step": 110,
+      "objective/scores": -2.9375,
+      "objective/kl": 6.82326602935791,
+      "ppo/mean_scores": -2.9375
+    },
+    {
+      "step": 120,
+      "objective/scores": -2.87890625,
+      "objective/kl": 8.336679458618164,
+      "ppo/mean_scores": -2.87890625
+    },
+    {
+      "step": 130,
+      "objective/scores": -2.9873046875,
+      "objective/kl": 7.594054698944092,
+      "ppo/mean_scores": -2.9873046875
+    },
+    {
+      "step": 134,
+      "objective/scores": -2.873046875,
+      "objective/kl": 6.494663238525391,
+      "ppo/mean_scores": -2.873046875
+    },
+    {
+      "step": 140,
+      "objective/scores": -2.8955078125,
+      "objective/kl": 7.129961013793945,
+      "ppo/mean_scores": -2.8955078125
+    },
+    {
+      "step": 150,
+      "objective/scores": -2.8291015625,
+      "objective/kl": 7.965298652648926,
+      "ppo/mean_scores": -2.8291015625
+    },
+    {
+      "step": 160,
+      "objective/scores": -2.8193359375,
+      "objective/kl": 6.51693058013916,
+      "ppo/mean_scores": -2.8193359375
+    },
+    {
+      "step": 170,
+      "objective/scores": -2.7802734375,
+      "objective/kl": 7.175285339355469,
+      "ppo/mean_scores": -2.7802734375
+    },
+    {
+      "step": 180,
+      "objective/scores": -2.7705078125,
+      "objective/kl": 6.534722328186035,
+      "ppo/mean_scores": -2.7705078125
+    },
+    {
+      "step": 190,
+      "objective/scores": -2.8642578125,
+      "objective/kl": 6.925444602966309,
+      "ppo/mean_scores": -2.8642578125
+    },
+    {
+      "step": 200,
+      "objective/scores": -2.892578125,
+      "objective/kl": 6.6139349937438965,
+      "ppo/mean_scores": -2.892578125
+    },
+    {
+      "step": 210,
+      "objective/scores": -2.8759765625,
+      "objective/kl": 7.837310791015625,
+      "ppo/mean_scores": -2.8759765625
+    },
+    {
+      "step": 220,
+      "objective/scores": -2.8857421875,
+      "objective/kl": 6.877010345458984,
+      "ppo/mean_scores": -2.8857421875
+    },
+    {
+      "step": 230,
+      "objective/scores": -2.79296875,
+      "objective/kl": 6.242428779602051,
+      "ppo/mean_scores": -2.79296875
+    },
+    {
+      "step": 240,
+      "objective/scores": -2.84765625,
+      "objective/kl": 6.846436023712158,
+      "ppo/mean_scores": -2.84765625
+    },
+    {
+      "step": 250,
+      "objective/scores": -2.8486328125,
+      "objective/kl": 8.319820404052734,
+      "ppo/mean_scores": -2.8486328125
+    },
+    {
+      "step": 260,
+      "objective/scores": -2.7724609375,
+      "objective/kl": 8.214179039001465,
+      "ppo/mean_scores": -2.7724609375
+    },
+    {
+      "step": 269,
+      "objective/scores": -2.7734375,
+      "objective/kl": 6.549623489379883,
+      "ppo/mean_scores": -2.7734375
+    },
+    {
+      "step": 270,
+      "objective/scores": -2.87109375,
+      "objective/kl": 7.624337196350098,
+      "ppo/mean_scores": -2.87109375
+    },
+    {
+      "step": 280,
+      "objective/scores": -2.8525390625,
+      "objective/kl": 7.538208484649658,
+      "ppo/mean_scores": -2.8525390625
+    },
+    {
+      "step": 290,
+      "objective/scores": -2.87109375,
+      "objective/kl": 7.628217697143555,
+      "ppo/mean_scores": -2.87109375
+    },
+    {
+      "step": 300,
+      "objective/scores": -2.775390625,
+      "objective/kl": 7.468597888946533,
+      "ppo/mean_scores": -2.775390625
+    },
+    {
+      "step": 310,
+      "objective/scores": -2.8046875,
+      "objective/kl": 7.330456733703613,
+      "ppo/mean_scores": -2.8046875
+    },
+    {
+      "step": 320,
+      "objective/scores": -2.7890625,
+      "objective/kl": 7.964038848876953,
+      "ppo/mean_scores": -2.7890625
+    },
+    {
+      "step": 330,
+      "objective/scores": -2.9169921875,
+      "objective/kl": 6.819189071655273,
+      "ppo/mean_scores": -2.9169921875
+    },
+    {
+      "step": 340,
+      "objective/scores": -2.8515625,
+      "objective/kl": 7.123378276824951,
+      "ppo/mean_scores": -2.8515625
+    },
+    {
+      "step": 350,
+      "objective/scores": -2.8505859375,
+      "objective/kl": 6.283297061920166,
+      "ppo/mean_scores": -2.8505859375
+    },
+    {
+      "step": 360,
+      "objective/scores": -2.9248046875,
+      "objective/kl": 7.215632915496826,
+      "ppo/mean_scores": -2.9248046875
+    },
+    {
+      "step": 370,
+      "objective/scores": -2.9482421875,
+      "objective/kl": 7.6076273918151855,
+      "ppo/mean_scores": -2.9482421875
+    },
+    {
+      "step": 380,
+      "objective/scores": -2.853515625,
+      "objective/kl": 6.994089126586914,
+      "ppo/mean_scores": -2.853515625
+    },
+    {
+      "step": 390,
+      "objective/scores": -2.8154296875,
+      "objective/kl": 6.812146186828613,
+      "ppo/mean_scores": -2.8154296875
+    },
+    {
+      "step": 400,
+      "objective/scores": -2.7900390625,
+      "objective/kl": 7.192235946655273,
+      "ppo/mean_scores": -2.7900390625
+    },
+    {
+      "step": 404,
+      "objective/scores": -2.79296875,
+      "objective/kl": 6.58964729309082,
+      "ppo/mean_scores": -2.79296875
+    },
+    {
+      "step": 410,
+      "objective/scores": -2.7626953125,
+      "objective/kl": 6.672328948974609,
+      "ppo/mean_scores": -2.7626953125
+    },
+    {
+      "step": 420,
+      "objective/scores": -2.9189453125,
+      "objective/kl": 7.114321231842041,
+      "ppo/mean_scores": -2.9189453125
+    },
+    {
+      "step": 430,
+      "objective/scores": -2.951171875,
+      "objective/kl": 6.906807899475098,
+      "ppo/mean_scores": -2.951171875
+    },
+    {
+      "step": 440,
+      "objective/scores": -2.7705078125,
+      "objective/kl": 6.260653972625732,
+      "ppo/mean_scores": -2.7705078125
+    },
+    {
+      "step": 450,
+      "objective/scores": -2.8046875,
+      "objective/kl": 6.923092842102051,
+      "ppo/mean_scores": -2.8046875
+    },
+    {
+      "step": 460,
+      "objective/scores": -2.9189453125,
+      "objective/kl": 7.588303565979004,
+      "ppo/mean_scores": -2.9189453125
+    },
+    {
+      "step": 470,
+      "objective/scores": -2.86328125,
+      "objective/kl": 8.346519470214844,
+      "ppo/mean_scores": -2.86328125
+    },
+    {
+      "step": 480,
+      "objective/scores": -2.9990234375,
+      "objective/kl": 7.321066856384277,
+      "ppo/mean_scores": -2.9990234375
+    },
+    {
+      "step": 490,
+      "objective/scores": -2.9873046875,
+      "objective/kl": 7.245245933532715,
+      "ppo/mean_scores": -2.9873046875
+    },
+    {
+      "step": 500,
+      "objective/scores": -2.8017578125,
+      "objective/kl": 7.269963264465332,
+      "ppo/mean_scores": -2.8017578125
+    },
+    {
+      "step": 510,
+      "objective/scores": -2.7900390625,
+      "objective/kl": 7.051273345947266,
+      "ppo/mean_scores": -2.7900390625
+    },
+    {
+      "step": 520,
+      "objective/scores": -2.9677734375,
+      "objective/kl": 7.691238880157471,
+      "ppo/mean_scores": -2.9677734375
+    },
+    {
+      "step": 530,
+      "objective/scores": -2.8974609375,
+      "objective/kl": 6.369621753692627,
+      "ppo/mean_scores": -2.8974609375
+    },
+    {
+      "step": 539,
+      "objective/scores": -2.662109375,
+      "objective/kl": 7.563320159912109,
+      "ppo/mean_scores": -2.662109375
+    },
+    {
+      "step": 540,
+      "objective/scores": -2.84521484375,
+      "objective/kl": 7.127837657928467,
+      "ppo/mean_scores": -2.84521484375
+    },
+    {
+      "step": 550,
+      "objective/scores": -2.8779296875,
+      "objective/kl": 6.547422885894775,
+      "ppo/mean_scores": -2.8779296875
+    },
+    {
+      "step": 560,
+      "objective/scores": -2.884765625,
+      "objective/kl": 7.333488941192627,
+      "ppo/mean_scores": -2.884765625
+    },
+    {
+      "step": 570,
+      "objective/scores": -2.865234375,
+      "objective/kl": 6.5845947265625,
+      "ppo/mean_scores": -2.865234375
+    },
+    {
+      "step": 580,
+      "objective/scores": -2.966796875,
+      "objective/kl": 7.2247138023376465,
+      "ppo/mean_scores": -2.966796875
+    },
+    {
+      "step": 590,
+      "objective/scores": -3.0205078125,
+      "objective/kl": 7.076053619384766,
+      "ppo/mean_scores": -3.0205078125
+    },
+    {
+      "step": 600,
+      "objective/scores": -2.94140625,
+      "objective/kl": 7.712041854858398,
+      "ppo/mean_scores": -2.94140625
+    },
+    {
+      "step": 610,
+      "objective/scores": -2.8994140625,
+      "objective/kl": 7.405665874481201,
+      "ppo/mean_scores": -2.8994140625
+    },
+    {
+      "step": 620,
+      "objective/scores": -2.8740234375,
+      "objective/kl": 6.663660526275635,
+      "ppo/mean_scores": -2.8740234375
+    },
+    {
+      "step": 630,
+      "objective/scores": -2.814453125,
+      "objective/kl": 6.755087375640869,
+      "ppo/mean_scores": -2.814453125
+    },
+    {
+      "step": 640,
+      "objective/scores": -2.7294921875,
+      "objective/kl": 6.710808277130127,
+      "ppo/mean_scores": -2.7294921875
+    },
+    {
+      "step": 650,
+      "objective/scores": -2.9482421875,
+      "objective/kl": 6.5189208984375,
+      "ppo/mean_scores": -2.9482421875
+    },
+    {
+      "step": 660,
+      "objective/scores": -3.0205078125,
+      "objective/kl": 8.212288856506348,
+      "ppo/mean_scores": -3.0205078125
+    },
+    {
+      "step": 670,
+      "objective/scores": -2.9228515625,
+      "objective/kl": 6.521610736846924,
+      "ppo/mean_scores": -2.9228515625
+    },
+    {
+      "step": 674,
+      "objective/scores": -2.84765625,
+      "objective/kl": 7.108094215393066,
+      "ppo/mean_scores": -2.84765625
+    }
+  ]
+}

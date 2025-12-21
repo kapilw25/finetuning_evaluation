@@ -71,6 +71,26 @@ MODELS = {
         "display_name": "CITA Instruct",
         "use_instruction": True,
     },
+    "PPO_NoInstruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct",
+        "display_name": "PPO NoInstruct",
+        "use_instruction": False,
+    },
+    "PPO_Instruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct",
+        "display_name": "PPO Instruct",
+        "use_instruction": True,
+    },
+    "GRPO_NoInstruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-GRPO-NoInstruct-SFT-NoInstruct",
+        "display_name": "GRPO NoInstruct",
+        "use_instruction": False,
+    },
+    "GRPO_Instruct": {
+        "hf_repo": "kapilw25/llama3-8b-pku-GRPO-Instruct-SFT-Instruct",
+        "display_name": "GRPO Instruct",
+        "use_instruction": True,
+    },
 }
 
 
