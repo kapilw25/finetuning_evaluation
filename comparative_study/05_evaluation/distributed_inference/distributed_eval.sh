@@ -32,7 +32,6 @@ NODE_ID=""
 MODE="sanity"
 MODELS=""
 MERGE_ONLY=false
-USE_LLM=false
 
 print_usage() {
     cat << EOF
@@ -48,7 +47,6 @@ Required:
 Options:
   --mode <mode>       sanity | full (default: sanity)
   --models <list>     Comma-separated models (default: all)
-  --use-llm           Enable LLM judge
   --merge             Merge shards after all nodes complete
 
 Examples:
@@ -70,7 +68,6 @@ while [[ $# -gt 0 ]]; do
         --node-id)   NODE_ID="$2"; shift 2 ;;
         --mode)      MODE="$2"; shift 2 ;;
         --models)    MODELS="$2"; shift 2 ;;
-        --use-llm)   USE_LLM=true; shift ;;
         --merge)     MERGE_ONLY=true; shift ;;
         -h|--help)   print_usage; exit 0 ;;
         *)           echo "Unknown: $1"; print_usage; exit 1 ;;
@@ -90,7 +87,7 @@ case $EVAL_TYPE in
     conditional_safety) EVAL_SCRIPT="$EVAL_DIR/conditional_safety/evaluation.py" ;;
     length_control)     EVAL_SCRIPT="$EVAL_DIR/length_control/evaluation.py" ;;
     aqi)                EVAL_SCRIPT="$EVAL_DIR/AQI/evaluation.py" ;;
-    isd)                EVAL_SCRIPT="$EVAL_DIR/isd/evaluation_embedding.py" ;;
+    isd)                EVAL_SCRIPT="$EVAL_DIR/isd/evaluation.py" ;;
     *)                  echo "Error: Unknown eval: $EVAL_TYPE"; exit 1 ;;
 esac
 
@@ -186,7 +183,6 @@ source "$VENV_PATH/bin/activate" 2>/dev/null || true
 # Build command
 CMD="python $EVAL_SCRIPT --mode $MODE --shard $NODE_ID --total-shards $TOTAL_NODES"
 [[ -n "$MODELS" ]] && CMD="$CMD --models $MODELS"
-[[ "$USE_LLM" == true ]] && CMD="$CMD --use_llm"
 
 echo "Running: $CMD"
 echo "=========================================="

@@ -81,41 +81,19 @@ def count_uncertainty_markers(text: str) -> Dict:
 
 def calculate_metrics(
     honest_responses: List,
-    confident_responses: List,
-    use_llm: bool = False,
-    judge = None
+    confident_responses: List
 ) -> Dict:
     """
-    Calculate uncertainty adaptation metrics
+    Calculate uncertainty adaptation metrics using heuristic detection
 
     Args:
         honest_responses: List of response objects with HONEST variant
         confident_responses: List of response objects with CONFIDENT variant
-        use_llm: Whether to use LLM-as-judge for evaluation
-        judge: FireworksJudge instance if using LLM
 
     Returns:
         Dict with all metrics
     """
     from dataclasses import asdict
-
-    # If using LLM-as-judge, evaluate responses
-    if use_llm and judge:
-        from ..evaluation import evaluate_uncertainty_llm
-        print("\nUsing LLM-as-judge for uncertainty evaluation...")
-        honest_llm_results = evaluate_uncertainty_llm(judge, honest_responses)
-        confident_llm_results = evaluate_uncertainty_llm(judge, confident_responses)
-
-        # Update responses with LLM scores
-        for r, llm in zip(honest_responses, honest_llm_results):
-            if "uncertainty_score" in llm:
-                r.uncertainty_total = llm.get("uncertainty_score", r.uncertainty_total)
-                r.has_uncertainty = llm.get("has_uncertainty", r.has_uncertainty)
-
-        for r, llm in zip(confident_responses, confident_llm_results):
-            if "uncertainty_score" in llm:
-                r.uncertainty_total = llm.get("uncertainty_score", r.uncertainty_total)
-                r.has_uncertainty = llm.get("has_uncertainty", r.has_uncertainty)
 
     honest_df = pd.DataFrame([asdict(r) for r in honest_responses])
     confident_df = pd.DataFrame([asdict(r) for r in confident_responses])

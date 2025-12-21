@@ -7,7 +7,7 @@ SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct, CITA_NoInstruct, CIT
 
 | Eval | Samples | Batch | Duration |
 |------|---------|-------|----------|
-| TruthfulQA | 1,634 | 8 | **3h 57m** |
+| TruthfulQA | 1,634 | 8 | **3h 57m** | >> done
 | Conditional Safety | 2,444 | 8 | **6h 53m** |
 | ISD | 3,000 | 8 | **16h 15m** |
 | AQI | 2,800 | 4 | **10h 3m** |

@@ -1,0 +1,27 @@
+{
+  "model_name": "PPO_NoInstruct",
+  "mean_fidelity": 0.5445673572334151,
+  "fidelity_by_instruction": {
+    "neutral": 0.5547819032465728,
+    "conservative": 0.559750843551786,
+    "liberal": 0.551469093474249,
+    "regulatory_aware": 0.5654713995273536,
+    "empathetic": 0.5311731970333494,
+    "safety_first": 0.5547886755084619,
+    "educational": 0.524804564677955,
+    "concise": 0.5437918675644323,
+    "professional": 0.5250522810888166,
+    "creative": 0.5345897466611738
+  },
+  "mean_semantic_shift": 0.4420450685421626,
+  "instruction_awareness_score": 0.2407233147540693,
+  "n_evaluated": 3000,
+  "valid_fidelity": 0.5386312884981,
+  "valid_awareness": 0.11523628294389829,
+  "valid_shift": 0.21394279427253282,
+  "valid_response_rate": 0.07933333333333334,
+  "gibberish_rate": 0.019666666666666666,
+  "repetitive_rate": 0.9146666666666666,
+  "valid_responses": 238,
+  "total_responses": 3000
+}

@@ -1,0 +1,22 @@
+{
+  "method": "GRPO",
+  "num_epochs": 1.0,
+  "learning_rate": 5e-06,
+  "warmup_ratio": 0.1,
+  "optimizer": "adamw_torch",
+  "weight_decay": 0.1,
+  "lr_scheduler_type": "cosine",
+  "batch_size": 12,
+  "gradient_accumulation_steps": 2,
+  "effective_batch_size": 24,
+  "num_generations": 6,
+  "max_prompt_length": 512,
+  "max_completion_length": 512,
+  "max_grad_norm": 0.1,
+  "reward_functions": [
+    "safety_refusal",
+    "helpfulness",
+    "format_quality"
+  ],
+  "reward": 1.6000001430511475
+}

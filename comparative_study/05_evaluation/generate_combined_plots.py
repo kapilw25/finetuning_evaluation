@@ -89,7 +89,7 @@ METRIC_KEYS = {
     "AQI": "aqi_score",
 }
 
-METHODS = ['SFT', 'DPO', 'CITA']
+METHODS = ['SFT', 'DPO', 'PPO', 'GRPO', 'CITA']
 
 
 def load_eval_metrics(eval_name: str, eval_dir: Path, metric_key: str) -> dict:

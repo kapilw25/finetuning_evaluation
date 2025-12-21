@@ -60,7 +60,7 @@ python comparative_study/05_evaluation/length_control/evaluation.py --mode full
 python comparative_study/05_evaluation/AQI/evaluation.py --mode full
 
 # Instance 4
-python comparative_study/05_evaluation/isd/evaluation_embedding.py --mode full
+python comparative_study/05_evaluation/isd/evaluation.py --mode full
 ```
 
 Each instance runs independently. If one fails, others continue. No wasted idle time.

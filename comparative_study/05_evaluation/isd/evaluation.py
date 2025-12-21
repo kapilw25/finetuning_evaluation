@@ -1,11 +1,13 @@
 """
 ISD (Instruction Switch Dataset) Evaluation
 
+Uses sentence transformer embeddings for fidelity scoring.
+
 Complete evaluation pipeline: Inference → Metrics → Comparison Plots
 Tests the core claim: "Instruction-Aware: DPO=No, CITA=Yes"
 
 Metrics:
-    1. Fidelity Score: Does response match expected characteristics for each instruction?
+    1. Fidelity Score: Embedding similarity between response and instruction prototype
     2. Semantic Shift: How much does response change across different instructions?
     3. Instruction Awareness Score: Fidelity × Semantic Shift (combined metric)
 
@@ -15,27 +17,27 @@ Dataset: https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset
                          Safety, Educational, Concise, Professional, Creative
 
 Usage:
-    # Run all 7 models (default)
-    python comparative_study/05_evaluation/isd/evaluation.py
-
-    # Run specific models (heuristic fidelity - fast)
+    # Sanity check
     python comparative_study/05_evaluation/isd/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode sanity
 
-    # Run with LLM-as-judge for fidelity (slower, more accurate)
+    # Full evaluation
     python comparative_study/05_evaluation/isd/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct \
-    --use_llm
+    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
+             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
+             CITA_Instruct CITA_NoInstruct \
+    --mode full
 
-    # Run all models with custom prompt count
-    python comparative_study/05_evaluation/isd/evaluation.py --num_prompts 50
-
-Available models: Baseline, SFT_NoInstruct, SFT_Instruct,
-                  DPO_NoInstruct, DPO_Instruct, CITA_NoInstruct, CITA_Instruct
+Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
+                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
+                  CITA_NoInstruct, CITA_Instruct
 
 Output:
-    - outputs/ISD_Evaluation/{model}/ - responses CSV, metrics JSON
-    - outputs/ISD_Evaluation/isd_comparison.png - comparison plots
+    - outputs/evaluation/ISD/{model}/ - responses CSV, metrics JSON
+    - outputs/evaluation/ISD/isd_comparison.png - comparison plots
     - logs/ISD_evaluation_*.log - full execution log
 """
 
@@ -68,8 +70,10 @@ from eval_utils import (
     batch_generate, cleanup_gpu, format_chat_messages, verify_hf_repos,
     add_validation_columns, get_validation_summary,
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
-    get_model_color, get_model_colors, get_legend_elements, add_figure_legend,
-    filter_model_keys
+    filter_model_keys,
+    get_isd_max_samples,
+    generate_comparison_plots,
+    generate_lollipop_chart
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 
@@ -110,7 +114,7 @@ class ISDModelResult:
 # CONFIGURATION
 # =============================================================================
 
-EVAL_OUTPUT_DIR = project_root / "outputs" / "evaluation" / "ISD_Evaluation"
+EVAL_OUTPUT_DIR = project_root / "outputs" / "evaluation" / "ISD_Evaluation_Embedding"
 EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL_KEYS = list(MODELS.keys())
@@ -187,6 +191,30 @@ def generate_responses(
     # Format all messages at once
     prompts = format_chat_messages(tokenizer, messages_list)
 
+    # Create checkpoint callback for intermediate saves
+    def checkpoint_cb(batch_responses_so_far):
+        # Convert to ISDResponse objects for checkpoint
+        temp_responses = responses.copy()
+        for i, response_text in enumerate(batch_responses_so_far):
+            tc = remaining_cases[i]
+            temp_responses.append(ISDResponse(
+                prompt_id=tc.prompt_id,
+                instruction_type=tc.instruction_type,
+                instruction=tc.instruction,
+                prompt=tc.prompt,
+                response=response_text,
+                response_length=len(response_text),
+                generation_time=0.0,
+                expected_characteristics=tc.expected_characteristics
+            ))
+        save_checkpoint(
+            model_key,
+            [asdict(r) for r in temp_responses],
+            len(test_cases),
+            eval_type="isd",
+            completed=False
+        )
+
     # Batch generate
     batch_responses = batch_generate(
         model=model,
@@ -199,6 +227,7 @@ def generate_responses(
         do_sample=True,
         show_progress=True,
         desc=f"Evaluating {MODELS[model_key]['display_name']}",
+        checkpoint_callback=checkpoint_cb,
         checkpoint_interval=checkpoint_interval
     )
 
@@ -369,101 +398,57 @@ def run_isd_evaluation(
 # PLOTTING FUNCTIONS
 # =============================================================================
 
-def generate_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate comparison plot with Overall vs Valid-only bars"""
-    import matplotlib.pyplot as plt
-    import numpy as np
-
+def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
+    """Generate ISD comparison plot using shared plotting function"""
     if len(all_metrics) < 2:
         print("Need at least 2 models for comparison plots")
         return
 
     models = list(all_metrics.keys())
-    awareness_scores = [all_metrics[m].instruction_awareness_score for m in models]
+    overall_scores = [all_metrics[m].instruction_awareness_score for m in models]
 
     # Get valid-only scores from stratified metrics
-    valid_awareness = []
+    valid_scores = []
     valid_rates = []
     for m in models:
         if stratified_metrics and m in stratified_metrics:
             va = stratified_metrics[m].get('valid_awareness')
             vr = stratified_metrics[m].get('valid_rate', 1.0)
-            valid_awareness.append(va if va is not None else awareness_scores[models.index(m)])
+            valid_scores.append(va if va is not None else all_metrics[m].instruction_awareness_score)
             valid_rates.append(vr)
         else:
-            valid_awareness.append(awareness_scores[models.index(m)])
+            valid_scores.append(all_metrics[m].instruction_awareness_score)
             valid_rates.append(1.0)
 
-    # Sort by overall awareness (ascending = best on right)
-    sorted_indices = np.argsort(awareness_scores)
-    models_sorted = [models[i] for i in sorted_indices]
-    awareness_sorted = [awareness_scores[i] for i in sorted_indices]
-    valid_awareness_sorted = [valid_awareness[i] for i in sorted_indices]
-    valid_rates_sorted = [valid_rates[i] for i in sorted_indices]
+    # Use shared plotting function - Bar chart
+    generate_comparison_plots(
+        models=models,
+        overall_scores=overall_scores,
+        valid_scores=valid_scores,
+        valid_rates=valid_rates,
+        output_dir=output_dir,
+        plot_filename="isd_comparison",
+        ylabel="Instruction Awareness Score",
+        title="ISD: Instruction Awareness (Higher = Better)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        score_format=".3f",
+        higher_is_better=True
+    )
 
-    # Get colors using shared utility
-    colors_sorted = get_model_colors(models_sorted)
-
-    # Single plot with Overall and Valid-only bars
-    fig, ax = plt.subplots(figsize=(14, 7))
-
-    x = np.arange(len(models_sorted))
-    bar_width = 0.35
-
-    # Get std for error bars (use fidelity std as proxy if available)
-    std_sorted = []
-    for m in models_sorted:
-        if stratified_metrics and m in stratified_metrics:
-            # Use difference between overall and valid as error estimate
-            overall = all_metrics[m].instruction_awareness_score
-            valid = stratified_metrics[m].get('valid_awareness', overall)
-            std_sorted.append(abs(overall - valid) if valid else 0)
-        else:
-            std_sorted.append(0)
-
-    # Overall bars (solid) with error bars
-    bars_overall = ax.bar(x - bar_width/2, awareness_sorted, bar_width,
-                          color=colors_sorted, edgecolor='black', linewidth=1.5, label='Overall',
-                          yerr=std_sorted, capsize=3, error_kw={'linewidth': 1.5})
-
-    # Valid-only bars (hatched)
-    bars_valid = ax.bar(x + bar_width/2, valid_awareness_sorted, bar_width,
-                        color=colors_sorted, edgecolor='black', linewidth=1.5,
-                        hatch='///', alpha=0.7, label='Valid-only')
-
-    ax.set_ylabel('Instruction Awareness Score', fontsize=14, fontweight='bold')
-    ax.set_title('ISD: Instruction Awareness - Overall vs Valid-Only (Higher = Better)', fontsize=16, fontweight='bold', pad=15)
-    max_aware = max(max(awareness_sorted), max(valid_awareness_sorted)) if awareness_sorted else 0.5
-    ax.set_ylim(0, max_aware * 1.4)
-
-    # Add Perfect score annotation (text instead of line for better scaling)
-    ax.text(0.98, 0.98, 'Perfect = 1.0', transform=ax.transAxes,
-            fontsize=10, fontweight='bold', ha='right', va='top',
-            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
-    ax.set_xticks(x)
-    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=12)
-    ax.grid(axis='y', alpha=0.3, linestyle='--')
-    ax.legend(loc='upper left', fontsize=10)
-
-    # Add value labels
-    for i, (bar_o, bar_v, score_o, score_v, vr) in enumerate(zip(bars_overall, bars_valid,
-                                                                   awareness_sorted, valid_awareness_sorted, valid_rates_sorted)):
-        # Overall label
-        ax.text(bar_o.get_x() + bar_o.get_width()/2., bar_o.get_height() + 0.005,
-                f'{score_o:.3f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
-        # Valid-only label with valid rate
-        ax.text(bar_v.get_x() + bar_v.get_width()/2., bar_v.get_height() + 0.005,
-                f'{score_v:.3f}\n({vr:.0%})', ha='center', va='bottom', fontsize=9, fontweight='bold')
-
-    plt.tight_layout()
-    plot_path = output_dir / "isd_comparison.png"
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"Saved plot: {plot_path}")
-
-    # Print ranking
-    print(f"\nInstruction Awareness Ranking (Best to Worst):")
-    for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(awareness_sorted)), 1):
-        print(f"   {rank}. {model}: {score:.3f}")
+    # Also generate lollipop chart as alternative
+    generate_lollipop_chart(
+        models=models,
+        overall_scores=overall_scores,
+        output_dir=output_dir,
+        plot_filename="isd_comparison",
+        xlabel="Instruction Awareness Score",
+        title="ISD: Instruction Awareness (Higher = Better)",
+        perfect_score=1.0,
+        perfect_label="Perfect = 1.0",
+        score_format=".3f",
+        higher_is_better=True
+    )
 
 
 # =============================================================================
@@ -480,7 +465,6 @@ def main():
     parser.add_argument("--models", nargs="+", default=None, help="Specific models to evaluate (e.g., CITA_Instruct DPO_Instruct)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--batch_size", type=int, default=8, help="Batch size for inference")
-    parser.add_argument("--use_llm", action="store_true", help="Use LLM-as-judge for fidelity (slower, more accurate)")
     args = parser.parse_args()
 
     # Setup logging
@@ -512,13 +496,21 @@ def main():
                 plot_filename="isd_comparison.png"
             )
 
-        # Interactive mode selection
+        # Interactive mode selection (max_desc shown without HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
             eval_name="ISD",
             sanity_desc="50 prompts x 10 instructions = 500 test cases (~15 min)",
-            full_desc="300 prompts x 10 instructions = 3,000 test cases (~60 min)"
+            full_desc="300 prompts x 10 instructions = 3,000 test cases (~60 min)",
+            max_desc="100% of dataset (fetches from HF)"
         )
-        args.num_prompts = 50 if mode == "sanity" else 300
+        if mode == "sanity":
+            args.num_prompts = 50
+        elif mode == "full":
+            args.num_prompts = 300
+        else:  # max - fetch dynamically
+            max_prompts, max_cases, source = get_isd_max_samples()
+            print(f"   Max Available: {max_prompts} prompts x 10 = {max_cases:,} [{source}]")
+            args.num_prompts = max_prompts
 
         # Filter models if specified
         model_keys = filter_model_keys(args.models, MODELS, MODEL_KEYS)
@@ -543,7 +535,7 @@ def main():
         print("Calculating ISD Metrics")
         print("=" * 80)
 
-        calculator = ISDMetricsCalculator(use_llm_judge=args.use_llm)
+        calculator = ISDMetricsCalculator(use_llm_judge=False)
         all_metrics = {}
         all_stratified = {}  # Collect stratified metrics for plotting
 
@@ -573,7 +565,7 @@ def main():
                     'valid_awareness': cached.get('valid_awareness'),
                     'valid_shift': cached.get('valid_shift')
                 }
-                print(f"  Loaded from cache (skipped LLM-as-judge)")
+                print(f"  Loaded from cache")
             else:
                 print(f"\nCalculating metrics for {model_key}...")
 
@@ -586,11 +578,11 @@ def main():
                 # Get validation summary
                 validation = get_validation_summary(responses_df)
 
-                # Calculate OVERALL metrics (all responses)
+                # Calculate OVERALL metrics (all responses) using embedding
                 metrics = calculator.calculate_metrics(
                     responses_df=responses_df,
                     model_name=model_key,
-                    use_llm_for_fidelity=args.use_llm
+                    use_embedding_for_fidelity=True
                 )
                 all_metrics[model_key] = metrics
 
@@ -600,7 +592,7 @@ def main():
                     valid_metrics = calculator.calculate_metrics(
                         responses_df=valid_df,
                         model_name=f"{model_key}_valid",
-                        use_llm_for_fidelity=args.use_llm
+                        use_embedding_for_fidelity=True
                     )
                     valid_fidelity = valid_metrics.mean_fidelity
                     valid_awareness = valid_metrics.instruction_awareness_score
@@ -663,7 +655,7 @@ def main():
             print("\n" + "=" * 80)
             print("Generating Comparison Plots")
             print("=" * 80)
-            generate_comparison_plots(all_metrics, output_dir, all_stratified)
+            generate_isd_comparison_plots(all_metrics, output_dir, all_stratified)
 
         print("\n" + "=" * 80)
         print("ISD Evaluation Complete")

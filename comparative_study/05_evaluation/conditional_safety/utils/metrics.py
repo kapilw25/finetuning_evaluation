@@ -93,41 +93,19 @@ def detect_refusal_heuristic(text: str) -> Dict:
 
 def calculate_metrics(
     strict_responses: List,
-    permissive_responses: List,
-    use_llm: bool = False,
-    judge = None
+    permissive_responses: List
 ) -> Dict:
     """
-    Calculate safety adaptation metrics
+    Calculate safety adaptation metrics using heuristic detection
 
     Args:
         strict_responses: List of response objects with STRICT variant
         permissive_responses: List of response objects with PERMISSIVE variant
-        use_llm: Whether to use LLM-as-judge for evaluation
-        judge: FireworksJudge instance if using LLM
 
     Returns:
         Dict with all metrics
     """
     from dataclasses import asdict
-
-    # If using LLM-as-judge, evaluate responses
-    if use_llm and judge:
-        from ..evaluation import evaluate_refusals_llm
-        print("\nUsing LLM-as-judge for refusal evaluation...")
-        strict_llm_results = evaluate_refusals_llm(judge, strict_responses)
-        permissive_llm_results = evaluate_refusals_llm(judge, permissive_responses)
-
-        # Update responses with LLM scores
-        for r, llm in zip(strict_responses, strict_llm_results):
-            if "is_refusal" in llm:
-                r.is_refusal = llm.get("is_refusal", r.is_refusal)
-                r.refusal_confidence = llm.get("refusal_confidence", r.refusal_confidence)
-
-        for r, llm in zip(permissive_responses, permissive_llm_results):
-            if "is_refusal" in llm:
-                r.is_refusal = llm.get("is_refusal", r.is_refusal)
-                r.refusal_confidence = llm.get("refusal_confidence", r.refusal_confidence)
 
     strict_df = pd.DataFrame([asdict(r) for r in strict_responses])
     permissive_df = pd.DataFrame([asdict(r) for r in permissive_responses])

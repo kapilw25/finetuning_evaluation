@@ -510,12 +510,16 @@ def generate_isd_fidelity_radar(
     model_colors = {
         'SFT_NoInstruct': '#FF6B6B', 'SFT_Instruct': '#8B0000',
         'DPO_NoInstruct': '#90EE90', 'DPO_Instruct': '#006400',
+        'PPO_NoInstruct': '#DDA0DD', 'PPO_Instruct': '#4B0082',
+        'GRPO_NoInstruct': '#FFDAB9', 'GRPO_Instruct': '#FF8C00',
         'CITA_NoInstruct': '#87CEEB', 'CITA_Instruct': '#00008B'
     }
 
     model_linestyles = {
         'SFT_NoInstruct': '--', 'SFT_Instruct': '-',
         'DPO_NoInstruct': '--', 'DPO_Instruct': '-',
+        'PPO_NoInstruct': '--', 'PPO_Instruct': '-',
+        'GRPO_NoInstruct': '--', 'GRPO_Instruct': '-',
         'CITA_NoInstruct': '--', 'CITA_Instruct': '-'
     }
 

@@ -45,6 +45,8 @@ def get_model_color(model_name: str) -> str:
     Color scheme:
     - SFT: Red tones (dark for Instruct, light for NoInstruct)
     - DPO: Green tones
+    - PPO: Purple tones
+    - GRPO: Orange tones
     - CITA: Blue tones
     - Baseline: Gray
 
@@ -58,6 +60,10 @@ def get_model_color(model_name: str) -> str:
         return '#8B0000' if 'Instruct' in model_name else '#FF6B6B'
     elif 'DPO' in model_name:
         return '#006400' if 'Instruct' in model_name else '#90EE90'
+    elif 'PPO' in model_name:
+        return '#4B0082' if 'Instruct' in model_name else '#DDA0DD'  # Indigo / Plum
+    elif 'GRPO' in model_name:
+        return '#FF8C00' if 'Instruct' in model_name else '#FFDAB9'  # DarkOrange / PeachPuff
     elif 'CITA' in model_name:
         return '#00008B' if 'Instruct' in model_name else '#87CEEB'
     elif 'Baseline' in model_name:
@@ -94,6 +100,10 @@ def get_legend_elements(include_baseline: bool = False) -> List[Patch]:
         Patch(facecolor='#FF6B6B', edgecolor='black', label='SFT_NoInstruct'),
         Patch(facecolor='#006400', edgecolor='black', label='DPO_Instruct'),
         Patch(facecolor='#90EE90', edgecolor='black', label='DPO_NoInstruct'),
+        Patch(facecolor='#4B0082', edgecolor='black', label='PPO_Instruct'),
+        Patch(facecolor='#DDA0DD', edgecolor='black', label='PPO_NoInstruct'),
+        Patch(facecolor='#FF8C00', edgecolor='black', label='GRPO_Instruct'),
+        Patch(facecolor='#FFDAB9', edgecolor='black', label='GRPO_NoInstruct'),
         Patch(facecolor='#00008B', edgecolor='black', label='CITA_Instruct'),
         Patch(facecolor='#87CEEB', edgecolor='black', label='CITA_NoInstruct'),
     ]

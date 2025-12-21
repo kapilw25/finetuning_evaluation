@@ -218,7 +218,7 @@ python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py \
 source venv_CITA/bin/activate
 
 # 1. ISD (select option 3 for Max)
-python comparative_study/05_evaluation/isd/evaluation_embedding.py \
+python comparative_study/05_evaluation/isd/evaluation.py \
   --models SFT_NoInstruct SFT_Instruct DPO_NoInstruct DPO_Instruct CITA_NoInstruct CITA_Instruct
 
 # 2. TruthfulQA (select option 3 for Max)
@@ -241,7 +241,7 @@ python comparative_study/05_evaluation/AQI/evaluation.py \
 
 ### With specific models:
 ```bash
-python comparative_study/05_evaluation/isd/evaluation_embedding.py \
+python comparative_study/05_evaluation/isd/evaluation.py \
     --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
 ```
 

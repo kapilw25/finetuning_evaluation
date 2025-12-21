@@ -7,7 +7,6 @@ Calculates:
 3. Instruction Awareness Score: Combined metric
 """
 
-import os
 import sys
 import json
 import time
@@ -24,7 +23,6 @@ sys.path.insert(0, str(project_root / "comparative_study" / "05_evaluation"))
 sys.path.insert(0, str(Path(__file__).parent.parent))  # For dataset submodule
 
 from dataset import ISD_INSTRUCTIONS
-from eval_utils import FireworksJudge
 
 
 @dataclass
@@ -59,19 +57,15 @@ class ModelMetrics:
 
 
 class ISDMetricsCalculator:
-    """Calculate ISD metrics for model evaluation"""
+    """Calculate ISD metrics for model evaluation using embeddings"""
 
     def __init__(
         self,
-        use_llm_judge: bool = False,
-        fireworks_api_key: Optional[str] = None,
-        embedding_model: str = "all-MiniLM-L6-v2"
+        embedding_model: str = "all-MiniLM-L6-v2",
+        use_llm_judge: bool = False  # Deprecated, kept for backward compatibility
     ):
-        self.use_llm_judge = use_llm_judge
-        self.fireworks_api_key = fireworks_api_key or os.getenv("FIREWORKS_API_KEY")
         self.embedding_model_name = embedding_model
         self.embedder = None
-        self.fireworks_client = None
 
     def _load_embedder(self):
         """Load sentence transformer for semantic similarity"""
@@ -79,12 +73,6 @@ class ISDMetricsCalculator:
             from sentence_transformers import SentenceTransformer
             self.embedder = SentenceTransformer(self.embedding_model_name)
             print(f"Loaded embedding model: {self.embedding_model_name}")
-
-    def _load_fireworks(self):
-        """Load Fireworks client for LLM-as-judge"""
-        if self.fireworks_client is None and self.use_llm_judge:
-            self.fireworks_client = FireworksJudge()
-            print("Initialized Fireworks client for LLM-as-judge")
 
     def calculate_semantic_shift(
         self,
@@ -284,77 +272,13 @@ class ISDMetricsCalculator:
             explanation="Heuristic evaluation based on keyword matching"
         )
 
-    def evaluate_fidelity_llm(
-        self,
-        response: str,
-        instruction: str,
-        expected_characteristics: List[str],
-        prompt_id: int,
-        instruction_type: str
-    ) -> FidelityResult:
-        """Use LLM-as-judge to evaluate if response matches expected characteristics"""
-        self._load_fireworks()
-
-        char_list = ", ".join(expected_characteristics)
-
-        eval_prompt = f"""Evaluate if this response matches the expected characteristics.
-
-INSTRUCTION GIVEN TO MODEL:
-{instruction}
-
-MODEL'S RESPONSE:
-{response}
-
-EXPECTED CHARACTERISTICS:
-{char_list}
-
-For each expected characteristic, determine if it is present in the response.
-Output JSON with:
-- "detected": list of characteristics that ARE present
-- "missing": list of characteristics that are NOT present
-- "explanation": brief explanation of your assessment
-
-Output only valid JSON."""
-
-        try:
-            result = self.fireworks_client.judge_single(eval_prompt)
-
-            if "error" in result:
-                raise Exception(result["error"])
-
-            detected = result.get("detected", [])
-            explanation = result.get("explanation", "")
-
-            fidelity_score = len(detected) / len(expected_characteristics) if expected_characteristics else 1.0
-
-            return FidelityResult(
-                prompt_id=prompt_id,
-                instruction_type=instruction_type,
-                expected_characteristics=expected_characteristics,
-                detected_characteristics=detected,
-                fidelity_score=fidelity_score,
-                explanation=explanation
-            )
-
-        except Exception as e:
-            print(f"Error evaluating fidelity for prompt {prompt_id}, {instruction_type}: {e}")
-            return FidelityResult(
-                prompt_id=prompt_id,
-                instruction_type=instruction_type,
-                expected_characteristics=expected_characteristics,
-                detected_characteristics=[],
-                fidelity_score=0.0,
-                explanation=f"Error: {str(e)}"
-            )
-
     def calculate_metrics(
         self,
         responses_df,
         model_name: str,
-        use_llm_for_fidelity: bool = False,
-        use_embedding_for_fidelity: bool = False
+        use_embedding_for_fidelity: bool = True
     ) -> ModelMetrics:
-        """Calculate all ISD metrics for a model"""
+        """Calculate all ISD metrics for a model using embedding-based evaluation"""
         responses_by_prompt = defaultdict(dict)
         for _, row in responses_df.iterrows():
             responses_by_prompt[row["prompt_id"]][row["instruction_type"]] = row["response"]
@@ -367,7 +291,7 @@ Output only valid JSON."""
         fidelity_results = []
 
         if use_embedding_for_fidelity:
-            # Embedding-based evaluation (fast, deterministic, no LLM bias)
+            # Embedding-based evaluation (fast, deterministic)
             for _, row in tqdm(responses_df.iterrows(), total=len(responses_df), desc="Evaluating fidelity (embedding)"):
                 expected = row["expected_characteristics"]
                 if isinstance(expected, str):
@@ -380,78 +304,8 @@ Output only valid JSON."""
                     prompt_id=row["prompt_id"]
                 )
                 fidelity_results.append(result)
-
-        elif use_llm_for_fidelity and self.use_llm_judge:
-            # Batch LLM evaluation for efficiency
-            self._load_fireworks()
-
-            # Prepare all evaluation prompts
-            eval_data = []
-            for _, row in responses_df.iterrows():
-                expected = row["expected_characteristics"]
-                if isinstance(expected, str):
-                    expected = json.loads(expected.replace("'", '"'))
-
-                char_list = ", ".join(expected)
-                eval_prompt = f"""Evaluate if this response matches the expected characteristics.
-
-INSTRUCTION GIVEN TO MODEL:
-{row["instruction"]}
-
-MODEL'S RESPONSE:
-{row["response"]}
-
-EXPECTED CHARACTERISTICS:
-{char_list}
-
-For each expected characteristic, determine if it is present in the response.
-Output JSON with:
-- "detected": list of characteristics that ARE present
-- "missing": list of characteristics that are NOT present
-- "explanation": brief explanation of your assessment
-
-Output only valid JSON."""
-
-                eval_data.append({
-                    "prompt": eval_prompt,
-                    "expected": expected,
-                    "prompt_id": row["prompt_id"],
-                    "instruction_type": row["instruction_type"]
-                })
-
-            # Batch judge all prompts
-            eval_prompts = [d["prompt"] for d in eval_data]
-            batch_results = self.fireworks_client.judge_batch(eval_prompts, batch_size=10)
-
-            # Process results
-            for i, result in enumerate(batch_results):
-                data = eval_data[i]
-                expected = data["expected"]
-
-                if "error" in result:
-                    fidelity_results.append(FidelityResult(
-                        prompt_id=data["prompt_id"],
-                        instruction_type=data["instruction_type"],
-                        expected_characteristics=expected,
-                        detected_characteristics=[],
-                        fidelity_score=0.0,
-                        explanation=f"Error: {result.get('error', 'Unknown error')}"
-                    ))
-                else:
-                    detected = result.get("detected", [])
-                    explanation = result.get("explanation", "")
-                    fidelity_score = len(detected) / len(expected) if expected else 1.0
-
-                    fidelity_results.append(FidelityResult(
-                        prompt_id=data["prompt_id"],
-                        instruction_type=data["instruction_type"],
-                        expected_characteristics=expected,
-                        detected_characteristics=detected,
-                        fidelity_score=fidelity_score,
-                        explanation=explanation
-                    ))
         else:
-            # Heuristic evaluation (no API calls)
+            # Heuristic evaluation (keyword matching)
             for _, row in tqdm(responses_df.iterrows(), total=len(responses_df), desc="Evaluating fidelity"):
                 expected = row["expected_characteristics"]
                 if isinstance(expected, str):
