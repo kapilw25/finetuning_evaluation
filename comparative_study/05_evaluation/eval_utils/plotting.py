@@ -817,11 +817,13 @@ def generate_improvement_radar_chart(
     angles = np.linspace(0, 2 * np.pi, num_evals, endpoint=False).tolist()
     angles += angles[:1]  # Close the polygon
 
-    # Method colors
+    # Method colors (consistent with get_model_color for *_Instruct variants)
     method_colors = {
-        'SFT': '#8B0000',   # Dark red
-        'DPO': '#006400',   # Dark green
-        'CITA': '#00008B'   # Dark blue
+        'SFT': '#8B0000',    # Dark red
+        'DPO': '#006400',    # Dark green
+        'PPO': '#4B0082',    # Indigo (purple)
+        'GRPO': '#FF8C00',   # Dark orange
+        'CITA': '#00008B',   # Dark blue
     }
 
     # Prepare data
@@ -865,7 +867,7 @@ def generate_improvement_radar_chart(
 
     # Set labels
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(eval_names, fontsize=12, fontweight='bold')
+    ax.set_xticklabels(eval_names, fontsize=16, fontweight='bold')
 
     # Add raw delta annotations at each vertex
     for i, eval_name in enumerate(eval_names):
@@ -881,21 +883,23 @@ def generate_improvement_radar_chart(
                 color = method_colors.get(method, '#808080')
                 ax.annotate(f'{raw_val:+.2f}',
                            xy=(angle, r),
-                           fontsize=9, fontweight='bold',
+                           fontsize=13, fontweight='bold',
                            color=color, ha='center', va='center')
 
     # Styling
     ax.set_ylim(0, 1.3)
     ax.set_yticks([0.25, 0.5, 0.75, 1.0])
-    ax.set_yticklabels(['', '', '', ''], fontsize=8)
+    ax.set_yticklabels(['', '', '', ''], fontsize=12, fontweight='bold')
     ax.grid(True, linestyle='--', alpha=0.5)
 
-    # Title
-    ax.set_title('Instruction Adaptation: NoInstruct → Instruct\n(CITA vs DPO vs SFT)',
-                 fontsize=14, fontweight='bold', pad=20)
+    # Title (dynamic based on methods provided)
+    methods_str = ' vs '.join(methods)
+    ax.set_title(f'Instruction Adaptation: NoInstruct → Instruct\n({methods_str})',
+                 fontsize=18, fontweight='bold', pad=20)
 
     # Legend
-    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1.1), fontsize=11)
+    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1.1), fontsize=14,
+              prop={'weight': 'bold'})
 
     # Add winner summary
     wins = {m: 0 for m in methods}
@@ -942,15 +946,19 @@ def generate_improvement_radar_chart(
         cellLoc='center'
     )
     tbl.auto_set_font_size(False)
-    tbl.set_fontsize(9)
+    tbl.set_fontsize(12)
     tbl.scale(1.0, 1.5)  # Reduced width scale from 1.3 to 1.0
 
+    # Make table text bold
+    for key, cell in tbl.get_celld().items():
+        cell.set_text_props(fontweight='bold')
+
     # Table title
-    table_ax.set_title('Δ = Instruct - NoInstruct', fontsize=11, fontweight='bold', pad=5)
+    table_ax.set_title('Δ = Instruct - NoInstruct', fontsize=14, fontweight='bold', pad=5)
 
     # Add winner summary at bottom with boundary padding
     summary = " | ".join([f"{m}: {wins[m]}/{num_evals}" for m in methods])
-    fig.text(0.82, 0.05, f"Wins: {summary}", ha='center', fontsize=12, fontweight='bold',
+    fig.text(0.82, 0.05, f"Wins: {summary}", ha='center', fontsize=14, fontweight='bold',
              bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='orange', alpha=0.9))
 
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
@@ -975,6 +983,309 @@ def generate_improvement_radar_chart(
         print(row)
 
     print(f"\nFinal Score: " + " | ".join([f"{m}: {wins[m]}" for m in methods]))
+
+    return str(output_path)
+
+
+def calculate_polygon_area(radii: List[float], n_sides: int) -> float:
+    """
+    Calculate the area of a radar chart polygon.
+
+    For a regular polygon with n sides and radii r₁, r₂, ..., rₙ:
+    Area = 0.5 * sin(2π/n) * Σ(rᵢ * rᵢ₊₁)
+
+    Args:
+        radii: List of radii values (not closed, i.e., length = n_sides)
+        n_sides: Number of sides/vertices
+
+    Returns:
+        Area of the polygon
+    """
+    if len(radii) != n_sides:
+        raise ValueError(f"Expected {n_sides} radii, got {len(radii)}")
+
+    # Angular spacing between vertices
+    angle_step = 2 * np.pi / n_sides
+
+    # Sum of r_i * r_{i+1} products (circular)
+    product_sum = sum(radii[i] * radii[(i + 1) % n_sides] for i in range(n_sides))
+
+    # Area formula for irregular polygon with equal angular spacing
+    area = 0.5 * np.sin(angle_step) * product_sum
+
+    return area
+
+
+def generate_radar_chart_area_based(
+    eval_deltas: Dict[str, Dict[str, float]],
+    output_path: Path,
+    methods: List[str] = ['SFT', 'DPO', 'CITA'],
+    normalize: bool = True
+) -> Optional[str]:
+    """
+    Generate radar chart with AREA-BASED ranking (more area = better overall performance).
+
+    This version emphasizes total coverage across all benchmarks rather than
+    individual wins, providing a more holistic view of instruction alignment.
+
+    Args:
+        eval_deltas: Dict mapping eval_name to {method: delta}
+        output_path: Path to save the plot
+        methods: Training methods to compare
+        normalize: If True, normalize deltas to [0, 1] per eval for comparability
+
+    Returns:
+        Path to saved plot, or None if not enough data
+    """
+    eval_names = list(eval_deltas.keys())
+    num_evals = len(eval_names)
+
+    if num_evals < 2:
+        print("Need at least 2 evals for radar chart")
+        return None
+
+    # Setup angles for radar chart
+    angles = np.linspace(0, 2 * np.pi, num_evals, endpoint=False).tolist()
+    angles_closed = angles + angles[:1]  # Close the polygon for plotting
+
+    # Method colors (consistent with get_model_color for *_Instruct variants)
+    method_colors = {
+        'SFT': '#8B0000',    # Dark red
+        'DPO': '#006400',    # Dark green
+        'PPO': '#4B0082',    # Indigo (purple)
+        'GRPO': '#FF8C00',   # Dark orange
+        'CITA': '#00008B',   # Dark blue
+    }
+
+    # Prepare data
+    method_data = {m: [] for m in methods}
+    raw_deltas = {m: [] for m in methods}
+
+    for eval_name in eval_names:
+        deltas = eval_deltas[eval_name]
+        for method in methods:
+            raw_deltas[method].append(deltas.get(method, 0))
+
+    # Normalize if requested (min-max per eval to [0, 1])
+    if normalize:
+        for i, eval_name in enumerate(eval_names):
+            vals = [raw_deltas[m][i] for m in methods]
+            min_val, max_val = min(vals), max(vals)
+            range_val = max_val - min_val if max_val != min_val else 1
+
+            for method in methods:
+                # Normalize to [0.1, 1.0] so all methods are visible
+                normalized = 0.1 + 0.9 * (raw_deltas[method][i] - min_val) / range_val
+                method_data[method].append(normalized)
+    else:
+        method_data = {m: list(raw_deltas[m]) for m in methods}
+
+    # Calculate polygon area for each method
+    method_areas = {}
+    for method in methods:
+        area = calculate_polygon_area(method_data[method], num_evals)
+        method_areas[method] = area
+
+    # Normalize areas to percentage of maximum possible area (unit circle polygon)
+    max_possible_area = calculate_polygon_area([1.0] * num_evals, num_evals)
+    method_area_pct = {m: (a / max_possible_area) * 100 for m, a in method_areas.items()}
+
+    # Rank methods by area
+    sorted_methods = sorted(methods, key=lambda m: method_areas[m], reverse=True)
+
+    # Close the polygon for plotting
+    method_data_closed = {m: method_data[m] + method_data[m][:1] for m in methods}
+
+    # Create figure - wider to accommodate ranking on the right
+    fig, ax = plt.subplots(figsize=(14, 10), subplot_kw=dict(polar=True))
+    ax.set_position([0.08, 0.12, 0.55, 0.78])
+
+    # Plot each method (sorted by area for legend ordering)
+    for method in sorted_methods:
+        color = method_colors.get(method, '#808080')
+        area_pct = method_area_pct[method]
+        ax.plot(angles_closed, method_data_closed[method], 'o-', linewidth=3,
+                label=f'{method} ({area_pct:.1f}%)', color=color, markersize=10)
+        ax.fill(angles_closed, method_data_closed[method], alpha=0.20, color=color)
+
+    # Set labels
+    ax.set_xticks(angles)
+    ax.set_xticklabels(eval_names, fontsize=16, fontweight='bold')
+
+    # Add raw delta annotations at each vertex (show all values, not just winners)
+    for i, eval_name in enumerate(eval_names):
+        angle = angles[i]
+        # Find the method with max value at this vertex to position annotation outside
+        max_r = max(method_data[m][i] for m in methods)
+
+        for method in methods:
+            raw_val = raw_deltas[method][i]
+            all_vals = [raw_deltas[m][i] for m in methods]
+
+            # Only annotate the winner for each eval
+            if raw_val == max(all_vals):
+                r = method_data[method][i] + 0.15
+                color = method_colors.get(method, '#808080')
+                ax.annotate(f'{raw_val:+.3f}',
+                           xy=(angle, r),
+                           fontsize=12, fontweight='bold',
+                           color=color, ha='center', va='center')
+
+    # Styling
+    ax.set_ylim(0, 1.35)
+    ax.set_yticks([0.25, 0.5, 0.75, 1.0])
+    ax.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=11, fontweight='bold')
+
+    # Subtle grid: thin lines, slightly darker than default
+    ax.grid(True, linestyle='--', alpha=0.5, linewidth=1.2, color='#606060')
+
+    # Title
+    ax.set_title('Instruction Alignment Efficiency\n(Pentagon Area = Overall Performance)',
+                 fontsize=20, fontweight='bold', pad=25)
+
+    # Legend with area percentages
+    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), fontsize=14,
+              prop={'weight': 'bold'}, title='Method (Area %)', title_fontsize=14)
+
+    # =========================================================================
+    # Right panel: Area-based ranking table
+    # =========================================================================
+    table_ax = fig.add_axes([0.66, 0.15, 0.32, 0.45])
+    table_ax.axis('off')
+
+    # Build ranking table
+    rank_data = []
+    for rank, method in enumerate(sorted_methods, 1):
+        area_pct = method_area_pct[method]
+        rank_data.append([f'#{rank}', method, f'{area_pct:.1f}%'])
+
+    # Color rows: Gold for winner, neutral gray for all others
+    cell_colors = []
+    for i in range(len(sorted_methods)):
+        if i == 0:  # Winner
+            cell_colors.append(['#FFD700'] * 3)  # Gold
+        else:  # All others - same neutral color
+            cell_colors.append(['#E8E8E8'] * 3)  # Light gray
+
+    tbl = table_ax.table(
+        cellText=rank_data,
+        colLabels=['Rank', 'Method', 'Area'],
+        cellColours=cell_colors,
+        loc='upper center',
+        cellLoc='center',
+        colWidths=[0.2, 0.4, 0.4]
+    )
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(14)
+    tbl.scale(1.0, 2.0)
+
+    # Make table text bold
+    for key, cell in tbl.get_celld().items():
+        cell.set_text_props(fontweight='bold')
+        if key[0] == 0:  # Header row
+            cell.set_facecolor('#404040')
+            cell.set_text_props(color='white', fontweight='bold')
+
+    # Table title
+    table_ax.set_title('Ranking by Pentagon Area\n(Higher = Better Alignment)',
+                       fontsize=16, fontweight='bold', pad=10)
+
+    # =========================================================================
+    # Bottom: Winner announcement
+    # =========================================================================
+    winner = sorted_methods[0]
+    winner_area = method_area_pct[winner]
+    runner_up = sorted_methods[1] if len(sorted_methods) > 1 else None
+    runner_up_area = method_area_pct[runner_up] if runner_up else 0
+
+    margin = winner_area - runner_up_area
+
+    fig.text(0.82, 0.06,
+             f'Winner: {winner} ({winner_area:.1f}%)\n'
+             f'Margin over {runner_up}: +{margin:.1f}%',
+             ha='center', fontsize=15, fontweight='bold',
+             bbox=dict(boxstyle='round,pad=0.5', facecolor='#90EE90',
+                      edgecolor='darkgreen', linewidth=2, alpha=0.95))
+
+    # =========================================================================
+    # Delta table (raw values)
+    # =========================================================================
+    delta_ax = fig.add_axes([0.64, 0.62, 0.35, 0.28])
+    delta_ax.axis('off')
+
+    # Shorten eval names for table
+    short_names = {
+        'ISD': 'ISD',
+        'TruthfulQA': 'TQA',
+        'Cond. Safety': 'C.Safe',
+        'Length Ctrl': 'L.Ctrl',
+        'AQI': 'AQI'
+    }
+
+    # Build delta table
+    delta_data = []
+    for eval_name in eval_names:
+        short_name = short_names.get(eval_name, eval_name[:6])
+        row = [short_name]
+        deltas = eval_deltas[eval_name]
+        for method in methods:
+            val = deltas.get(method, 0)
+            row.append(f'{val:+.3f}')
+        delta_data.append(row)
+
+    # Highlight max in each row
+    delta_colors = []
+    for i, eval_name in enumerate(eval_names):
+        deltas = eval_deltas[eval_name]
+        vals = [deltas.get(m, float('-inf')) for m in methods]
+        max_val = max(vals)
+        row_colors = ['white']  # First column (eval name)
+        for method in methods:
+            val = deltas.get(method, 0)
+            if val == max_val:
+                row_colors.append('#90EE90')
+            else:
+                row_colors.append('white')
+        delta_colors.append(row_colors)
+
+    delta_tbl = delta_ax.table(
+        cellText=delta_data,
+        colLabels=['Eval'] + methods,
+        cellColours=delta_colors,
+        loc='upper center',
+        cellLoc='center'
+    )
+    delta_tbl.auto_set_font_size(False)
+    delta_tbl.set_fontsize(10)
+    delta_tbl.scale(1.0, 1.5)
+
+    for key, cell in delta_tbl.get_celld().items():
+        cell.set_text_props(fontweight='bold')
+        if key[0] == 0:  # Header row
+            cell.set_facecolor('#404040')
+            cell.set_text_props(color='white', fontweight='bold')
+
+    delta_ax.set_title('Δ = Instruct − NoInstruct', fontsize=13, fontweight='bold', pad=5)
+
+    # Save
+    pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
+    plt.close()
+
+    print(f"\nSaved AREA-BASED radar chart:")
+    print(f"  PDF: {pdf_path}")
+    print(f"  PNG: {png_path}")
+
+    # Print ranking summary
+    print(f"\n{'='*60}")
+    print(f"INSTRUCTION ALIGNMENT EFFICIENCY (Pentagon Area)")
+    print(f"{'='*60}")
+    for rank, method in enumerate(sorted_methods, 1):
+        area = method_areas[method]
+        area_pct = method_area_pct[method]
+        print(f"  #{rank} {method}: {area_pct:.1f}% (area={area:.4f})")
+
+    print(f"\n🏆 WINNER: {winner} with {winner_area:.1f}% coverage")
+    print(f"   Margin over {runner_up}: +{margin:.1f}%")
 
     return str(output_path)
 

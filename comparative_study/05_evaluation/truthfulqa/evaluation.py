@@ -22,12 +22,12 @@ Usage:
              CITA_Instruct CITA_NoInstruct \
     --mode sanity
 
-    # Full evaluation (817 questions)
+    # Max evaluation
     python comparative_study/05_evaluation/truthfulqa/evaluation.py \
     --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
              PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
              CITA_Instruct CITA_NoInstruct \
-    --mode full
+    --mode max
 
 Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
                   PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,

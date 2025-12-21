@@ -3,8 +3,8 @@
     "model_name": "PPO_NoInstruct",
     "total_prompts": 300,
     "total_test_cases": 3000,
-    "evaluation_time": 2227.0830869674683,
-    "timestamp": "2025-12-21T03:34:12.755531"
+    "evaluation_time": 0.02373957633972168,
+    "timestamp": "2025-12-21T13:19:29.051963"
   },
   "responses": [
     {

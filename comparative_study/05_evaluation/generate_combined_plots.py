@@ -53,7 +53,11 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "comparative_study" / "05_evaluation"))
 
-from eval_utils.plotting import generate_improvement_radar_chart, generate_combined_heatmap
+from eval_utils.plotting import (
+    generate_improvement_radar_chart,
+    generate_radar_chart_area_based,
+    generate_combined_heatmap
+)
 from eval_utils.appendix_visualizations import generate_all_appendix_visualizations
 
 # Import HP ablation generator (separate script due to different data source)
@@ -265,12 +269,12 @@ def generate_main_plots():
         print(f"\n⚠️  Need at least 2 evals for heatmap, got {len(eval_scores)}")
 
     # =========================================================================
-    # Generate Radar Chart (improvement deltas)
+    # Generate Radar Chart (improvement deltas - wins-based)
     # =========================================================================
     if len(eval_deltas) >= 2:
         radar_path = COMBINED_PLOTS_DIR / "radar"
         print(f"\n{'=' * 80}")
-        print("Generating Radar Chart (Improvement Deltas)...")
+        print("Generating Radar Chart (Wins-Based)...")
         print(f"{'=' * 80}")
 
         generate_improvement_radar_chart(
@@ -280,7 +284,25 @@ def generate_main_plots():
             normalize=True
         )
         generated['radar'] = True
-        print(f"\n✅ Radar chart saved to: {radar_path}")
+        print(f"\n✅ Radar chart (wins) saved to: {radar_path}")
+
+    # =========================================================================
+    # Generate Radar Chart (AREA-BASED - pentagon coverage)
+    # =========================================================================
+    if len(eval_deltas) >= 2:
+        radar_area_path = COMBINED_PLOTS_DIR / "radar_area"
+        print(f"\n{'=' * 80}")
+        print("Generating Radar Chart (AREA-BASED - Pentagon Coverage)...")
+        print(f"{'=' * 80}")
+
+        generate_radar_chart_area_based(
+            eval_deltas=eval_deltas,
+            output_path=radar_area_path,
+            methods=METHODS,
+            normalize=True
+        )
+        generated['radar_area'] = True
+        print(f"\n✅ Radar chart (area) saved to: {radar_area_path}")
     else:
         print(f"\n⚠️  Need at least 2 evals for radar chart, got {len(eval_deltas)}")
 
@@ -374,10 +396,15 @@ Examples:
         else:
             print(f"  ⚠️  heatmap: skipped")
         if main_results.get('radar'):
-            print(f"  ✅ radar.{{pdf,png}}")
+            print(f"  ✅ radar.{{pdf,png}} (wins-based)")
             main_count += 1
         else:
             print(f"  ⚠️  radar: skipped")
+        if main_results.get('radar_area'):
+            print(f"  ✅ radar_area.{{pdf,png}} (pentagon coverage - MAIN FIGURE)")
+            main_count += 1
+        else:
+            print(f"  ⚠️  radar_area: skipped")
 
     if generate_appendix:
         print(f"\nAppendix Plots (in appendix/):")

@@ -3,8 +3,8 @@
     "model_name": "GRPO_NoInstruct",
     "total_prompts": 300,
     "total_test_cases": 3000,
-    "evaluation_time": 2226.740731239319,
-    "timestamp": "2025-12-21T04:49:26.958251"
+    "evaluation_time": 0.023020029067993164,
+    "timestamp": "2025-12-21T13:19:51.376605"
   },
   "responses": [
     {
