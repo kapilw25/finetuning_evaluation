@@ -47,7 +47,7 @@ CITA achieves XX% weighted average (rank #1), outperforming DPO (XX%), GRPO (XX%
 
 ---
 
-###  ✅  3. UPDATE TABLES TO INCLUDE ALL 5 TRAINERS
+###  ✅ 3. UPDATE TABLES TO INCLUDE ALL 5 TRAINERS
 
 ####  ✅  3.1 Table 2 (Method Comparison) - `1_introduction.tex` lines 116-134
 - **Label:** `tab:method_comparison`
