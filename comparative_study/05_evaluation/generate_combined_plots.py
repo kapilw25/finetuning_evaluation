@@ -1,18 +1,15 @@
 """
 Generate Combined Plots for All Evaluations
 
-Single entry point for ALL visualization generation:
+Single entry point for paper visualization generation:
 
 1. MAIN PAPER PLOTS (--main):
-   - Radar chart: Instruction adaptation (NoInstruct → Instruct) improvement
+   - Radar chart (area-based): Pentagon coverage for instruction alignment
    - Heatmap: Absolute scores across all models and evals
 
 2. APPENDIX PLOTS (--appendix):
-   - ISD Fidelity Heatmap: Instruction type × model matrix
-   - Length Control Distribution: Word count violin plots
-   - ISD Embedding t-SNE: Response clusters by instruction type
-   - AQI 3D Scatterplot: Safe vs unsafe response clusters
    - HP Ablation: Hyperparameter sensitivity from Optuna trials
+   - HP Pareto Frontier: Margin vs accuracy trade-off
 
 Both PDF (for Overleaf) and PNG (for sharing) formats are generated.
 
@@ -26,21 +23,13 @@ Usage:
     # Generate only appendix plots
     python comparative_study/05_evaluation/generate_combined_plots.py --appendix
 
-    # Skip embedding visualizations (faster, no sentence-transformers needed)
-    python comparative_study/05_evaluation/generate_combined_plots.py --appendix --skip-embeddings
-
 Output:
-    outputs/combined_plots/
-    ├── radar.{pdf,png}                    # Main paper
-    ├── heatmap.{pdf,png}                  # Main paper
-    ├── appendix/
-    │   ├── isd_fidelity_heatmap.{pdf,png}
-    │   ├── length_control_distribution.{pdf,png}
-    │   ├── isd_tsne_CITA_Instruct.{pdf,png}
-    │   ├── isd_tsne_DPO_Instruct.{pdf,png}
-    │   ├── aqi_3d_CITA_Instruct.{pdf,png}
-    │   ├── aqi_3d_DPO_Instruct.{pdf,png}
-    │   └── hp_ablation_*.{pdf,png}        # From Optuna trials
+    outputs/evaluation/combined_plots/
+    ├── radar_area.{pdf,png}               # Main paper - instruction alignment
+    ├── heatmap.{pdf,png}                  # Main paper - absolute scores
+    └── appendix/
+        ├── hp_ablation_combined.{pdf,png} # 2x2 hyperparameter sensitivity
+        └── hp_pareto_frontier.{pdf,png}   # Margin vs accuracy trade-off
 """
 
 import sys
@@ -54,11 +43,9 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "comparative_study" / "05_evaluation"))
 
 from eval_utils.plotting import (
-    generate_improvement_radar_chart,
     generate_radar_chart_area_based,
     generate_combined_heatmap
 )
-from eval_utils.appendix_visualizations import generate_all_appendix_visualizations
 
 # Import HP ablation generator (separate script due to different data source)
 sys.path.insert(0, str(project_root / "comparative_study"))
@@ -246,7 +233,7 @@ def generate_main_plots():
         else:
             print(f"  ⚠️  Not enough methods with both variants for radar chart")
 
-    generated = {'heatmap': False, 'radar': False}
+    generated = {'heatmap': False, 'radar_area': False}
 
     # =========================================================================
     # Generate Heatmap (absolute scores)
@@ -267,24 +254,6 @@ def generate_main_plots():
         print(f"\n✅ Heatmap saved to: {heatmap_path}")
     else:
         print(f"\n⚠️  Need at least 2 evals for heatmap, got {len(eval_scores)}")
-
-    # =========================================================================
-    # Generate Radar Chart (improvement deltas - wins-based)
-    # =========================================================================
-    if len(eval_deltas) >= 2:
-        radar_path = COMBINED_PLOTS_DIR / "radar"
-        print(f"\n{'=' * 80}")
-        print("Generating Radar Chart (Wins-Based)...")
-        print(f"{'=' * 80}")
-
-        generate_improvement_radar_chart(
-            eval_deltas=eval_deltas,
-            output_path=radar_path,
-            methods=METHODS,
-            normalize=True
-        )
-        generated['radar'] = True
-        print(f"\n✅ Radar chart (wins) saved to: {radar_path}")
 
     # =========================================================================
     # Generate Radar Chart (AREA-BASED - pentagon coverage)
@@ -318,22 +287,17 @@ Examples:
   # Generate all plots (main + appendix)
   python generate_combined_plots.py
 
-  # Generate only main paper plots
+  # Generate only main paper plots (radar_area, heatmap)
   python generate_combined_plots.py --main
 
-  # Generate only appendix plots
+  # Generate only appendix plots (HP ablation)
   python generate_combined_plots.py --appendix
-
-  # Skip embedding visualizations (faster)
-  python generate_combined_plots.py --appendix --skip-embeddings
         """
     )
     parser.add_argument('--main', action='store_true',
-                       help='Generate only main paper plots (radar, heatmap)')
+                       help='Generate only main paper plots (radar_area, heatmap)')
     parser.add_argument('--appendix', action='store_true',
-                       help='Generate only appendix plots')
-    parser.add_argument('--skip-embeddings', action='store_true',
-                       help='Skip embedding visualizations (ISD t-SNE, AQI 3D)')
+                       help='Generate only appendix plots (HP ablation)')
 
     args = parser.parse_args()
 
@@ -349,7 +313,6 @@ Examples:
     print(f"Output directory: {COMBINED_PLOTS_DIR}")
     print(f"Generate main plots: {generate_main}")
     print(f"Generate appendix plots: {generate_appendix}")
-    print(f"Skip embeddings: {args.skip_embeddings}")
 
     main_results = {}
     appendix_results = {}
@@ -361,19 +324,14 @@ Examples:
         main_results = generate_main_plots()
 
     # =========================================================================
-    # Generate Appendix Plots
+    # Generate Appendix Plots (HP Ablation only - other appendix viz not used in paper)
     # =========================================================================
     if generate_appendix:
         appendix_output_dir = COMBINED_PLOTS_DIR / "appendix"
-        appendix_results = generate_all_appendix_visualizations(
-            outputs_dir=OUTPUTS_DIR,
-            output_dir=appendix_output_dir,
-            skip_embeddings=args.skip_embeddings
-        )
+        appendix_output_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate HP ablation plots (from Optuna trial configs)
-        hp_ablation_results = generate_hp_ablation_plots(appendix_output_dir)
-        appendix_results.update(hp_ablation_results)
+        appendix_results = generate_hp_ablation_plots(appendix_output_dir)
 
     # =========================================================================
     # Final Summary
@@ -395,11 +353,6 @@ Examples:
             main_count += 1
         else:
             print(f"  ⚠️  heatmap: skipped")
-        if main_results.get('radar'):
-            print(f"  ✅ radar.{{pdf,png}} (wins-based)")
-            main_count += 1
-        else:
-            print(f"  ⚠️  radar: skipped")
         if main_results.get('radar_area'):
             print(f"  ✅ radar_area.{{pdf,png}} (pentagon coverage - MAIN FIGURE)")
             main_count += 1

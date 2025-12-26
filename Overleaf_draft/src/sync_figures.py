@@ -27,6 +27,7 @@ SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 OUTPUTS_EVAL = PROJECT_ROOT / "outputs" / "evaluation"
 OVERLEAF_FIGURES = SCRIPT_DIR.parent / "figures" / "evaluation"
+OVERLEAF_APPENDIX = SCRIPT_DIR.parent / "figures" / "appendix"
 
 # =============================================================================
 # WHITELIST: Only these files are used in .tex (from grep "includegraphics")
@@ -34,29 +35,28 @@ OVERLEAF_FIGURES = SCRIPT_DIR.parent / "figures" / "evaluation"
 USED_FILES = {
     'AQI_Evaluation': [
         'aqi_comparison',
-        'aqi_comparison_lollipop',
     ],
     'Conditional_Safety_Evaluation': [
         'conditional_safety_comparison',
-        'conditional_safety_comparison_lollipop',
     ],
     'ISD_Evaluation_Embedding': [
         'isd_comparison',
-        'isd_comparison_lollipop',
     ],
     'Length_Control_Evaluation': [
         'length_control_comparison',
-        'length_control_comparison_lollipop',
     ],
     'TruthfulQA_Evaluation': [
         'truthfulqa_comparison',
-        'truthfulqa_comparison_lollipop',
     ],
     'combined_plots': [
         'heatmap',
         'radar_area',
         # Note: teaser_single_prompt_idx287 is generated separately in outputs/evaluation/teaser_examples/
         # and already exists in Overleaf_draft/figures/evaluation/combined_plots/
+    ],
+    'appendix': [
+        'hp_ablation_combined',
+        'hp_pareto_frontier',
     ],
 }
 
@@ -68,6 +68,7 @@ SOURCE_DIRS = {
     'Length_Control_Evaluation': OUTPUTS_EVAL / 'Length_Control_Evaluation',
     'TruthfulQA_Evaluation': OUTPUTS_EVAL / 'TruthfulQA_Evaluation',
     'combined_plots': OUTPUTS_EVAL / 'combined_plots',
+    'appendix': OUTPUTS_EVAL / 'combined_plots' / 'appendix',
 }
 
 # File extensions to sync
@@ -105,6 +106,7 @@ def main():
     # Ensure destination directories exist
     OVERLEAF_FIGURES.mkdir(parents=True, exist_ok=True)
     (OVERLEAF_FIGURES / 'combined_plots').mkdir(parents=True, exist_ok=True)
+    OVERLEAF_APPENDIX.mkdir(parents=True, exist_ok=True)
 
     files_to_copy = []
     missing_files = []
@@ -120,6 +122,8 @@ def main():
         # Determine destination
         if name == 'combined_plots':
             dest_dir = OVERLEAF_FIGURES / 'combined_plots'
+        elif name == 'appendix':
+            dest_dir = OVERLEAF_APPENDIX
         else:
             dest_dir = OVERLEAF_FIGURES
 
@@ -178,10 +182,12 @@ def main():
     else:
         print("\nCopying files...")
         copied_count = 0
+        figures_root = OVERLEAF_FIGURES.parent  # figures/ directory
         for src_file, dest_file in files_to_copy:
             try:
                 shutil.copy2(src_file, dest_file)
-                print(f"  [COPIED] {src_file.name} -> {dest_file.relative_to(OVERLEAF_FIGURES)}")
+                rel_path = dest_file.relative_to(figures_root)
+                print(f"  [COPIED] {src_file.name} -> {rel_path}")
                 copied_count += 1
             except Exception as e:
                 print(f"  [ERROR] {src_file.name}: {e}")

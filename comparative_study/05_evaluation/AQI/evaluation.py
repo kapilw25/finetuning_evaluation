@@ -138,6 +138,66 @@ RANDOM_SEED = 42
 
 
 # =============================================================================
+# CACHED METRICS LOADING
+# =============================================================================
+
+def load_cached_metrics(results_dir: Path, model_keys: List[str]) -> tuple:
+    """
+    Load AQI metrics from cached CSV files (for option 1: regenerate plots only).
+
+    Returns:
+        tuple: (all_results dict, stratified_metrics dict)
+    """
+    all_results = {}
+    stratified_metrics = {}
+
+    print(f"\nLoading cached metrics from {results_dir}")
+
+    for model_key in model_keys:
+        model_dir = results_dir / model_key
+        csv_path = model_dir / f"{model_key}_metrics_summary.csv"
+        valid_csv = model_dir / f"{model_key}_valid_metrics_summary.csv"
+
+        if not csv_path.exists():
+            print(f"  Warning: No cached metrics for {model_key}")
+            continue
+
+        # Read CSV and extract overall AQI
+        df = pd.read_csv(csv_path)
+        overall_row = df[df['Category'] == 'overall'].iloc[0]
+        overall_aqi = float(overall_row['AQI [0-100] (↑)'])
+
+        # Read valid-only AQI if exists
+        valid_aqi = None
+        valid_rate = 1.0
+        if valid_csv.exists():
+            valid_df = pd.read_csv(valid_csv)
+            valid_overall = valid_df[valid_df['Category'] == 'overall'].iloc[0]
+            valid_aqi = float(valid_overall['AQI [0-100] (↑)'])
+
+        # Create minimal result object with just aqi_score
+        result = AQIModelResult(
+            model_name=model_key,
+            responses=[],  # Empty - not needed for plotting
+            total_samples=0,
+            evaluation_time=0.0,
+            timestamp="",
+            aqi_score=overall_aqi
+        )
+        all_results[model_key] = result
+
+        # Build stratified metrics for plotting
+        stratified_metrics[model_key] = {
+            'valid_aqi': valid_aqi if valid_aqi else overall_aqi,
+            'valid_rate': valid_rate
+        }
+
+        print(f"  Loaded: {model_key} (AQI: {overall_aqi:.2f})")
+
+    return all_results, stratified_metrics
+
+
+# =============================================================================
 # RESPONSE GENERATION
 # =============================================================================
 
@@ -681,15 +741,42 @@ def main():
         ) if checkpoint_dir.exists() else False
         results_exist = results_dir.exists() and any(results_dir.iterdir())
 
+        cache_choice = None
         if checkpoints_exist or results_exist:
-            show_cached_data_menu(
+            cache_choice = show_cached_data_menu(
                 checkpoint_dir=checkpoint_dir,
                 results_dir=results_dir,
                 eval_type="AQI",
                 checkpoint_suffix="_aqi_checkpoint.json",
-                metrics_filename="*_metrics_summary.csv",
+                metrics_filename="{model}_metrics_summary.csv",
                 plot_filename="aqi_comparison.png"
             )
+
+        # Option 1: Regenerate plots only from cached metrics
+        if cache_choice == "1":
+            print("\n" + "=" * 80)
+            print("LOADING CACHED METRICS (Skipping recalculation)")
+            print("=" * 80)
+
+            all_results, all_stratified = load_cached_metrics(
+                results_dir=results_dir,
+                model_keys=list(MODELS.keys())
+            )
+
+            if not all_results:
+                print("\nError: No cached metrics found. Run full evaluation first.")
+                sys.exit(1)
+
+            if len(all_results) < len(MODELS):
+                print(f"\nWarning: Only {len(all_results)}/{len(MODELS)} models have cached metrics")
+
+            # Generate plots from cached data
+            generate_comparison_plots(all_results, results_dir, stratified_metrics=all_stratified)
+
+            print("\n" + "=" * 80)
+            print("PLOTS REGENERATED FROM CACHED METRICS")
+            print("=" * 80)
+            return
 
         # Interactive mode selection (defer HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(

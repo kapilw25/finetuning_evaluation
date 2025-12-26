@@ -218,31 +218,27 @@ python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py \
 source venv_CITA/bin/activate
 
 # 1. ISD (select option 3 for Max)
-python comparative_study/05_evaluation/isd/evaluation.py \
-  --models SFT_NoInstruct SFT_Instruct DPO_NoInstruct DPO_Instruct CITA_NoInstruct CITA_Instruct
+python comparative_study/05_evaluation/isd/evaluation.py
 
 # 2. TruthfulQA (select option 3 for Max)
-python comparative_study/05_evaluation/truthfulqa/evaluation.py \
-  --models SFT_NoInstruct SFT_Instruct DPO_NoInstruct DPO_Instruct CITA_NoInstruct CITA_Instruct
+python comparative_study/05_evaluation/truthfulqa/evaluation.py
 
 # 3. Conditional Safety (select option 3 for Max)
-python comparative_study/05_evaluation/conditional_safety/evaluation.py \
-  --models SFT_NoInstruct SFT_Instruct DPO_NoInstruct DPO_Instruct CITA_NoInstruct CITA_Instruct
+python comparative_study/05_evaluation/conditional_safety/evaluation.py 
 
 # 4. Length Control (select option 3 for Max)
-python comparative_study/05_evaluation/length_control/evaluation.py \
-  --models SFT_NoInstruct SFT_Instruct DPO_NoInstruct DPO_Instruct CITA_NoInstruct CITA_Instruct
+python comparative_study/05_evaluation/length_control/evaluation.py
 
 # 5. AQI (select option 2 for Full - NOT Max)
-python comparative_study/05_evaluation/AQI/evaluation.py \
-  --models SFT_NoInstruct SFT_Instruct DPO_NoInstruct DPO_Instruct CITA_NoInstruct CITA_Instruct \
-  --batch_size 4
+python comparative_study/05_evaluation/AQI/evaluation.py
+
 ```
 
 ### With specific models:
 ```bash
 python comparative_study/05_evaluation/isd/evaluation.py \
-    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct
+    --models CITA_Instruct CITA_NoInstruct DPO_Instruct DPO_NoInstruct \
+    --batch_size 4
 ```
 
 ## HuggingFace Models

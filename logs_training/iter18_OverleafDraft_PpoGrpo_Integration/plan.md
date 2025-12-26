@@ -16,13 +16,13 @@ Update Overleaf draft to include all 5 trainers (SFT, PPO, GRPO, DPO, CITA) and 
 
 ## TODO LIST - INCOMPLETE
 
-### 🟡 1. RADAR PLOT: Pentagon Area → Average Radius
+### ✅ 1. RADAR PLOT: Pentagon Area → Average Radius
 
 **File:** `plotting.py` | **Output:** `radar_area.pdf`
 
 - Formula: `avg = Σ(rᵢ) / n` (replaces polygon area)
 - Labels updated: "Pentagon Area" → "Average Radius"
-
+#### execute : `python3 comparative_study/05_evaluation/generate_combined_plots.py` to generate updated radar plot
 ---
 
 ### 🔴 2. UPDATE NARRATIVE: "wins X/5" → Weighted Average
@@ -51,7 +51,9 @@ Update Overleaf draft to include all 5 trainers (SFT, PPO, GRPO, DPO, CITA) and 
 | TruthfulQA | `comparative_study/05_evaluation/truthfulqa/evaluation.py` |
 | Conditional Safety | `comparative_study/05_evaluation/conditional_safety/evaluation.py` |
 | Length Control | `comparative_study/05_evaluation/length_control/evaluation.py` |
-| AQI | `comparative_study/05_evaluation/AQI/evaluation.py` |
+<!-- 4. Length Control (select option 3 for Max) -->
+| AQI | `comparative_study/05_evaluation/AQI/evaluation.py` | 
+<!-- (select option 2 for Full - NOT Max) -->
 
 **Changes Applied (in `plotting.py`):**
 - `plt.rcParams['font.weight'] = 'bold'`

@@ -19,6 +19,19 @@ echo "============================================"
 echo "CITA Environment Setup"
 echo "============================================"
 
+# 0. Install system dependencies
+echo ""
+echo "[0/5] Installing system dependencies..."
+sudo apt update && sudo apt install -y \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-fonts-extra \
+    texlive-bibtex-extra \
+    texlive-science \
+    biber \
+    tree
+
 # 1. Create virtual environment
 echo ""
 echo "[1/5] Creating virtual environment..."
