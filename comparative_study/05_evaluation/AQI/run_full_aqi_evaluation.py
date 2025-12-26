@@ -11,6 +11,12 @@ import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.weight'] = 'bold'  # ALL text bold globally
+plt.rcParams['font.size'] = 11
+plt.rcParams['axes.linewidth'] = 1.2
 import seaborn as sns
 from pathlib import Path
 from peft import PeftModel

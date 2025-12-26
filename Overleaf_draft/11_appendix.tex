@@ -15,7 +15,7 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
     \item \textbf{Implementation Details}: Training infrastructure and hyperparameters (cf.~\cref{sec:appendix_implementation})
     \item \textbf{Dataset Details}: Extended ISD statistics and examples (cf.~\cref{sec:appendix_dataset})
     \item \textbf{Ablation Studies}: Component-wise analysis (cf.~\cref{sec:appendix_ablations})
-    \item \textbf{Training Curves}: Supplementary training dynamics plots (cf.~\cref{sec:appendix_training_curves})
+    \item \textbf{Training Curves}: References to main paper figures (cf.~\cref{sec:appendix_training_curves})
     \item \textbf{Qualitative Examples}: Good and failure case examples (cf.~\cref{sec:appendix_examples})
 \end{itemize}
 
@@ -499,39 +499,7 @@ Figures~\ref{fig:hp_beta}--\ref{fig:hp_lr} show detailed sensitivity analysis fo
 \section{Training Curves}
 \label{sec:appendix_training_curves}
 
-Additional training dynamics plots that provide supplementary context to the main results in Section~\ref{sec:training_dynamics}.
-
-\subsection{DPO/CITA Eval Loss}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_loss.pdf}
-\caption{\textbf{Eval Loss}: CITA\_Instruct has higher loss but achieves better reward margins (see Figure~\ref{fig:training_margins}). This apparent paradox is explained by CITA's mandatory KL regularization, which prevents over-optimization on the training distribution while maintaining stronger preference separation.}
-\label{fig:training_loss}
-\vspace{-3mm}
-\end{figure}
-
-\subsection{SFT Training Curves}
-
-The SFT stage serves as the foundation for both DPO and CITA training. We observe that instruction-augmented training (SFT\_Instruct) produces more efficient learning:
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/training/sft_loss.pdf}
-\caption{\textbf{SFT Training Loss}: SFT\_Instruct (1.49) converges to lower loss than SFT\_NoInstruct (1.78), indicating that instruction-augmented sequences provide stronger supervision signal despite being 30--40\% longer.}
-\label{fig:sft_loss}
-\vspace{-3mm}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/training/sft_mean_token_accuracy.pdf}
-\caption{\textbf{SFT Token Accuracy}: SFT\_Instruct (63\%) achieves higher mean token accuracy than SFT\_NoInstruct (56\%). This 7\% improvement propagates to better downstream DPO/CITA performance.}
-\label{fig:sft_accuracy}
-\vspace{-3mm}
-\end{figure}
-
-\textbf{Implication}: The SFT\_Instruct checkpoint provides a stronger initialization for CITA training, partially explaining CITA\_Instruct's superior instruction sensitivity.
+All training dynamics plots are shown in the main paper (Section~\ref{sec:training_dynamics}): the combined eval loss plot (Figure~\ref{fig:training_loss}) provides a 2$\times$2 comparison across SFT, DPO, CITA, and GRPO trainers, while the combined accuracy plot (Figure~\ref{fig:training_accuracy}) shows reward accuracy for DPO/CITA and token accuracy for SFT in a 1$\times$2 layout. The reward margins plot (Figure~\ref{fig:training_margins}) demonstrates CITA's superior preference learning.
 
 %% =============================================================================
 %% QUALITATIVE EXAMPLES

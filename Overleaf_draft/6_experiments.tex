@@ -21,13 +21,13 @@ Following the staged approach from Section~\ref{sec:training_pipeline}, we train
     \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
 \end{enumerate}
 
-\begin{figure}[H]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/pipeline/training_pipeline.pdf}
+\includegraphics[width=0.9\textwidth]{figures/pipeline/training_pipeline.pdf}
 \caption{\textbf{Training Pipeline}: All methods branch from SFT. PPO and GRPO are online methods requiring reward model/functions. DPO uses offline preference pairs. CITA stacks on DPO with instruction-conditioning and mandatory KL regularization.}
 \label{fig:training_pipeline}
 \vspace{-3mm}
-\end{figure}
+\end{figure*}
 
 \vspace{-2mm}
 \subsection{Model Variants}
@@ -165,15 +165,23 @@ Accuracy & 89.5\% & 89.0\% \\
 \subsection{Training Dynamics}
 \label{sec:training_dynamics}
 
-We analyze key training curves comparing DPO and CITA variants. Additional training curves (eval loss, SFT loss, SFT token accuracy) are provided in Appendix~\ref{sec:appendix_training_curves}.
+We analyze key training curves across all alignment methods.
 
-\begin{figure}[H]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_accuracy.pdf}
-\caption{\textbf{Reward Accuracy}: All models converge to 89--92\%. DPO variants achieve slightly higher accuracy.}
+\includegraphics[width=0.9\textwidth]{figures/training/combined_eval_loss.pdf}
+\caption{\textbf{Eval Loss Across Training Methods}: 2$\times$2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf{SFT} (top-left): Loss $\sim$1.5--1.9, Instruct converges lower. \textbf{DPO} (top-right): Loss $\sim$0.21--0.28, smooth convergence. \textbf{CITA} (bottom-left): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (bottom-right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
+\label{fig:training_loss}
+\vspace{-3mm}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/training/combined_accuracy.pdf}
+\caption{\textbf{Training Accuracy Metrics}: 1$\times$2 subplot comparing accuracy across methods. \textbf{Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf{Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.}
 \label{fig:training_accuracy}
 \vspace{-3mm}
-\end{figure}
+\end{figure*}
 
 \begin{figure}[H]
 \centering

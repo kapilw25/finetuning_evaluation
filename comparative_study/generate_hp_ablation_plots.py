@@ -24,17 +24,21 @@ Output:
 import json
 from pathlib import Path
 import numpy as np
+import optuna
+from adjustText import adjust_text
 
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.weight'] = 'bold'  # ALL text bold globally
 plt.rcParams['font.size'] = 11
 plt.rcParams['axes.linewidth'] = 1.2
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
-TRIAL_DIR = PROJECT_ROOT / "outputs" / "CITA_Instruct_Adaptive"
+OPTUNA_DB_INSTRUCT = PROJECT_ROOT / "outputs" / "training" / "optuna_cita_instruct.db"
+OPTUNA_DB_NOINSTRUCT = PROJECT_ROOT / "outputs" / "training" / "optuna_cita.db"
 OUTPUT_DIR = PROJECT_ROOT / "Overleaf_draft" / "figures" / "appendix"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -46,19 +50,57 @@ METRIC_COLORS = {
 }
 
 
-def load_all_trial_configs():
-    """Load trial configs from all trial directories."""
-    trials = []
+def load_all_trial_configs(db_path: Path = None):
+    """Load trial configs from Optuna database.
 
-    for trial_dir in sorted(TRIAL_DIR.glob("trial_*")):
-        if trial_dir.name == "best_trial":
+    Args:
+        db_path: Path to Optuna SQLite database. Defaults to OPTUNA_DB_INSTRUCT.
+
+    Returns:
+        List of trial config dicts with hyperparameters and metrics.
+    """
+    if db_path is None:
+        db_path = OPTUNA_DB_INSTRUCT
+
+    if not db_path.exists():
+        print(f"  [WARN] Database not found: {db_path}")
+        return []
+
+    # Load Optuna study
+    storage = f"sqlite:///{db_path}"
+    try:
+        study = optuna.load_study(study_name=None, storage=storage)
+    except Exception as e:
+        print(f"  [ERROR] Failed to load study: {e}")
+        return []
+
+    trials = []
+    for trial in study.trials:
+        if trial.state != optuna.trial.TrialState.COMPLETE:
             continue
 
-        config_path = trial_dir / "trial_config.json"
-        if config_path.exists():
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-                trials.append(config)
+        # Extract hyperparameters
+        config = {
+            'trial_number': trial.number,
+            'lambda_kl': trial.params.get('lambda_kl', 0),
+            'learning_rate': trial.params.get('learning_rate', 0),
+            'beta': trial.params.get('beta', 0),
+            'weight_decay': trial.params.get('weight_decay', 0),
+            'warmup_ratio': trial.params.get('warmup_ratio', 0),
+        }
+
+        # Extract metrics (values[0]=margin, values[1]=accuracy, values[2]=-loss)
+        if trial.values and len(trial.values) >= 3:
+            config['final_margin'] = trial.values[0]
+            config['final_accuracy'] = trial.values[1]
+            config['final_eval_loss'] = abs(trial.values[2])  # Stored as negative
+        else:
+            # Single objective (margin only)
+            config['final_margin'] = trial.value if trial.value else 0
+            config['final_accuracy'] = 0
+            config['final_eval_loss'] = 0
+
+        trials.append(config)
 
     return trials
 
@@ -85,7 +127,9 @@ def plot_hp_vs_metric(
     Returns:
         List of generated file paths
     """
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4), facecolor='white')
+    # 2x2 layout with larger figure
+    fig, axes = plt.subplots(2, 2, figsize=(20, 16), facecolor='white')
+    axes = axes.flatten()
 
     # Extract data
     hp_values = [t[hp_name] for t in trials]
@@ -102,54 +146,70 @@ def plot_hp_vs_metric(
             break
 
     metrics = [
-        (margins, 'Reward Margin', 'margin', '↑ Higher is Better'),
-        (accuracies, 'Accuracy (%)', 'accuracy', '↑ Higher is Better'),
-        (eval_losses, 'Eval Loss', 'eval_loss', '↓ Lower is Better'),
+        (margins, 'Reward Margin', 'margin', '(↑ Higher is Better)'),
+        (accuracies, 'Accuracy (%)', 'accuracy', '(↑ Higher is Better)'),
+        (eval_losses, 'Eval Loss', 'eval_loss', '(↓ Lower is Better)'),
     ]
 
-    for ax, (values, ylabel, metric_key, annotation) in zip(axes, metrics):
+    # Scale small values and include multiplier in label
+    if hp_name == 'lambda_kl':
+        hp_values_plot = [v * 10000 for v in hp_values]  # Scale to 1-6 range
+        xlabel_display = f'{hp_label} (×10⁻⁴)'
+    elif hp_name == 'learning_rate':
+        hp_values_plot = [v * 1000000 for v in hp_values]  # Scale to 2.6-5.4 range
+        xlabel_display = f'{hp_label} (×10⁻⁶)'
+    else:
+        hp_values_plot = hp_values
+        xlabel_display = hp_label
+
+    for idx, (ax, (values, ylabel, metric_key, direction)) in enumerate(zip(axes[:3], metrics)):
         ax.set_facecolor('white')
 
         # Scatter plot
         color = METRIC_COLORS[metric_key]
-        ax.scatter(hp_values, values, c=color, s=60, alpha=0.7, edgecolors='black', linewidth=0.5)
+        ax.scatter(hp_values_plot, values, c=color, s=200, alpha=0.7, edgecolors='black', linewidth=2)
 
         # Highlight best trial
         if best_idx is not None:
-            ax.scatter([hp_values[best_idx]], [values[best_idx]],
-                      c='gold', s=150, marker='*', edgecolors='black',
-                      linewidth=1, zorder=5, label=f'Best (Trial {best_trial_num})')
+            ax.scatter([hp_values_plot[best_idx]], [values[best_idx]],
+                      c='gold', s=500, marker='*', edgecolors='black',
+                      linewidth=3, zorder=5, label=f'Best (Trial {best_trial_num})')
 
-        # Add trial numbers as annotations (small)
-        for i, (x, y, tn) in enumerate(zip(hp_values, values, trial_nums)):
-            ax.annotate(str(tn), (x, y), fontsize=7, alpha=0.6,
-                       xytext=(3, 3), textcoords='offset points')
+        # Use adjustText for annotations
+        texts = []
+        for i, (x, y, tn) in enumerate(zip(hp_values_plot, values, trial_nums)):
+            texts.append(ax.text(x, y, str(tn), fontsize=18, fontweight='bold', alpha=0.8))
 
-        # Add trend line (polynomial fit)
-        if len(hp_values) > 2:
+        # Auto-adjust text positions to avoid overlap
+        adjust_text(texts, ax=ax, arrowprops=dict(arrowstyle='-', color='gray', alpha=0.5))
+
+        # Add trend line
+        if len(hp_values_plot) > 2:
             try:
-                z = np.polyfit(hp_values, values, 2)
+                z = np.polyfit(hp_values_plot, values, 2)
                 p = np.poly1d(z)
-                x_trend = np.linspace(min(hp_values), max(hp_values), 50)
-                ax.plot(x_trend, p(x_trend), '--', color=color, alpha=0.5, linewidth=1.5)
+                x_trend = np.linspace(min(hp_values_plot), max(hp_values_plot), 50)
+                ax.plot(x_trend, p(x_trend), '--', color=color, alpha=0.5, linewidth=4)
             except Exception:
                 pass  # Skip trend if fitting fails
 
-        ax.set_xlabel(hp_label, fontsize=11)
-        ax.set_ylabel(ylabel, fontsize=11)
+        ax.set_xlabel(xlabel_display, fontsize=22, fontweight='bold')
+        # Include direction in ylabel to free up plot area
+        ax.set_ylabel(f'{ylabel} {direction}', fontsize=22, fontweight='bold')
+        ax.tick_params(axis='both', labelsize=16)
         ax.grid(True, alpha=0.3, linestyle='--')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
-        # Add annotation for direction
-        ax.annotate(annotation, xy=(0.98, 0.02), xycoords='axes fraction',
-                   fontsize=8, ha='right', va='bottom', style='italic', alpha=0.7)
-
         if best_idx is not None:
-            ax.legend(loc='best', fontsize=9)
+            ax.legend(loc='best', fontsize=16)
 
-    fig.suptitle(f'CITA Hyperparameter Sensitivity: {hp_label}', fontsize=13, fontweight='bold', y=1.02)
-    plt.tight_layout()
+    # Hide the 4th subplot (empty in 2x2 grid with 3 metrics)
+    axes[3].axis('off')
+
+    fig.suptitle(f'CITA Hyperparameter Sensitivity: {hp_label}', fontsize=28, fontweight='bold', y=0.98)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.subplots_adjust(hspace=0.35, wspace=0.35)
 
     # Save both PDF and PNG
     pdf_path = output_path.with_suffix('.pdf')
@@ -169,7 +229,7 @@ def plot_combined_ablation(trials: list, output_path: Path, best_trial_num: int 
     Shows: beta, lambda_kl, learning_rate, weight_decay
     Metric: Reward Margin (primary optimization target)
     """
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8), facecolor='white')
+    fig, axes = plt.subplots(2, 2, figsize=(20, 16), facecolor='white')
     axes = axes.flatten()
 
     hps = [
@@ -179,7 +239,7 @@ def plot_combined_ablation(trials: list, output_path: Path, best_trial_num: int 
         ('weight_decay', 'Weight Decay'),
     ]
 
-    # Extract data
+    # Extract data - use Reward Margin
     margins = [t['final_margin'] for t in trials]
     trial_nums = [t['trial_number'] for t in trials]
 
@@ -195,41 +255,60 @@ def plot_combined_ablation(trials: list, output_path: Path, best_trial_num: int 
 
         hp_values = [t[hp_name] for t in trials]
 
+        # Scale small values and include multiplier in label
+        if hp_name == 'lambda_kl':
+            hp_values_plot = [v * 10000 for v in hp_values]
+            xlabel_display = f'{hp_label} (×10⁻⁴)'
+        elif hp_name == 'learning_rate':
+            hp_values_plot = [v * 1000000 for v in hp_values]
+            xlabel_display = f'{hp_label} (×10⁻⁶)'
+        else:
+            hp_values_plot = hp_values
+            xlabel_display = hp_label
+
         # Scatter plot
-        ax.scatter(hp_values, margins, c=METRIC_COLORS['margin'], s=60,
-                  alpha=0.7, edgecolors='black', linewidth=0.5)
+        ax.scatter(hp_values_plot, margins, c=METRIC_COLORS['margin'], s=200,
+                  alpha=0.7, edgecolors='black', linewidth=2)
 
         # Highlight best trial
         if best_idx is not None:
-            ax.scatter([hp_values[best_idx]], [margins[best_idx]],
-                      c='gold', s=150, marker='*', edgecolors='black',
-                      linewidth=1, zorder=5)
+            ax.scatter([hp_values_plot[best_idx]], [margins[best_idx]],
+                      c='gold', s=500, marker='*', edgecolors='black',
+                      linewidth=3, zorder=5, label=f'Best (Trial {best_trial_num})')
 
-        # Add trial numbers
-        for x, y, tn in zip(hp_values, margins, trial_nums):
-            ax.annotate(str(tn), (x, y), fontsize=7, alpha=0.6,
-                       xytext=(3, 3), textcoords='offset points')
+        # Use adjustText for annotations
+        texts = []
+        for x, y, tn in zip(hp_values_plot, margins, trial_nums):
+            texts.append(ax.text(x, y, str(tn), fontsize=18, fontweight='bold', alpha=0.8))
+
+        # Auto-adjust text positions to avoid overlap
+        adjust_text(texts, ax=ax, arrowprops=dict(arrowstyle='-', color='gray', alpha=0.5))
 
         # Trend line
-        if len(hp_values) > 2:
+        if len(hp_values_plot) > 2:
             try:
-                z = np.polyfit(hp_values, margins, 2)
+                z = np.polyfit(hp_values_plot, margins, 2)
                 p = np.poly1d(z)
-                x_trend = np.linspace(min(hp_values), max(hp_values), 50)
+                x_trend = np.linspace(min(hp_values_plot), max(hp_values_plot), 50)
                 ax.plot(x_trend, p(x_trend), '--', color=METRIC_COLORS['margin'],
-                       alpha=0.5, linewidth=1.5)
+                       alpha=0.5, linewidth=4)
             except Exception:
                 pass
 
-        ax.set_xlabel(hp_label, fontsize=10)
-        ax.set_ylabel('Reward Margin', fontsize=10)
+        ax.set_xlabel(xlabel_display, fontsize=22, fontweight='bold')
+        ax.set_ylabel('Reward Margin', fontsize=22, fontweight='bold')
+        ax.tick_params(axis='both', labelsize=16)
         ax.grid(True, alpha=0.3, linestyle='--')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
-    fig.suptitle('CITA Hyperparameter Ablation Study\n(Metric: Reward Margin, * = Best Trial)',
-                fontsize=13, fontweight='bold')
-    plt.tight_layout()
+        if best_idx is not None:
+            ax.legend(loc='best', fontsize=14)
+
+    fig.suptitle(f'CITA Hyperparameter Ablation Study\n(Metric: Reward Margin, Best = Trial {best_trial_num})',
+                fontsize=26, fontweight='bold', y=0.99)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.subplots_adjust(hspace=0.35, wspace=0.35)
 
     # Save
     pdf_path = output_path.with_suffix('.pdf')
@@ -246,7 +325,7 @@ def plot_pareto_frontier(trials: list, output_path: Path, best_trial_num: int = 
     """
     Generate Pareto frontier plot: Margin vs Accuracy trade-off.
     """
-    fig, ax = plt.subplots(figsize=(7, 5), facecolor='white')
+    fig, ax = plt.subplots(figsize=(14, 10), facecolor='white')
     ax.set_facecolor('white')
 
     margins = [t['final_margin'] for t in trials]
@@ -260,20 +339,23 @@ def plot_pareto_frontier(trials: list, output_path: Path, best_trial_num: int = 
             best_idx = i
             break
 
-    # Scatter plot
-    ax.scatter(margins, accuracies, c='#1f77b4', s=80, alpha=0.7,
-              edgecolors='black', linewidth=0.5, label='Trials')
+    # Scatter plot (DOUBLED: larger markers)
+    ax.scatter(margins, accuracies, c='#1f77b4', s=320, alpha=0.7,
+              edgecolors='black', linewidth=2, label='Trials')
 
-    # Highlight best trial
+    # Highlight best trial (DOUBLED: larger star)
     if best_idx is not None:
         ax.scatter([margins[best_idx]], [accuracies[best_idx]],
-                  c='gold', s=200, marker='*', edgecolors='black',
-                  linewidth=1, zorder=5, label=f'Best (Trial {best_trial_num})')
+                  c='gold', s=800, marker='*', edgecolors='black',
+                  linewidth=4, zorder=5, label=f'Best (Trial {best_trial_num})')
 
-    # Add trial numbers
+    # Use adjustText for annotations
+    texts = []
     for x, y, tn in zip(margins, accuracies, trial_nums):
-        ax.annotate(str(tn), (x, y), fontsize=9, fontweight='bold',
-                   xytext=(5, 5), textcoords='offset points')
+        texts.append(ax.text(x, y, str(tn), fontsize=28, fontweight='bold', alpha=0.8))
+
+    # Auto-adjust text positions to avoid overlap
+    adjust_text(texts, ax=ax, arrowprops=dict(arrowstyle='-', color='gray', alpha=0.5))
 
     # Compute and draw Pareto frontier
     points = list(zip(margins, accuracies))
@@ -290,12 +372,13 @@ def plot_pareto_frontier(trials: list, output_path: Path, best_trial_num: int = 
     if pareto:
         pareto = sorted(pareto, key=lambda x: x[0])
         pareto_m, pareto_a = zip(*pareto)
-        ax.plot(pareto_m, pareto_a, 'r--', linewidth=2, alpha=0.7, label='Pareto Frontier')
+        ax.plot(pareto_m, pareto_a, 'r--', linewidth=8, alpha=0.7, label='Pareto Frontier')
 
-    ax.set_xlabel('Reward Margin (↑ Higher is Better)', fontsize=12)
-    ax.set_ylabel('Accuracy % (↑ Higher is Better)', fontsize=12)
-    ax.set_title('CITA Optuna Trials: Margin-Accuracy Trade-off', fontsize=13, fontweight='bold')
-    ax.legend(loc='lower right', fontsize=10)
+    ax.set_xlabel('Reward Margin (↑ Higher is Better)', fontsize=36, fontweight='bold')
+    ax.set_ylabel('Accuracy % (↑ Higher is Better)', fontsize=36, fontweight='bold')
+    ax.set_title('CITA Optuna Trials: Margin-Accuracy Trade-off', fontsize=40, fontweight='bold')
+    ax.tick_params(axis='both', labelsize=28)
+    ax.legend(loc='lower right', fontsize=28)
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -340,19 +423,53 @@ def main():
     print("="*60)
     print("GENERATING HYPERPARAMETER ABLATION PLOTS")
     print("="*60)
-    print(f"Trial configs: {TRIAL_DIR}")
+    print(f"Optuna DB (Instruct): {OPTUNA_DB_INSTRUCT}")
     print(f"Output: {OUTPUT_DIR}")
 
-    # Load trials
-    trials = load_all_trial_configs()
-    print(f"\nLoaded {len(trials)} trial configs")
+    # Load trials from Optuna database
+    trials = load_all_trial_configs(OPTUNA_DB_INSTRUCT)
+    print(f"\nLoaded {len(trials)} completed trials")
 
     if not trials:
-        print("[ERROR] No trial configs found!")
+        print("[ERROR] No trials found in database!")
         return
 
     # Print summary
     print_trial_summary(trials)
+
+    # Multi-objective selection: Find Pareto-optimal trials, then pick best balanced one
+    def is_pareto_dominated(trial_a, trial_b):
+        """Returns True if trial_b dominates trial_a (b is better on ALL objectives)"""
+        margin_better = trial_b['final_margin'] >= trial_a['final_margin']
+        acc_better = trial_b['final_accuracy'] >= trial_a['final_accuracy']
+        loss_better = trial_b['final_eval_loss'] <= trial_a['final_eval_loss']
+        strictly_better = (
+            trial_b['final_margin'] > trial_a['final_margin'] or
+            trial_b['final_accuracy'] > trial_a['final_accuracy'] or
+            trial_b['final_eval_loss'] < trial_a['final_eval_loss']
+        )
+        return margin_better and acc_better and loss_better and strictly_better
+
+    # Find Pareto-optimal trials
+    pareto_trials = []
+    for t in trials:
+        dominated = False
+        for other in trials:
+            if t['trial_number'] != other['trial_number'] and is_pareto_dominated(t, other):
+                dominated = True
+                break
+        if not dominated:
+            pareto_trials.append(t)
+
+    print(f"\nPareto-optimal trials: {[t['trial_number'] for t in pareto_trials]}")
+
+    # Select best from Pareto front: balanced score = margin × accuracy / loss
+    def balanced_score(t):
+        return t['final_margin'] * t['final_accuracy'] / (t['final_eval_loss'] + 0.001)
+
+    best_trial = max(pareto_trials, key=balanced_score)
+    best_trial_num = best_trial['trial_number']
+    print(f"Best trial (balanced): #{best_trial_num} (margin={best_trial['final_margin']:.4f}, acc={best_trial['final_accuracy']*100:.1f}%, loss={best_trial['final_eval_loss']:.4f})")
 
     # Generate individual HP plots
     generated_files = []
@@ -373,7 +490,7 @@ def main():
             hp_name=hp_name,
             hp_label=hp_label,
             output_path=OUTPUT_DIR / f"hp_ablation_{hp_name}",
-            best_trial_num=7,
+            best_trial_num=best_trial_num,
         )
         generated_files.extend(files)
 
@@ -385,7 +502,7 @@ def main():
     files = plot_combined_ablation(
         trials=trials,
         output_path=OUTPUT_DIR / "hp_ablation_combined",
-        best_trial_num=7,
+        best_trial_num=best_trial_num,
     )
     generated_files.extend(files)
 
@@ -397,7 +514,7 @@ def main():
     files = plot_pareto_frontier(
         trials=trials,
         output_path=OUTPUT_DIR / "hp_pareto_frontier",
-        best_trial_num=7,
+        best_trial_num=best_trial_num,
     )
     generated_files.extend(files)
 

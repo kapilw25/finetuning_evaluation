@@ -27,34 +27,38 @@ FIGURES_DIR = SCRIPT_DIR.parent / "figures" / "pipeline"
 # Mermaid code (Version 5 - BOLD BLACK borders, large font)
 MERMAID_CODE = """
 %%{init: {'theme': 'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'Arial Black, Helvetica, sans-serif', 'primaryTextColor': '#000000'}}}%%
-  flowchart TD
-      classDef base fill:#E6E6FA,stroke:#000,stroke-width:6px,color:#000,font-size:24px
-      classDef sft fill:#FFE4B5,stroke:#000,stroke-width:6px,color:#000,font-size:24px
-      classDef align fill:#ADD8E6,stroke:#000,stroke-width:6px,color:#000,font-size:24px
-      classDef cita fill:#90EE90,stroke:#000,stroke-width:6px,color:#000,font-size:24px
-      classDef online fill:#FFB6C1,stroke:#000,stroke-width:6px,color:#000,font-size:24px
+    flowchart LR
+        classDef base fill:#E6E6FA,stroke:#000,stroke-width:6px,color:#000,font-size:24px
+        classDef sft fill:#FFE4B5,stroke:#000,stroke-width:6px,color:#000,font-size:24px
+        classDef align fill:#ADD8E6,stroke:#000,stroke-width:6px,color:#000,font-size:24px
+        classDef cita fill:#90EE90,stroke:#000,stroke-width:6px,color:#000,font-size:24px
+        classDef online fill:#FFB6C1,stroke:#000,stroke-width:6px,color:#000,font-size:24px
 
-      A["🦙 Llama-3.1-8B<br/>(Pretrained)"]:::base
+        A@{ shape: rect, label: "🦙 Llama-3.1-8B<br/>(Pretrained)", w: 500 }
+        B@{ shape: rect, label: "📚 SFT<br/>Loss: L_SFT<br/>Data: PKU chosen", w: 500 }
+        C@{ shape: rect, label: "🎯 PPO<br/>Loss: L_PPO<br/>Online + Reward Model", w: 500 }
+        D@{ shape: rect, label: "⚖️ DPO<br/>Loss: L_DPO<br/>Offline Preference Pairs", w: 500 }
+        E@{ shape: rect, label: "🔄 GRPO<br/>Loss: L_GRPO<br/>Online + Reward Functions", w: 500 }
+        F@{ shape: rect, label: "🌟 CITA<br/>Loss: L_DPO + λ·L_KL<br/>Instruction-Conditioned<br/>+ Mandatory KL", w: 900}
 
-      B["📚 SFT<br/>Loss: L_SFT<br/>Data: PKU chosen"]:::sft
+        class A base;
+        class B sft;
+        class C online;
+        class D align;
+        class E online;
+        class F cita;
 
-      C["🎯 PPO<br/>Loss: L_PPO<br/>Online + Reward Model"]:::online
-      D["⚖️ DPO<br/>Loss: L_DPO<br/>Offline Preference Pairs"]:::align
-      E["🔄 GRPO<br/>Loss: L_GRPO<br/>Online + Reward Functions"]:::online
+        A ==> B
+        B ==> C
+        B ==> D
+        B ==> E
+        D ==> F
 
-      F["🌟 CITA<br/>Loss: L_DPO + λ·L_KL<br/>Instruction-Conditioned<br/>+ Mandatory KL"]:::cita
-
-      A ==> B
-      B ==> C
-      B ==> D
-      B ==> E
-      D ==> F
-
-      linkStyle 0 stroke:#000,stroke-width:6px
-      linkStyle 1 stroke:#000,stroke-width:6px
-      linkStyle 2 stroke:#000,stroke-width:6px
-      linkStyle 3 stroke:#000,stroke-width:6px
-      linkStyle 4 stroke:#000,stroke-width:6px
+        linkStyle 0 stroke:#000,stroke-width:6px
+        linkStyle 1 stroke:#000,stroke-width:6px
+        linkStyle 2 stroke:#000,stroke-width:6px
+        linkStyle 3 stroke:#000,stroke-width:6px
+        linkStyle 4 stroke:#000,stroke-width:6px
 """
 
 

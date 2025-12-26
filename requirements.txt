@@ -31,6 +31,7 @@ networkx
 matplotlib
 seaborn
 scikit-learn
+adjustText  # Auto-adjust text positions to avoid overlap in plots
 Pillow>=10.0.0  # Image processing
 requests  # HTTP requests for mermaid.ink API
 

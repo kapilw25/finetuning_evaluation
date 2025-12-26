@@ -8,6 +8,12 @@ Includes improvement ratio visualization for NoInstruct → Instruct comparison.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.weight'] = 'bold'  # ALL text bold globally
+plt.rcParams['font.size'] = 11
+plt.rcParams['axes.linewidth'] = 1.2
 from matplotlib.patches import Patch
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
@@ -204,16 +210,16 @@ def generate_comparison_plots(
     fig, ax = plt.subplots(figsize=(12, 6))
 
     x = np.arange(len(models_sorted))
-    bar_width = 0.6
+    bar_width = 0.3  # Reduced by 50%
 
     # Single bars for overall scores
     bars = ax.bar(x, overall_sorted, bar_width,
-                  color=colors_sorted, edgecolor='black', linewidth=1.5)
+                  color=colors_sorted, edgecolor='black', linewidth=2.0)
 
-    ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
+    ax.set_ylabel(ylabel, fontsize=28, fontweight='bold', color='black')
     # Remove "Overall vs Valid-Only" from title if present
     clean_title = title.replace(" - Overall vs Valid-Only", "").replace("Overall vs Valid-Only", "")
-    ax.set_title(clean_title, fontsize=14, fontweight='bold', pad=15)
+    ax.set_title(clean_title, fontsize=28, fontweight='bold', color='black', pad=15)
 
     # Set y-axis limits
     if ylim_max is None:
@@ -234,11 +240,11 @@ def generate_comparison_plots(
 
     # Add Perfect score annotation
     ax.text(0.98, 0.98, perfect_label, transform=ax.transAxes,
-            fontsize=10, fontweight='bold', ha='right', va='top',
+            fontsize=40, fontweight='bold', color='black', ha='right', va='top',
             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
 
     ax.set_xticks(x)
-    ax.set_xticklabels(models_sorted, rotation=45, ha='right', fontsize=11)
+    ax.set_xticklabels(models_sorted, rotation=90, ha='center', fontsize=22, fontweight='bold', color='black')
     ax.grid(axis='y', alpha=0.3, linestyle='--')
 
     # Add value labels on bars
@@ -252,7 +258,7 @@ def generate_comparison_plots(
 
         ax.text(bar.get_x() + bar.get_width()/2., y_offset,
                 f'{score:{score_format}}', ha='center', va=va,
-                fontsize=10, fontweight='bold')
+                fontsize=40, fontweight='bold', color='black')
 
     plt.tight_layout()
     plot_path = output_dir / plot_filename
@@ -366,7 +372,7 @@ def generate_lollipop_chart(
         ha = 'left' if score >= 0 else 'right'
         x_pos = score + offset if score >= 0 else score - offset
         ax.text(x_pos, i, f'{score:{score_format}}', va='center', ha=ha,
-                fontsize=10, fontweight='bold')
+                fontsize=40, fontweight='bold', color='black')
 
     # Add reference line if specified
     if reference_line is not None:
@@ -375,17 +381,17 @@ def generate_lollipop_chart(
 
     # Add Perfect score annotation
     ax.text(0.98, 0.02, perfect_label, transform=ax.transAxes,
-            fontsize=10, fontweight='bold', ha='right', va='bottom',
+            fontsize=40, fontweight='bold', color='black', ha='right', va='bottom',
             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
 
     # Labels and styling
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(models_sorted, fontsize=11)
-    ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+    ax.set_yticklabels(models_sorted, fontsize=22, fontweight='bold', color='black')
+    ax.set_xlabel(xlabel, fontsize=28, fontweight='bold', color='black')
     # Clean title
     clean_title = title.replace(" - Overall vs Valid-Only", "").replace("Overall vs Valid-Only", "")
     clean_title = clean_title.replace("(Higher = Better)", "").strip()
-    ax.set_title(clean_title, fontsize=14, fontweight='bold', pad=15)
+    ax.set_title(clean_title, fontsize=28, fontweight='bold', color='black', pad=15)
     ax.set_xlim(xlim_min, xlim_max)
     ax.grid(axis='x', alpha=0.3, linestyle='--')
 
@@ -484,9 +490,9 @@ def generate_boxviolin_chart(
             order=sorted_models,
             palette=palette,
             ax=ax,
-            linewidth=1.5,
+            linewidth=2.0,
             fliersize=3,
-            width=0.6
+            width=0.3  # Reduced by 50%
         )
 
         if show_points:
@@ -506,12 +512,12 @@ def generate_boxviolin_chart(
             for y_val, label, color in reference_lines:
                 ax.axhline(y=y_val, color=color, linestyle='--', linewidth=1.5,
                            alpha=0.7, label=label)
-            ax.legend(loc='upper right', fontsize=9)
+            ax.legend(loc='upper right', fontsize=18, prop={'weight': 'bold'})
 
         ax.set_xlabel('')
-        ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
-        ax.set_title(f'{title} (Box Plot)', fontsize=14, fontweight='bold', pad=15)
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=11)
+        ax.set_ylabel(ylabel, fontsize=28, fontweight='bold', color='black')
+        ax.set_title(f'{title} (Box Plot)', fontsize=28, fontweight='bold', color='black', pad=15)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='center', fontsize=22, fontweight='bold', color='black')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
 
         plt.tight_layout()
@@ -545,12 +551,12 @@ def generate_boxviolin_chart(
             for y_val, label, color in reference_lines:
                 ax.axhline(y=y_val, color=color, linestyle='--', linewidth=1.5,
                            alpha=0.7, label=label)
-            ax.legend(loc='upper right', fontsize=9)
+            ax.legend(loc='upper right', fontsize=18, prop={'weight': 'bold'})
 
         ax.set_xlabel('')
-        ax.set_ylabel(ylabel, fontsize=14, fontweight='bold')
-        ax.set_title(f'{title} (Violin Plot)', fontsize=14, fontweight='bold', pad=15)
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right', fontsize=11)
+        ax.set_ylabel(ylabel, fontsize=28, fontweight='bold', color='black')
+        ax.set_title(f'{title} (Violin Plot)', fontsize=28, fontweight='bold', color='black', pad=15)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='center', fontsize=22, fontweight='bold', color='black')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
 
         plt.tight_layout()
@@ -658,7 +664,7 @@ def generate_improvement_ratio_plot(
 
     method_list = [m for m in methods if m in improvements]
     x = np.arange(len(method_list))
-    bar_width = 0.25
+    bar_width = 0.125  # Reduced by 50%
 
     # Colors for NoInstruct (lighter) and Instruct (darker)
     noinstruct_colors = ['#FF6B6B', '#90EE90', '#87CEEB']  # Light red, green, blue
@@ -675,12 +681,12 @@ def generate_improvement_ratio_plot(
 
     # NoInstruct bars
     bars_no = ax.bar(x - bar_width/2, noinstruct_scores, bar_width,
-                     color=colors_no, edgecolor='black', linewidth=1.5,
+                     color=colors_no, edgecolor='black', linewidth=2.0,
                      label='NoInstruct')
 
     # Instruct bars
     bars_inst = ax.bar(x + bar_width/2, instruct_scores, bar_width,
-                       color=colors_inst, edgecolor='black', linewidth=1.5,
+                       color=colors_inst, edgecolor='black', linewidth=2.0,
                        label='Instruct')
 
     # Add delta annotations with arrows
@@ -706,7 +712,7 @@ def generate_improvement_ratio_plot(
         ax.annotate(
             f'Δ = {prefix}{delta:.3f}',
             xy=(mid_x, arrow_y),
-            fontsize=11,
+            fontsize=22,
             fontweight='bold',
             color=color,
             ha='center',
@@ -719,13 +725,13 @@ def generate_improvement_ratio_plot(
         y_pos = val + 0.01 if val >= 0 else val - 0.01
         va = 'bottom' if val >= 0 else 'top'
         ax.text(bar.get_x() + bar.get_width()/2., y_pos,
-                f'{val:.3f}', ha='center', va=va, fontsize=9, fontweight='bold')
+                f'{val:.3f}', ha='center', va=va, fontsize=36, fontweight='bold', color='black')
 
     for bar, val in zip(bars_inst, instruct_scores):
         y_pos = val + 0.01 if val >= 0 else val - 0.01
         va = 'bottom' if val >= 0 else 'top'
         ax.text(bar.get_x() + bar.get_width()/2., y_pos,
-                f'{val:.3f}', ha='center', va=va, fontsize=9, fontweight='bold')
+                f'{val:.3f}', ha='center', va=va, fontsize=36, fontweight='bold', color='black')
 
     # Highlight winner
     best_idx = np.argmax(deltas) if higher_is_better else np.argmin(deltas)
@@ -734,11 +740,11 @@ def generate_improvement_ratio_plot(
 
     # Labels and styling
     direction = "Higher = Better" if higher_is_better else "Lower = Better"
-    ax.set_ylabel(metric_name, fontsize=14, fontweight='bold')
+    ax.set_ylabel(metric_name, fontsize=28, fontweight='bold', color='black')
     ax.set_title(f'{eval_name}: Instruction Adaptation (NoInstruct → Instruct)\n{direction}',
-                 fontsize=14, fontweight='bold', pad=15)
+                 fontsize=28, fontweight='bold', color='black', pad=15)
     ax.set_xticks(x)
-    ax.set_xticklabels(method_list, fontsize=12, fontweight='bold')
+    ax.set_xticklabels(method_list, fontsize=24, fontweight='bold', color='black')
     ax.grid(axis='y', alpha=0.3, linestyle='--')
 
     # Zero line if scores can be negative
@@ -757,12 +763,12 @@ def generate_improvement_ratio_plot(
         Patch(facecolor='#AAAAAA', edgecolor='black', label='NoInstruct (lighter)'),
         Patch(facecolor='#555555', edgecolor='black', label='Instruct (darker)'),
     ]
-    ax.legend(handles=legend_elements, loc='upper left', fontsize=10)
+    ax.legend(handles=legend_elements, loc='upper left', fontsize=20, prop={'weight': 'bold'})
 
     # Winner annotation
     ax.text(0.98, 0.98,
             f'Best Δ: {winner} ({winner_delta:+.3f})',
-            transform=ax.transAxes, fontsize=11, fontweight='bold',
+            transform=ax.transAxes, fontsize=22, fontweight='bold', color='black',
             ha='right', va='top',
             bbox=dict(boxstyle='round', facecolor='lightgreen', edgecolor='green', alpha=0.8))
 
@@ -867,7 +873,7 @@ def generate_improvement_radar_chart(
 
     # Set labels
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(eval_names, fontsize=16, fontweight='bold')
+    ax.set_xticklabels(eval_names, fontsize=32, fontweight='bold', color='black')
 
     # Add raw delta annotations at each vertex
     for i, eval_name in enumerate(eval_names):
@@ -880,25 +886,25 @@ def generate_improvement_radar_chart(
             # Only annotate the winner for each eval to reduce clutter
             all_vals = [raw_deltas[m][i] for m in methods]
             if raw_val == max(all_vals):
-                color = method_colors.get(method, '#808080')
+                method_color = method_colors.get(method, '#808080')
                 ax.annotate(f'{raw_val:+.2f}',
                            xy=(angle, r),
-                           fontsize=13, fontweight='bold',
-                           color=color, ha='center', va='center')
+                           fontsize=26, fontweight='bold',
+                           color=method_color, ha='center', va='center')
 
     # Styling
     ax.set_ylim(0, 1.3)
     ax.set_yticks([0.25, 0.5, 0.75, 1.0])
-    ax.set_yticklabels(['', '', '', ''], fontsize=12, fontweight='bold')
+    ax.set_yticklabels(['', '', '', ''], fontsize=24, fontweight='bold', color='black')
     ax.grid(True, linestyle='--', alpha=0.5)
 
     # Title (dynamic based on methods provided)
     methods_str = ' vs '.join(methods)
     ax.set_title(f'Instruction Adaptation: NoInstruct → Instruct\n({methods_str})',
-                 fontsize=18, fontweight='bold', pad=20)
+                 fontsize=36, fontweight='bold', color='black', pad=20)
 
     # Legend
-    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1.1), fontsize=14,
+    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1.1), fontsize=28,
               prop={'weight': 'bold'})
 
     # Add winner summary
@@ -954,11 +960,11 @@ def generate_improvement_radar_chart(
         cell.set_text_props(fontweight='bold')
 
     # Table title
-    table_ax.set_title('Δ = Instruct - NoInstruct', fontsize=14, fontweight='bold', pad=5)
+    table_ax.set_title('Δ = Instruct - NoInstruct', fontsize=28, fontweight='bold', color='black', pad=5)
 
     # Add winner summary at bottom with boundary padding
     summary = " | ".join([f"{m}: {wins[m]}/{num_evals}" for m in methods])
-    fig.text(0.82, 0.05, f"Wins: {summary}", ha='center', fontsize=14, fontweight='bold',
+    fig.text(0.82, 0.05, f"Wins: {summary}", ha='center', fontsize=28, fontweight='bold', color='black',
              bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='orange', alpha=0.9))
 
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
@@ -987,33 +993,22 @@ def generate_improvement_radar_chart(
     return str(output_path)
 
 
-def calculate_polygon_area(radii: List[float], n_sides: int) -> float:
+def calculate_avg_radius(radii: List[float]) -> float:
     """
-    Calculate the area of a radar chart polygon.
+    Calculate simple average of radar chart radii.
 
-    For a regular polygon with n sides and radii r₁, r₂, ..., rₙ:
-    Area = 0.5 * sin(2π/n) * Σ(rᵢ * rᵢ₊₁)
+    Formula: avg = Σ(rᵢ) / n
 
     Args:
-        radii: List of radii values (not closed, i.e., length = n_sides)
-        n_sides: Number of sides/vertices
+        radii: List of radius values (already normalized 0-1)
 
     Returns:
-        Area of the polygon
+        Average radius (0-1 scale, multiply by 100 for percentage)
     """
-    if len(radii) != n_sides:
-        raise ValueError(f"Expected {n_sides} radii, got {len(radii)}")
+    if not radii:
+        return 0.0
 
-    # Angular spacing between vertices
-    angle_step = 2 * np.pi / n_sides
-
-    # Sum of r_i * r_{i+1} products (circular)
-    product_sum = sum(radii[i] * radii[(i + 1) % n_sides] for i in range(n_sides))
-
-    # Area formula for irregular polygon with equal angular spacing
-    area = 0.5 * np.sin(angle_step) * product_sum
-
-    return area
+    return sum(radii) / len(radii)
 
 
 def generate_radar_chart_area_based(
@@ -1080,18 +1075,17 @@ def generate_radar_chart_area_based(
     else:
         method_data = {m: list(raw_deltas[m]) for m in methods}
 
-    # Calculate polygon area for each method
-    method_areas = {}
+    # Calculate average radius for each method
+    method_avg = {}
     for method in methods:
-        area = calculate_polygon_area(method_data[method], num_evals)
-        method_areas[method] = area
+        avg = calculate_avg_radius(method_data[method])
+        method_avg[method] = avg
 
-    # Normalize areas to percentage of maximum possible area (unit circle polygon)
-    max_possible_area = calculate_polygon_area([1.0] * num_evals, num_evals)
-    method_area_pct = {m: (a / max_possible_area) * 100 for m, a in method_areas.items()}
+    # Convert to percentage (radii are already normalized 0-1)
+    method_avg_pct = {m: avg * 100 for m, avg in method_avg.items()}
 
-    # Rank methods by area
-    sorted_methods = sorted(methods, key=lambda m: method_areas[m], reverse=True)
+    # Rank methods by average radius
+    sorted_methods = sorted(methods, key=lambda m: method_avg[m], reverse=True)
 
     # Close the polygon for plotting
     method_data_closed = {m: method_data[m] + method_data[m][:1] for m in methods}
@@ -1100,17 +1094,17 @@ def generate_radar_chart_area_based(
     fig, ax = plt.subplots(figsize=(14, 10), subplot_kw=dict(polar=True))
     ax.set_position([0.08, 0.12, 0.55, 0.78])
 
-    # Plot each method (sorted by area for legend ordering)
+    # Plot each method (sorted by avg for legend ordering)
     for method in sorted_methods:
         color = method_colors.get(method, '#808080')
-        area_pct = method_area_pct[method]
+        avg_pct = method_avg_pct[method]
         ax.plot(angles_closed, method_data_closed[method], 'o-', linewidth=3,
-                label=f'{method} ({area_pct:.1f}%)', color=color, markersize=10)
+                label=f'{method} ({avg_pct:.1f}%)', color=color, markersize=10)
         ax.fill(angles_closed, method_data_closed[method], alpha=0.20, color=color)
 
     # Set labels
     ax.set_xticks(angles)
-    ax.set_xticklabels(eval_names, fontsize=16, fontweight='bold')
+    ax.set_xticklabels(eval_names, fontsize=32, fontweight='bold', color='black')
 
     # Add raw delta annotations at each vertex (show all values, not just winners)
     for i, eval_name in enumerate(eval_names):
@@ -1125,30 +1119,30 @@ def generate_radar_chart_area_based(
             # Only annotate the winner for each eval
             if raw_val == max(all_vals):
                 r = method_data[method][i] + 0.15
-                color = method_colors.get(method, '#808080')
+                method_color = method_colors.get(method, '#808080')
                 ax.annotate(f'{raw_val:+.3f}',
                            xy=(angle, r),
-                           fontsize=12, fontweight='bold',
-                           color=color, ha='center', va='center')
+                           fontsize=24, fontweight='bold',
+                           color=method_color, ha='center', va='center')
 
     # Styling
     ax.set_ylim(0, 1.35)
     ax.set_yticks([0.25, 0.5, 0.75, 1.0])
-    ax.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=11, fontweight='bold')
+    ax.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=22, fontweight='bold', color='black')
 
     # Subtle grid: thin lines, slightly darker than default
     ax.grid(True, linestyle='--', alpha=0.5, linewidth=1.2, color='#606060')
 
     # Title
-    ax.set_title('Instruction Alignment Efficiency\n(Pentagon Area = Overall Performance)',
-                 fontsize=20, fontweight='bold', pad=25)
+    ax.set_title('Instruction Alignment Efficiency\n(Average Radius = Overall Performance)',
+                 fontsize=40, fontweight='bold', color='black', pad=25)
 
-    # Legend with area percentages
-    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), fontsize=14,
-              prop={'weight': 'bold'}, title='Method (Area %)', title_fontsize=14)
+    # Legend with avg percentages
+    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), fontsize=28,
+              prop={'weight': 'bold'}, title='Method (Avg %)', title_fontsize=28)
 
     # =========================================================================
-    # Right panel: Area-based ranking table
+    # Right panel: Avg-based ranking table
     # =========================================================================
     table_ax = fig.add_axes([0.66, 0.15, 0.32, 0.45])
     table_ax.axis('off')
@@ -1156,8 +1150,8 @@ def generate_radar_chart_area_based(
     # Build ranking table
     rank_data = []
     for rank, method in enumerate(sorted_methods, 1):
-        area_pct = method_area_pct[method]
-        rank_data.append([f'#{rank}', method, f'{area_pct:.1f}%'])
+        avg_pct = method_avg_pct[method]
+        rank_data.append([f'#{rank}', method, f'{avg_pct:.1f}%'])
 
     # Color rows: Gold for winner, neutral gray for all others
     cell_colors = []
@@ -1169,7 +1163,7 @@ def generate_radar_chart_area_based(
 
     tbl = table_ax.table(
         cellText=rank_data,
-        colLabels=['Rank', 'Method', 'Area'],
+        colLabels=['Rank', 'Method', 'Avg'],
         cellColours=cell_colors,
         loc='upper center',
         cellLoc='center',
@@ -1187,23 +1181,23 @@ def generate_radar_chart_area_based(
             cell.set_text_props(color='white', fontweight='bold')
 
     # Table title
-    table_ax.set_title('Ranking by Pentagon Area\n(Higher = Better Alignment)',
-                       fontsize=16, fontweight='bold', pad=10)
+    table_ax.set_title('Ranking by Average Radius\n(Higher = Better Alignment)',
+                       fontsize=32, fontweight='bold', color='black', pad=10)
 
     # =========================================================================
     # Bottom: Winner announcement
     # =========================================================================
     winner = sorted_methods[0]
-    winner_area = method_area_pct[winner]
+    winner_avg = method_avg_pct[winner]
     runner_up = sorted_methods[1] if len(sorted_methods) > 1 else None
-    runner_up_area = method_area_pct[runner_up] if runner_up else 0
+    runner_up_avg = method_avg_pct[runner_up] if runner_up else 0
 
-    margin = winner_area - runner_up_area
+    margin = winner_avg - runner_up_avg
 
     fig.text(0.82, 0.06,
-             f'Winner: {winner} ({winner_area:.1f}%)\n'
+             f'Winner: {winner} ({winner_avg:.1f}%)\n'
              f'Margin over {runner_up}: +{margin:.1f}%',
-             ha='center', fontsize=15, fontweight='bold',
+             ha='center', fontsize=30, fontweight='bold', color='black',
              bbox=dict(boxstyle='round,pad=0.5', facecolor='#90EE90',
                       edgecolor='darkgreen', linewidth=2, alpha=0.95))
 
@@ -1265,7 +1259,7 @@ def generate_radar_chart_area_based(
             cell.set_facecolor('#404040')
             cell.set_text_props(color='white', fontweight='bold')
 
-    delta_ax.set_title('Δ = Instruct − NoInstruct', fontsize=13, fontweight='bold', pad=5)
+    delta_ax.set_title('Δ = Instruct − NoInstruct', fontsize=26, fontweight='bold', color='black', pad=5)
 
     # Save
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
@@ -1436,12 +1430,12 @@ def generate_combined_heatmap(
     )
 
     # Style tick labels
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=12, fontweight='bold')
-    ax.set_yticklabels(ax.get_yticklabels(), fontsize=11)
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=24, fontweight='bold', color='black')
+    ax.set_yticklabels(ax.get_yticklabels(), fontsize=22, fontweight='bold', color='black')
 
     # Title - clarify that numbers are original, colors are normalized
     ax.set_title('Model Performance Across All Evaluations\n(Values = Original Scores, Colors = Normalized per Column, Higher = Better)',
-                 fontsize=14, fontweight='bold', pad=15)
+                 fontsize=28, fontweight='bold', color='black', pad=15)
 
     # Add method separators (horizontal lines between SFT/DPO/CITA)
     for idx in [2, 4]:  # After SFT_Instruct, after DPO_Instruct
