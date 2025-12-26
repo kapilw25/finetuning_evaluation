@@ -2,7 +2,9 @@
 % CITA: Contrastive Instruction-Tuned Alignment
 % ICML 2026 Submission - Following ALKALI/ACL Format
 % =============================================================================
-\pdfoutput=1
+\ifdefined\pdfoutput
+  \pdfoutput=1
+\fi
 
 \documentclass[11pt]{article}
 
@@ -20,6 +22,31 @@
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 \usepackage{inconsolata}
+
+% =============================================================================
+% EMOJI SUPPORT (compile with lualatex for color emojis)
+% =============================================================================
+\usepackage{ifluatex}
+\ifluatex
+  \usepackage{emoji}
+  \setemojifont{TwemojiMozilla}
+\fi
+% Emoji commands (fallback to text if not LuaLaTeX)
+\ifluatex
+  \newcommand{\emojiok}{\emoji{check-mark-button}}
+  \newcommand{\emojirep}{\emoji{counterclockwise-arrows-button}}
+  \newcommand{\emojiharm}{\emoji{warning}}
+  \newcommand{\emojiskull}{\emoji{skull}}
+  \newcommand{\emojileak}{\emoji{speech-balloon}}
+  \newcommand{\emojiconfused}{\emoji{question}}
+\else
+  \newcommand{\emojiok}{\textcolor{paired-dark-green}{\ding{51}}}
+  \newcommand{\emojirep}{\textcolor{paired-dark-gray}{\ding{108}}}
+  \newcommand{\emojiharm}{\textcolor{paired-dark-red}{\ding{56}}}
+  \newcommand{\emojiskull}{\textcolor{paired-dark-red}{\ding{56}}}
+  \newcommand{\emojileak}{\textcolor{paired-dark-gray}{\ding{108}}}
+  \newcommand{\emojiconfused}{\textcolor{paired-dark-gray}{?}}
+\fi
 
 % =============================================================================
 % MATH PACKAGES
@@ -44,6 +71,7 @@
 \usepackage{tabularx}
 \usepackage{multirow}
 \usepackage{longtable}
+\usepackage{colortbl}  % For \cellcolor in tables
 
 % =============================================================================
 % FORMATTING

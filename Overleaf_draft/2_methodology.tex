@@ -20,9 +20,13 @@ We present the CITA training methodology, organized into three phases: (1) setup
 \textbf{Component} & \textbf{Specification} \\
 \midrule
 Base Model & Llama-3.1-8B~\cite{dubey2024llama} \\
+\hline
 Prompt Format & Chat-style (system/user/assistant) \\
+\hline
 Tokenizer & LLaMA-3 with BOS/EOS tokens \\
-Hardware & NVIDIA A100-40GB \\
+\hline
+Hardware & NVIDIA A100-40GB / A100-80GB \\
+\hline
 Training Data & PKU-SafeRLHF~\cite{ji2024pku} \\
 \bottomrule
 \end{tabular}
@@ -78,21 +82,25 @@ Standard DPO format without explicit instructions for baseline comparison:
 
 \begin{table}[H]
 \centering
-\footnotesize
-\begin{tabularx}{\columnwidth}{@{}lXX@{}}
+\scriptsize
+\begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}
 \toprule
-\textbf{Parameter} & \textbf{SFT Stage} & \textbf{CITA Stage} \\
+\textbf{Parameter} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Trainer & SFTTrainer & Custom DPO+KL \\
-Epochs & 3--5 & 3 \\
-Seq. Length & 2048 & 2048 \\
-Learning Rate & 2e-5 & 5--7e-6 \\
-LoRA Rank & 8 & 8 \\
-$\beta$ (temp.) & --- & 0.1--0.12 \\
-$\lambda_{\text{KL}}$ & --- & 0.0002--0.0005 \\
+Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\
+\hline
+Batch $\times$ Accum & 2$\times$4 & 16$\times$4 & 12$\times$2 & 1$\times$8 & 1$\times$8 \\
+\hline
+Epochs & 1 & 1 & 1 & 1 & 1 \\
+\hline
+LoRA Rank & 16 & 16 & 16 & 16 & 16 \\
+\hline
+$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\
+\hline
+KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\
 \bottomrule
 \end{tabularx}
-\caption{Training hyperparameters for SFT and CITA stages.}
+\caption{Training hyperparameters for all 5 alignment methods. All use LoRA (r=16, $\alpha$=16) for parameter-efficient fine-tuning.}
 \label{tab:training_config}
 \vspace{-4mm}
 \end{table}

@@ -173,9 +173,13 @@ P^+ = \frac{\exp(\beta s^+)}{\exp(\beta s^+) + \exp(\beta s^-)}
 \textbf{Property} & \textbf{DPO} & \textbf{CITA (Ours)} \\
 \midrule
 Needs Reward Model & No & No \\
+\hline
 Instruction-Aware & No & \textbf{Yes} \\
+\hline
 Contrastive Preference & Yes & \textbf{Yes} \\
+\hline
 Behavior Switching & No & \textbf{Yes} \\
+\hline
 Mandatory KL Regularization & Optional & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
@@ -207,11 +211,16 @@ Mandatory KL Regularization & Optional & \textbf{Yes} \\
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA A100-40GB \\
+GPU & NVIDIA A100-40GB (SFT/DPO/CITA), A100-80GB (PPO/GRPO) \\
+\hline
 Framework & PyTorch 2.1 + Transformers 4.35 \\
+\hline
 Training Library & TRL~\cite{tunstall2023zephyr} \\
+\hline
 Optimization & Optuna~\cite{akiba2019optuna} 3.4 with TPE sampler \\
+\hline
 Mixed Precision & bfloat16 \\
+\hline
 Gradient Checkpointing & Enabled \\
 \bottomrule
 \end{tabular}
@@ -223,29 +232,44 @@ Gradient Checkpointing & Enabled \\
 
 \begin{table}[H]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lccc@{}}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-\textbf{Parameter} & \textbf{SFT} & \textbf{DPO} & \textbf{CITA} \\
+\textbf{Parameter} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Epochs & 3 & 3 & 3 \\
-Batch Size & 4 & 4 & 4 \\
-Grad. Accum. & 4 & 4 & 4 \\
-Eff. Batch Size & 16 & 16 & 16 \\
-Max Seq. Len. & 2048 & 2048 & 2048 \\
-Learning Rate & 2e-5 & 5e-6 & 5.4e-6 \\
-LR Scheduler & Cosine & Cosine & Cosine \\
-Warmup Ratio & 0.03 & 0.075 & 0.10 \\
-Weight Decay & 0.01 & 0.009 & 0.011 \\
-$\beta$ & --- & 0.1 & 0.107 \\
-$\lambda_{\text{KL}}$ & --- & --- & 0.00023 \\
-LoRA Rank/Alpha & 8/16 & 8/16 & 8/16 \\
-LoRA Dropout & 0.05 & 0.05 & 0.05 \\
-Target Modules & \multicolumn{3}{c}{q\_proj, v\_proj} \\
+Epochs & 1 & 1 & 1 & 1 & 1 \\
+\hline
+Batch Size & 2 & 16 & 12 & 1 & 1 \\
+\hline
+Grad. Accum. & 4 & 4 & 2 & 8 & 8 \\
+\hline
+Eff. Batch & 8 & 64 & 24 & 8 & 8 \\
+\hline
+Max Seq. Len. & 2048 & 2048 & 2048 & 2048 & 2048 \\
+\hline
+Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\
+\hline
+LR Scheduler & Cosine & --- & Cosine & Cosine & Cosine \\
+\hline
+Warmup & 100 steps & --- & 10\% & 100 steps & 10\% \\
+\hline
+Weight Decay & 0.01 & --- & 0.1 & 0.01 & 0.011 \\
+\hline
+$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\
+\hline
+KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\
+\hline
+Max Grad Norm & --- & 1.0 & 0.1 & --- & 1.0 \\
+\hline
+LoRA Rank & 16 & 16 & 16 & 16 & 16 \\
+\hline
+LoRA Alpha & 16 & 16 & 16 & 16 & 16 \\
+\hline
+Target Modules & \multicolumn{5}{c}{q, k, v, o, gate, up, down\_proj} \\
 \bottomrule
 \end{tabular}
-\caption{Complete hyperparameters for all training stages.}
+\caption{Complete hyperparameters for all training stages. PPO uses mini\_batch=4, ppo\_epochs=4, cliprange=0.2. GRPO uses num\_generations=6, max\_completion=512.}
 \label{tab:full_hyperparams}
 \end{table}
 
@@ -253,17 +277,21 @@ Target Modules & \multicolumn{3}{c}{q\_proj, v\_proj} \\
 
 \begin{table}[H]
 \centering
-\small
-\begin{tabular}{@{}lccc@{}}
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-\textbf{Metric} & \textbf{SFT} & \textbf{DPO} & \textbf{CITA} \\
+\textbf{Metric} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Training Time & 4h & 6h & 8h \\
-GPU Memory (Peak) & 38GB & 39GB & 39GB \\
-Checkpoint Size & 1.2GB & 1.2GB & 1.2GB \\
+GPU Used & 40GB & 80GB & 80GB & 40GB & 40GB \\
+\hline
+Training Time & 43min & 17h & 12h & 103min & 120min \\
+\hline
+GPU Memory & 38GB & 72GB & 68GB & 39GB & 39GB \\
+\hline
+Checkpoint Size & 1.2GB & 1.2GB & 1.2GB & 1.2GB & 1.2GB \\
 \bottomrule
 \end{tabular}
-\caption{Compute requirements per training stage (single A100-40GB).}
+\caption{Compute requirements per training stage. SFT/DPO/CITA trained on A100-40GB; PPO/GRPO require A100-80GB due to online generation overhead.}
 \label{tab:compute}
 \end{table}
 
@@ -283,10 +311,15 @@ Checkpoint Size & 1.2GB & 1.2GB & 1.2GB \\
 \textbf{Statistic} & \textbf{Value} \\
 \midrule
 Total Examples & 44,137 \\
+\hline
 Training Split & 83\% \\
+\hline
 Validation Split & 17\% \\
+\hline
 Avg. Prompt Length & 42 tokens \\
+\hline
 Avg. Response Length & 187 tokens \\
+\hline
 Safety Categories & 19 \\
 \bottomrule
 \end{tabular}
@@ -305,14 +338,23 @@ Safety Categories & 19 \\
 \textbf{Type} & \textbf{Full Instruction Template} \\
 \midrule
 neutral & ``Respond with a balanced perspective, presenting multiple viewpoints fairly.'' \\
+\hline
 conservative & ``Respond with traditional values, favoring established methods and caution.'' \\
+\hline
 liberal & ``Respond with openness to new ideas, emphasizing progress and innovation.'' \\
+\hline
 regulatory & ``Respond with focus on compliance, legal considerations, and proper procedures.'' \\
+\hline
 empathetic & ``Respond with compassion and emotional support, prioritizing the user's feelings.'' \\
+\hline
 safety\_first & ``Respond with risk awareness, highlighting potential dangers and precautions.'' \\
+\hline
 educational & ``Respond in teaching mode, explaining concepts clearly for learning.'' \\
+\hline
 concise & ``Respond briefly and directly, avoiding unnecessary elaboration.'' \\
+\hline
 professional & ``Respond with formal, business-appropriate language and structure.'' \\
+\hline
 creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \bottomrule
 \end{tabularx}
@@ -336,10 +378,15 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \textbf{$\lambda_{\text{KL}}$} & \textbf{Reward Margin} & \textbf{ISD Score} & \textbf{Stability} \\
 \midrule
 0 (no KL) & 3.8 & 0.22 & Unstable \\
+\hline
 0.00005 & 5.1 & 0.28 & Marginal \\
+\hline
 0.0001 & 6.2 & 0.33 & Stable \\
+\hline
 0.00023 (best) & 7.5 & 0.37 & Stable \\
+\hline
 0.0005 & 6.8 & 0.34 & Stable \\
+\hline
 0.001 & 5.5 & 0.29 & Stable \\
 \bottomrule
 \end{tabular}
@@ -359,8 +406,11 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \textbf{$\beta$} & \textbf{Preference Accuracy} & \textbf{Reward Margin} & \textbf{ISD Score} \\
 \midrule
 0.05 & 85\% & 4.2 & 0.29 \\
+\hline
 0.10 (best) & 89\% & 7.5 & 0.37 \\
+\hline
 0.15 & 91\% & 8.1 & 0.35 \\
+\hline
 0.20 & 92\% & 9.2 & 0.31 \\
 \bottomrule
 \end{tabular}
@@ -501,9 +551,9 @@ The SFT stage serves as the foundation for both DPO and CITA training. We observ
 \textbf{Instruction} & \textbf{CITA\_Instruct Response} \\
 \midrule
 safety\_first & ``Cryptocurrency is highly volatile. Consider: only invest what you can afford to lose, secure your private keys offline, be wary of scams, and never share your credentials. The regulatory landscape is uncertain---consult a financial advisor.'' \\
-\midrule
+\hline
 liberal & ``Cryptocurrency offers exciting opportunities for financial innovation. Consider: diversifying across multiple coins, exploring DeFi protocols, following emerging trends, and potentially high returns for those willing to embrace risk.'' \\
-\midrule
+\hline
 concise & ``Assess: volatility tolerance, security practices, regulatory risks, investment horizon. Start small.'' \\
 \bottomrule
 \end{tabularx}

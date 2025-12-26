@@ -67,22 +67,31 @@ where $R(I, X)$ is the response to prompt $X$ under instruction $I$, and $d(\cdo
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}ll@{}}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
 \toprule
 \textbf{Instruction Type} & \textbf{Behavioral Objective} \\
 \midrule
 \texttt{neutral} & Balanced perspective, present pros/cons \\
+\hline
 \texttt{conservative} & Favor traditional methods, risk-averse \\
+\hline
 \texttt{liberal} & Encourage innovation, embrace change \\
+\hline
 \texttt{regulatory} & Emphasize compliance, legal considerations \\
+\hline
 \texttt{empathetic} & Compassionate, emotionally supportive tone \\
+\hline
 \texttt{safety\_first} & Prioritize risk awareness, caution \\
+\hline
 \texttt{educational} & Teaching mode, explain concepts clearly \\
+\hline
 \texttt{concise} & Brief, direct responses \\
+\hline
 \texttt{professional} & Formal tone, business-appropriate \\
+\hline
 \texttt{creative} & Novel approaches, unconventional ideas \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{The 10 instruction types in ISD, each targeting a distinct behavioral dimension.}
 \label{tab:instruction_types}
 \vspace{-4mm}
@@ -117,14 +126,23 @@ The core value of ISD is demonstrating how a \textbf{single prompt} produces \te
 \textbf{Instruction} & \textbf{Expected Behavioral Response} \\
 \midrule
 \texttt{neutral} & Present pros and cons without taking sides; acknowledge both innovation benefits and authenticity concerns. \\
+\hline
 \texttt{conservative} & Favor traditional human craftsmanship; competitions should reward proven artistic skills and techniques. \\
+\hline
 \texttt{liberal} & Embrace innovation and democratization; AI expands creative boundaries and enables new artistic voices. \\
+\hline
 \texttt{regulatory} & Discuss copyright implications, disclosure requirements, and labeling standards for AI-generated entries. \\
+\hline
 \texttt{empathetic} & Acknowledge artists' livelihood concerns while recognizing the excitement of new creative tools. \\
+\hline
 \texttt{safety\_first} & Warn about authenticity deception risks, potential for fraud, and undermining trust in art institutions. \\
+\hline
 \texttt{educational} & Explain how AI art generation works, its capabilities, limitations, and implications for art education. \\
+\hline
 \texttt{concise} & Brief direct answer: ``Yes, with disclosure requirements'' or ``No, separate category needed.'' \\
+\hline
 \texttt{professional} & Formal industry analysis discussing market implications, institutional policies, and stakeholder interests. \\
+\hline
 \texttt{creative} & Explore unconventional possibilities: AI-human collaborations, new competition categories, hybrid art forms. \\
 \bottomrule
 \end{tabularx}
@@ -147,10 +165,15 @@ ISD prompts span 12 diverse categories to ensure broad coverage of real-world to
 \textbf{Category} & \textbf{\#} & \textbf{Category} & \textbf{\#} \\
 \midrule
 Technology & 25 & Ethics & 25 \\
+\hline
 Healthcare & 25 & Culture & 25 \\
+\hline
 Environment & 25 & Science & 25 \\
+\hline
 Education & 25 & Business & 25 \\
+\hline
 Economics & 25 & Personal & 25 \\
+\hline
 Social & 25 & Governance & 25 \\
 \bottomrule
 \end{tabular}
@@ -168,16 +191,19 @@ A critical distinction underlies the ISD evaluation:
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lcc@{}}
+\begin{tabularx}{\columnwidth}{@{}lXX@{}}
 \toprule
 \textbf{Property} & \textbf{Following} & \textbf{Alignment} \\
 \midrule
 Depth & Surface-level & Internalized \\
+\hline
 Example & ``Be concise'' $\rightarrow$ short text & Concise \textit{style} adopted \\
+\hline
 Robustness & Easily disrupted & Consistent across contexts \\
+\hline
 Goal & Format compliance & Policy embodiment \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Instruction-following (shallow) vs. instruction-alignment (deep).}
 \label{tab:following_vs_alignment}
 \vspace{-4mm}

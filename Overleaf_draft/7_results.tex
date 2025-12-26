@@ -20,10 +20,15 @@ We present evaluation results across 5 benchmarks, comparing 6 model variants. W
 \textbf{Model} & \textbf{ISD} & \textbf{TQA} & \textbf{CS} & \textbf{LC} & \textbf{AQI} \\
 \midrule
 SFT\_NI & .126 & $-$.006 & .002 & 0.95 & 37.6 \\
+\hline
 SFT\_I & .142 & .012 & .022 & 1.02 & 47.7 \\
+\hline
 DPO\_NI & .217 & $-$.006 & .015 & 0.99 & 11.0 \\
+\hline
 DPO\_I & \textbf{.389} & $-$.005 & \textbf{.489} & 1.12 & 55.0 \\
+\hline
 CITA\_NI & .204 & $-$.040 & .009 & 0.98 & 9.4 \\
+\hline
 CITA\_I & .367 & \textbf{.013} & .400 & \textbf{1.14} & \textbf{55.5} \\
 \bottomrule
 \end{tabular}
@@ -46,9 +51,13 @@ The critical comparison is the \textit{improvement} from NoInstruct to Instruct,
 \textbf{Benchmark} & \textbf{SFT$\Delta$} & \textbf{DPO$\Delta$} & \textbf{CITA$\Delta$} & \textbf{Winner} \\
 \midrule
 ISD & +0.016 & \textbf{+0.172} & +0.162 & DPO \\
+\hline
 TruthfulQA & +0.018 & +0.001 & \textbf{+0.054} & \textbf{CITA} \\
+\hline
 Cond. Safety & +0.020 & \textbf{+0.475} & +0.391 & DPO \\
+\hline
 Length Control & +0.063 & +0.130 & \textbf{+0.164} & \textbf{CITA} \\
+\hline
 AQI & +10.1 & +44.0 & \textbf{+46.1} & \textbf{CITA} \\
 \bottomrule
 \end{tabular}
@@ -151,8 +160,8 @@ AQI & +10.1 & +44.0 & \textbf{+46.1} & \textbf{CITA} \\
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/evaluation/combined_plots/radar.pdf}
-\caption{\textbf{Instruction Adaptation Radar}: CITA wins 3/5 benchmarks, DPO wins 2/5, SFT wins 0/5. Values show NoInstruct $\rightarrow$ Instruct improvement.}
+\includegraphics[width=0.85\textwidth]{figures/evaluation/combined_plots/radar_area.pdf}
+\caption{\textbf{Instruction Alignment Efficiency}: Pentagon area represents overall performance. CITA achieves 91.3\% area (rank \#1), outperforming DPO (42.7\%), GRPO (36.4\%), PPO (23.4\%), and SFT (2.2\%). CITA wins 3/5 benchmarks with +48.6\% margin over DPO.}
 \label{fig:radar}
 \vspace{-3mm}
 \end{figure*}

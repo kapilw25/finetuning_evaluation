@@ -35,8 +35,6 @@ trash
 datasets
 datasets/raw
 test_output
-
-
 *unsloth_compiled_cache
 
 
@@ -132,6 +130,9 @@ secrets.json
 wandb/
 # tensorboard_logs/
 lightning_logs/
+
+# GIT credentials
+git_push.sh
 
 # Large output files and checkpoints (ALLOW metadata, BLOCK binaries)
 # Keep: *.json, README.md, .db files (small metadata)
