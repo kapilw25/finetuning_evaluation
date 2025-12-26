@@ -199,7 +199,7 @@ python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full --use-inst
 ```
 
 ### Optuna HP Search (27 trials × 1354 steps, ~20-24 hrs)
-```bash
+```bash 
 # CITA NoInstruct
 python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py \
     --mode full --use-instruction false \
