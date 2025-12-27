@@ -19,7 +19,7 @@ echo "============================================"
 echo "CITA Environment Setup"
 echo "============================================"
 
-# 0. Install system dependencies
+# 0. Install LINUX system dependencies
 echo ""
 echo "[0/5] Installing system dependencies..."
 sudo apt update && sudo apt install -y \

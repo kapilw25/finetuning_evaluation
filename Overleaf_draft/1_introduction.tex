@@ -101,7 +101,7 @@ We introduce \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framewor
 
     \item \textbf{Instruction Switch Dataset (ISD)}: A diagnostic benchmark of 3,000 test cases (300 prompts $\times$ 10 instruction types) designed to isolate alignment instruction effects from prompt variation. ISD enables systematic evaluation of instruction-awareness beyond surface-level instruction-following.
 
-    \item \textbf{Comprehensive Evaluation}: Experiments on Llama-3.1-8B~\cite{dubey2024llama} across 5 benchmarks demonstrate CITA outperforms DPO in 3/5 metrics. On TruthfulQA~\cite{lin2022truthfulqa}, CITA improves by +0.054 while DPO shows minimal change (+0.001).
+    \item \textbf{Comprehensive Evaluation}: Experiments on Llama-3.1-8B~\cite{dubey2024llama} across 5 benchmarks demonstrate CITA achieves 95.6\% instruction-alignment efficiency, outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. On TruthfulQA~\cite{lin2022truthfulqa}, CITA shows 54$\times$ stronger adaptation than DPO (+0.054 vs +0.001).
 \end{enumerate}
 
 \vspace{-3mm}

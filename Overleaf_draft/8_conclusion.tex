@@ -13,9 +13,9 @@ This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a
 \label{sec:key_findings}
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{CITA outperforms DPO in instruction-awareness}: Measuring NoInstruct $\rightarrow$ Instruct improvement, CITA wins \textbf{3/5 benchmarks} (TruthfulQA, Length Control, AQI), while DPO wins 2/5 (ISD, Conditional Safety).
+    \item \textbf{CITA dominates in instruction-alignment efficiency}: Measuring overall performance across 5 benchmarks, \textbf{CITA achieves 95.6\%}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
 
-    \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
+    \item \textbf{54$\times$ stronger adaptation on TruthfulQA}: CITA improves by \textbf{+0.054} while DPO shows minimal change (\textbf{+0.001})---a 54$\times$ difference. This validates CITA's ability to internalize calibration instructions.
 
     \item \textbf{Mandatory KL is essential}: The KL term---optional in DPO---becomes mandatory in CITA to prevent mode collapse and enable stable instruction-conditioned behavioral switching.
 

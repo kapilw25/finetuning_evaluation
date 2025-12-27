@@ -54,11 +54,11 @@ MERMAID_CODE = """
         B ==> E
         D ==> F
 
-        linkStyle 0 stroke:#000,stroke-width:6px
-        linkStyle 1 stroke:#000,stroke-width:6px
-        linkStyle 2 stroke:#000,stroke-width:6px
-        linkStyle 3 stroke:#000,stroke-width:6px
-        linkStyle 4 stroke:#000,stroke-width:6px
+        linkStyle 0 stroke:#000,stroke-width:2px
+        linkStyle 1 stroke:#000,stroke-width:2px
+        linkStyle 2 stroke:#000,stroke-width:2px
+        linkStyle 3 stroke:#000,stroke-width:2px
+        linkStyle 4 stroke:#000,stroke-width:2px
 """
 
 

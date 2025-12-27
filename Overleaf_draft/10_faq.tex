@@ -16,7 +16,7 @@ This section addresses anticipated critical questions about CITA's methodology, 
 %% Q1 - ATTACKS MAIN RESULT
 \item[\ding{93}] \textbf{CITA wins 3/5 benchmarks, DPO wins 2/5. A 60\% win rate seems marginal---why is this a significant contribution?}
 
-\item[\ding{224}] The headline ``3/5 vs 2/5'' understates the key finding. The critical comparison is \textbf{instruction sensitivity}---improvement from NoInstruct to Instruct:
+\item[\ding{224}] The headline ``3/5 vs 2/5'' understates the key finding. When measuring \textbf{overall instruction-alignment efficiency} (pentagon coverage across all 5 benchmarks), \textbf{CITA achieves 95.6\%}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. The per-benchmark breakdown:
 
 \begin{table}[H]
 \centering
@@ -29,7 +29,7 @@ TruthfulQA & +0.001 & \textbf{+0.054} & \textbf{54$\times$ better} \\
 \hline
 Length Control & +0.130 & \textbf{+0.164} & 26\% better \\
 \hline
-AQI & +44.0 & \textbf{+46.1} & 5\% better \\
+AQI & +22.4 & \textbf{+41.7} & 86\% better \\
 \bottomrule
 \end{tabular}
 \end{table}

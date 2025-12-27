@@ -41,7 +41,7 @@ Update Overleaf draft to include all 5 trainers (SFT, PPO, GRPO, DPO, CITA) and 
 
 ---
 
-### 🔴 4. REGENERATE EVAL PLOTS: Double Fontsize + Bold
+### ✅ 4. REGENERATE EVAL PLOTS: Double Fontsize + Bold
 
 **REQUIRES GPU SERVER** - Run each evaluation script to regenerate plots:
 

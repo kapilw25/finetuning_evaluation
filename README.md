@@ -254,6 +254,30 @@ python comparative_study/05_evaluation/isd/evaluation.py \
 
 See [logs_training/iter13/observation.md](logs_training/iter13/observation.md) for latest evaluation results.
 
+## Plot Generation
+
+```bash
+source venv_CITA/bin/activate
+
+# 1. Training plots (TensorBoard logs → Overleaf figures)
+#    Output: Overleaf_draft/figures/training/
+python comparative_study/generate_training_plots.py
+
+# 2. HP ablation plots (Optuna trials → Overleaf appendix)
+#    Output: Overleaf_draft/figures/appendix/
+python comparative_study/generate_hp_ablation_plots.py
+
+# 3. Evaluation plots (eval metrics → radar + heatmap)
+#    Output: outputs/evaluation/combined_plots/
+python comparative_study/05_evaluation/generate_combined_plots.py
+```
+
+| Script | Output Directory | Plots |
+|--------|------------------|-------|
+| `generate_training_plots.py` | `Overleaf_draft/figures/training/` | combined_eval_loss, combined_accuracy, dpo_cita_margins |
+| `generate_hp_ablation_plots.py` | `Overleaf_draft/figures/appendix/` | hp_ablation_combined, hp_pareto_frontier, hp_ablation_{beta,lambda_kl,learning_rate} |
+| `generate_combined_plots.py` | `outputs/evaluation/combined_plots/` | radar_area, heatmap |
+
 ## Paper (LaTeX)
 
 ```bash
