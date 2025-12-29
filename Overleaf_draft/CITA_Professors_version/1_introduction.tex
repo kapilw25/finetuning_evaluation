@@ -338,7 +338,7 @@ Figure~\ref{fig:teaser_safety} demonstrates the target behavior: for the \emph{s
 
    
 
-    \item \textbf{Comprehensive Evaluation:} On \textbf{Llama-3.1-8B}~\cite{dubey2024llama}, across five deterministic benchmarks, \colorbox{bg-green}{\textbf{CITA achieves 95.6\% instruction-alignment efficiency}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. On TruthfulQA~\cite{lin2022truthfulqa}, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
+    \item \textbf{Comprehensive Evaluation:} On \textbf{Llama-3.1-8B}~\cite{dubey2024llama}, across five deterministic benchmarks (switching, truthfulness, conditional safety, length control, alignment quality), CITA outperforms DPO on $3/5$ metrics; on TruthfulQA~\cite{lin2022truthfulqa}, CITA improves by $+0.054$ while DPO changes minimally ($+0.001$).
 \end{enumerate}
 
 
@@ -353,31 +353,8 @@ To our knowledge, these prior methods do not provide a \emph{preference-optimize
 nor a controlled \emph{prompt-held-constant} benchmark (ISD) designed to \textbf{isolate the causal effect} of alignment instructions.
 We provide a detailed comparison and design-differences table in Appendix~\ref{sec:appendix_related}.
 
-\vspace{-2mm}
-\begin{table}[H]
-\centering
-\footnotesize
-\begin{tabularx}{\columnwidth}{@{}Xccccc@{}}
-\toprule
-\textbf{Property} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
-\midrule
-Reward Model Required & No & Yes & No & No & No \\
-\hline
-Preference Pairs & No & No & No & Yes & Yes \\
-\hline
-Instruction-Conditioned Switching & No & No & No & No & \textbf{Yes} \\
-\hline
-KL Regularization & --- & Yes & No & Implicit & \textbf{Yes} \\
-\hline
-Dynamic Policy & No & No & No & No & \textbf{Yes} \\
-\hline
-Agent-Compatible & No & No & No & No & \textbf{Yes} \\
-\bottomrule
-\end{tabularx}
-\caption{Comparison of alignment methods. All trainers support instruction-augmented training (Instruct variants), but only CITA learns to dynamically switch behavior based on alignment instructions. PPO requires an external reward model; GRPO uses inline reward functions. DPO has implicit KL via $\beta$ temperature.}
-\label{tab:method_comparison}
-\vspace{-4mm}
-\end{table}
+
+
 
 
 

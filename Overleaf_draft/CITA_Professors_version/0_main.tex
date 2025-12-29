@@ -254,7 +254,7 @@
 % TITLE AND AUTHORS
 % =============================================================================
 
-\title{\includegraphics[width=\textwidth]{figures/banner.pdf}}
+\title{\includegraphics[width=\textwidth]{banner.pdf}}
 
 \author{
 Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vaibhaav Tiwari$^{3}$ \quad Vinija Jain$^{4}$ \quad Aman Chadha$^{5}$ \quad Amitava Das$^{6}$ \\[0.5em]
@@ -280,7 +280,7 @@ We instantiate ECLIPTICA with \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstr
 $L_{\textsc{CITA}} = L_{\textsc{SFT}} + \lambda_1 L_{\textsc{DPO}} + \lambda_2 L_{\textsc{KL}}$.
 The KL term is not optional: it anchors the model to a reference policy to prevent mode collapse and enables stable \emph{instruction-conditioned} switching rather than shallow instruction compliance.
 
-To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{Instruction Switch Dataset (ISD)}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ISD, TruthfulQA, Conditional Safety, Length Control, AQI) show that \colorbox{bg-green}{\textbf{CITA achieves 95.6\% instruction-alignment efficiency}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. On TruthfulQA, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments.
+To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{Instruction Switch Dataset (ISD)}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ISD, TruthfulQA, Conditional Safety, Length Control, AQI) show that CITA improves instruction sensitivity and outperforms DPO in $3/5$ metrics (TruthfulQA, Length Control, AQI); on TruthfulQA, CITA improves by $+0.054$ while DPO shows minimal change ($+0.001$). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments.
 \end{abstract}
 
 
@@ -327,9 +327,9 @@ We explicitly test whether models exhibit \textbf{instruction-following} (surfac
 or \textbf{instruction-alignment} (internalized, robust policy embodiment consistent across contexts).
 
 \item[\faChartLine] \textbf{\textit{Results (switchability without judges)}}:
-On \textbf{Llama-3.1-8B}, across \textbf{five deterministic benchmarks},
-\colorbox{bg-green}{\textbf{CITA achieves 95.6\% instruction-alignment efficiency}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
-On TruthfulQA, \textbf{CITA shows 54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
+On \textbf{Llama-3.1-8B}, across \textbf{five deterministic benchmarks} (including ISD and TruthfulQA),
+\textbf{CITA outperforms DPO in 3/5 metrics} (TruthfulQA, Length Control, AQI);
+on TruthfulQA, \textbf{CITA improves by +0.054} while \textbf{DPO changes minimally (+0.001)}.
 
 \item[\faTools] \textbf{\textit{Practical upshot}}:
 ECLIPTICA + CITA move from \textbf{one-policy-per-checkpoint} to \textbf{switchable, instruction-governed alignment}:
@@ -349,17 +349,21 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 %\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
 
 % =============================================================================
-% MAIN CONTENT (Sequential order: 1, 2, 3, 4, 5, 6, 7, 8, 9)
+% MAIN CONTENT (11 Sections matching ALKALI structure)
 % =============================================================================
 \input{1_introduction}
-\input{2_methodology}
-\input{3_unified_loss}
-\input{4_cita_framework}
 \input{5_isd_dataset}
+
+
+\input{4_cita_framework}
 \input{6_experiments}
 \input{7_results}
 \input{8_conclusion}
 \input{9_limitation}
+
+
+\input{2_methodology}
+\input{3_unified_loss}
 % =============================================================================
 % REFERENCES
 % =============================================================================

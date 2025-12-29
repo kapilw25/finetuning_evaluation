@@ -1,0 +1,276 @@
+
+
+
+% =============================================================================
+% CITA Objective (Figure*) — NeurIPS spotlight style, math-forward + crisp
+% =============================================================================
+\vspace{-0.6em}
+\begin{figure*}[ht!]
+\centering
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=black,
+  boxrule=0.8pt,
+  borderline={0.6pt}{1.6pt}{black},
+  sharp corners,
+  width=0.99\textwidth,
+  left=3pt,
+  right=3pt,
+  top=3pt,
+  bottom=2pt
+]
+\tiny
+
+% -------------------------
+% Main objective
+% -------------------------
+\[
+\boxed{
+\mathcal{L}_{\textsc{CITA-KL}}(\theta)
+\;=\;
+\underbrace{
+\mathbb{E}_{(I,X,Y^+,Y^-)\sim \mathcal{D}}
+\Big[
+-\log \sigma\!\big(\beta\,\Delta_\theta(I,X;Y^+,Y^-)\big)
+\Big]
+}_{\textbf{(1) Instruction-Conditioned Preference (Contrastive)}}
+\;+\;
+\lambda\;
+\underbrace{
+\mathbb{E}_{(I,X)\sim \mathcal{D}}
+\Big[
+\mathrm{KL}\!\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+\Big]
+}_{\textbf{(2) Mandatory Trust-Region Anchor (KL)}}
+}
+\]
+
+\vspace{-0.5em}
+
+% -------------------------
+% Definitions
+% -------------------------
+\[
+\Delta_\theta(I,X;Y^+,Y^-)
+\;=\;
+\log \pi_\theta(Y^+\mid I,X)\;-\;\log \pi_\theta(Y^-\mid I,X),
+\qquad
+\sigma(z)=\frac{1}{1+e^{-z}}.
+\]
+
+\vspace{-0.6em}
+
+% -------------------------
+% Gradient "wow" line
+% -------------------------
+\[
+\textbf{Gradient (preference term):}\quad
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,
+\mathbb{E}\Big[
+(1-P^+)\big(\nabla_\theta \log \pi_\theta(Y^+\!\mid I,X)-\nabla_\theta \log \pi_\theta(Y^-\!\mid I,X)\big)
+\Big],
+\quad
+P^+=\sigma(\beta\Delta_\theta).
+\]
+
+\vspace{-0.35em}
+
+% -------------------------
+% Compact "generalized" box
+% -------------------------
+\[
+\text{Generalized:}\qquad
+\boxed{
+\mathcal{L}_{\textsc{CITA-KL}}
+=
+\mathcal{L}_{\textsc{pref}}^{I\text{-cond}}
++
+\lambda\,\mathcal{L}_{\textsc{KL}}^{I\text{-cond}},
+\qquad
+\lambda>0
+}
+\]
+\end{tcolorbox}
+
+\vspace{-0.9em}
+\caption{
+\textbf{CITA objective: contrastive preference learning under explicit alignment instructions.}
+CITA trains on quadruples $(I,X,Y^+,Y^-)$ where the \textbf{alignment instruction $I$} \textbf{defines} the preference relation $Y^+\succ Y^-$.
+\textbf{(1) Instruction-conditioned preference:} the loss is a \textbf{conditional logistic/contrastive} objective on the \textbf{score gap}
+$\Delta_\theta=\log \pi_\theta(Y^+\!\mid I,X)-\log \pi_\theta(Y^-\!\mid I,X)$, with temperature $\beta$ controlling sharpness.
+\textbf{(2) Mandatory KL anchor:} a \textbf{non-optional} trust-region term ($\lambda>0$) constrains updates relative to a frozen reference $\pi_0$,
+stabilizing a \textbf{switchable policy family} $\{\pi_\theta(\cdot\mid I,\cdot)\}_{I\in\mathcal{I}}$ instead of collapsing to a single implicit regime.
+The gradient form highlights \textbf{self-quenching updates} via $(1-P^+)$: once the instruction-conditioned preference is satisfied, the preference force diminishes, improving reliability under switching.
+}
+\label{fig:cita_objective_box}
+\vspace{-1.2em}
+\end{figure*}
+
+
+
+% =============================================================================
+% CITA: Contrastive Instruction-Tuned Alignment
+% =============================================================================
+% =============================================================================
+% CITA: Contrastive Instruction-Tuned Alignment (math-forward, NeurIPS-spotlight)
+% =============================================================================
+% =============================================================================
+% CITA: Contrastive Instruction-Tuned Alignment (math-forward, NeurIPS-spotlight)
+% (Figure-first narrative; minimal repetition; refer to Fig.~\ref{fig:cita_objective_box})
+% =============================================================================
+%\vspace{-0.45em}
+\section{CITA: Contrastive Instruction-Tuned Alignment}
+\label{sec:cita_framework}
+
+\textbf{Goal.} We treat alignment as \textbf{conditional control}: a single checkpoint should implement a \textbf{switchable policy family}
+$\{\pi_\theta(\cdot\mid I,\cdot)\}_{I\in\mathcal{I}}$ where the \textbf{alignment instruction $I$} selects the behavioral contract at inference time.
+Accordingly, CITA optimizes \textbf{instruction-indexed optima} that remain \textbf{well-conditioned under switching}.
+
+\vspace{-0.35em}
+\paragraph{Training signal: instruction makes preference identifiable.}
+Each supervision unit is a preference-conditioned quadruple
+\[
+(I, X, Y^{+}, Y^{-}) \;\in\; \mathcal{D}_{\textsc{CITA}},
+\]
+where $Y^+\succ Y^-$ is defined \textbf{relative to $I$} for the same prompt $X$.
+This explicit conditioning is the key departure from standard DPO~\cite{rafailov2023direct}: rather than learning one implicit preference regime, CITA must fit \textbf{multiple co-existing instruction-conditioned regimes}.
+
+\vspace{-0.35em}
+\paragraph{Objective (refer to Fig.~\ref{fig:cita_objective_box}).}
+CITA uses the \textbf{instruction-conditioned logistic/contrastive} preference term and a \textbf{mandatory KL trust region}:
+(i) the preference term increases the score gap $\Delta_\theta=\log\pi_\theta(Y^+\!\mid I,X)-\log\pi_\theta(Y^-\!\mid I,X)$ for each $(I,X)$;
+(ii) the KL term anchors $\pi_\theta(\cdot\mid I,X)$ to a frozen reference $\pi_0(\cdot\mid I,X)$ with weight $\lambda>0$.
+The combined effect is \textbf{instruction-specific separation} without collapsing the family into a single overconfident mode.
+
+\vspace{-0.35em}
+\paragraph{Gradient geometry: a self-quenching score-gap flow.}
+Because the preference loss depends on $\theta$ only through $\Delta_\theta$, the update forms a clean vector field along the
+\textbf{instruction-specific preference direction} $\nabla_\theta \Delta_\theta$:
+\[
+\begin{aligned}
+\nabla_{\theta}\mathcal{L}_{\textsc{pref}}
+&=
+-\beta\,(1-P^{+})*
+\\[-0.35em]
+&
+\begin{aligned}[t]
+\Big(
+&\nabla_{\theta}\log \pi_{\theta}(Y^{+}\mid I,X)\\
+&-\nabla_{\theta}\log \pi_{\theta}(Y^{-}\mid I,X)
+\Big)
+\end{aligned}
+\\[-0.15em]
+P^{+}&=\sigma(\beta\Delta_\theta).
+\end{aligned}
+\]
+
+
+
+
+
+
+
+This yields two switching-critical properties: \textbf{(i) self-quenching} ($P^+\!\to1 \Rightarrow \|\nabla\mathcal{L}\|\to0$), reducing over-steering across competing instructions; and
+\textbf{(ii) directional purity} (a signed difference of two conditional policy gradients under the \emph{same} $(I,X)$), isolating the effect of $I$ rather than prompt artifacts.
+
+\vspace{-0.35em}
+\paragraph{Why the KL term is mandatory (trust-region view).}
+Across many instructions, preference gradients can interfere, producing instruction-agnostic shortcuts or brittle oscillations.
+The KL term enforces a \textbf{local trust region} around $\pi_0$:
+for small parameter moves, it induces a quadratic penalty shaped by the \textbf{conditional Fisher metric},
+\[
+\mathrm{KL}\!\big(\pi_{\theta}\,\|\,\pi_{0}\big)
+\;\approx\;
+\tfrac{1}{2}(\theta-\theta_0)^{\top}F_{I,X}(\theta-\theta_0),
+\]
+so CITA performs preference optimization \textbf{on a Riemannian chart} where steps are scaled by curvature.
+Practically, this keeps instruction-conditioned policies \textbf{nearby and controllable}, making switching a \textbf{stable move across neighboring optima} rather than a brittle prompt hack.
+
+\vspace{-0.35em}
+\paragraph{Identifiability under prompt-held-constant switching.}
+ECLIPTICA-style construction creates \emph{paired} conditions $(I_a,X)$ and $(I_b,X)$ with incompatible behavioral targets.
+Any instruction-invariant policy $\pi(\cdot\mid X)$ cannot simultaneously satisfy both preference relations, incurring unavoidable loss.
+Thus, the only degree of freedom that can explain systematic behavioral changes is the \textbf{control variable $I$}, turning alignment into a \textbf{causal control problem}.
+
+\paragraph{Hyperparameter optimization.}
+We tune CITA with \textbf{Optuna}~\cite{akiba2019optuna} using the \textbf{TPE} sampler for \textbf{12 trials}, following recent HPO guidance~\cite{liang2023holistic}.
+A consistent trend emerges: \textbf{CITA\_Instruct prefers a $\sim$50\% lower learning rate} than CITA\_NoInstruct.
+Mechanistically, instruction-augmented inputs are \textbf{30--40\% longer}, which increases effective gradient magnitude; a smaller step size stabilizes the preference/KL trade-off.
+
+\vspace{-0.25em}
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.06}
+\resizebox{0.98\columnwidth}{!}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{CITA\_NoInstruct (T5)} & \textbf{CITA\_Instruct (T7)} \\
+\midrule
+Learning rate          & 6.83e-6  & 5.41e-6  \\
+$\lambda_{\text{KL}}$  & 0.00052  & 0.00023  \\
+$\beta$ (temp.)        & 0.119    & 0.107    \\
+Weight decay           & 0.0091   & 0.0109   \\
+Warmup ratio           & 7.5\%    & 10.0\%   \\
+\midrule
+Final margin           & 6.95     & 7.52     \\
+Accuracy               & 89.5\%   & 89.0\%   \\
+\bottomrule
+\end{tabular}
+}
+\vspace{-0.35em}
+\caption{\textbf{Optuna-selected hyperparameters.} T5/T7 denote the best-performing trial IDs for each setting.}
+\label{tab:hyperparams}
+\vspace{-1.5em}
+\end{table}
+
+
+\vspace{-0.35em}
+\paragraph{Training pipeline (stability-first).}
+We separate \textbf{format competence} from \textbf{instruction-conditioned preference geometry}:
+\textbf{Base $\rightarrow$ SFT} to stabilize instruction-following priors and response formatting; then \textbf{SFT $\rightarrow$ CITA} to learn the conditional preference field under a KL-shaped trust region. cf. Appendix. 
+
+\vspace{-0.35em}
+\paragraph{Takeaway.}
+\textbf{CITA optimizes an instruction-indexed family of nearby optima; the KL term supplies the geometry that makes switching reliable.}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{comment}
+
+\begin{figure}[H]
+\centering
+\small
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{ccccccc}
+\textit{\scriptsize Llama-3.1-8B} & & \textit{\scriptsize PKU (chosen)} & & \textit{\scriptsize PKU (pairs)} & & \textit{\scriptsize + Instructions} \\[2pt]
+$\downarrow$ & & $\downarrow$ & & $\downarrow$ & & $\downarrow$ \\[2pt]
+\fbox{\textbf{Base}} & $\rightarrow$ & \fbox{\textbf{SFT}} & $\rightarrow$ & \fbox{\textbf{DPO}} & $\rightarrow$ & \colorbox{green!20}{\fbox{\textbf{CITA}}} \\[2pt]
+& & $\downarrow$ & & $\downarrow$ & & $\downarrow$ \\[2pt]
+& & $\mathcal{L}_{\text{SFT}}$ & & $\mathcal{L}_{\text{DPO}}$ & & $\mathcal{L}_{\text{CITA}} + \lambda \cdot \text{KL}$ \\
+\end{tabular}
+\caption{CITA training pipeline. Each stage uses the previous checkpoint. CITA adds mandatory KL regularization for instruction-conditioned alignment.}
+\label{fig:pipeline}
+\end{figure}
+
+\end{comment}
+
+
+
+

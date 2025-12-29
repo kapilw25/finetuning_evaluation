@@ -790,7 +790,7 @@ def generate_improvement_ratio_plot(
 
 
 # =============================================================================
-# RADAR CHART - Area-Based (Average Radius)
+# RADAR CHART - Average Radius (Mean Normalized Improvement)
 # =============================================================================
 
 def calculate_avg_radius(radii: List[float]) -> float:
@@ -798,6 +798,9 @@ def calculate_avg_radius(radii: List[float]) -> float:
     Calculate simple average of radar chart radii.
 
     Formula: avg = Σ(rᵢ) / n
+
+    This computes the mean of normalized radii across all benchmarks,
+    NOT the geometric pentagon area.
 
     Args:
         radii: List of radius values (already normalized 0-1)
@@ -818,10 +821,10 @@ def generate_radar_chart_area_based(
     normalize: bool = True
 ) -> Optional[str]:
     """
-    Generate radar chart with AREA-BASED ranking (more area = better overall performance).
+    Generate radar chart with AVERAGE RADIUS ranking (higher avg = better overall performance).
 
-    This version emphasizes total coverage across all benchmarks rather than
-    individual wins, providing a more holistic view of instruction alignment.
+    This version computes the mean of normalized radii across all benchmarks,
+    providing a holistic measure of instruction alignment efficiency.
 
     Args:
         eval_deltas: Dict mapping eval_name to {method: delta}
@@ -1065,7 +1068,7 @@ def generate_radar_chart_area_based(
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
     plt.close()
 
-    print(f"\nSaved AREA-BASED radar chart:")
+    print(f"\nSaved AVERAGE RADIUS radar chart:")
     print(f"  PDF: {pdf_path}")
     print(f"  PNG: {png_path}")
 

@@ -2,7 +2,7 @@
 Generate Combined Evaluation Plots
 
 Focused on EVALUATION visualization only:
-- Radar chart (area-based): Pentagon coverage for instruction alignment efficiency
+- Radar chart: Mean normalized radius for instruction alignment efficiency
 - Heatmap: Absolute scores across all models and evaluations
 
 NOTE: HP ablation plots (hyperparameter sensitivity) are generated separately by:
@@ -13,7 +13,7 @@ Usage:
 
 Output:
     outputs/evaluation/combined_plots/
-    ├── radar_area.{pdf,png}    # Instruction alignment efficiency (pentagon coverage)
+    ├── radar_area.{pdf,png}    # Instruction alignment efficiency (average radius)
     └── heatmap.{pdf,png}       # Absolute scores heatmap
 """
 
@@ -200,12 +200,12 @@ def main():
         print(f"\n[WARN] Need at least 2 evals for heatmap, got {len(eval_scores)}")
 
     # =========================================================================
-    # Generate Radar Chart (AREA-BASED - pentagon coverage)
+    # Generate Radar Chart (Average Radius - instruction alignment efficiency)
     # =========================================================================
     if len(eval_deltas) >= 2:
         radar_area_path = COMBINED_PLOTS_DIR / "radar_area"
         print(f"\n{'=' * 70}")
-        print("Generating Radar Chart (AREA-BASED - Pentagon Coverage)...")
+        print("Generating Radar Chart (Average Radius - Instruction Alignment)...")
         print(f"{'=' * 70}")
 
         generate_radar_chart_area_based(

@@ -13,9 +13,9 @@ This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a
 \label{sec:key_findings}
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{CITA dominates in instruction-alignment efficiency}: Measuring overall performance across 5 benchmarks, \colorbox{bg-green}{\textbf{CITA achieves 95.6\%}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
+    \item \textbf{CITA outperforms DPO in instruction-awareness}: Measuring NoInstruct $\rightarrow$ Instruct improvement, CITA wins \textbf{3/5 benchmarks} (TruthfulQA, Length Control, AQI), while DPO wins 2/5 (ISD, Conditional Safety).
 
-    \item \textbf{54$\times$ stronger adaptation on TruthfulQA}: CITA improves by \textbf{+0.054} while DPO shows minimal change (\textbf{+0.001})---a 54$\times$ difference. This validates CITA's ability to internalize calibration instructions.
+    \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
 
     \item \textbf{Mandatory KL is essential}: The KL term---optional in DPO---becomes mandatory in CITA to prevent mode collapse and enable stable instruction-conditioned behavioral switching.
 
@@ -50,3 +50,76 @@ All code, trained models, and the Instruction Switch Dataset are publicly availa
     \item \textbf{Code}: \url{https://github.com/kapilw25/finetuning_evaluation}
     \item \textbf{Dataset}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
 \end{itemize}
+
+
+
+
+
+
+
+\textbf{Benefits of CITA}
+\label{sec:benefits}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Generalization}: Responds appropriately to novel instruction-prompt combinations not seen during training, similar to zero-shot generalization in instruction tuning~\cite{wei2022finetuned,chung2022scaling}.
+
+    \item \textbf{Robustness}: Resists jailbreak attempts~\cite{zou2023universal,wei2023jailbroken} by conditioning behavior on explicit alignment instructions.
+
+    \item \textbf{Calibration}: Avoids over-refusal~\cite{bianchi2023safetytuned} by adjusting safety level based on instruction context.
+
+    \item \textbf{Behavioral Switching}: Dynamically adapts response style (e.g., concise vs. detailed, formal vs. casual) based on instructions, enabling multi-tenant deployment~\cite{wang2024survey}.
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-3mm}
+\subsection{CITA vs. Prior Methods}
+\label{sec:comparison}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Capability} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+No Reward Model & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
+Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
+Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
+Explicit KL Control & Implicit & \textbf{Mandatory} \\
+\bottomrule
+\end{tabular}
+\caption{Feature comparison across alignment methods. CITA uniquely supports instruction-conditioned behavioral switching.}
+\label{tab:feature_comparison}
+\vspace{-4mm}
+\end{table}

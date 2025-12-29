@@ -1,0 +1,222 @@
+% =============================================================================
+% INSTRUCTION SWITCH DATASET (ISD) - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Instruction Switch Dataset (ISD)}
+\label{sec:isd_dataset}
+
+We introduce the \textbf{Instruction Switch Dataset (ISD)}---a diagnostic benchmark specifically designed to evaluate instruction-conditioned alignment. Unlike existing benchmarks~\cite{zheng2023judging,wang2023decodingtrust,liang2023holistic} that conflate instruction effects with prompt variation, ISD isolates the \textit{pure effect} of alignment instructions by keeping prompts constant.
+
+\vspace{-2mm}
+\begin{tcolorbox}[
+    colback=Teal!5!White,
+    colframe=Teal!55!black,
+    title=\textbf{Dataset Design Questions},
+    fonttitle=\bfseries,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm
+]
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+    \item[\ding{227}] \textbf{DQ1: How do we isolate instruction effects from prompt effects?}\\
+    \textit{Keep user prompts constant while varying only the alignment instruction.}
+
+    \item[\ding{227}] \textbf{DQ2: What instruction types capture meaningful behavioral dimensions?}\\
+    \textit{Select 10 types spanning perspective, style, and constraint dimensions.}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{-2mm}
+\subsection{Motivation}
+\label{sec:isd_motivation}
+
+Existing benchmarks like TruthfulQA~\cite{lin2022truthfulqa}, MMLU~\cite{hendrycks2021measuring}, HellaSwag~\cite{zellers2019hellaswag}, and ARC~\cite{clark2018think} conflate instruction-following with prompt variation. When both change simultaneously, it is impossible to determine whether behavioral differences stem from instruction comprehension or prompt-specific responses.
+
+\textbf{ISD Design Principle.} By fixing the user prompt $X$ and varying only the instruction $I$, we can measure:
+\begin{equation}
+\Delta_I = \mathbb{E}_{I_1, I_2}\left[ d\left( R(I_1, X), R(I_2, X) \right) \right]
+\label{eq:isd_metric}
+\end{equation}
+
+where $R(I, X)$ is the response to prompt $X$ under instruction $I$, and $d(\cdot, \cdot)$ measures behavioral difference.
+
+\vspace{-2mm}
+\subsection{Dataset Construction}
+\label{sec:isd_construction}
+
+\paragraph{Prompt Bank.} We curate 500 prompts from diverse sources:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item News articles and current events
+    \item Educational Q\&A collections
+    \item Instruction-tuning datasets (FLAN~\cite{wei2022finetuned}, Alpaca~\cite{taori2023alpaca}, OPT-IML~\cite{iyer2022optiml})
+    \item User intent pools from dialogue systems
+\end{itemize}
+
+\paragraph{Selection Criteria.} All prompts are:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item \textbf{Semantically open-ended}: Allow multiple valid response styles
+    \item \textbf{Culturally grounded}: Avoid region-specific assumptions
+    \item \textbf{Neutrally phrased}: No embedded biases toward specific instruction types
+\end{itemize}
+
+\vspace{-2mm}
+\subsection{10 Instruction Types}
+\label{sec:instruction_types}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\toprule
+\textbf{Instruction Type} & \textbf{Behavioral Objective} \\
+\midrule
+\texttt{neutral} & Balanced perspective, present pros/cons \\
+\hline
+\texttt{conservative} & Favor traditional methods, risk-averse \\
+\hline
+\texttt{liberal} & Encourage innovation, embrace change \\
+\hline
+\texttt{regulatory} & Emphasize compliance, legal considerations \\
+\hline
+\texttt{empathetic} & Compassionate, emotionally supportive tone \\
+\hline
+\texttt{safety\_first} & Prioritize risk awareness, caution \\
+\hline
+\texttt{educational} & Teaching mode, explain concepts clearly \\
+\hline
+\texttt{concise} & Brief, direct responses \\
+\hline
+\texttt{professional} & Formal tone, business-appropriate \\
+\hline
+\texttt{creative} & Novel approaches, unconventional ideas \\
+\bottomrule
+\end{tabularx}
+\caption{The 10 instruction types in ISD, each targeting a distinct behavioral dimension.}
+\label{tab:instruction_types}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Dataset Scale}
+\label{sec:isd_scale}
+
+The ISD benchmark is constructed as a full factorial design:
+
+\begin{equation}
+|\text{ISD}| = 300 \times 10 = \mathbf{3{,}000} \text{ test cases}
+\label{eq:isd_scale}
+\end{equation}
+
+This structure enables systematic evaluation: each prompt appears exactly 10 times (once per instruction type), allowing direct comparison of behavioral responses while controlling for prompt-specific effects. The 300 base prompts are drawn from 12 categories (25 prompts each), ensuring topical diversity across economics, healthcare, technology, ethics, and other domains.
+
+\vspace{-2mm}
+\subsection{Example: Instruction Switching}
+\label{sec:isd_example}
+
+The core value of ISD is demonstrating how a \textbf{single prompt} produces \textbf{10 distinct behavioral responses} based solely on the alignment instruction. Table~\ref{tab:isd_example_full} shows this for a representative prompt.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\toprule
+\multicolumn{2}{@{}X@{}}{\textbf{Prompt}: ``\textit{Should AI-generated art be allowed in competitions?}''} \\
+\midrule
+\textbf{Instruction} & \textbf{Expected Behavioral Response} \\
+\midrule
+\texttt{neutral} & Present pros and cons without taking sides; acknowledge both innovation benefits and authenticity concerns. \\
+\hline
+\texttt{conservative} & Favor traditional human craftsmanship; competitions should reward proven artistic skills and techniques. \\
+\hline
+\texttt{liberal} & Embrace innovation and democratization; AI expands creative boundaries and enables new artistic voices. \\
+\hline
+\texttt{regulatory} & Discuss copyright implications, disclosure requirements, and labeling standards for AI-generated entries. \\
+\hline
+\texttt{empathetic} & Acknowledge artists' livelihood concerns while recognizing the excitement of new creative tools. \\
+\hline
+\texttt{safety\_first} & Warn about authenticity deception risks, potential for fraud, and undermining trust in art institutions. \\
+\hline
+\texttt{educational} & Explain how AI art generation works, its capabilities, limitations, and implications for art education. \\
+\hline
+\texttt{concise} & Brief direct answer: ``Yes, with disclosure requirements'' or ``No, separate category needed.'' \\
+\hline
+\texttt{professional} & Formal industry analysis discussing market implications, institutional policies, and stakeholder interests. \\
+\hline
+\texttt{creative} & Explore unconventional possibilities: AI-human collaborations, new competition categories, hybrid art forms. \\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Instruction Switching Example}: Same prompt produces 10 behaviorally distinct responses. Each instruction activates a different alignment policy, demonstrating CITA's dynamic behavioral switching capability.}
+\label{tab:isd_example_full}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Prompt Category Distribution}
+\label{sec:prompt_categories}
+
+ISD prompts span 12 diverse categories to ensure broad coverage of real-world topics:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lc|lc@{}}
+\toprule
+\textbf{Category} & \textbf{\#} & \textbf{Category} & \textbf{\#} \\
+\midrule
+Technology & 25 & Ethics & 25 \\
+\hline
+Healthcare & 25 & Culture & 25 \\
+\hline
+Environment & 25 & Science & 25 \\
+\hline
+Education & 25 & Business & 25 \\
+\hline
+Economics & 25 & Personal & 25 \\
+\hline
+Social & 25 & Governance & 25 \\
+\bottomrule
+\end{tabular}
+\caption{ISD prompt distribution across 12 categories (300 prompts total).}
+\label{tab:prompt_categories}
+\vspace{-4mm}
+\end{table}
+
+\vspace{-2mm}
+\subsection{Instruction-Following vs. Instruction-Alignment}
+\label{sec:following_vs_alignment}
+
+A critical distinction underlies the ISD evaluation:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}lXX@{}}
+\toprule
+\textbf{Property} & \textbf{Following} & \textbf{Alignment} \\
+\midrule
+Depth & Surface-level & Internalized \\
+\hline
+Example & ``Be concise'' $\rightarrow$ short text & Concise \textit{style} adopted \\
+\hline
+Robustness & Easily disrupted & Consistent across contexts \\
+\hline
+Goal & Format compliance & Policy embodiment \\
+\bottomrule
+\end{tabularx}
+\caption{Instruction-following (shallow) vs. instruction-alignment (deep).}
+\label{tab:following_vs_alignment}
+\vspace{-4mm}
+\end{table}
+
+\textbf{ISD tests whether CITA achieves true instruction-alignment}---consistent behavioral shifts reflecting internalized policy goals---rather than superficial instruction-following that can be easily circumvented, building on recent work in self-play fine-tuning~\cite{chen2024self}.
+
+\vspace{-2mm}
+\subsection{Dataset Availability}
+\label{sec:dataset_availability}
+
+The Instruction Switch Dataset is publicly available:
+
+\begin{center}
+\url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+\end{center}

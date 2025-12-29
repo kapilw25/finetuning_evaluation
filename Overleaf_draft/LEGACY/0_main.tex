@@ -11,7 +11,7 @@
 % =============================================================================
 % ACL STYLE
 % =============================================================================
-\usepackage[review]{acl2023}
+\usepackage{acl2023}
 
 % =============================================================================
 % STANDARD PACKAGES
@@ -165,22 +165,10 @@
 % =============================================================================
 % CONTRIBUTIONS BOX (ALKALI-style)
 % =============================================================================
-\usepackage{fontawesome5} % only if you keep \fa... icons
-% --- Tables / layout ---
-\usepackage{tabularx,booktabs,array}
-\usepackage{float}      % for [H]
-\usepackage{pifont}     % for \ding fallback icons
-
-% --- URLs that break nicely (IMPORTANT for overfull boxes) ---
-\usepackage{xurl}
-
-
-
-
 \newtcolorbox{defin}{
     colback=Teal!5!White,
     enhanced,
-    title=ECLIPTICA at-a-glance,
+    title=Contributions at-a-glance,
     attach boxed title to top left={xshift=-4mm},
     boxrule=0pt,
     after skip=1cm,
@@ -205,21 +193,6 @@
         }
     }
 }
-
-
-
-\makeatletter
-\newcommand{\SafeFA}[2]{\ifcsname #1\endcsname \csname #1\endcsname \else #2\fi}
-\makeatother
-
-% Define icons used in the table (robust across FA versions)
-\newcommand{\IcSupport}{\SafeFA{faHeadphones}{\ding{72}}}
-\newcommand{\IcResearch}{\SafeFA{faFlask}{\ding{46}}}
-\newcommand{\IcCompliance}{\SafeFA{faGavel}{\ding{115}}}
-\newcommand{\IcCreative}{\SafeFA{faLightbulb}{\ding{72}}}
-\newcommand{\IcChild}{\SafeFA{faChild}{\ding{43}}}
-\newcommand{\IcSecurity}{\SafeFA{faShieldAlt}{\ding{110}}} % if missing, uses ding fallback
-
 
 % =============================================================================
 % CUSTOM HIGHLIGHT COMMANDS
@@ -254,7 +227,7 @@
 % TITLE AND AUTHORS
 % =============================================================================
 
-\title{\includegraphics[width=\textwidth]{figures/banner.pdf}}
+\title{CITA: Contrastive Instruction-Tuned Alignment\\for Switchable LLM Behavior}
 
 \author{
 Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vaibhaav Tiwari$^{3}$ \quad Vinija Jain$^{4}$ \quad Aman Chadha$^{5}$ \quad Amitava Das$^{6}$ \\[0.5em]
@@ -274,82 +247,30 @@ Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vaibhaav Tiwari$^{3}$ \quad V
 % ABSTRACT
 % =============================================================================
 \begin{abstract}
-Alignment in large language models is still predominantly \emph{static}: training-time methods such as RLHF and DPO imprint a single, fixed behavioral policy into the weights, making post-deployment policy updates slow, expensive, and brittle. We introduce \textbf{ECLIPTICA}, a framework that reframes alignment as \emph{instruction-driven} and \emph{runtime-controllable}: models should accept natural-language \emph{alignment instructions} that modulate behavior on-the-fly, enabling interactive alignment correction under evolving policies, user roles, and safety requirements.
+Traditional LLM alignment methods like DPO, PPO, and GRPO embed static objectives into model weights, lacking flexibility for dynamic policy changes. We introduce \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling \textbf{instruction-driven alignment} at inference time. CITA combines supervised fine-tuning, contrastive preference optimization, and mandatory KL regularization to achieve instruction-conditioned behavior switching.
 
-We instantiate ECLIPTICA with \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstruction-\textbf{T}uned \textbf{A}lignment), an algorithm that unifies supervised fine-tuning and contrastive preference optimization with an \emph{explicit, mandatory} KL regularizer:
-$L_{\textsc{CITA}} = L_{\textsc{SFT}} + \lambda_1 L_{\textsc{DPO}} + \lambda_2 L_{\textsc{KL}}$.
-The KL term is not optional: it anchors the model to a reference policy to prevent mode collapse and enables stable \emph{instruction-conditioned} switching rather than shallow instruction compliance.
+To evaluate this capability, we contribute the \textbf{Instruction Switch Dataset (ISD)}---3,000 test cases (300 prompts $\times$ 10 instruction types) where only the alignment instruction varies while the user prompt remains constant.
 
-To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{Instruction Switch Dataset (ISD)}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ISD, TruthfulQA, Conditional Safety, Length Control, AQI) show that \colorbox{bg-green}{\textbf{CITA achieves 95.6\% instruction-alignment efficiency}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. On TruthfulQA, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments.
+Experiments on Llama-3.1-8B across 5 benchmarks demonstrate CITA's dominance over all baselines. Measuring instruction-alignment efficiency (how well models adapt behavior based on instructions), \textbf{CITA achieves 95.6\%}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. On TruthfulQA, CITA shows 54$\times$ stronger adaptation than DPO (+0.054 vs +0.001). Our results demonstrate that mandatory KL regularization enables deep instruction-alignment rather than superficial instruction-following.
 \end{abstract}
-
 
 % =============================================================================
 % CONTRIBUTIONS AT-A-GLANCE
 % =============================================================================
 \begin{defin}
-\scriptsize
-\vspace{-2mm}
-\begin{itemize}[left=-4pt,itemsep=0pt,topsep=0pt,parsep=0pt]
-
-\item[\faBolt] \textbf{\textit{TL;DR}}:
-\textbf{ECLIPTICA is a framework for \emph{instruction-driven, runtime-switchable alignment}};
-\textbf{CITA is the algorithm that makes the switch \emph{stable}} via contrastive preference learning \emph{plus} a \textbf{mandatory} KL anchor.
-
-\item[\faGlobeAmericas] \textbf{\textit{Why now (agentic reality)}}:
-Modern deployments require \textbf{one model} to exhibit \textbf{different alignment postures} across workflows (e.g., customer support vs.\ internal research vs.\ compliance).
-Static alignment hard-codes a single policy; ECLIPTICA instead treats \textbf{alignment as a controllable instruction channel} at inference time.
-
-\item[\faCompass] \textbf{\textit{Framework (ECLIPTICA)}}:
-We shift alignment from \textbf{training-only} to \textbf{dialogue / instruction-driven correction}:
-a model receives \textbf{natural-language alignment instructions} that \textbf{modulate policy on-the-fly}, enabling \textbf{policy updates without exhaustive retraining}.
-
-\item[\faCogs] \textbf{\textit{Algorithm (CITA)}}:
-CITA operationalizes ECLIPTICA with a \textbf{unified objective} that couples response quality, preference contrast, and stability:
-\[\boxed{
-L_{\textsc{CITA}} \;=\; L_{\textsc{SFT}} \;+\; \lambda_1\,L_{\textsc{DPO}} \;+\; \lambda_2\,L_{\textsc{KL}}.
-}
-\]
-Crucially, \textbf{KL is explicit \& mandatory}: it \textbf{prevents mode collapse}, \textbf{bounds preference margins}, and preserves a \textbf{switchable} policy manifold.
-
-\item[\faRandom] \textbf{\textit{Instruction-conditioned switching (not prompt hacks)}}:
-CITA is designed so the \textbf{same user prompt} can yield \textbf{meaningfully different behaviors} \emph{solely} due to the alignment instruction
-(e.g., safety-first vs.\ professional vs.\ creative), enabling \textbf{multi-tenant} and \textbf{role-aware} deployment.
-
-\item[\faVial] \textbf{\textit{New diagnostic (ISD)}}:
-We introduce the \textbf{Instruction Switch Dataset (ISD)} to isolate instruction effects:
-\textbf{keep prompts constant}, vary \textbf{only} the alignment instruction.
-ISD is a \textbf{full-factorial} benchmark with
-\(\lvert\text{ISD}\rvert = 300 \times 10 = 3{,}000\) test cases, enabling direct, controlled comparisons.
-
-\item[\faBalanceScale] \textbf{\textit{Key distinction: following vs.\ alignment}}:
-We explicitly test whether models exhibit \textbf{instruction-following} (surface format compliance)
-or \textbf{instruction-alignment} (internalized, robust policy embodiment consistent across contexts).
-
-\item[\faChartLine] \textbf{\textit{Results (switchability without judges)}}:
-On \textbf{Llama-3.1-8B}, across \textbf{five deterministic benchmarks},
-\colorbox{bg-green}{\textbf{CITA achieves 95.6\% instruction-alignment efficiency}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
-On TruthfulQA, \textbf{CITA shows 54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
-
-\item[\faTools] \textbf{\textit{Practical upshot}}:
-ECLIPTICA + CITA move from \textbf{one-policy-per-checkpoint} to \textbf{switchable, instruction-governed alignment}:
-a single deployed model can be \textbf{re-scoped} by policy instructions for safety level, tone, verbosity, compliance emphasis, or creativity---\textbf{without} spawning separate aligned models.
-
-\item[\faCode] \textbf{\textit{Release}}:
-\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation};
-\textbf{Dataset (ISD):} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
-
-
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{CITA Framework}: A unified loss combining SFT, DPO, and mandatory KL regularization for instruction-conditioned alignment
+    \item \textbf{Instruction Switch Dataset (ISD)}: 3,000 test cases (300 prompts $\times$ 10 instruction types) isolating alignment instruction effects
+    \item \textbf{Comprehensive Evaluation}: CITA achieves 95.6\% instruction-alignment efficiency, beating DPO by 25.1 pp, GRPO by 36.3 pp, PPO by 45.2 pp, and SFT by 79.7 pp
+    \item \textbf{Key Insight}: Mandatory KL regularization enables deep instruction-alignment---54$\times$ stronger TruthfulQA adaptation than DPO
 \end{itemize}
-\vspace{-2mm}
 \end{defin}
 
-
-%\noindent\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation}\\
-%\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+\noindent\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation}\\
+\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
 
 % =============================================================================
-% MAIN CONTENT (Sequential order: 1, 2, 3, 4, 5, 6, 7, 8, 9)
+% MAIN CONTENT (11 Sections matching ALKALI structure)
 % =============================================================================
 \input{1_introduction}
 \input{2_methodology}
@@ -360,6 +281,7 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 \input{7_results}
 \input{8_conclusion}
 \input{9_limitation}
+
 % =============================================================================
 % REFERENCES
 % =============================================================================

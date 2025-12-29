@@ -58,7 +58,18 @@
       "Bash(/workspace/finetuning_evaluation/comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py)",
       "Bash(tail:*)",
       "Bash(tree:*)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(wc:*)",
+      "Bash(for:*)",
+      "Bash(do if [ -f \"$f.tex\" ])",
+      "Bash(then echo \"✓ $f.tex\")",
+      "Bash(else echo \"✗ $f.tex MISSING\")",
+      "Bash(fi)",
+      "Bash(tr:*)",
+      "Bash(while read f)",
+      "Bash(do if [ -f \"$f\" ])",
+      "Bash(then echo \"✓ $f\")",
+      "Bash(else echo \"✗ $f MISSING\")"
     ],
     "deny": [],
     "ask": []

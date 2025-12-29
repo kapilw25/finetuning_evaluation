@@ -6,16 +6,7 @@
 \section{Results}
 \label{sec:results}
 
-\paragraph{Instruction-Alignment Efficiency Metric.}
-We define \textit{instruction-alignment efficiency} as the mean normalized improvement across all benchmarks. For each method $m$: (1) compute $\Delta_i^m = \text{Instruct}_i - \text{NoInstruct}_i$ for each benchmark $i$, (2) normalize each $\Delta_i^m$ to $[0.1, 1.0]$ using min-max scaling across methods within that benchmark, (3) compute efficiency as the mean:
-\begin{equation}
-\text{Efficiency}_m = \frac{1}{5}\sum_{i=1}^{5} \hat{\Delta}_i^m \times 100\%
-\label{eq:efficiency}
-\end{equation}
-where $\hat{\Delta}_i^m$ is the normalized delta. This metric captures overall responsiveness to alignment instructions across diverse evaluation dimensions (\cref{fig:radar}).
-
-\paragraph{Summary.}
-We present evaluation results across 5 benchmarks, comparing 10 model variants (5 methods $\times$ 2 instruction settings). We use deterministic metrics following best practices from holistic evaluation~\cite{liang2023holistic,sun2024trustllm}. The key finding is that \colorbox{bg-green}{\textbf{CITA achieves 95.6\% instruction-alignment efficiency}}, outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
+We present evaluation results across 5 benchmarks, comparing 10 model variants (5 methods $\times$ 2 instruction settings). We use deterministic metrics following best practices from holistic evaluation~\cite{liang2023holistic,sun2024trustllm}. The key finding is that \textbf{CITA achieves 95.6\% instruction-alignment efficiency}, outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
 
 \vspace{-2mm}
 \subsection{Overall Performance}
@@ -70,13 +61,13 @@ Length Control & +0.063 & +0.130 & \textbf{+0.164} & \textbf{CITA} \\
 AQI & $-$23.4 & +22.4 & \textbf{+41.7} & \textbf{CITA} \\
 \bottomrule
 \end{tabular}
-\caption{Instruction sensitivity ($\Delta$ = Instruct $-$ NoInstruct). CITA wins 3/5 benchmarks (TruthfulQA, Length Control, AQI); DPO wins 2/5 (ISD, Cond. Safety). However, \textbf{overall instruction-alignment efficiency}: \colorbox{bg-green}{\textbf{CITA 95.6\%}} vs DPO 70.5\% (+25.1 pp margin).}
+\caption{Instruction sensitivity ($\Delta$ = Instruct $-$ NoInstruct). CITA wins 3/5 benchmarks (TruthfulQA, Length Control, AQI); DPO wins 2/5 (ISD, Cond. Safety). However, \textbf{overall instruction-alignment efficiency}: CITA 95.6\% vs DPO 70.5\% (+25.1 pp margin).}
 \label{tab:improvement_comparison}
 \vspace{-4mm}
 \end{table}
 
 \begin{center}
-\fcolorbox{paired-dark-green}{bg-green}{\textbf{Overall Instruction-Alignment Efficiency: CITA 95.6\% vs DPO 70.5\% (+25.1 pp)}}
+\fbox{\textbf{Overall Instruction-Alignment Efficiency: CITA 95.6\% vs DPO 70.5\% (+25.1 pp)}}
 \end{center}
 
 \vspace{-2mm}
@@ -130,7 +121,7 @@ AQI & $-$23.4 & +22.4 & \textbf{+41.7} & \textbf{CITA} \\
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/evaluation/combined_plots/radar_area.pdf}
-\caption{\textbf{Instruction Alignment Efficiency}: Average normalized radius represents overall instruction-alignment performance (see \cref{eq:efficiency}). \colorbox{bg-green}{\textbf{CITA achieves 95.6\%}}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.}
+\caption{\textbf{Instruction Alignment Efficiency}: Pentagon coverage represents overall instruction-alignment performance. \textbf{CITA achieves 95.6\%}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.}
 \label{fig:radar}
 \vspace{-3mm}
 \end{figure*}

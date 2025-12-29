@@ -1,0 +1,108 @@
+% =============================================================================
+% METHODOLOGY - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Methodology}
+\label{sec:methodology}
+
+We present the CITA training methodology, organized into three phases: (1) setup and data preparation, (2) instruction-tuned formatting, and (3) contrastive training configuration.
+
+\vspace{-2mm}
+\subsection{Phase 0: Model and Infrastructure Setup}
+\label{sec:phase0}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+Base Model & Llama-3.1-8B~\cite{dubey2024llama} \\
+\hline
+Prompt Format & Chat-style (system/user/assistant) \\
+\hline
+Tokenizer & LLaMA-3 with BOS/EOS tokens \\
+\hline
+Hardware & NVIDIA A100-40GB / A100-80GB \\
+\hline
+Training Data & PKU-SafeRLHF~\cite{ji2024pku} \\
+\bottomrule
+\end{tabular}
+\caption{Training infrastructure and configuration.}
+\label{tab:infrastructure}
+\vspace{-4mm}
+\end{table}
+
+\textbf{Rationale.} We select Llama-3.1-8B for its strong instruction-following capabilities and accessibility, following the Llama model family tradition~\cite{touvron2023llama,touvron2023llama1,dubey2024llama3}. PKU-SafeRLHF provides high-quality preference pairs with explicit safety annotations~\cite{bai2022training}, enabling evaluation of instruction-conditioned safety behaviors. Alternative datasets like OpenAssistant~\cite{kopf2023openassistant}, UltraFeedback~\cite{cui2023ultrafeedback}, and Tulu~\cite{ivison2023camels} could also be used.
+
+\vspace{-2mm}
+\subsection{Phase 1: Dataset Formatting}
+\label{sec:phase1}
+
+We define two complementary data formats that enable instruction-conditioned training:
+
+\paragraph{Instruction-Tuned Alignment (ITA) Format.}
+Each training example explicitly includes an alignment instruction alongside the user query:
+
+\begin{small}
+\begin{verbatim}
+<user>
+### Alignment Instruction:
+${alignment_instruction}
+### User Prompt:
+${user_prompt}
+<assistant>
+${expected_response}
+\end{verbatim}
+\end{small}
+
+\paragraph{Contrastive ITA Format.}
+For preference learning, we extend ITA to include rejected responses:
+
+\begin{small}
+\begin{verbatim}
+### Rejected Response (Bad):
+${rejected_response}
+### Expected Response (Good):
+${accepted_response}
+\end{verbatim}
+\end{small}
+
+\paragraph{Example-Based Alignment (EBA) Format.}
+Standard DPO format without explicit instructions for baseline comparison:
+\begin{center}
+\texttt{\{prompt, chosen, rejected\}}
+\end{center}
+
+\vspace{-2mm}
+\subsection{Phase 2: Training Configuration}
+\label{sec:phase2}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}
+\toprule
+\textbf{Parameter} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\
+\hline
+Batch $\times$ Accum & 2$\times$4 & 16$\times$4 & 12$\times$2 & 1$\times$8 & 1$\times$8 \\
+\hline
+Epochs & 1 & 1 & 1 & 1 & 1 \\
+\hline
+LoRA Rank & 16 & 16 & 16 & 16 & 16 \\
+\hline
+$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\
+\hline
+KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\
+\bottomrule
+\end{tabularx}
+\caption{Training hyperparameters for all 5 alignment methods. All use LoRA (r=16, $\alpha$=16) for parameter-efficient fine-tuning.}
+\label{tab:training_config}
+\vspace{-4mm}
+\end{table}
+
+\textbf{Key Design Choice.} The CITA stage uses significantly lower learning rates (3--4$\times$ lower than typical DPO) because instruction-augmented sequences are 30--40\% longer, producing larger gradients. This finding emerged from hyperparameter optimization using Optuna~\cite{akiba2019optuna} (Section~\ref{sec:hyperparams}). We use parameter-efficient fine-tuning via LoRA~\cite{hu2022lora,dettmers2023qlora} rather than full fine-tuning to enable single-GPU training. Alternative PEFT methods include adapter tuning~\cite{houlsby2019parameter}, prompt tuning~\cite{lester2021power}, and prefix tuning~\cite{li2021prefix}.
