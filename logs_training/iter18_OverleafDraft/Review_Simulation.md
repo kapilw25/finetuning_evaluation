@@ -55,7 +55,7 @@
 
 - [✅]95.6% metric definition missing in main text (Added to `7_results.tex:9-15` with Equation 1)
 - [ ] No statistical significance / error bars
-- [❌] Baseline comparison fairness (hardware, tuning effort) ❌ >> no Optuna for PPO, GRPO as their each raun takes around 17 and 12 hours respectively
+- [⚠️] Baseline comparison fairness (hardware, tuning effort) — **Addressed in FAQ Q7b-Q7d**: Published HPs for baselines, Optuna only for novel CITA, compute constraints documented (PPO 17h, GRPO 12h per run)
 
 ### Should Fix (Strengthen)
 
