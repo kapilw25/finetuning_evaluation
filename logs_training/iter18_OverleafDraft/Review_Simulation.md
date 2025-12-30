@@ -59,7 +59,7 @@
 
 ### Should Fix (Strengthen)
 
-- [ ] DPO+instruction ablation (isolate KL contribution)
+- [⚠️] DPO+instruction ablation (isolate KL contribution) — **Addressed theoretically in FAQ Q13, Q20-Q22**: Explained implicit vs explicit KL, mode collapse, parameter coupling (β shared vs λ_KL separate). Added citations: goyal2024beyond, liu2024kl, wang2024comprehensive, tang2024understanding
 - [ ] Adversarial instruction robustness
 
 ### Nice to Have (Future Work)
