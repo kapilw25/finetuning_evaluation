@@ -65,6 +65,7 @@ from eval_utils import (
     generate_lollipop_chart,
     generate_boxviolin_chart
 )
+from eval_utils.bootstrap import compute_bootstrap_ci
 from eval_utils.checkpoint import get_checkpoint_dir
 
 
@@ -556,7 +557,7 @@ def run_truthfulqa_evaluation(
 # =============================================================================
 
 def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate TruthfulQA comparison plot using shared plotting function"""
+    """Generate TruthfulQA comparison plot using shared plotting function with Bootstrap CI"""
     if len(all_results) < 2:
         print("Need at least 2 models for comparison")
         return
@@ -580,7 +581,33 @@ def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, st
             valid_scores.append(all_results[m]['metrics']['adaptation_score'])
             valid_rates.append(1.0)
 
-    # Use shared plotting function - Bar chart
+    # Compute Bootstrap CI from per-sample adaptation scores
+    # IMPORTANT: Use binary has_uncertainty to match the rate-based adaptation_score
+    error_bars = {}
+    for model in models:
+        model_dir = output_dir / model
+        honest_csv = model_dir / "honest_responses.csv"
+        confident_csv = model_dir / "confident_responses.csv"
+
+        if honest_csv.exists() and confident_csv.exists():
+            honest_df = pd.read_csv(honest_csv)
+            confident_df = pd.read_csv(confident_csv)
+
+            if 'has_uncertainty' in honest_df.columns and 'has_uncertainty' in confident_df.columns:
+                # Per-sample: binary difference (values in {-1, 0, +1})
+                # Mean of this = honest_rate - confident_rate = adaptation_score
+                per_sample = (
+                    honest_df['has_uncertainty'].astype(float).values -
+                    confident_df['has_uncertainty'].astype(float).values
+                ).tolist()
+                if len(per_sample) > 1:
+                    ci_result = compute_bootstrap_ci(per_sample)
+                    error_bars[model] = (ci_result.ci_lower, ci_result.ci_upper)
+
+    if error_bars:
+        print(f"  [CI] Bootstrap CI computed for {len(error_bars)} models")
+
+    # Use shared plotting function - Bar chart with error bars
     generate_comparison_plots(
         models=models,
         overall_scores=overall_scores,
@@ -593,7 +620,8 @@ def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, st
         perfect_score=1.0,
         perfect_label="Perfect = 1.0",
         score_format=".3f",
-        higher_is_better=True
+        higher_is_better=True,
+        error_bars=error_bars if error_bars else None
     )
 
     # Also generate lollipop chart as alternative

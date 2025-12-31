@@ -66,6 +66,7 @@ from eval_utils import (
     generate_lollipop_chart as _generate_lollipop_chart,
     generate_boxviolin_chart as _generate_boxviolin_chart
 )
+from eval_utils.bootstrap import compute_bootstrap_ci
 from eval_utils.checkpoint import get_checkpoint_dir
 
 
@@ -551,7 +552,7 @@ def run_safety_evaluation(
 # =============================================================================
 
 def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate Conditional Safety comparison plot using shared plotting function (no error bars)"""
+    """Generate Conditional Safety comparison plot using shared plotting function with Bootstrap CI"""
     if len(all_results) < 2:
         print("Need at least 2 models for comparison")
         return
@@ -575,7 +576,33 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
             valid_adaptation.append(adaptation_scores[models.index(m)])
             valid_rates.append(1.0)
 
-    # Use shared plotting function - Bar chart
+    # Compute Bootstrap CI from per-sample adaptation scores
+    # IMPORTANT: Use binary is_refusal to match the rate-based adaptation_score
+    error_bars = {}
+    for model in models:
+        model_dir = output_dir / model
+        strict_csv = model_dir / "strict_responses.csv"
+        permissive_csv = model_dir / "permissive_responses.csv"
+
+        if strict_csv.exists() and permissive_csv.exists():
+            strict_df = pd.read_csv(strict_csv)
+            permissive_df = pd.read_csv(permissive_csv)
+
+            if 'is_refusal' in strict_df.columns and 'is_refusal' in permissive_df.columns:
+                # Per-sample: binary difference (values in {-1, 0, +1})
+                # Mean of abs(this) ≈ adaptation_score
+                per_sample = (
+                    strict_df['is_refusal'].astype(float).values -
+                    permissive_df['is_refusal'].astype(float).values
+                ).tolist()
+                if len(per_sample) > 1:
+                    ci_result = compute_bootstrap_ci(per_sample)
+                    error_bars[model] = (ci_result.ci_lower, ci_result.ci_upper)
+
+    if error_bars:
+        print(f"  [CI] Bootstrap CI computed for {len(error_bars)} models")
+
+    # Use shared plotting function - Bar chart with error bars
     _generate_comparison_plots(
         models=models,
         overall_scores=adaptation_scores,
@@ -590,7 +617,8 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         ylim_max=None,  # Auto-scale
         ylim_min=0,
         score_format=".3f",
-        higher_is_better=True
+        higher_is_better=True,
+        error_bars=error_bars if error_bars else None
     )
 
     # Also generate lollipop chart as alternative

@@ -163,7 +163,8 @@ def generate_comparison_plots(
     reference_line: Optional[float] = None,
     reference_label: str = "Reference",
     score_format: str = ".3f",
-    higher_is_better: bool = True
+    higher_is_better: bool = True,
+    error_bars: Optional[Dict[str, Tuple[float, float]]] = None
 ) -> Tuple[str, str]:
     """
     Shared comparison plot generator for all evaluation scripts.
@@ -187,6 +188,8 @@ def generate_comparison_plots(
         reference_label: Label for reference line
         score_format: Format string for score labels (e.g., ".3f", ".2f", ".1f")
         higher_is_better: If True, sort ascending (best on right)
+        error_bars: Optional dict mapping model name to (ci_lower, ci_upper) tuple
+            for 95% confidence interval. If provided, error whiskers are added.
 
     Returns:
         Tuple of (pdf_path, png_path)
@@ -215,6 +218,23 @@ def generate_comparison_plots(
     # Single bars for overall scores
     bars = ax.bar(x, overall_sorted, bar_width,
                   color=colors_sorted, edgecolor='black', linewidth=2.0)
+
+    # Add error bars if provided (Bootstrap CI whiskers)
+    if error_bars is not None:
+        yerr_lower = []
+        yerr_upper = []
+        for model in models_sorted:
+            if model in error_bars:
+                ci_lower, ci_upper = error_bars[model]
+                score = overall_scores[models.index(model)]
+                yerr_lower.append(score - ci_lower)
+                yerr_upper.append(ci_upper - score)
+            else:
+                yerr_lower.append(0)
+                yerr_upper.append(0)
+
+        ax.errorbar(x, overall_sorted, yerr=[yerr_lower, yerr_upper],
+                    fmt='none', ecolor='black', elinewidth=2, capsize=5, capthick=2)
 
     ax.set_ylabel(ylabel, fontsize=14, fontweight='bold', color='black')
     # Remove "Overall vs Valid-Only" from title if present
@@ -818,7 +838,8 @@ def generate_radar_chart_area_based(
     eval_deltas: Dict[str, Dict[str, float]],
     output_path: Path,
     methods: List[str] = ['SFT', 'DPO', 'CITA'],
-    normalize: bool = True
+    normalize: bool = True,
+    delta_ci: Optional[Dict[str, Dict[str, Tuple[float, float]]]] = None
 ) -> Optional[str]:
     """
     Generate radar chart with AVERAGE RADIUS ranking (higher avg = better overall performance).
@@ -831,6 +852,8 @@ def generate_radar_chart_area_based(
         output_path: Path to save the plot
         methods: Training methods to compare
         normalize: If True, normalize deltas to [0, 1] per eval for comparability
+        delta_ci: Optional dict mapping eval_name to {method: (ci_lower, ci_upper)}
+            for confidence intervals. If provided, shaded CI bands are drawn.
 
     Returns:
         Path to saved plot, or None if not enough data
@@ -897,10 +920,51 @@ def generate_radar_chart_area_based(
     fig, ax = plt.subplots(figsize=(14, 10), subplot_kw=dict(polar=True))
     ax.set_position([0.08, 0.12, 0.55, 0.78])
 
+    # Prepare CI data if provided (normalize CI bounds same as deltas)
+    method_ci_lower = {m: [] for m in methods}
+    method_ci_upper = {m: [] for m in methods}
+    has_ci = delta_ci is not None
+
+    if has_ci:
+        for i, eval_name in enumerate(eval_names):
+            ci_data = delta_ci.get(eval_name, {})
+            vals = [raw_deltas[m][i] for m in methods]
+            min_val, max_val = min(vals), max(vals)
+            range_val = max_val - min_val if max_val != min_val else 1
+
+            for method in methods:
+                if method in ci_data:
+                    ci_lo, ci_hi = ci_data[method]
+                    # Normalize CI bounds using same scale as delta
+                    if normalize:
+                        ci_lo_norm = 0.1 + 0.9 * (ci_lo - min_val) / range_val
+                        ci_hi_norm = 0.1 + 0.9 * (ci_hi - min_val) / range_val
+                    else:
+                        ci_lo_norm, ci_hi_norm = ci_lo, ci_hi
+                    method_ci_lower[method].append(ci_lo_norm)
+                    method_ci_upper[method].append(ci_hi_norm)
+                else:
+                    # No CI for this method/eval, use same as mean
+                    method_ci_lower[method].append(method_data[method][i])
+                    method_ci_upper[method].append(method_data[method][i])
+
+        # Close CI polygons
+        for method in methods:
+            method_ci_lower[method] = method_ci_lower[method] + method_ci_lower[method][:1]
+            method_ci_upper[method] = method_ci_upper[method] + method_ci_upper[method][:1]
+
     # Plot each method (sorted by avg for legend ordering)
     for method in sorted_methods:
         color = method_colors.get(method, '#808080')
         avg_pct = method_avg_pct[method]
+
+        # Draw CI band if available (shaded region between CI bounds)
+        if has_ci:
+            ci_lo = method_ci_lower[method]
+            ci_hi = method_ci_upper[method]
+            ax.fill_between(angles_closed, ci_lo, ci_hi, alpha=0.15, color=color,
+                            linewidth=0, label=None)
+
         ax.plot(angles_closed, method_data_closed[method], 'o-', linewidth=3,
                 label=f'{method} ({avg_pct:.1f}%)', color=color, markersize=10)
         ax.fill(angles_closed, method_data_closed[method], alpha=0.20, color=color)
@@ -1116,7 +1180,8 @@ def generate_combined_heatmap(
     models: List[str] = None,
     normalize_per_column: bool = True,
     show_raw_values: bool = True,
-    cmap: str = 'RdYlGn'
+    cmap: str = 'RdYlGn',
+    score_ci: Optional[Dict[str, Dict[str, Tuple[float, float]]]] = None
 ) -> Optional[str]:
     """
     Generate heatmap showing absolute scores across all evals for all models.
@@ -1129,6 +1194,8 @@ def generate_combined_heatmap(
         normalize_per_column: If True, normalize each eval column to [0,1] for color
         show_raw_values: If True, show raw values in cells (not normalized)
         cmap: Colormap name (RdYlGn = red-yellow-green, good for higher=better)
+        score_ci: Optional dict mapping eval_name to {model_name: (ci_lower, ci_upper)}
+            for confidence intervals. If provided, cells show "value +/- ci".
 
     Returns:
         Path to saved plot, or None if not enough data
@@ -1203,13 +1270,28 @@ def generate_combined_heatmap(
     annot_matrix = []
     for i in range(len(models)):
         row = []
+        model = models[i]
         for j in range(len(eval_names)):
             val = raw_data[i, j]
+            eval_name = eval_names[j]
+
             if not np.isnan(val):
+                # Check if CI is available for this cell
+                ci_text = ""
+                if score_ci is not None and eval_name in score_ci:
+                    ci_data = score_ci[eval_name].get(model)
+                    if ci_data is not None:
+                        ci_lo, ci_hi = ci_data
+                        ci_half = (ci_hi - ci_lo) / 2
+                        if abs(val) >= 10:
+                            ci_text = f'\n+/-{ci_half:.1f}'
+                        else:
+                            ci_text = f'\n+/-{ci_half:.2f}'
+
                 if abs(val) >= 10:
-                    row.append(f'{val:.1f}')
+                    row.append(f'{val:.1f}{ci_text}')
                 else:
-                    row.append(f'{val:.3f}')
+                    row.append(f'{val:.3f}{ci_text}')
             else:
                 row.append('')
         annot_matrix.append(row)

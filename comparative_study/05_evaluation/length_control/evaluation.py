@@ -64,6 +64,7 @@ from eval_utils import (
     generate_lollipop_chart as _generate_lollipop_chart,
     generate_boxviolin_chart as _generate_boxviolin_chart
 )
+from eval_utils.bootstrap import compute_bootstrap_ci
 from eval_utils.checkpoint import get_checkpoint_dir
 
 
@@ -422,7 +423,7 @@ def run_style_evaluation(
 # =============================================================================
 
 def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate Length Control comparison plot using shared plotting function (no error bars)"""
+    """Generate Length Control comparison plot using shared plotting function with Bootstrap CI"""
     if len(all_results) < 2:
         print("Need at least 2 models for comparison")
         return
@@ -446,7 +447,39 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
             valid_adaptation.append(adaptation_scores[models.index(m)])
             valid_rates.append(1.0)
 
-    # Use shared plotting function - Bar chart
+    # Compute Bootstrap CI for ratio of means (matches adaptation_score)
+    # NOTE: Bar shows mean(detailed)/mean(concise), so bootstrap the ratio of means
+    error_bars = {}
+    for model in models:
+        model_dir = output_dir / model
+        concise_csv = model_dir / "concise_responses.csv"
+        detailed_csv = model_dir / "detailed_responses.csv"
+
+        if concise_csv.exists() and detailed_csv.exists():
+            concise_df = pd.read_csv(concise_csv)
+            detailed_df = pd.read_csv(detailed_csv)
+
+            if 'word_count' in concise_df.columns and 'word_count' in detailed_df.columns:
+                concise_words = concise_df['word_count'].values
+                detailed_words = detailed_df['word_count'].values
+                n_samples = len(concise_words)
+
+                if n_samples > 1:
+                    # Bootstrap the ratio of means (not mean of ratios)
+                    rng = np.random.RandomState(42)
+                    bootstrap_ratios = []
+                    for _ in range(1000):
+                        idx = rng.choice(n_samples, size=n_samples, replace=True)
+                        ratio = np.mean(detailed_words[idx]) / max(np.mean(concise_words[idx]), 1)
+                        bootstrap_ratios.append(ratio)
+                    ci_lower = np.percentile(bootstrap_ratios, 2.5)
+                    ci_upper = np.percentile(bootstrap_ratios, 97.5)
+                    error_bars[model] = (ci_lower, ci_upper)
+
+    if error_bars:
+        print(f"  [CI] Bootstrap CI computed for {len(error_bars)} models")
+
+    # Use shared plotting function - Bar chart with error bars
     _generate_comparison_plots(
         models=models,
         overall_scores=adaptation_scores,
@@ -463,7 +496,8 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         reference_line=1.0,  # "No Adaptation" reference line
         reference_label="No Adaptation",
         score_format=".2f",
-        higher_is_better=True
+        higher_is_better=True,
+        error_bars=error_bars if error_bars else None
     )
 
     # Also generate lollipop chart as alternative

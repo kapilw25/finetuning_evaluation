@@ -53,8 +53,25 @@
 
 ### Must Fix (Blocking)
 
-- [✅]95.6% metric definition missing in main text (Added to `7_results.tex:9-15` with Equation 1)
-- [ ] No statistical significance / error bars
+- [✅] 95.6% metric definition missing in main text (Added to `7_results.tex:9-15` with Equation 1)
+- [⚠️] No statistical significance / error bars — **Code complete, pending re-run** (see `plan_BootstrapCI_OptionB.md`):
+  - Bootstrap CI for 3/5 individual charts + heatmap:
+    - ✓ TruthfulQA: Binary `has_uncertainty` difference
+    - ✓ Cond. Safety: Binary `is_refusal` difference
+    - ✓ Length Ctrl: Ratio of means (bootstrapped)
+    - ✗ ISD: Skipped (composite metric: fidelity × shift)
+    - ✗ AQI: Skipped (cluster-based, no per-sample)
+  - **Bug fixed**: Per-sample metrics now match aggregate metrics (avoids error bars beyond Y-axis)
+  - Radar chart: CI disabled (too cluttered)
+  - **PENDING**:
+    ```bash
+    # Re-generate individual plots (now with error bars)
+    python comparative_study/05_evaluation/truthfulqa/evaluation.py --mode full
+    python comparative_study/05_evaluation/conditional_safety/evaluation.py --mode full
+    python comparative_study/05_evaluation/length_control/evaluation.py --mode full
+    # Generate combined plots (heatmap with ±CI)
+    python comparative_study/05_evaluation/generate_combined_plots.py
+    ```
 - [⚠️] Baseline comparison fairness (hardware, tuning effort) — **Addressed in FAQ Q7b-Q7d**: Published HPs for baselines, Optuna only for novel CITA, compute constraints documented (PPO 17h, GRPO 12h per run)
 
 ### Should Fix (Strengthen)

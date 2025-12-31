@@ -76,6 +76,7 @@ from eval_utils import (
     generate_lollipop_chart
 )
 from eval_utils.checkpoint import get_checkpoint_dir
+from eval_utils.bootstrap import compute_bootstrap_ci
 
 # Add isd utils path
 sys.path.insert(0, str(Path(__file__).parent / "utils"))
@@ -399,7 +400,7 @@ def run_isd_evaluation(
 # =============================================================================
 
 def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_dir: Path, stratified_metrics: Dict[str, Dict] = None):
-    """Generate ISD comparison plot using shared plotting function"""
+    """Generate ISD comparison plot using shared plotting function with Bootstrap CI"""
     if len(all_metrics) < 2:
         print("Need at least 2 models for comparison plots")
         return
@@ -420,7 +421,14 @@ def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_d
             valid_scores.append(all_metrics[m].instruction_awareness_score)
             valid_rates.append(1.0)
 
-    # Use shared plotting function - Bar chart
+    # NOTE: Skipping CI for ISD
+    # Bar shows instruction_awareness_score = mean_fidelity × mean_semantic_shift
+    # per_sample_fidelity alone doesn't capture this composite metric
+    # CI would be misleading since fidelity CI ≠ awareness CI
+    error_bars = None
+    print("  [INFO] CI skipped for ISD (composite metric: fidelity × semantic_shift)")
+
+    # Use shared plotting function - Bar chart with error bars
     generate_comparison_plots(
         models=models,
         overall_scores=overall_scores,
@@ -433,7 +441,8 @@ def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_d
         perfect_score=1.0,
         perfect_label="Perfect = 1.0",
         score_format=".3f",
-        higher_is_better=True
+        higher_is_better=True,
+        error_bars=error_bars if error_bars else None
     )
 
     # Also generate lollipop chart as alternative
@@ -630,6 +639,8 @@ def main():
                         "mean_semantic_shift": metrics.mean_semantic_shift,
                         "instruction_awareness_score": metrics.instruction_awareness_score,
                         "n_evaluated": metrics.n_evaluated,
+                        # Per-sample fidelity for Bootstrap CI
+                        "per_sample_fidelity": metrics.per_sample_fidelity,
                         # Valid-only metrics
                         "valid_fidelity": valid_fidelity,
                         "valid_awareness": valid_awareness,

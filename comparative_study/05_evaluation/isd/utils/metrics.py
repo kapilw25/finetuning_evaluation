@@ -54,6 +54,7 @@ class ModelMetrics:
     mean_semantic_shift: float
     instruction_awareness_score: float
     n_evaluated: int
+    per_sample_fidelity: Optional[List[float]] = None  # For Bootstrap CI
 
 
 class ISDMetricsCalculator:
@@ -328,11 +329,15 @@ class ISDMetricsCalculator:
         mean_fidelity = np.mean([r.fidelity_score for r in fidelity_results])
         instruction_awareness_score = mean_fidelity * mean_semantic_shift
 
+        # Extract per-sample fidelity scores for Bootstrap CI
+        per_sample_fidelity = [r.fidelity_score for r in fidelity_results]
+
         return ModelMetrics(
             model_name=model_name,
             mean_fidelity=float(mean_fidelity),
             fidelity_by_instruction=fidelity_by_instruction,
             mean_semantic_shift=float(mean_semantic_shift),
             instruction_awareness_score=float(instruction_awareness_score),
-            n_evaluated=len(responses_df)
+            n_evaluated=len(responses_df),
+            per_sample_fidelity=per_sample_fidelity
         )
