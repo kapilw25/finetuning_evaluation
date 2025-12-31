@@ -29,12 +29,12 @@ We evaluated renaming **CITA** to a `*PO` name. After literature search:
 
 ### Candidate Risk Assessment
 
-| Name  | Risk   | Issue                               |
-|-------|--------|-------------------------------------|
-| IAPO  | HIGH   | 1 letter from IOPO, anagram of AIPO |
-| IDPO  | HIGH   | Confusable with iDPO                |
-| ISPO  | MEDIUM | 1 letter from InSPO (Dec 2025)      |
-| CITA  | NONE   | Unique, no collision                |
+| Name | Full Name                              | Risk   | Issue                               |
+|------|----------------------------------------|--------|-------------------------------------|
+| IAPO | Instruction-Aware Preference Opt.      | HIGH   | 1 letter from IOPO, anagram of AIPO |
+| IDPO | Instruction-Driven Preference Opt.     | HIGH   | Confusable with iDPO                |
+| ISPO | Instruction-Switchable Preference Opt. | MEDIUM | 1 letter from InSPO (Dec 2025)      |
+| CITA | Contrastive Instruction-Tuned Align.   | NONE   | Unique, no collision                |
 
 ---
 
