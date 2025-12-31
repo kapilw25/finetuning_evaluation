@@ -45,7 +45,7 @@ where $R(I, X)$ is the response to prompt $X$ under instruction $I$, and $d(\cdo
 \subsection{Dataset Construction}
 \label{sec:isd_construction}
 
-\paragraph{Prompt Bank.} We curate 500 prompts from diverse sources:
+\paragraph{Prompt Bank.} We curate 500 prompts from diverse sources, following prompt curation best practices from recommendation systems~\cite{yang2023prompt}:
 \begin{itemize}[leftmargin=*,itemsep=1pt]
     \item News articles and current events
     \item Educational Q\&A collections
@@ -108,7 +108,7 @@ The ISD benchmark is constructed as a full factorial design:
 \label{eq:isd_scale}
 \end{equation}
 
-This structure enables systematic evaluation: each prompt appears exactly 10 times (once per instruction type), allowing direct comparison of behavioral responses while controlling for prompt-specific effects. The 300 base prompts are drawn from 12 categories (25 prompts each), ensuring topical diversity across economics, healthcare, technology, ethics, and other domains.
+This structure enables systematic evaluation: each prompt appears exactly 10 times (once per instruction type), allowing direct comparison of behavioral responses while controlling for prompt-specific effects. The controlled factorial design follows principles from large-scale text generation datasets~\cite{roy2025comprehensive}. The 300 base prompts are drawn from 12 categories (25 prompts each), ensuring topical diversity across economics, healthcare, technology, ethics, and other domains.
 
 \vspace{-2mm}
 \subsection{Example: Instruction Switching}
