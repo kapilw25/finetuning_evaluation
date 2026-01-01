@@ -1,0 +1,132 @@
+% =============================================================================
+% CONCLUSION - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling instruction-aware alignment in large language models. Unlike DPO~\cite{rafailov2023direct} and RLHF~\cite{ouyang2022training} which embed static alignment into weights, CITA allows models to dynamically adapt behavior based on natural language instructions at inference time.
+
+\vspace{-2mm}
+\subsection{Key Findings}
+\label{sec:key_findings}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{95.6\%} efficiency---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
+
+    \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
+
+    \item \textbf{Mandatory KL is essential}: The KL term---optional in DPO---becomes mandatory in CITA to prevent mode collapse and enable stable instruction-conditioned behavioral switching.
+
+    \item \textbf{Instruction-alignment $\neq$ instruction-following}: Through the Instruction Switch Dataset, we demonstrate that CITA achieves \textit{deeper} instruction-alignment (internalized policies) rather than \textit{superficial} instruction-following (surface compliance).
+\end{enumerate}
+
+\vspace{-2mm}
+\subsection{Implications}
+\label{sec:implications}
+
+CITA enables a new paradigm of \textbf{interactive and adaptive AI systems} where:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Policy updates via natural language}: Alignment changes can be expressed through instructions without model retraining.
+
+    \item \textbf{Context-aware responses}: Different users, applications, or deployment contexts can receive appropriately calibrated behaviors.
+
+    \item \textbf{Dynamic safety policies}: Safety constraints can be adjusted at inference time based on deployment requirements (e.g., stricter for child-facing apps, more permissive for research contexts).
+
+    \item \textbf{Reduced alignment tax}: No need for multiple specialized models for different alignment policies---a single CITA model can switch behaviors on demand.
+\end{itemize}
+
+\textbf{Outlook.} CITA opens several research directions: (1) scaling to larger models~\cite{touvron2023llama,jiang2023mistral,team2023gemini,chowdhery2022palm} and more instruction types, (2) theoretical analysis of instruction-conditioned learning dynamics~\cite{azar2023general}, (3) applications to multi-stakeholder alignment where different parties have different policy requirements~\cite{sun2024trustllm}, and (4) integration with constitutional AI methods~\cite{bai2022constitutional} for hierarchical instruction handling.
+
+\vspace{-2mm}
+\subsection{Reproducibility}
+\label{sec:reproducibility}
+
+All code, trained models, and the Instruction Switch Dataset are publicly available:
+
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item \textbf{Code}: \url{https://github.com/kapilw25/finetuning_evaluation}
+    \item \textbf{Dataset}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+\end{itemize}
+
+
+
+
+
+
+
+\textbf{Benefits of CITA}
+\label{sec:benefits}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Generalization}: Responds appropriately to novel instruction-prompt combinations not seen during training, similar to zero-shot generalization in instruction tuning~\cite{wei2022finetuned,chung2022scaling}.
+
+    \item \textbf{Robustness}: Resists jailbreak attempts~\cite{zou2023universal,wei2023jailbroken} by conditioning behavior on explicit alignment instructions.
+
+    \item \textbf{Calibration}: Avoids over-refusal~\cite{bianchi2023safetytuned} by adjusting safety level based on instruction context.
+
+    \item \textbf{Behavioral Switching}: Dynamically adapts response style (e.g., concise vs. detailed, formal vs. casual) based on instructions, enabling multi-tenant deployment~\cite{wang2024survey}.
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-3mm}
+\subsection{CITA vs. Prior Methods}
+\label{sec:comparison}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Capability} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+No Reward Model & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
+\hline
+Preference Pairs & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
+\hline
+Online Generation & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} \\
+\hline
+Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
+\hline
+Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
+\hline
+Explicit KL Control & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & Implicit & \textbf{Mandatory} \\
+\bottomrule
+\end{tabular}
+\caption{Feature comparison across alignment methods. CITA uniquely supports instruction-conditioned behavioral switching with mandatory KL regularization.}
+\label{tab:feature_comparison}
+\vspace{-4mm}
+\end{table}

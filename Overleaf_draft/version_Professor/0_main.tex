@@ -1,0 +1,386 @@
+% =============================================================================
+% CITA: Contrastive Instruction-Tuned Alignment
+% ICML 2026 Submission - Following ALKALI/ACL Format
+% =============================================================================
+\ifdefined\pdfoutput
+  \pdfoutput=1
+\fi
+
+\documentclass[11pt]{article}
+
+% =============================================================================
+% ACL STYLE
+% =============================================================================
+\usepackage[review]{acl2023}
+
+% =============================================================================
+% STANDARD PACKAGES
+% =============================================================================
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{microtype}
+
+% =============================================================================
+% EMOJI SUPPORT (compile with lualatex for color emojis)
+% =============================================================================
+\usepackage{ifluatex}
+\ifluatex
+  \usepackage{emoji}
+  \setemojifont{TwemojiMozilla}
+\fi
+% Emoji commands (fallback to text if not LuaLaTeX)
+\ifluatex
+  \newcommand{\emojiok}{\emoji{check-mark-button}}
+  \newcommand{\emojirep}{\emoji{counterclockwise-arrows-button}}
+  \newcommand{\emojiharm}{\emoji{warning}}
+  \newcommand{\emojiskull}{\emoji{skull}}
+  \newcommand{\emojileak}{\emoji{speech-balloon}}
+  \newcommand{\emojiconfused}{\emoji{question}}
+\else
+  \newcommand{\emojiok}{\textcolor{paired-dark-green}{\ding{51}}}
+  \newcommand{\emojirep}{\textcolor{paired-dark-gray}{\ding{108}}}
+  \newcommand{\emojiharm}{\textcolor{paired-dark-red}{\ding{56}}}
+  \newcommand{\emojiskull}{\textcolor{paired-dark-red}{\ding{56}}}
+  \newcommand{\emojileak}{\textcolor{paired-dark-gray}{\ding{108}}}
+  \newcommand{\emojiconfused}{\textcolor{paired-dark-gray}{?}}
+\fi
+
+% =============================================================================
+% MATH PACKAGES
+% =============================================================================
+\usepackage{amsmath,amssymb,amsfonts}
+
+% =============================================================================
+% GRAPHICS AND FIGURES
+% =============================================================================
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{trees,shapes,positioning,arrows.meta}
+\usetikzlibrary{shapes.geometric,arrows}
+\usetikzlibrary{decorations.markings}
+\usepackage[edges]{forest}  % For taxonomy trees
+
+% =============================================================================
+% TABLES
+% =============================================================================
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage{colortbl}  % For \cellcolor in tables
+
+% =============================================================================
+% FORMATTING
+% =============================================================================
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{soul}  % For highlighting
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% =============================================================================
+% ALGORITHMS
+% =============================================================================
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% =============================================================================
+% REFERENCES AND LINKS
+% =============================================================================
+% Note: url and hyperref already loaded by acl2023.sty
+\hypersetup{breaklinks=true,colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\usepackage[capitalise,nameinlink]{cleveref}  % Smart cross-references
+\crefname{section}{Sec.}{Sec.}
+\crefname{figure}{Fig.}{Figs.}
+\crefname{table}{Tab.}{Tabs.}
+\crefname{equation}{Eq.}{Eqs.}
+
+% =============================================================================
+% SYMBOLS
+% =============================================================================
+\usepackage{pifont}  % For \ding{} symbols in FAQ
+
+% =============================================================================
+% TCOLORBOX FOR CONTRIBUTIONS
+% =============================================================================
+\usepackage[many]{tcolorbox}
+\tcbuselibrary{skins}
+
+% =============================================================================
+% COLOR DEFINITIONS (ALKALI-style palette)
+% =============================================================================
+% Primary colors
+\definecolor{Teal}{RGB}{0, 50, 50}
+\definecolor{White}{RGB}{250, 250, 250}
+\definecolor{darkblue}{rgb}{0, 0, 0.5}
+
+% Paired colors for figures
+\definecolor{paired-light-blue}{RGB}{198, 219, 239}
+\definecolor{paired-dark-blue}{RGB}{49, 130, 188}
+\definecolor{paired-light-orange}{RGB}{251, 208, 162}
+\definecolor{paired-dark-orange}{RGB}{230, 85, 12}
+\definecolor{paired-light-green}{RGB}{199, 233, 193}
+\definecolor{paired-dark-green}{RGB}{49, 163, 83}
+\definecolor{paired-light-purple}{RGB}{218, 218, 235}
+\definecolor{paired-dark-purple}{RGB}{117, 107, 176}
+\definecolor{paired-light-gray}{RGB}{217, 217, 217}
+\definecolor{paired-dark-gray}{RGB}{99, 99, 99}
+\definecolor{paired-light-pink}{RGB}{222, 158, 214}
+\definecolor{paired-dark-pink}{RGB}{123, 65, 115}
+\definecolor{paired-light-red}{RGB}{231, 150, 156}
+\definecolor{paired-dark-red}{RGB}{131, 60, 56}
+\definecolor{paired-light-yellow}{RGB}{231, 204, 149}
+\definecolor{paired-dark-yellow}{RGB}{141, 109, 49}
+
+% Category colors for tables/figures
+\definecolor{light-red}{RGB}{255,182,193}
+\definecolor{medium-red}{RGB}{205,92,92}
+\definecolor{light-yellow}{RGB}{255, 239, 153}
+\definecolor{light-blue}{RGB}{173, 216, 230}
+\definecolor{light-green}{RGB}{144, 238, 144}
+
+% Background colors
+\definecolor{bg-green}{HTML}{D5E8D4}
+\definecolor{bg-blue}{HTML}{dae8fc}
+\definecolor{bg-yellow}{HTML}{FFF2CC}
+\definecolor{bg-pink}{HTML}{FFCCCC}
+\definecolor{bg-orange}{HTML}{FFCC99}
+\definecolor{bg-gray}{HTML}{eeeeee}
+
+% Semantic colors
+\definecolor{hidden-draw}{RGB}{20,68,106}
+\definecolor{hidden-pink}{RGB}{255,245,247}
+
+% Gradient colors (for heatmaps)
+\definecolor{a4}{RGB}{250,235,215}
+\definecolor{vgreen}{HTML}{60A917}
+\definecolor{vred}{HTML}{CE3A29}
+
+% =============================================================================
+% CONTRIBUTIONS BOX (ALKALI-style)
+% =============================================================================
+\usepackage{fontawesome5} % only if you keep \fa... icons
+% --- Tables / layout ---
+\usepackage{tabularx,booktabs,array}
+\usepackage{float}      % for [H]
+\usepackage{pifont}     % for \ding fallback icons
+
+% --- URLs that break nicely (IMPORTANT for overfull boxes) ---
+\usepackage{xurl}
+
+
+
+
+\newtcolorbox{defin}{
+    colback=Teal!5!White,
+    enhanced,
+    title=ECLIPTICA at-a-glance,
+    attach boxed title to top left={xshift=-4mm},
+    boxrule=0pt,
+    after skip=1cm,
+    before skip=1cm,
+    right skip=0cm,
+    fonttitle=\bfseries,
+    toprule=0pt,
+    bottomrule=0pt,
+    rightrule=0pt,
+    leftrule=3pt,
+    arc=0mm,
+    skin=enhancedlast jigsaw,
+    sharp corners,
+    colframe=Teal!55!black,
+    colbacktitle=Teal!55!black,
+    boxed title style={
+        frame code={
+            \fill[Teal!25!black](frame.south west)--(frame.north west)--(frame.north east)--([xshift=3mm]frame.east)--(frame.south east)--cycle;
+            \draw[line width=1mm,Teal!25!black]([xshift=2mm]frame.north east)--([xshift=5mm]frame.east)--([xshift=2mm]frame.south east);
+            \draw[line width=1mm,Teal!25!black]([xshift=5mm]frame.north east)--([xshift=8mm]frame.east)--([xshift=5mm]frame.south east);
+            \fill[Teal!25!black](frame.south west)--+(4mm,-2mm)--+(4mm,2mm)--cycle;
+        }
+    }
+}
+
+
+
+\makeatletter
+\newcommand{\SafeFA}[2]{\ifcsname #1\endcsname \csname #1\endcsname \else #2\fi}
+\makeatother
+
+% Define icons used in the table (robust across FA versions)
+\newcommand{\IcSupport}{\SafeFA{faHeadphones}{\ding{72}}}
+\newcommand{\IcResearch}{\SafeFA{faFlask}{\ding{46}}}
+\newcommand{\IcCompliance}{\SafeFA{faGavel}{\ding{115}}}
+\newcommand{\IcCreative}{\SafeFA{faLightbulb}{\ding{72}}}
+\newcommand{\IcChild}{\SafeFA{faChild}{\ding{43}}}
+\newcommand{\IcSecurity}{\SafeFA{faShieldAlt}{\ding{110}}} % if missing, uses ding fallback
+
+
+% =============================================================================
+% CUSTOM HIGHLIGHT COMMANDS
+% =============================================================================
+\DeclareRobustCommand{\hlpink}[1]{{\sethlcolor{pink}\hl{#1}}}
+\DeclareRobustCommand{\hlgreen}[1]{{\sethlcolor{green}\hl{#1}}}
+\DeclareRobustCommand{\hlyellow}[1]{{\sethlcolor{yellow}\hl{#1}}}
+
+% =============================================================================
+% TIKZ STYLES (for diagrams)
+% =============================================================================
+\tikzstyle{my-box}=[
+    rectangle,
+    draw=hidden-draw,
+    rounded corners,
+    text opacity=1,
+    minimum height=1.5em,
+    minimum width=40em,
+    inner sep=2pt,
+    align=center,
+    fill opacity=.5,
+    line width=0.8pt,
+]
+\tikzstyle{leaf}=[my-box, minimum height=1.5em,
+    fill=hidden-pink!80, text=black, align=center,font=\normalsize,
+    inner xsep=2pt,
+    inner ysep=4pt,
+    line width=0.8pt,
+]
+
+% =============================================================================
+% TITLE AND AUTHORS
+% =============================================================================
+
+\title{\includegraphics[width=\textwidth]{figures/banner.pdf}}
+
+\author{
+Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vaibhaav Tiwari$^{3}$ \quad Vinija Jain$^{4}$ \quad Aman Chadha$^{5}$ \quad Amitava Das$^{6}$ \\[0.5em]
+{\small $^{1}$San Jos\'{e} State University \quad $^{2}$GITA, India \quad $^{3}$BML Munjal University, India}\\
+{\small $^{4}$Google AI \quad $^{5}$Apple GenAI \quad $^{6}$BITS Pilani, Goa} \\[0.3em]
+{\small \texttt{kapilw25@gmail.com}}
+}
+
+% =============================================================================
+% DOCUMENT BEGIN
+% =============================================================================
+\begin{document}
+
+\maketitle
+
+% =============================================================================
+% ABSTRACT
+% =============================================================================
+\begin{abstract}
+\vspace{-1.5mm}
+Alignment in large language models is still predominantly \emph{static}: training-time methods such as RLHF and DPO imprint a single, fixed behavioral policy into the weights, making post-deployment policy updates slow, expensive, and brittle. We introduce \textbf{ECLIPTICA}, a framework that reframes alignment as \emph{instruction-driven} and \emph{runtime-controllable}: models should accept natural-language \emph{alignment instructions} that modulate behavior on-the-fly, enabling interactive alignment correction under evolving policies, user roles, and safety requirements.
+
+We instantiate ECLIPTICA with \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstruction-\textbf{T}uned \textbf{A}lignment), an algorithm that unifies supervised fine-tuning and contrastive preference optimization with an \emph{explicit, mandatory} KL regularizer:
+$L_{\textsc{CITA}} = L_{\textsc{SFT}} + \lambda_1 L_{\textsc{DPO}} + \lambda_2 L_{\textsc{KL}}$.
+The KL term is not optional: it anchors the model to a reference policy to prevent mode collapse and enables stable \emph{instruction-conditioned} switching rather than shallow instruction compliance.
+
+\textls[0]{To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{Instruction Switch Dataset (ISD)}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ISD, TruthfulQA, Conditional Safety, Length Control, AQI) show that \textbf{CITA achieves \colorbox{bg-green}{95.6\%} instruction-alignment efficiency}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp. On TruthfulQA, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments. To foster further research in this domain, we make the \href{https://github.com/kapilw25/finetuning_evaluation}{code} and \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{dataset} publicly available.}
+\end{abstract}
+
+
+% =============================================================================
+% CONTRIBUTIONS AT-A-GLANCE
+% =============================================================================
+\begin{defin}
+\scriptsize
+\vspace{-2mm}
+\begin{itemize}[left=-4pt,itemsep=0pt,topsep=0pt,parsep=0pt]
+
+\item[\faBolt] \textbf{\textit{TL;DR}}:
+\textbf{ECLIPTICA is a framework for \emph{instruction-driven, runtime-switchable alignment}};
+\textbf{CITA is the algorithm that makes the switch \emph{stable}} via contrastive preference learning \emph{plus} a \textbf{mandatory} KL anchor.
+
+\item[\faGlobeAmericas] \textbf{\textit{Why now (agentic reality)}}:
+Modern deployments require \textbf{one model} to exhibit \textbf{different alignment postures} across workflows (e.g., customer support vs.\ internal research vs.\ compliance).
+Static alignment hard-codes a single policy; ECLIPTICA instead treats \textbf{alignment as a controllable instruction channel} at inference time.
+
+\item[\faCompass] \textbf{\textit{Framework (ECLIPTICA)}}:
+We shift alignment from \textbf{training-only} to \textbf{dialogue / instruction-driven correction}:
+a model receives \textbf{natural-language alignment instructions} that \textbf{modulate policy on-the-fly}, enabling \textbf{policy updates without exhaustive retraining}.
+
+\item[\faCogs] \textbf{\textit{Algorithm (CITA)}}:
+CITA operationalizes ECLIPTICA with a \textbf{unified objective} that couples response quality, preference contrast, and stability:
+
+\vspace{-0.7em}
+\[\boxed{
+L_{\textsc{CITA}} \;=\; L_{\textsc{SFT}} \;+\; \lambda_1\,L_{\textsc{DPO}} \;+\; \lambda_2\,L_{\textsc{KL}}.
+}
+\]
+\vspace{-1em}
+
+Crucially, \textbf{KL is explicit \& mandatory}: it \textbf{prevents mode collapse}, \textbf{bounds preference margins}, and preserves a \textbf{switchable} policy manifold.
+
+\item[\faRandom] \textbf{\textit{Instruction-conditioned switching (not prompt hacks)}}:
+CITA is designed so the \textbf{same user prompt} can yield \textbf{meaningfully different behaviors} \emph{solely} due to the alignment instruction
+(e.g., safety-first vs.\ professional vs.\ creative), enabling \textbf{multi-tenant} and \textbf{role-aware} deployment.
+
+\item[\faVial] \textbf{\textit{New diagnostic (ISD)}}:
+We introduce the \textbf{Instruction Switch Dataset (ISD)} to isolate instruction effects:
+\textbf{keep prompts constant}, vary \textbf{only} the alignment instruction.
+ISD is a \textbf{full-factorial} benchmark with
+\(\lvert\text{ISD}\rvert = 300 \times 10 = 3{,}000\) test cases, enabling direct, controlled comparisons.
+
+\item[\faBalanceScale] \textbf{\textit{Key distinction: following vs.\ alignment}}:
+We explicitly test whether models exhibit \textbf{instruction-following} (surface format compliance)
+or \textbf{instruction-alignment} (internalized, robust policy embodiment consistent across contexts).
+
+\item[\faChartLine] \textbf{\textit{Results (switchability without judges)}}:
+On \textbf{Llama-3.1-8B}, across \textbf{five deterministic benchmarks},
+\textbf{CITA achieves \colorbox{bg-green}{95.6\%} instruction-alignment efficiency}---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
+On TruthfulQA, \textbf{CITA shows 54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
+
+\item[\faTools] \textbf{\textit{Practical upshot}}:
+ECLIPTICA + CITA move from \textbf{one-policy-per-checkpoint} to \textbf{switchable, instruction-governed alignment}:
+a single deployed model can be \textbf{re-scoped} by policy instructions for safety level, tone, verbosity, compliance emphasis, or creativity---\textbf{without} spawning separate aligned models.
+
+\item[\faCode] \textbf{\textit{Release}}:
+\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation};
+\textbf{Dataset (ISD):} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
+
+
+\end{itemize}
+\vspace{-2mm}
+\end{defin}
+
+
+%\noindent\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation}\\
+%\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+
+% =============================================================================
+% MAIN CONTENT (11 Sections matching ALKALI structure)
+% =============================================================================
+\input{1_introduction}
+\input{5_isd_dataset}
+
+
+\input{4_cita_framework}
+%\input{6_experiments}
+\input{7_results}
+\input{8_conclusion}
+\input{9_limitation}
+\input{6_experiments}
+
+
+\input{2_methodology}
+\input{3_unified_loss}
+% =============================================================================
+% REFERENCES
+% =============================================================================
+\bibliographystyle{acl_natbib}
+\bibliography{custom}
+
+% =============================================================================
+% APPENDIX (FAQ + Detailed Appendix)
+% =============================================================================
+\input{10_faq}
+\input{11_appendix}
+
+\end{document}
