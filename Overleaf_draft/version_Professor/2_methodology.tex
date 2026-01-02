@@ -15,18 +15,16 @@ We present the CITA training methodology, organized into three phases: (1) setup
 \begin{table}[H]
 \centering
 \small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}ll@{}}
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-Base Model & Llama-3.1-8B~\cite{dubey2024llama} \\
-\hline
-Prompt Format & Chat-style (system/user/assistant) \\
-\hline
-Tokenizer & LLaMA-3 with BOS/EOS tokens \\
-\hline
-Hardware & NVIDIA A100-40GB / A100-80GB \\
-\hline
+Base Model & Llama-3.1-8B~\cite{dubey2024llama} \\ \hline
+Prompt Format & Chat-style (system/user/assistant) \\ \hline
+Tokenizer & LLaMA-3 with BOS/EOS tokens \\ \hline
+Hardware & NVIDIA A100-40GB / A100-80GB \\ \hline
 Training Data & PKU-SafeRLHF~\cite{ji2024pku} \\
 \bottomrule
 \end{tabular}
@@ -83,20 +81,17 @@ Standard DPO format without explicit instructions for baseline comparison:
 \begin{table}[H]
 \centering
 \scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}
 \toprule
 \textbf{Parameter} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\
-\hline
-Batch $\times$ Accum & 2$\times$4 & 16$\times$4 & 12$\times$2 & 1$\times$8 & 1$\times$8 \\
-\hline
-Epochs & 1 & 1 & 1 & 1 & 1 \\
-\hline
-LoRA Rank & 16 & 16 & 16 & 16 & 16 \\
-\hline
-$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\
-\hline
+Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\ \hline
+Batch $\times$ Accum & 2$\times$4 & 16$\times$4 & 12$\times$2 & 1$\times$8 & 1$\times$8 \\ \hline
+Epochs & 1 & 1 & 1 & 1 & 1 \\ \hline
+LoRA Rank & 16 & 16 & 16 & 16 & 16 \\ \hline
+$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\ \hline
 KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\
 \bottomrule
 \end{tabularx}

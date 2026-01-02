@@ -354,23 +354,16 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 %\noindent\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation}\\
 %\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
 
-% =============================================================================
-% MAIN CONTENT (11 Sections matching ALKALI structure)
+% % =============================================================================
+% MAIN CONTENT (Core paper - before references)
 % =============================================================================
 \input{1_introduction}
 \input{5_isd_dataset}
-
-
 \input{4_cita_framework}
-%\input{6_experiments}
+\input{6_experiments}
 \input{7_results}
 \input{8_conclusion}
-\input{9_limitation}
-\input{6_experiments}
 
-
-\input{2_methodology}
-\input{3_unified_loss}
 % =============================================================================
 % REFERENCES
 % =============================================================================
@@ -378,8 +371,13 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 \bibliography{custom}
 
 % =============================================================================
-% APPENDIX (FAQ + Detailed Appendix)
+% APPENDIX (follows logical paper flow: methods → experiments → results)
 % =============================================================================
+\appendix
+
+\input{2_methodology}
+\input{3_unified_loss}
+\input{9_limitation}
 \input{10_faq}
 \input{11_appendix}
 

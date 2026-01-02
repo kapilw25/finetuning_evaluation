@@ -916,9 +916,9 @@ def generate_radar_chart_area_based(
     # Close the polygon for plotting
     method_data_closed = {m: method_data[m] + method_data[m][:1] for m in methods}
 
-    # Create figure - wider to accommodate ranking on the right
-    fig, ax = plt.subplots(figsize=(14, 10), subplot_kw=dict(polar=True))
-    ax.set_position([0.08, 0.12, 0.55, 0.78])
+    # Create figure - single column layout (radar + legend below)
+    fig, ax = plt.subplots(figsize=(8, 9), subplot_kw=dict(polar=True))
+    ax.set_position([0.1, 0.18, 0.8, 0.72])  # Leave room for legend at bottom
 
     # Prepare CI data if provided (normalize CI bounds same as deltas)
     method_ci_lower = {m: [] for m in methods}
@@ -969,9 +969,9 @@ def generate_radar_chart_area_based(
                 label=f'{method} ({avg_pct:.1f}%)', color=color, markersize=10)
         ax.fill(angles_closed, method_data_closed[method], alpha=0.20, color=color)
 
-    # Set labels
+    # Set labels - LARGER FONT SIZE and BOLD
     ax.set_xticks(angles)
-    ax.set_xticklabels(eval_names, fontsize=16, fontweight='bold', color='black')
+    ax.set_xticklabels(eval_names, fontsize=18, fontweight='bold', color='black')
 
     # Add raw delta annotations at each vertex (show all values, not just winners)
     for i, eval_name in enumerate(eval_names):
@@ -989,144 +989,44 @@ def generate_radar_chart_area_based(
                 method_color = method_colors.get(method, '#808080')
                 ax.annotate(f'{raw_val:+.3f}',
                            xy=(angle, r),
-                           fontsize=14, fontweight='bold',
+                           fontsize=16, fontweight='bold',
                            color=method_color, ha='center', va='center')
 
-    # Styling
+    # Styling - LARGER FONT SIZE
     ax.set_ylim(0, 1.35)
     ax.set_yticks([0.25, 0.5, 0.75, 1.0])
-    ax.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=11, fontweight='bold', color='black')
+    ax.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=14, fontweight='bold', color='black')
 
     # Subtle grid: thin lines, slightly darker than default
     ax.grid(True, linestyle='--', alpha=0.5, linewidth=1.2, color='#606060')
 
-    # Title
+    # Title - LARGER FONT SIZE
     ax.set_title('Instruction Alignment Efficiency\n(Average Radius = Overall Performance)',
-                 fontsize=20, fontweight='bold', color='black', pad=25)
-
-    # Legend with avg percentages - positioned at top right corner above tables
-    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.15), fontsize=14,
-              prop={'weight': 'bold'}, title='Method (Avg %)', title_fontsize=14)
+                 fontsize=22, fontweight='bold', color='black', pad=30)
 
     # =========================================================================
-    # Right panel: Avg-based ranking table (moved down to make room for legend)
+    # LEGEND: Single horizontal line below radar chart
+    # Format: Method (Avg%): -o- CITA(95.6%), -o- DPO(70.5%), ...
     # =========================================================================
-    table_ax = fig.add_axes([0.66, 0.08, 0.32, 0.38])
-    table_ax.axis('off')
+    from matplotlib.lines import Line2D
 
-    # Build ranking table
-    rank_data = []
-    for rank, method in enumerate(sorted_methods, 1):
+    # Create custom legend handles with line+marker
+    legend_handles = []
+    legend_labels = []
+    for method in sorted_methods:
+        color = method_colors.get(method, '#808080')
         avg_pct = method_avg_pct[method]
-        rank_data.append([f'#{rank}', method, f'{avg_pct:.1f}%'])
+        handle = Line2D([0], [0], marker='o', color=color, linewidth=3,
+                        markersize=10, markerfacecolor=color)
+        legend_handles.append(handle)
+        legend_labels.append(f'{method} ({avg_pct:.1f}%)')
 
-    # Color rows: Gold for winner, neutral gray for all others
-    cell_colors = []
-    for i in range(len(sorted_methods)):
-        if i == 0:  # Winner
-            cell_colors.append(['#FFD700'] * 3)  # Gold
-        else:  # All others - same neutral color
-            cell_colors.append(['#E8E8E8'] * 3)  # Light gray
-
-    tbl = table_ax.table(
-        cellText=rank_data,
-        colLabels=['Rank', 'Method', 'Avg'],
-        cellColours=cell_colors,
-        loc='upper center',
-        cellLoc='center',
-        colWidths=[0.2, 0.4, 0.4]
-    )
-    tbl.auto_set_font_size(False)
-    tbl.set_fontsize(14)
-    tbl.scale(1.0, 2.0)
-
-    # Make table text bold
-    for key, cell in tbl.get_celld().items():
-        cell.set_text_props(fontweight='bold')
-        if key[0] == 0:  # Header row
-            cell.set_facecolor('#404040')
-            cell.set_text_props(color='white', fontweight='bold')
-
-    # Table title
-    table_ax.set_title('Ranking by Average Radius\n(Higher = Better Alignment)',
-                       fontsize=16, fontweight='bold', color='black', pad=10)
-
-    # =========================================================================
-    # Bottom: Winner announcement
-    # =========================================================================
-    winner = sorted_methods[0]
-    winner_avg = method_avg_pct[winner]
-    runner_up = sorted_methods[1] if len(sorted_methods) > 1 else None
-    runner_up_avg = method_avg_pct[runner_up] if runner_up else 0
-
-    margin = winner_avg - runner_up_avg
-
-    fig.text(0.82, 0.06,
-             f'Winner: {winner} ({winner_avg:.1f}%)\n'
-             f'Margin over {runner_up}: +{margin:.1f}%',
-             ha='center', fontsize=15, fontweight='bold', color='black',
-             bbox=dict(boxstyle='round,pad=0.5', facecolor='#90EE90',
-                      edgecolor='darkgreen', linewidth=2, alpha=0.95))
-
-    # =========================================================================
-    # Delta table (raw values) - moved down to make room for legend at top
-    # =========================================================================
-    delta_ax = fig.add_axes([0.64, 0.48, 0.35, 0.28])
-    delta_ax.axis('off')
-
-    # Shorten eval names for table
-    short_names = {
-        'ISD': 'ISD',
-        'TruthfulQA': 'TQA',
-        'Cond. Safety': 'C.Safe',
-        'Length Ctrl': 'L.Ctrl',
-        'AQI': 'AQI'
-    }
-
-    # Build delta table
-    delta_data = []
-    for eval_name in eval_names:
-        short_name = short_names.get(eval_name, eval_name[:6])
-        row = [short_name]
-        deltas = eval_deltas[eval_name]
-        for method in methods:
-            val = deltas.get(method, 0)
-            row.append(f'{val:+.3f}')
-        delta_data.append(row)
-
-    # Highlight max in each row
-    delta_colors = []
-    for i, eval_name in enumerate(eval_names):
-        deltas = eval_deltas[eval_name]
-        vals = [deltas.get(m, float('-inf')) for m in methods]
-        max_val = max(vals)
-        row_colors = ['white']  # First column (eval name)
-        for method in methods:
-            val = deltas.get(method, 0)
-            if val == max_val:
-                row_colors.append('#90EE90')
-            else:
-                row_colors.append('white')
-        delta_colors.append(row_colors)
-
-    delta_tbl = delta_ax.table(
-        cellText=delta_data,
-        colLabels=['Eval'] + methods,
-        cellColours=delta_colors,
-        loc='upper center',
-        cellLoc='center'
-    )
-    delta_tbl.auto_set_font_size(False)
-    delta_tbl.set_fontsize(10)
-    delta_tbl.scale(1.0, 1.5)
-
-    for key, cell in delta_tbl.get_celld().items():
-        cell.set_text_props(fontweight='bold')
-        if key[0] == 0:  # Header row
-            cell.set_facecolor('#404040')
-            cell.set_text_props(color='white', fontweight='bold')
-
-    delta_ax.set_title('Δ = Instruct − NoInstruct', fontsize=13, fontweight='bold', color='black', pad=5)
+    # Place legend at bottom center in single horizontal row
+    fig.legend(handles=legend_handles, labels=legend_labels,
+               loc='lower center', bbox_to_anchor=(0.5, 0.02),
+               ncol=len(sorted_methods), fontsize=12,
+               prop={'weight': 'bold'}, frameon=True,
+               title='Method (Avg %)', title_fontsize=13)
 
     # Save
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
@@ -1137,6 +1037,12 @@ def generate_radar_chart_area_based(
     print(f"  PNG: {png_path}")
 
     # Print ranking summary
+    winner = sorted_methods[0]
+    winner_avg = method_avg_pct[winner]
+    runner_up = sorted_methods[1] if len(sorted_methods) > 1 else None
+    runner_up_avg = method_avg_pct[runner_up] if runner_up else 0
+    margin = winner_avg - runner_up_avg
+
     print(f"\n{'='*60}")
     print(f"INSTRUCTION ALIGNMENT EFFICIENCY (Average Radius)")
     print(f"{'='*60}")
@@ -1145,7 +1051,7 @@ def generate_radar_chart_area_based(
         avg_pct = method_avg_pct[method]
         print(f"  #{rank} {method}: {avg_pct:.1f}% (avg={avg:.4f})")
 
-    print(f"\n🏆 WINNER: {winner} with {winner_avg:.1f}% coverage")
+    print(f"\n  WINNER: {winner} with {winner_avg:.1f}% coverage")
     print(f"   Margin over {runner_up}: +{margin:.1f}%")
 
     return str(output_path)
@@ -1217,6 +1123,8 @@ def generate_combined_heatmap(
         models = [
             'SFT_NoInstruct', 'SFT_Instruct',
             'DPO_NoInstruct', 'DPO_Instruct',
+            'PPO_NoInstruct', 'PPO_Instruct',
+            'GRPO_NoInstruct', 'GRPO_Instruct',
             'CITA_NoInstruct', 'CITA_Instruct'
         ]
         models = [m for m in models if m in all_models]
@@ -1306,7 +1214,7 @@ def generate_combined_heatmap(
         vmax=1,
         annot=np.array(annot_matrix),
         fmt='',
-        annot_kws={'fontsize': 11, 'fontweight': 'bold', 'color': 'black'},
+        annot_kws={'fontsize': 14, 'fontweight': 'bold', 'color': 'black'},
         cbar_kws={'label': 'Normalized Score (per eval)', 'shrink': 0.8},
         xticklabels=eval_names,
         yticklabels=models,
@@ -1315,15 +1223,15 @@ def generate_combined_heatmap(
     )
 
     # Style tick labels
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=12, fontweight='bold', color='black', rotation=45, ha='right')
-    ax.set_yticklabels(ax.get_yticklabels(), fontsize=11, fontweight='bold', color='black')
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=14, fontweight='bold', color='black', rotation=45, ha='right')
+    ax.set_yticklabels(ax.get_yticklabels(), fontsize=13, fontweight='bold', color='black')
 
     # Title - clarify that numbers are original, colors are normalized
     ax.set_title('Model Performance Across All Evaluations\n(Values = Original, Colors = Normalized)',
-                 fontsize=14, fontweight='bold', color='black', pad=15)
+                 fontsize=16, fontweight='bold', color='black', pad=15)
 
-    # Add method separators (horizontal lines between SFT/DPO/CITA)
-    for idx in [2, 4]:  # After SFT_Instruct, after DPO_Instruct
+    # Add method separators (horizontal lines between SFT/DPO/PPO/GRPO/CITA)
+    for idx in [2, 4, 6, 8]:  # After each method group
         if idx < len(models):
             ax.axhline(y=idx, color='black', linewidth=3)
 

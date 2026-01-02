@@ -38,15 +38,16 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Property} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Reward Model Required & No & No \\
-Instruction-Aware & No & \textbf{Yes} \\
-Behavioral Switching & No & \textbf{Yes} \\
-Mandatory KL & Optional & \textbf{Yes} \\
-Dynamic Policy & No & \textbf{Yes} \\
+Reward Model Required & No & No \\ \hline
+Instruction-Aware & No & \textbf{Yes} \\ \hline
+Behavioral Switching & No & \textbf{Yes} \\ \hline
+Mandatory KL & Optional & \textbf{Yes} \\ \hline
+Dynamic Policy & No & \textbf{Yes} \\ \hline
 Agent-Compatible & No & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
@@ -207,18 +208,15 @@ P^+ = \frac{\exp(\beta s^+)}{\exp(\beta s^+) + \exp(\beta s^-)}
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Property} & \textbf{DPO} & \textbf{CITA (Ours)} \\
 \midrule
-Needs Reward Model & No & No \\
-\hline
-Instruction-Aware & No & \textbf{Yes} \\
-\hline
-Contrastive Preference & Yes & \textbf{Yes} \\
-\hline
-Behavior Switching & No & \textbf{Yes} \\
-\hline
+Needs Reward Model & No & No \\ \hline
+Instruction-Aware & No & \textbf{Yes} \\ \hline
+Contrastive Preference & Yes & \textbf{Yes} \\ \hline
+Behavior Switching & No & \textbf{Yes} \\ \hline
 Mandatory KL Regularization & Optional & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
@@ -246,15 +244,16 @@ Mandatory KL Regularization & Optional & \textbf{Yes} \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}ll@{}}
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
-GPU & NVIDIA A100-40GB \\
-Framework & PyTorch 2.1 + Transformers 4.35 \\
-Training Library & TRL~\cite{tunstall2023zephyr} \\
-Optimization & Optuna~\cite{akiba2019optuna} 3.4 with TPE sampler \\
-Mixed Precision & bfloat16 \\
+GPU & NVIDIA A100-40GB \\ \hline
+Framework & PyTorch 2.1 + Transformers 4.35 \\ \hline
+Training Library & TRL~\cite{tunstall2023zephyr} \\ \hline
+Optimization & Optuna~\cite{akiba2019optuna} 3.4 with TPE sampler \\ \hline
+Mixed Precision & bfloat16 \\ \hline
 Gradient Checkpointing & Enabled \\
 \bottomrule
 \end{tabular}
@@ -268,38 +267,25 @@ Gradient Checkpointing & Enabled \\
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 \textbf{Parameter} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Epochs & 1 & 1 & 1 & 1 & 1 \\
-\hline
-Batch Size & 2 & 16 & 12 & 1 & 1 \\
-\hline
-Grad. Accum. & 4 & 4 & 2 & 8 & 8 \\
-\hline
-Eff. Batch & 8 & 64 & 24 & 8 & 8 \\
-\hline
-Max Seq. Len. & 2048 & 2048 & 2048 & 2048 & 2048 \\
-\hline
-Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\
-\hline
-LR Scheduler & Cosine & --- & Cosine & Cosine & Cosine \\
-\hline
-Warmup & 100 steps & --- & 10\% & 100 steps & 10\% \\
-\hline
-Weight Decay & 0.01 & --- & 0.1 & 0.01 & 0.011 \\
-\hline
-$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\
-\hline
-KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\
-\hline
-Max Grad Norm & --- & 1.0 & 0.1 & --- & 1.0 \\
-\hline
-LoRA Rank & 16 & 16 & 16 & 16 & 16 \\
-\hline
-LoRA Alpha & 16 & 16 & 16 & 16 & 16 \\
-\hline
+Epochs & 1 & 1 & 1 & 1 & 1 \\ \hline
+Batch Size & 2 & 16 & 12 & 1 & 1 \\ \hline
+Grad. Accum. & 4 & 4 & 2 & 8 & 8 \\ \hline
+Eff. Batch & 8 & 64 & 24 & 8 & 8 \\ \hline
+Max Seq. Len. & 2048 & 2048 & 2048 & 2048 & 2048 \\ \hline
+Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\ \hline
+LR Scheduler & Cosine & --- & Cosine & Cosine & Cosine \\ \hline
+Warmup & 100 steps & --- & 10\% & 100 steps & 10\% \\ \hline
+Weight Decay & 0.01 & --- & 0.1 & 0.01 & 0.011 \\ \hline
+$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\ \hline
+KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\ \hline
+Max Grad Norm & --- & 1.0 & 0.1 & --- & 1.0 \\ \hline
+LoRA Rank & 16 & 16 & 16 & 16 & 16 \\ \hline
+LoRA Alpha & 16 & 16 & 16 & 16 & 16 \\ \hline
 Target Modules & \multicolumn{5}{c}{q, k, v, o, gate, up, down\_proj} \\
 \bottomrule
 \end{tabular}
@@ -312,16 +298,14 @@ Target Modules & \multicolumn{5}{c}{q, k, v, o, gate, up, down\_proj} \\
 \begin{table}[H]
 \centering
 \scriptsize
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 \textbf{Metric} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-GPU Used & 40GB & 80GB & 80GB & 40GB & 40GB \\
-\hline
-Training Time & 43min & 17h & 12h & 103min & 120min \\
-\hline
-GPU Memory & 38GB & 72GB & 68GB & 39GB & 39GB \\
-\hline
+GPU Used & 40GB & 80GB & 80GB & 40GB & 40GB \\ \hline
+Training Time & 43min & 17h & 12h & 103min & 120min \\ \hline
+GPU Memory & 38GB & 72GB & 68GB & 39GB & 39GB \\ \hline
 Checkpoint Size & 1.2GB & 1.2GB & 1.2GB & 1.2GB & 1.2GB \\
 \bottomrule
 \end{tabular}
@@ -340,15 +324,16 @@ Checkpoint Size & 1.2GB & 1.2GB & 1.2GB & 1.2GB & 1.2GB \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lc@{}}
 \toprule
 \textbf{Statistic} & \textbf{Value} \\
 \midrule
-Total Examples & 44,137 \\
-Training Split & 83\% \\
-Validation Split & 17\% \\
-Avg. Prompt Length & 42 tokens \\
-Avg. Response Length & 187 tokens \\
+Total Examples & 44,137 \\ \hline
+Training Split & 83\% \\ \hline
+Validation Split & 17\% \\ \hline
+Avg. Prompt Length & 42 tokens \\ \hline
+Avg. Response Length & 187 tokens \\ \hline
 Safety Categories & 19 \\
 \bottomrule
 \end{tabular}
@@ -362,19 +347,20 @@ Safety Categories & 19 \\
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2pt}
-\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Type} & \textbf{Full Instruction Template} \\
 \midrule
-neutral & ``Respond with a balanced perspective, presenting multiple viewpoints fairly.'' \\
-conservative & ``Respond with traditional values, favoring established methods and caution.'' \\
-liberal & ``Respond with openness to new ideas, emphasizing progress and innovation.'' \\
-regulatory & ``Respond with focus on compliance, legal considerations, and proper procedures.'' \\
-empathetic & ``Respond with compassion and emotional support, prioritizing the user's feelings.'' \\
-safety\_first & ``Respond with risk awareness, highlighting potential dangers and precautions.'' \\
-educational & ``Respond in teaching mode, explaining concepts clearly for learning.'' \\
-concise & ``Respond briefly and directly, avoiding unnecessary elaboration.'' \\
-professional & ``Respond with formal, business-appropriate language and structure.'' \\
+neutral & ``Respond with a balanced perspective, presenting multiple viewpoints fairly.'' \\ \hline
+conservative & ``Respond with traditional values, favoring established methods and caution.'' \\ \hline
+liberal & ``Respond with openness to new ideas, emphasizing progress and innovation.'' \\ \hline
+regulatory & ``Respond with focus on compliance, legal considerations, and proper procedures.'' \\ \hline
+empathetic & ``Respond with compassion and emotional support, prioritizing the user's feelings.'' \\ \hline
+safety\_first & ``Respond with risk awareness, highlighting potential dangers and precautions.'' \\ \hline
+educational & ``Respond in teaching mode, explaining concepts clearly for learning.'' \\ \hline
+concise & ``Respond briefly and directly, avoiding unnecessary elaboration.'' \\ \hline
+professional & ``Respond with formal, business-appropriate language and structure.'' \\ \hline
 creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \bottomrule
 \end{tabularx}
@@ -393,15 +379,16 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{$\lambda_{\text{KL}}$} & \textbf{Reward Margin} & \textbf{ISD Score} & \textbf{Stability} \\
 \midrule
-0 (no KL) & 3.8 & 0.22 & Unstable \\
-0.00005 & 5.1 & 0.28 & Marginal \\
-0.0001 & 6.2 & 0.33 & Stable \\
-0.00023 (best) & 7.5 & 0.37 & Stable \\
-0.0005 & 6.8 & 0.34 & Stable \\
+0 (no KL) & 3.8 & 0.22 & Unstable \\ \hline
+0.00005 & 5.1 & 0.28 & Marginal \\ \hline
+0.0001 & 6.2 & 0.33 & Stable \\ \hline
+0.00023 (best) & 7.5 & 0.37 & Stable \\ \hline
+0.0005 & 6.8 & 0.34 & Stable \\ \hline
 0.001 & 5.5 & 0.29 & Stable \\
 \bottomrule
 \end{tabular}
@@ -416,13 +403,14 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{$\beta$} & \textbf{Preference Accuracy} & \textbf{Reward Margin} & \textbf{ISD Score} \\
 \midrule
-0.05 & 85\% & 4.2 & 0.29 \\
-0.10 (best) & 89\% & 7.5 & 0.37 \\
-0.15 & 91\% & 8.1 & 0.35 \\
+0.05 & 85\% & 4.2 & 0.29 \\ \hline
+0.10 (best) & 89\% & 7.5 & 0.37 \\ \hline
+0.15 & 91\% & 8.1 & 0.35 \\ \hline
 0.20 & 92\% & 9.2 & 0.31 \\
 \bottomrule
 \end{tabular}
@@ -559,14 +547,13 @@ Additional training dynamics plots that provide supplementary context to the mai
 \begin{table}[H]
 \centering
 \footnotesize
-\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
 \toprule
 \textbf{Instruction} & \textbf{CITA\_Instruct Response} \\
 \midrule
-safety\_first & ``Cryptocurrency is highly volatile. Consider: only invest what you can afford to lose, secure your private keys offline, be wary of scams, and never share your credentials. The regulatory landscape is uncertain---consult a financial advisor.'' \\
-\midrule
-liberal & ``Cryptocurrency offers exciting opportunities for financial innovation. Consider: diversifying across multiple coins, exploring DeFi protocols, following emerging trends, and potentially high returns for those willing to embrace risk.'' \\
-\midrule
+safety\_first & ``Cryptocurrency is highly volatile. Consider: only invest what you can afford to lose, secure your private keys offline, be wary of scams, and never share your credentials. The regulatory landscape is uncertain---consult a financial advisor.'' \\ \hline
+liberal & ``Cryptocurrency offers exciting opportunities for financial innovation. Consider: diversifying across multiple coins, exploring DeFi protocols, following emerging trends, and potentially high returns for those willing to embrace risk.'' \\ \hline
 concise & ``Assess: volatility tolerance, security practices, regulatory risks, investment horizon. Start small.'' \\
 \bottomrule
 \end{tabularx}
@@ -639,6 +626,7 @@ We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$
 \begin{table}[H]
 \centering
 \footnotesize
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lll@{}}
 \toprule
 \textbf{Model} & \textbf{Training Path} & \textbf{Instruction} \\

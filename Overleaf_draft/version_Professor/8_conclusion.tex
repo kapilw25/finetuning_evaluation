@@ -3,8 +3,8 @@
 % =============================================================================
 
 \vspace{-2mm}
-\section{Conclusion}
-\label{sec:conclusion}
+\section{Discussion and Implications}
+\label{sec:discussion}
 
 This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling instruction-aware alignment in large language models. Unlike DPO~\cite{rafailov2023direct} and RLHF~\cite{ouyang2022training} which embed static alignment into weights, CITA allows models to dynamically adapt behavior based on natural language instructions at inference time.
 
@@ -109,20 +109,17 @@ All code, trained models, and the Instruction Switch Dataset are publicly availa
 \begin{table}[H]
 \centering
 \scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 \textbf{Capability} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-No Reward Model & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
-\hline
-Preference Pairs & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\
-\hline
-Online Generation & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} \\
-\hline
-Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
-\hline
-Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\
-\hline
+No Reward Model & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\ \hline
+Preference Pairs & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\ \hline
+Online Generation & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} \\ \hline
+Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\ \hline
+Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\ \hline
 Explicit KL Control & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & Implicit & \textbf{Mandatory} \\
 \bottomrule
 \end{tabular}

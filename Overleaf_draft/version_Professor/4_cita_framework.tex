@@ -132,9 +132,11 @@ Accordingly, CITA optimizes \textbf{instruction-indexed optima} that remain \tex
 \vspace{-0.35em}
 \paragraph{Training signal: instruction makes preference identifiable.}
 Each supervision unit is a preference-conditioned quadruple
+\vspace{-1mm}
 \[
 (I, X, Y^{+}, Y^{-}) \;\in\; \mathcal{D}_{\textsc{CITA}},
 \]
+\vspace{-1mm}
 where $Y^+\succ Y^-$ is defined \textbf{relative to $I$} for the same prompt $X$.
 This explicit conditioning is the key departure from standard DPO~\cite{rafailov2023direct}: rather than learning one implicit preference regime, CITA must fit \textbf{multiple co-existing instruction-conditioned regimes}.
 
@@ -152,16 +154,10 @@ Because the preference loss depends on $\theta$ only through $\Delta_\theta$, th
 \[
 \begin{aligned}
 \nabla_{\theta}\mathcal{L}_{\textsc{pref}}
-&=
--\beta\,(1-P^{+})*
-\\[-0.35em]
-&
-\begin{aligned}[t]
-\Big(
-&\nabla_{\theta}\log \pi_{\theta}(Y^{+}\mid I,X)\\
+=&
+-\beta\,(1-P^{+})\cdot\Big(\nabla_{\theta}\log \pi_{\theta}(Y^{+}\mid I,X)\\
 &-\nabla_{\theta}\log \pi_{\theta}(Y^{-}\mid I,X)
 \Big)
-\end{aligned}
 \\[-0.15em]
 P^{+}&=\sigma(\beta\Delta_\theta).
 \end{aligned}
@@ -181,13 +177,13 @@ This yields two switching-critical properties: \textbf{(i) self-quenching} ($P^+
 Across many instructions, preference gradients can interfere, producing instruction-agnostic shortcuts or brittle oscillations.
 The KL term enforces a \textbf{local trust region} around $\pi_0$:
 for small parameter moves, it induces a quadratic penalty shaped by the \textbf{conditional Fisher metric},
-\vspace{-0.5mm}
+\vspace{-1mm}
 \[
 \mathrm{KL}\!\big(\pi_{\theta}\,\|\,\pi_{0}\big)
 \;\approx\;
 \tfrac{1}{2}(\theta-\theta_0)^{\top}F_{I,X}(\theta-\theta_0),
 \]
-\vspace{-0.5mm}
+\vspace{-1mm}
 so CITA performs preference optimization \textbf{on a Riemannian chart} where steps are scaled by curvature.
 Practically, this keeps instruction-conditioned policies \textbf{nearby and controllable}, making switching a \textbf{stable move across neighboring optima} rather than a brittle prompt hack.
 

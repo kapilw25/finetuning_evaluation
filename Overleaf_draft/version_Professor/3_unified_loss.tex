@@ -64,16 +64,15 @@ where $P_{\text{ref}}$ is the reference model (pre-CITA checkpoint).
 \begin{table}[H]
 \centering
 \small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Scenario} & \textbf{Without KL} & \textbf{With KL} \\
 \midrule
-Mode Collapse & High risk & Prevented \\
-\hline
-Instruction Switching & Unstable & Stable \\
-\hline
-Behavioral Consistency & Degrades & Maintained \\
-\hline
+Mode Collapse & High risk & Prevented \\ \hline
+Instruction Switching & Unstable & Stable \\ \hline
+Behavioral Consistency & Degrades & Maintained \\ \hline
 Preference Margin & Unbounded & Controlled \\
 \bottomrule
 \end{tabular}

@@ -21,52 +21,47 @@ Following the staged approach from Section~\ref{sec:methodology}, we train on PK
     \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
 \end{enumerate}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/pipeline/training_pipeline.pdf}
+\includegraphics[width=\columnwidth]{figures/pipeline/training_pipeline.pdf}
 \caption{\textbf{Training Pipeline}: All methods branch from SFT. PPO and GRPO are online methods requiring reward model/functions. DPO uses offline preference pairs. CITA stacks on DPO with instruction-conditioning and mandatory KL regularization.}
 \label{fig:training_pipeline}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
 \vspace{-2mm}
 \subsection{Model Variants}
 \label{sec:model_variants}
 
-We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct):
+We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct).
 
-\begin{table}[H]
-\centering
-\footnotesize
-\begin{tabular}{@{}lll@{}}
-\toprule
-\textbf{Model} & \textbf{Training Path} & \textbf{Instruction} \\
-\midrule
-SFT\_NI & Base$\rightarrow$SFT & No \\
-\hline
-SFT\_I & Base$\rightarrow$SFT & Yes \\
-\hline
-PPO\_NI & Base$\rightarrow$SFT$\rightarrow$PPO & No \\
-\hline
-PPO\_I & Base$\rightarrow$SFT$\rightarrow$PPO & Yes \\
-\hline
-GRPO\_NI & Base$\rightarrow$SFT$\rightarrow$GRPO & No \\
-\hline
-GRPO\_I & Base$\rightarrow$SFT$\rightarrow$GRPO & Yes \\
-\hline
-DPO\_NI & Base$\rightarrow$SFT$\rightarrow$DPO & No \\
-\hline
-DPO\_I & Base$\rightarrow$SFT$\rightarrow$DPO & Yes \\
-\hline
-CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & No \\
-\hline
-CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
-\bottomrule
-\end{tabular}
-\caption{10 model variants. NI = NoInstruct (standard prompts), I = Instruct (with behavioral instructions). PPO, GRPO, DPO branch from SFT; CITA stacks on DPO.}
-\label{tab:model_variants}
-\vspace{-4mm}
-\end{table}
+% \begin{table}[H]
+% \centering
+% \footnotesize
+% \begin{tabular}{@{}lll@{}}
+% \toprule
+% \textbf{Model} & \textbf{Training Path} & \textbf{Instruction} \\
+% \midrule
+% SFT\_NI & Base$\rightarrow$SFT & No \\
+% SFT\_I & Base$\rightarrow$SFT & Yes \\
+% \midrule
+% PPO\_NI & Base$\rightarrow$SFT$\rightarrow$PPO & No \\
+% PPO\_I & Base$\rightarrow$SFT$\rightarrow$PPO & Yes \\
+% \midrule
+% GRPO\_NI & Base$\rightarrow$SFT$\rightarrow$GRPO & No \\
+% GRPO\_I & Base$\rightarrow$SFT$\rightarrow$GRPO & Yes \\
+% \midrule
+% DPO\_NI & Base$\rightarrow$SFT$\rightarrow$DPO & No \\
+% DPO\_I & Base$\rightarrow$SFT$\rightarrow$DPO & Yes \\
+% \midrule
+% CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & No \\
+% CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
+% \bottomrule
+% \end{tabular}
+% \caption{10 model variants. NI = NoInstruct (standard prompts), I = Instruct (with behavioral instructions). PPO, GRPO, DPO branch from SFT; CITA stacks on DPO.}
+% \label{tab:model_variants}
+% \vspace{-4mm}
+% \end{table}
 
 \textbf{Comparison Design.} By evaluating NoInstruct vs. Instruct variants, we measure each method's \textit{instruction sensitivity}---the improvement from adding alignment instructions.
 
@@ -79,27 +74,24 @@ We use Optuna~\cite{akiba2019optuna} with TPE sampler (12 trials) to optimize hy
 \begin{table}[H]
 \centering
 \footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Hyperparameter} & \textbf{NoInstruct (T5)} & \textbf{Instruct (T7)} \\
 \midrule
-Learning rate & 6.83e-6 & 5.41e-6 \\
-\hline
-$\lambda_{\text{KL}}$ & 0.00052 & 0.00023 \\
-\hline
-$\beta$ (DPO temp.) & 0.119 & 0.107 \\
-\hline
-Weight decay & 0.0091 & 0.0109 \\
-\hline
+Learning rate & 6.83e-6 & 5.41e-6 \\ \hline
+$\lambda_{\text{KL}}$ & 0.00052 & 0.00023 \\ \hline
+$\beta$ (DPO temp.) & 0.119 & 0.107 \\ \hline
+Weight decay & 0.0091 & 0.0109 \\ \hline
 Warmup ratio & 7.5\% & 10.0\% \\
 \midrule
-Final margin & 6.95 & 7.52 \\
-\hline
+Final margin & 6.95 & 7.52 \\ \hline
 Accuracy & 89.5\% & 89.0\% \\
 \bottomrule
 \end{tabular}
 \caption{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration.}
-\label{tab:hyperparams}
+\label{tab:hyperparams_exp}
 \vspace{-4mm}
 \end{table}
 
@@ -109,25 +101,25 @@ Accuracy & 89.5\% & 89.0\% \\
 
 We analyze key training curves across all alignment methods.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/training/combined_eval_loss.pdf}
+\includegraphics[width=\columnwidth]{figures/training/combined_eval_loss.pdf}
 \caption{\textbf{Eval Loss Across Training Methods}: 2$\times$2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf{SFT} (top-left): Loss $\sim$1.5--1.9, Instruct converges lower. \textbf{DPO} (top-right): Loss $\sim$0.21--0.28, smooth convergence. \textbf{CITA} (bottom-left): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (bottom-right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
 \label{fig:training_loss}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/training/combined_accuracy.pdf}
+\includegraphics[width=\columnwidth]{figures/training/combined_accuracy.pdf}
 \caption{\textbf{Training Accuracy Metrics}: 1$\times$2 subplot comparing accuracy across methods. \textbf{Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf{Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.}
 \label{fig:training_accuracy}
 \vspace{-3mm}
-\end{figure*}
+\end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_margins.pdf}
+\includegraphics[width=0.65\columnwidth]{figures/training/dpo_cita_margins.pdf}
 \caption{\textbf{Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim$6.0). Higher margins indicate stronger preference learning.}
 \label{fig:training_margins}
 \vspace{-3mm}

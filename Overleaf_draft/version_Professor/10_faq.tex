@@ -21,12 +21,13 @@ This section addresses anticipated critical questions about CITA's methodology, 
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Benchmark} & \textbf{DPO $\Delta$} & \textbf{CITA $\Delta$} & \textbf{CITA Advantage} \\
 \midrule
-TruthfulQA & +0.001 & \textbf{+0.054} & \textbf{54$\times$ better} \\
-Length Control & +0.130 & \textbf{+0.164} & 26\% better \\
+TruthfulQA & +0.001 & \textbf{+0.054} & \textbf{54$\times$ better} \\ \hline
+Length Control & +0.130 & \textbf{+0.164} & 26\% better \\ \hline
 AQI & +22.4 & \textbf{+41.7} & 86\% better \\
 \bottomrule
 \end{tabular}
@@ -99,12 +100,13 @@ This paper establishes the \textit{concept} and \textit{methodology}. Broad gene
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Metric} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Accuracy & 91\% & 89\% ($-$2\%) \\
-Reward Margin & 6.0 & 7.5 (+25\%) \\
+Accuracy & 91\% & 89\% ($-$2\%) \\ \hline
+Reward Margin & 6.0 & 7.5 (+25\%) \\ \hline
 Instruction Sensitivity & Lower & \textbf{Higher} \\
 \bottomrule
 \end{tabular}
@@ -143,12 +145,13 @@ Instruction Sensitivity & Lower & \textbf{Higher} \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lll@{}}
 \toprule
 \textbf{Stage} & \textbf{Purpose} & \textbf{Without It} \\
 \midrule
-SFT & Learn response format & Incoherent outputs \\
-DPO & Learn base preferences & No preference foundation \\
+SFT & Learn response format & Incoherent outputs \\ \hline
+DPO & Learn base preferences & No preference foundation \\ \hline
 CITA & Add instruction-conditioning & Static alignment only \\
 \bottomrule
 \end{tabular}
@@ -223,12 +226,13 @@ Pattern matching would fail on paraphrased or combined instructions. CITA's cons
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lp{5cm}p{5cm}@{}}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{5cm}>{\raggedright\arraybackslash}p{5cm}@{}}
 \toprule
 \textbf{Failure Mode} & \textbf{When It Occurs} & \textbf{Mitigation} \\
 \midrule
-Instruction Ignoring & Very long prompts ($>$2K tokens) dilute instruction attention & Place instructions at end, use stronger $\lambda_{\text{KL}}$ \\
-Conflicting Behavior & Contradictory instructions (``be concise AND detailed'') & Instruction validation, hierarchical handling \\
+Instruction Ignoring & Very long prompts ($>$2K tokens) dilute instruction attention & Place instructions at end, use stronger $\lambda_{\text{KL}}$ \\ \hline
+Conflicting Behavior & Contradictory instructions (``be concise AND detailed'') & Instruction validation, hierarchical handling \\ \hline
 Domain Mismatch & Instructions far from training distribution (e.g., ``respond in Klingon'') & Domain-specific fine-tuning \\
 \bottomrule
 \end{tabular}
@@ -246,13 +250,14 @@ Domain Mismatch & Instructions far from training distribution (e.g., ``respond i
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Method} & \textbf{ISD Score} & \textbf{Adversarial Robustness} & \textbf{Consistency} \\
 \midrule
-Zero-shot prompting & 0.12 & Low (easily overridden) & Variable \\
-Few-shot prompting & 0.18 & Low & Variable \\
-DPO + prompting & 0.25 & Medium & Medium \\
+Zero-shot prompting & 0.12 & Low (easily overridden) & Variable \\ \hline
+Few-shot prompting & 0.18 & Low & Variable \\ \hline
+DPO + prompting & 0.25 & Medium & Medium \\ \hline
 \textbf{CITA} & \textbf{0.37} & \textbf{High} & \textbf{High} \\
 \bottomrule
 \end{tabular}
@@ -272,11 +277,12 @@ DPO + prompting & 0.25 & Medium & Medium \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 \textbf{Configuration} & \textbf{ISD} & \textbf{Margin} & \textbf{Stability} \\
 \midrule
-CITA ($\lambda_{\text{KL}}=0$) & 0.22 & 4.0 & Unstable \\
+CITA ($\lambda_{\text{KL}}=0$) & 0.22 & 4.0 & Unstable \\ \hline
 CITA ($\lambda_{\text{KL}}=0.0005$) & \textbf{0.37} & \textbf{7.5} & Stable \\
 \bottomrule
 \end{tabular}
@@ -315,14 +321,15 @@ We chose 8B for \textbf{reproducibility}---single-GPU training enables community
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Aspect} & \textbf{RLHF/PPO} & \textbf{CITA} \\
 \midrule
-Reward Model & Required (separate training) & Not required \\
-Training Stability & Notoriously unstable & Stable (supervised loss) \\
-Compute Cost & 2--4$\times$ higher & Single forward pass \\
-Dynamic Alignment & Post-hoc only & \textbf{Native support} \\
+Reward Model & Required (separate training) & Not required \\ \hline
+Training Stability & Notoriously unstable & Stable (supervised loss) \\ \hline
+Compute Cost & 2--4$\times$ higher & Single forward pass \\ \hline
+Dynamic Alignment & Post-hoc only & \textbf{Native support} \\ \hline
 Hyperparameters & Many (PPO-specific) & Few ($\beta$, $\lambda_{\text{KL}}$) \\
 \bottomrule
 \end{tabular}
@@ -357,13 +364,14 @@ Hyperparameters & Many (PPO-specific) & Few ($\beta$, $\lambda_{\text{KL}}$) \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Generalization Type} & \textbf{Success Rate} & \textbf{Example} \\
 \midrule
-Paraphrase of trained type & $\sim$90\% & ``formal'' $\approx$ ``professional'' \\
-Combination of trained types & $\sim$75\% & ``concise + professional'' \\
-Semantically similar new type & $\sim$60\% & ``academic'' $\approx$ ``educational'' \\
+Paraphrase of trained type & $\sim$90\% & ``formal'' $\approx$ ``professional'' \\ \hline
+Combination of trained types & $\sim$75\% & ``concise + professional'' \\ \hline
+Semantically similar new type & $\sim$60\% & ``academic'' $\approx$ ``educational'' \\ \hline
 Completely novel type & $\sim$30\% & ``Socratic questioning'' \\
 \bottomrule
 \end{tabular}
@@ -381,24 +389,25 @@ Completely novel type & $\sim$30\% & ``Socratic questioning'' \\
 \begin{table}[H]
 \centering
 \footnotesize
-\begin{tabular}{@{}lp{10cm}@{}}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{10cm}@{}}
 \toprule
 \textbf{Artifact} & \textbf{Location} \\
 \midrule
-Training Code & \url{https://github.com/kapilw25/finetuning_evaluation} \\
+Training Code & \url{https://github.com/kapilw25/finetuning_evaluation} \\ \hline
 ISD Dataset & \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset} \\
 \midrule
 \multicolumn{2}{@{}l}{\textbf{NoInstruct Models}} \\
-SFT\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\
-DPO\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct} \\
+SFT\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\ \hline
+DPO\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct} \\ \hline
 CITA\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct} \\
 \midrule
 \multicolumn{2}{@{}l}{\textbf{Instruct Models}} \\
-SFT\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct} \\
-DPO\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\
+SFT\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct} \\ \hline
+DPO\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\ \hline
 CITA\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct} \\
 \midrule
-Hyperparameters & Table~\ref{tab:hyperparams} (exact values from Optuna) \\
+Hyperparameters & Table~\ref{tab:hyperparams} (exact values from Optuna) \\ \hline
 Training Logs & TensorBoard logs in repository \\
 \bottomrule
 \end{tabular}
@@ -437,14 +446,13 @@ Training Logs & TensorBoard logs in repository \\
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Aspect} & \textbf{Mode Collapse} & \textbf{Mode Preservation} \\
 \midrule
-Behavioral diversity & Low (one dominant mode) & High (multiple modes) \\
-\hline
-Instruction response & Cannot switch & Can switch dynamically \\
-\hline
+Behavioral diversity & Low (one dominant mode) & High (multiple modes) \\ \hline
+Instruction response & Cannot switch & Can switch dynamically \\ \hline
 TruthfulQA $\Delta$ & +0.001 (DPO) & +0.054 (CITA) \\
 \bottomrule
 \end{tabular}
@@ -469,16 +477,14 @@ A mode-collapsed model produces similar outputs regardless of instruction---exac
 \begin{table}[H]
 \centering
 \small
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Property} & \textbf{DPO (Implicit)} & \textbf{CITA (Explicit)} \\
 \midrule
-KL control & $\beta$ (shared) & $\lambda_{\text{KL}}$ (separate) \\
-\hline
-Preference strength & $\beta$ (shared) & $\beta$ (separate) \\
-\hline
-Independent tuning & \textcolor{red}{\ding{55}} No & \textcolor{green}{\ding{51}} Yes \\
-\hline
+KL control & $\beta$ (shared) & $\lambda_{\text{KL}}$ (separate) \\ \hline
+Preference strength & $\beta$ (shared) & $\beta$ (separate) \\ \hline
+Independent tuning & \textcolor{red}{\ding{55}} No & \textcolor{green}{\ding{51}} Yes \\ \hline
 Mode behavior & Mode-seeking & Mode-preserving \\
 \bottomrule
 \end{tabular}

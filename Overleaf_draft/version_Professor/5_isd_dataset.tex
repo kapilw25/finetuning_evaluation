@@ -174,16 +174,16 @@ The set is constructed so that \emph{multiple} behaviors are reasonable for the 
 \centering
 \small
 \setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.05}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lc|lc@{}}
 \toprule
 \textbf{Category} & \textbf{\#} & \textbf{Category} & \textbf{\#} \\
 \midrule
-Technology   & 25 & Ethics      & 25 \\
-Healthcare   & 25 & Culture     & 25 \\
-Environment  & 25 & Science     & 25 \\
-Education    & 25 & Business    & 25 \\
-Economics    & 25 & Personal    & 25 \\
+Technology   & 25 & Ethics      & 25 \\ \hline
+Healthcare   & 25 & Culture     & 25 \\ \hline
+Environment  & 25 & Science     & 25 \\ \hline
+Education    & 25 & Business    & 25 \\ \hline
+Economics    & 25 & Personal    & 25 \\ \hline
 Social       & 25 & Governance  & 25 \\
 \bottomrule
 \end{tabular}
@@ -197,21 +197,21 @@ Social       & 25 & Governance  & 25 \\
 \centering
 \small
 \setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.07}
+\renewcommand{\arraystretch}{1.2}
 \resizebox{0.98\columnwidth}{!}{%
 \begin{tabular}{@{}ll@{}}
 \toprule
 \textbf{Instruction Type} & \textbf{Behavioral objective (what should change)} \\
 \midrule
-\texttt{neutral}        & balanced perspective; pros/cons \\
-\texttt{conservative}   & risk-averse; favor tradition \\
-\texttt{liberal}        & innovation-forward; embrace change \\
-\texttt{regulatory}     & compliance-first; policy/legal framing \\
-\texttt{empathetic}     & emotionally supportive; de-escalate \\
-\texttt{safety\_first}  & cautious posture; highlight risks \\
-\texttt{educational}    & teaching mode; explain step-by-step \\
-\texttt{concise}        & minimal verbosity; direct answer \\
-\texttt{professional}   & formal tone; structured delivery \\
+\texttt{neutral}        & balanced perspective; pros/cons \\ \hline
+\texttt{conservative}   & risk-averse; favor tradition \\ \hline
+\texttt{liberal}        & innovation-forward; embrace change \\ \hline
+\texttt{regulatory}     & compliance-first; policy/legal framing \\ \hline
+\texttt{empathetic}     & emotionally supportive; de-escalate \\ \hline
+\texttt{safety\_first}  & cautious posture; highlight risks \\ \hline
+\texttt{educational}    & teaching mode; explain step-by-step \\ \hline
+\texttt{concise}        & minimal verbosity; direct answer \\ \hline
+\texttt{professional}   & formal tone; structured delivery \\ \hline
 \texttt{creative}       & divergent ideas; labeled speculation \\
 \bottomrule
 \end{tabular}
@@ -372,16 +372,16 @@ This makes the instruction a \textbf{causal control signal} tied to an observed 
 \centering
 \small
 \setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.05}
+\renewcommand{\arraystretch}{1.2}
 \resizebox{0.98\columnwidth}{!}{%
 \begin{tabular}{@{}lll@{}}
 \toprule
 \textbf{Role} & \textbf{Judge model} & \textbf{Reference} \\
 \midrule
-Instruction generator & GPT-4 / GPT-4o-family & \cite{openai2023gpt4,openai2024gpt4o} \\
-Instruction generator & Gemini 1.5 Pro & \cite{reid2024gemini15} \\
-Instruction generator & Claude-family (system/model cards) & \cite{anthropic2023claude2,anthropic2024claude3addendum} \\
-Instruction generator & Llama-3.1-Instruct (via Llama-3 report) & \cite{meta2024llama3} \\
+Instruction generator & GPT-4 / GPT-4o-family & \cite{openai2023gpt4,openai2024gpt4o} \\ \hline
+Instruction generator & Gemini 1.5 Pro & \cite{reid2024gemini15} \\ \hline
+Instruction generator & Claude-family (system/model cards) & \cite{anthropic2023claude2,anthropic2024claude3addendum} \\ \hline
+Instruction generator & Llama-3.1-Instruct (via Llama-3 report) & \cite{meta2024llama3} \\ \hline
 Instruction generator & Mistral Large & \cite{mistral2024large} \\
 \bottomrule
 \end{tabular}
