@@ -10,7 +10,7 @@
 \section{Experiments \& Results}
 \label{sec:results}
 
-\textls[0]{We evaluate whether \textsc{CITA} supports \emph{instruction-conditioned behavioral switching}—a \textbf{policy-level} change under a fixed user prompt—rather than merely inducing \emph{surface-form compliance}. Our study spans \textbf{5 benchmarks} and \textbf{10 model variants}, enabling a controlled comparison of both \emph{base performance} and \emph{instruction sensitivity}. Unless noted otherwise, we report \textbf{deterministic, non-LLM metrics} to reduce evaluator drift and improve reproducibility, consistent with holistic evaluation practice~\cite{liang2023holistic,sun2024trustllm}. Across this suite, \textsc{CITA} attains \textbf{\colorbox{bg-green}{95.6\%}} instruction-alignment efficiency, surpassing \textsc{DPO} (70.5\%) by \textbf{+25.1 pp} and outperforming \textsc{GRPO}/\textsc{PPO}/\textsc{SFT} by wider margins.}
+\textls[0]{We evaluate whether \textsc{CITA} supports \emph{instruction-conditioned behavioral switching}—a \textbf{policy-level} change under a fixed user prompt—rather than merely inducing \emph{surface-form compliance}. Our study spans \textbf{5 benchmarks} and \textbf{10 model variants}, enabling a controlled comparison of both \emph{base performance} and \emph{instruction sensitivity}. Unless noted otherwise, we report \textbf{deterministic, non-LLM metrics} to reduce evaluator drift and improve reproducibility, consistent with holistic evaluation practice~\cite{liang2023holistic,sun2024trustllm}. Across this suite, \textsc{CITA} attains \textbf{\colorbox{bg-green}{95.6\%}} instruction-alignment efficiency, surpassing \textsc{GRPO} (67.3\%) by \textbf{+28.3 pp}, \textsc{DPO} (64.7\%) by \textbf{+30.9 pp}, and outperforming \textsc{PPO}/\textsc{SFT} by wider margins.}
 
 
 \vspace{-2mm}
@@ -136,17 +136,7 @@ We define the normalized radar-area efficiency as:
 \vspace{-1mm}
 where $\bar{r}$ is the average normalized radius across all benchmark axes.
 
-\begin{figure*}[ht!]
-\centering
-\vspace{-1mm}
-% \fcolorbox{paired-dark-green}{bg-green}{\strut\textbf{Overall Instruction-Alignment Efficiency: CITA 95.6\% vs DPO 70.5\% (+25.1 pp)}}
-% \vspace{1mm}
-\includegraphics[width=0.5\textwidth]{figures/evaluation/combined_plots/radar_area.pdf}
-\vspace{-2mm}
-\caption{\textbf{Instruction-alignment efficiency (radar-area).} \textsc{CITA} attains \textbf{\colorbox{bg-green}{95.6\%}}, outperforming \textsc{DPO} (70.5\%), \textsc{GRPO} (59.3\%), \textsc{PPO} (50.4\%), and \textsc{SFT} (15.9\%).}
-\label{fig:radar}
-\vspace{-3mm}
-\end{figure*}
+% Radar chart moved to Section 6 Performance (see below)
 
 
 \vspace{-2mm}
@@ -183,36 +173,27 @@ AQI & 2,800; 7 axioms & (CHI + XB)/ 2 clustering (100) \\
 \section{Performance}
 \label{sec:overall_results}
 
-\noindent\textbf{Aggregate instruction-alignment efficiency.} We summarize overall instruction-alignment using the normalized radar-area score (see \cref{eq:efficiency}); the headline comparison is \textsc{CITA} vs.\ established alignment baselines.
+\noindent\textbf{Aggregate instruction-alignment efficiency.} We summarize overall instruction-alignment using the normalized radar-area score (see \cref{eq:efficiency}); the headline comparison is \textsc{CITA} vs.\ established alignment baselines. Figure~\ref{fig:radar} visualizes the instruction-alignment efficiency across all five benchmarks, with Table~\ref{tab:improvement_comparison} reporting instruction sensitivity ($\Delta$) and Table~\ref{tab:ranking_avg_radius} showing the final ranking.
 
-
-
-\noindent\textbf{Benchmark-wise results.} Table~\ref{tab:overall_results} reports scores across all five benchmarks for the key variants shown here (cf. Appendix~\ref{sec:appendix_examples} for a comprehensive evaluation using other variants).
-
-\begin{table}[H]
+\begin{figure}[t]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-\textbf{Model} & \textbf{ISD} & \textbf{TQA} & \textbf{CS} & \textbf{LC} & \textbf{AQI} \\
-\midrule
-SFT\_NI & .126 & $-$.006 & .002 & 0.95 & 37.6 \\ \hline
-SFT\_I & .142 & .012 & .022 & 1.02 & 47.7 \\
-\midrule
-DPO\_NI & .217 & $-$.006 & .015 & 0.99 & 11.0 \\ \hline
-DPO\_I & \textbf{.389} & $-$.005 & \textbf{.489} & 1.12 & 55.0 \\
-\midrule
-CITA\_NI & .204 & $-$.040 & .009 & 0.98 & 9.4 \\ \hline
-CITA\_I & .367 & \textbf{.013} & .400 & \textbf{1.14} & \textbf{55.5} \\
-\bottomrule
-\end{tabular}
-\vspace{-1mm}
-\caption{\textbf{Results across 5 benchmarks.} TQA = TruthfulQA, CS = Conditional Safety, LC = Length Control. \textbf{Bold} = best per column. NI = NoInstruct, I = Instruct.}
-\label{tab:overall_results}
-\vspace{-4mm}
-\end{table}
+\includegraphics[width=\columnwidth]{figures/evaluation/combined_plots/radar_area.pdf}
+\vspace{-2mm}
+\caption{\textbf{Instruction-alignment efficiency (radar-area).} \textsc{CITA} attains \textbf{\colorbox{bg-green}{95.6\%}}, outperforming \textsc{DPO} (64.7\%), \textsc{GRPO} (67.3\%), \textsc{PPO} (54.4\%), and \textsc{SFT} (15.9\%). Delta annotations show the winning method's improvement (Instruct $-$ NoInstruct) per benchmark.}
+\label{fig:radar}
+\vspace{-3mm}
+\end{figure}
+
+\noindent\textbf{Benchmark-wise results.} Figure~\ref{fig:heatmap_results} reports scores across all five benchmarks for all 10 model variants (cf. Appendix~\ref{sec:appendix_examples} for detailed per-benchmark analysis).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/evaluation/combined_plots/heatmap_no_ci.pdf}
+\vspace{-2mm}
+\caption{\textbf{Performance heatmap across 5 benchmarks.} Original scores with column-normalized colors (green = best, red = worst per column). NI = NoInstruct, I = Instruct. \textsc{CITA\_I} achieves highest AQI (55.0) and competitive performance across all metrics.}
+\label{fig:heatmap_results}
+\vspace{-3mm}
+\end{figure}
 
 \vspace{-2mm}
 \subsection{Instruction Sensitivity: CITA vs.\ DPO}
@@ -233,7 +214,7 @@ ISD & +0.016 & \cellcolor{green!30}\textbf{+0.172} & +0.138 & +0.141 & +0.162 \\
 TruthfulQA & +0.018 & +0.001 & +0.017 & +0.045 & \cellcolor{green!30}\textbf{+0.054} \\ \hline
 Cond.\ Safety & +0.020 & \cellcolor{green!30}\textbf{+0.475} & +0.295 & +0.304 & +0.391 \\ \hline
 Length Control & +0.063 & +0.130 & +0.086 & +0.092 & \cellcolor{green!30}\textbf{+0.164} \\ \hline
-AQI & $-$23.4 & +22.4 & $-$2.2 & $-$11.2 & \cellcolor{green!30}\textbf{+41.7} \\
+AQI & $-$26.2 & $-$6.2 & +2.7 & +6.9 & \cellcolor{green!30}\textbf{+26.4} \\
 \bottomrule
 \end{tabular}
 \vspace{-1mm}
@@ -252,13 +233,13 @@ AQI & $-$23.4 & +22.4 & $-$2.2 & $-$11.2 & \cellcolor{green!30}\textbf{+41.7} \\
 \textbf{Rank} & \textbf{Method} & \textbf{Avg Radius} \\
 \midrule
 \#1 & \cellcolor{green!30}\textbf{CITA} & \cellcolor{green!30}\textbf{95.6\%} \\ \hline
-\#2 & DPO & 70.5\% \\ \hline
-\#3 & GRPO & 59.3\% \\ \hline
-\#4 & PPO & 50.4\% \\ \hline
+\#2 & GRPO & 67.3\% \\ \hline
+\#3 & DPO & 64.7\% \\ \hline
+\#4 & PPO & 54.4\% \\ \hline
 \#5 & SFT & 15.9\% \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Ranking by average radius} (higher = better instruction alignment). \textbf{Overall instruction-alignment efficiency}: \colorbox{green!30}{\textbf{CITA 95.6\%}} vs DPO 70.5\% (+25.1 pp), GRPO 59.3\% (+36.3 pp), PPO 50.4\% (+45.2 pp), SFT 15.9\% (+79.7 pp).}
+\caption{\textbf{Ranking by average radius} (higher = better instruction alignment). \textbf{Overall instruction-alignment efficiency}: \colorbox{green!30}{\textbf{CITA 95.6\%}} vs GRPO 67.3\% (+28.3 pp), DPO 64.7\% (+30.9 pp), PPO 54.4\% (+41.2 pp), SFT 15.9\% (+79.7 pp).}
 \label{tab:ranking_avg_radius}
 \vspace{-4mm}
 \end{table}
@@ -517,13 +498,16 @@ More broadly, this work reframes alignment as a \emph{runtime-controllable inter
 
 
 
-\begin{figure}[H]
+\begin{figure*}[ht!]
 \centering
-\includegraphics[width=0.95\columnwidth]{figures/evaluation/combined_plots/heatmap.pdf}
-\caption{\textbf{Performance Heatmap}: Original scores with column-normalized colors. Green = best, red = worst.}
+\includegraphics[width=0.75\textwidth]{figures/evaluation/combined_plots/heatmap.pdf}
+\vspace{-1mm}
+\caption{\textbf{Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ISD and AQI lack per-sample decomposition (composite/cluster-based metrics).}
 \label{fig:heatmap}
-\vspace{-3mm}
-\end{figure}
+\vspace{-2mm}
+\end{figure*}
+
+\noindent\textbf{Statistical reliability.} Bootstrap confidence intervals (N=1,000 resamples) are reported for benchmarks with per-sample metrics. The narrow CIs on TruthfulQA ($\pm$0.05--0.28) and Cond.\ Safety ($\pm$0.01--0.03) indicate stable estimates; Length Ctrl shows larger variance ($\pm$0.02--4.67) due to response length variability across prompts.
 
 \vspace{-2mm}
 \subsection{Key Insights}

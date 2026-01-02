@@ -1,16 +1,5 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
-\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
-\global\let\oldnewlabel\newlabel
-\gdef\newlabel#1#2{\newlabelxx{#1}#2}
-\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
-\AtEndDocument{\ifx\hyper@anchor\@undefined
-\let\newlabel\oldnewlabel
-\fi}
-\fi}
-\global\let\hyper@last\relax 
-\gdef\HyperFirstAtBeginDocument#1{#1}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
 \citation{brown2020language,openai2023gpt4,touvron2023llama}
@@ -150,7 +139,7 @@
 \citation{dong-etal-2023-steerlm,wang-etal-2024-arithmetic,shi2024decodingtime}
 \citation{liu-etal-2024-inference,chen2025pad}
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:teaser_safety}{{1}{3}{\textbf {Teaser: Instruction-Conditioned Safety Alignment.} Same prompt with different alignment instructions. Only CITA produces valid, coherent responses in both modes.\relax }{figure.caption.1}{}}
+\newlabel{fig:teaser_safety}{{1}{3}{\textbf {Teaser: Instruction-Conditioned Safety Alignment.} Same prompt with different alignment instructions. Only CITA produces valid, coherent responses in both modes}{figure.caption.1}{}}
 \newlabel{fig:teaser_safety@cref}{{[figure][1][]1}{[1][2][]3}}
 \@LN@col{1}
 \@LN{120}{2}
@@ -231,7 +220,7 @@
 \citation{meta2024llama3}
 \citation{mistral2024large}
 \citation{zhang2019bertscore}
-\newlabel{tab:ecliptica_one_prompt_safety_switching}{{1}{4}{\footnotesize \textbf {ECLIPTICA: one safety-sensitive prompt, ten instruction-conditioned answers.} $X$ is fixed; only $I$ changes. All modes \textbf {refuse intimidation}, but reliably switch \textbf {stance, tone, verbosity, and policy framing} without unsafe drift.\relax }{table.caption.3}{}}
+\newlabel{tab:ecliptica_one_prompt_safety_switching}{{1}{4}{\footnotesize \textbf {ECLIPTICA: one safety-sensitive prompt, ten instruction-conditioned answers.} $X$ is fixed; only $I$ changes. All modes \textbf {refuse intimidation}, but reliably switch \textbf {stance, tone, verbosity, and policy framing} without unsafe drift}{table.caption.3}{}}
 \newlabel{tab:ecliptica_one_prompt_safety_switching@cref}{{[table][1][]1}{[1][3][]4}}
 \@LN@col{1}
 \@LN{186}{3}
@@ -257,7 +246,7 @@
 \@LN{206}{3}
 \@LN{207}{3}
 \@LN@col{2}
-\newlabel{tab:prompt_categories}{{2}{4}{\textbf {ECLIPTICA prompt distribution.} 12 categories, 300 prompts total.\relax }{table.caption.6}{}}
+\newlabel{tab:prompt_categories}{{2}{4}{\textbf {ECLIPTICA prompt distribution.} 12 categories, 300 prompts total}{table.caption.6}{}}
 \newlabel{tab:prompt_categories@cref}{{[table][2][]2}{[1][4][]4}}
 \@LN{208}{3}
 \@LN{209}{3}
@@ -279,12 +268,12 @@
 \@LN{225}{3}
 \@LN{226}{3}
 \citation{rafailov2023direct}
-\newlabel{fig:ecliptica_pipeline}{{2}{5}{\textbf {ECLIPTICA instruction derivation pipeline.} We synthesize candidate alignment instructions from \textbf {five independent judge models}, filter by \textbf {semantic agreement} (\textbf {BERTScore}), apply a \textbf {two-rater quality gate}, and compile a \textbf {10-instruction inventory} used to instantiate the \textbf {prompt-held-constant} switching grid.\relax }{figure.caption.8}{}}
+\newlabel{fig:ecliptica_pipeline}{{2}{5}{\textbf {ECLIPTICA instruction derivation pipeline.} We synthesize candidate alignment instructions from \textbf {five independent judge models}, filter by \textbf {semantic agreement} (\textbf {BERTScore}), apply a \textbf {two-rater quality gate}, and compile a \textbf {10-instruction inventory} used to instantiate the \textbf {prompt-held-constant} switching grid}{figure.caption.8}{}}
 \newlabel{fig:ecliptica_pipeline@cref}{{[figure][2][]2}{[1][4][]5}}
 \@LN@col{1}
-\newlabel{tab:instruction_types}{{3}{5}{\textbf {ECLIPTICA instruction set.} Ten switch types spanning stance, tone, and constraints.\relax }{table.caption.7}{}}
+\newlabel{tab:instruction_types}{{3}{5}{\textbf {ECLIPTICA instruction set.} Ten switch types spanning stance, tone, and constraints}{table.caption.7}{}}
 \newlabel{tab:instruction_types@cref}{{[table][3][]3}{[1][4][]5}}
-\newlabel{tab:judge_models}{{4}{5}{\textbf {Judge models for instruction synthesis.} Five independent LLM judges propose alignment instructions for the same preference pair; we keep only cases with \textbf {cross-judge semantic agreement} (Section~\ref {sec:ecliptica_benchmark}).\relax }{table.caption.10}{}}
+\newlabel{tab:judge_models}{{4}{5}{\textbf {Judge models for instruction synthesis.} Five independent LLM judges propose alignment instructions for the same preference pair; we keep only cases with \textbf {cross-judge semantic agreement} (Section~\ref {sec:ecliptica_benchmark})}{table.caption.10}{}}
 \newlabel{tab:judge_models@cref}{{[table][4][]4}{[1][4][]5}}
 \@LN{227}{4}
 \@LN{228}{4}
@@ -347,7 +336,7 @@
 \citation{ji2024pku,bai2022training}
 \citation{hu2022lora}
 \citation{dubey2024llama}
-\newlabel{fig:cita_objective_box}{{3}{6}{\textbf {CITA objective: contrastive preference learning under explicit alignment instructions.} CITA trains on quadruples $(I,X,Y^+,Y^-)$ where the \textbf {alignment instruction $I$} \textbf {defines} the preference relation $Y^+\succ Y^-$. \textbf {(1) Instruction-conditioned preference:} the loss is a \textbf {conditional logistic/contrastive} objective on the \textbf {score gap} $\Delta _\theta =\log \pi _\theta (Y^+\!\mid I,X)-\log \pi _\theta (Y^-\!\mid I,X)$, with temperature $\beta $ controlling sharpness. \textbf {(2) Mandatory KL anchor:} a \textbf {non-optional} trust-region term ($\lambda >0$) constrains updates relative to a frozen reference $\pi _0$, stabilizing a \textbf {switchable policy family} $\{\pi _\theta (\cdot \mid I,\cdot )\}_{I\in \mathcal {I}}$ instead of collapsing to a single implicit regime. The gradient form highlights \textbf {self-quenching updates} via $(1-P^+)$: once the instruction-conditioned preference is satisfied, the preference force diminishes, improving reliability under switching. \relax }{figure.caption.13}{}}
+\newlabel{fig:cita_objective_box}{{3}{6}{\textbf {CITA objective: contrastive preference learning under explicit alignment instructions.} CITA trains on quadruples $(I,X,Y^+,Y^-)$ where the \textbf {alignment instruction $I$} \textbf {defines} the preference relation $Y^+\succ Y^-$. \textbf {(1) Instruction-conditioned preference:} the loss is a \textbf {conditional logistic/contrastive} objective on the \textbf {score gap} $\Delta _\theta =\log \pi _\theta (Y^+\!\mid I,X)-\log \pi _\theta (Y^-\!\mid I,X)$, with temperature $\beta $ controlling sharpness. \textbf {(2) Mandatory KL anchor:} a \textbf {non-optional} trust-region term ($\lambda >0$) constrains updates relative to a frozen reference $\pi _0$, stabilizing a \textbf {switchable policy family} $\{\pi _\theta (\cdot \mid I,\cdot )\}_{I\in \mathcal {I}}$ instead of collapsing to a single implicit regime. The gradient form highlights \textbf {self-quenching updates} via $(1-P^+)$: once the instruction-conditioned preference is satisfied, the preference force diminishes, improving reliability under switching}{figure.caption.13}{}}
 \newlabel{fig:cita_objective_box@cref}{{[figure][3][]3}{[1][5][]6}}
 \@LN@col{1}
 \@LN{282}{5}
@@ -385,7 +374,7 @@
 \@LN{312}{5}
 \@LN{313}{5}
 \@LN@col{2}
-\newlabel{fig:training_pipeline}{{4}{6}{\textbf {Training Pipeline}: All methods branch from SFT. PPO and GRPO are online methods requiring reward model/functions. DPO uses offline preference pairs. CITA stacks on DPO with instruction-conditioning and mandatory KL regularization.\relax }{figure.caption.20}{}}
+\newlabel{fig:training_pipeline}{{4}{6}{\textbf {Training Pipeline}: All methods branch from SFT. PPO and GRPO are online methods requiring reward model/functions. DPO uses offline preference pairs. CITA stacks on DPO with instruction-conditioning and mandatory KL regularization}{figure.caption.20}{}}
 \newlabel{fig:training_pipeline@cref}{{[figure][4][]4}{[1][6][]6}}
 \@LN{314}{5}
 \newlabel{sec:training_pipeline_exp}{{4.1}{6}{Training Pipeline}{subsection.4.1}{}}
@@ -414,7 +403,7 @@
 \citation{ji2024pku,bai2022training}
 \citation{hu2022lora}
 \@LN@col{1}
-\newlabel{fig:training_loss}{{5}{7}{\textbf {Eval Loss Across Training Methods}: 2$\times $2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf {SFT} (top-left): Loss $\sim $1.5--1.9, Instruct converges lower. \textbf {DPO} (top-right): Loss $\sim $0.21--0.28, smooth convergence. \textbf {CITA} (bottom-left): Loss $\sim $0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf {GRPO} (bottom-right): Loss oscillates near zero ($\pm $0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).\relax }{figure.caption.22}{}}
+\newlabel{fig:training_loss}{{5}{7}{\textbf {Eval Loss Across Training Methods}: 2$\times $2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf {SFT} (top-left): Loss $\sim $1.5--1.9, Instruct converges lower. \textbf {DPO} (top-right): Loss $\sim $0.21--0.28, smooth convergence. \textbf {CITA} (bottom-left): Loss $\sim $0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf {GRPO} (bottom-right): Loss oscillates near zero ($\pm $0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue)}{figure.caption.22}{}}
 \newlabel{fig:training_loss@cref}{{[figure][5][]5}{[1][7][]7}}
 \@LN{331}{6}
 \@LN{332}{6}
@@ -431,7 +420,7 @@
 \@LN{341}{6}
 \@LN{342}{6}
 \@LN{343}{6}
-\newlabel{tab:hyperparams_exp}{{5}{7}{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration.\relax }{table.caption.21}{}}
+\newlabel{tab:hyperparams_exp}{{5}{7}{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration}{table.caption.21}{}}
 \newlabel{tab:hyperparams_exp@cref}{{[table][5][]5}{[1][7][]7}}
 \@LN{344}{6}
 \newlabel{sec:training_dynamics}{{4.4}{7}{Training Dynamics}{subsection.4.4}{}}
@@ -439,9 +428,9 @@
 \@LN{345}{6}
 \@LN{346}{6}
 \@LN@col{2}
-\newlabel{fig:training_accuracy}{{6}{7}{\textbf {Training Accuracy Metrics}: 1$\times $2 subplot comparing accuracy across methods. \textbf {Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf {Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.\relax }{figure.caption.23}{}}
+\newlabel{fig:training_accuracy}{{6}{7}{\textbf {Training Accuracy Metrics}: 1$\times $2 subplot comparing accuracy across methods. \textbf {Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf {Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences}{figure.caption.23}{}}
 \newlabel{fig:training_accuracy@cref}{{[figure][6][]6}{[1][7][]7}}
-\newlabel{fig:training_margins}{{7}{7}{\textbf {Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim $6.0). Higher margins indicate stronger preference learning.\relax }{figure.caption.24}{}}
+\newlabel{fig:training_margins}{{7}{7}{\textbf {Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim $6.0). Higher margins indicate stronger preference learning}{figure.caption.24}{}}
 \newlabel{fig:training_margins@cref}{{[figure][7][]7}{[1][7][]7}}
 \@LN{347}{6}
 \@LN{348}{6}
@@ -522,7 +511,7 @@
 \@LN{409}{7}
 \@LN{410}{7}
 \@LN@col{2}
-\newlabel{tab:hyperparams}{{6}{8}{\textbf {Best Optuna configurations.} T5/T7 denote the best trial index in each setting.\relax }{table.caption.28}{}}
+\newlabel{tab:hyperparams}{{6}{8}{\textbf {Best Optuna configurations.} T5/T7 denote the best trial index in each setting}{table.caption.28}{}}
 \newlabel{tab:hyperparams@cref}{{[table][6][]6}{[1][8][]8}}
 \@LN{411}{7}
 \@LN{412}{7}
@@ -545,7 +534,7 @@
 \@LN{425}{7}
 \@LN{426}{7}
 \@LN{427}{7}
-\newlabel{tab:benchmarks}{{7}{8}{\textbf {Evaluation suite and metrics.} All benchmarks use deterministic metrics; higher is better (TruthfulQA: positive separation HON $>$ CONF).\relax }{table.caption.31}{}}
+\newlabel{tab:benchmarks}{{7}{8}{\textbf {Evaluation suite and metrics.} All benchmarks use deterministic metrics; higher is better (TruthfulQA: positive separation HON $>$ CONF)}{table.caption.30}{}}
 \newlabel{tab:benchmarks@cref}{{[table][7][]7}{[1][8][]8}}
 \@LN{428}{7}
 \@LN{429}{7}
@@ -554,9 +543,9 @@
 \@LN{432}{7}
 \citation{rafailov2023direct}
 \citation{ouyang2022training}
-\newlabel{fig:radar}{{8}{9}{\textbf {Instruction-alignment efficiency (radar-area).} \textsc {CITA} attains \textbf {\colorbox {bg-green}{95.6\%}}, outperforming \textsc {DPO} (70.5\%), \textsc {GRPO} (59.3\%), \textsc {PPO} (50.4\%), and \textsc {SFT} (15.9\%).\relax }{figure.caption.30}{}}
-\newlabel{fig:radar@cref}{{[figure][8][]8}{[1][8][]9}}
 \@LN@col{1}
+\newlabel{fig:radar}{{8}{9}{\textbf {Instruction-alignment efficiency (radar-area).} \textsc {CITA} attains \textbf {\colorbox {bg-green}{95.6\%}}, outperforming \textsc {DPO} (64.7\%), \textsc {GRPO} (67.3\%), \textsc {PPO} (54.4\%), and \textsc {SFT} (15.9\%). Delta annotations show the winning method's improvement (Instruct $-$ NoInstruct) per benchmark}{figure.caption.31}{}}
+\newlabel{fig:radar@cref}{{[figure][8][]8}{[1][9][]9}}
 \@LN{433}{8}
 \newlabel{sec:overall_results}{{6}{9}{Performance}{section.6}{}}
 \newlabel{sec:overall_results@cref}{{[section][6][]6}{[1][8][]9}}
@@ -569,36 +558,36 @@
 \@LN{440}{8}
 \@LN{441}{8}
 \@LN{442}{8}
-\newlabel{tab:overall_results}{{8}{9}{\textbf {Results across 5 benchmarks.} TQA = TruthfulQA, CS = Conditional Safety, LC = Length Control. \textbf {Bold} = best per column. NI = NoInstruct, I = Instruct.\relax }{table.caption.32}{}}
-\newlabel{tab:overall_results@cref}{{[table][8][]8}{[1][9][]9}}
 \@LN{443}{8}
-\newlabel{sec:improvement_comparison}{{6.1}{9}{Instruction Sensitivity: CITA vs.\ DPO}{subsection.6.1}{}}
-\newlabel{sec:improvement_comparison@cref}{{[subsection][1][6]6.1}{[1][9][]9}}
 \@LN{444}{8}
 \@LN{445}{8}
 \@LN{446}{8}
+\newlabel{sec:improvement_comparison}{{6.1}{9}{Instruction Sensitivity: CITA vs.\ DPO}{subsection.6.1}{}}
+\newlabel{sec:improvement_comparison@cref}{{[subsection][1][6]6.1}{[1][9][]9}}
 \@LN{447}{8}
 \@LN{448}{8}
-\@LN@col{2}
-\newlabel{tab:improvement_comparison}{{9}{9}{\textbf {Instruction sensitivity} ($\Delta =$ Instruct $-$ NoInstruct). \textsc {CITA} shows the strongest gains on TruthfulQA, Length Control, and AQI, while \textsc {DPO} leads on ISD and Conditional Safety.\relax }{table.caption.33}{}}
-\newlabel{tab:improvement_comparison@cref}{{[table][9][]9}{[1][9][]9}}
-\newlabel{tab:ranking_avg_radius}{{10}{9}{\textbf {Ranking by average radius} (higher = better instruction alignment). \textbf {Overall instruction-alignment efficiency}: \colorbox {green!30}{\textbf {CITA 95.6\%}} vs DPO 70.5\% (+25.1 pp), GRPO 59.3\% (+36.3 pp), PPO 50.4\% (+45.2 pp), SFT 15.9\% (+79.7 pp).\relax }{table.caption.34}{}}
-\newlabel{tab:ranking_avg_radius@cref}{{[table][10][]10}{[1][9][]9}}
 \@LN{449}{8}
 \@LN{450}{8}
 \@LN{451}{8}
+\@LN@col{2}
+\newlabel{fig:heatmap_results}{{9}{9}{\textbf {Performance heatmap across 5 benchmarks.} Original scores with column-normalized colors (green = best, red = worst per column). NI = NoInstruct, I = Instruct. \textsc {CITA\_I} achieves highest AQI (55.0) and competitive performance across all metrics}{figure.caption.32}{}}
+\newlabel{fig:heatmap_results@cref}{{[figure][9][]9}{[1][9][]9}}
+\newlabel{tab:improvement_comparison}{{8}{9}{\textbf {Instruction sensitivity} ($\Delta =$ Instruct $-$ NoInstruct). \textsc {CITA} shows the strongest gains on TruthfulQA, Length Control, and AQI, while \textsc {DPO} leads on ISD and Conditional Safety}{table.caption.33}{}}
+\newlabel{tab:improvement_comparison@cref}{{[table][8][]8}{[1][9][]9}}
+\newlabel{tab:ranking_avg_radius}{{9}{9}{\textbf {Ranking by average radius} (higher = better instruction alignment). \textbf {Overall instruction-alignment efficiency}: \colorbox {green!30}{\textbf {CITA 95.6\%}} vs GRPO 67.3\% (+28.3 pp), DPO 64.7\% (+30.9 pp), PPO 54.4\% (+41.2 pp), SFT 15.9\% (+79.7 pp)}{table.caption.34}{}}
+\newlabel{tab:ranking_avg_radius@cref}{{[table][9][]9}{[1][9][]9}}
 \@LN{452}{8}
 \@LN{453}{8}
 \@LN{454}{8}
 \@LN{455}{8}
 \@LN{456}{8}
-\newlabel{sec:conclusion}{{7}{9}{Conclusion}{section.7}{}}
-\newlabel{sec:conclusion@cref}{{[section][7][]7}{[1][9][]9}}
 \@LN{457}{8}
 \@LN{458}{8}
-\@LN{459}{8}
-\@LN{460}{8}
 \@LN@col{1}
+\@LN{459}{9}
+\newlabel{sec:conclusion}{{7}{10}{Conclusion}{section.7}{}}
+\newlabel{sec:conclusion@cref}{{[section][7][]7}{[1][9][]10}}
+\@LN{460}{9}
 \@LN{461}{9}
 \@LN{462}{9}
 \@LN{463}{9}
@@ -620,34 +609,30 @@
 \@LN{479}{9}
 \@LN{480}{9}
 \@LN{481}{9}
+\@LN{482}{9}
+\@LN{483}{9}
+\@LN{484}{9}
 \@LN@col{2}
 \citation{rafailov2023direct}
 \citation{ouyang2022training}
 \@LN@col{1}
-\@LN{482}{10}
+\@LN{485}{10}
 \newlabel{sec:benchmark_analysis}{{7.1}{11}{Benchmark-Specific Analysis}{subsection.7.1}{}}
 \newlabel{sec:benchmark_analysis@cref}{{[subsection][1][7]7.1}{[1][11][]11}}
-\newlabel{fig:isd}{{9}{11}{\textbf {ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.\relax }{figure.caption.35}{}}
-\newlabel{fig:isd@cref}{{[figure][9][]9}{[1][11][]11}}
-\newlabel{fig:truthfulqa}{{10}{11}{\textbf {TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit {positive} adaptation scores.\relax }{figure.caption.36}{}}
-\newlabel{fig:truthfulqa@cref}{{[figure][10][]10}{[1][11][]11}}
-\newlabel{fig:conditional_safety}{{11}{11}{\textbf {Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show behavioral gap between STRICT vs. PERMISSIVE.\relax }{figure.caption.37}{}}
-\newlabel{fig:conditional_safety@cref}{{[figure][11][]11}{[1][11][]11}}
-\newlabel{fig:length_control}{{12}{11}{\textbf {Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation.\relax }{figure.caption.38}{}}
-\newlabel{fig:length_control@cref}{{[figure][12][]12}{[1][11][]11}}
+\newlabel{fig:isd}{{10}{11}{\textbf {ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness}{figure.caption.35}{}}
+\newlabel{fig:isd@cref}{{[figure][10][]10}{[1][11][]11}}
+\newlabel{fig:truthfulqa}{{11}{11}{\textbf {TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit {positive} adaptation scores}{figure.caption.36}{}}
+\newlabel{fig:truthfulqa@cref}{{[figure][11][]11}{[1][11][]11}}
+\newlabel{fig:conditional_safety}{{12}{11}{\textbf {Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show behavioral gap between STRICT vs. PERMISSIVE}{figure.caption.37}{}}
+\newlabel{fig:conditional_safety@cref}{{[figure][12][]12}{[1][11][]11}}
+\newlabel{fig:length_control}{{13}{11}{\textbf {Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation}{figure.caption.38}{}}
+\newlabel{fig:length_control@cref}{{[figure][13][]13}{[1][11][]11}}
 \@LN@col{2}
-\newlabel{fig:aqi}{{13}{11}{\textbf {AQI}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores.\relax }{figure.caption.39}{}}
-\newlabel{fig:aqi@cref}{{[figure][13][]13}{[1][11][]11}}
-\@LN{483}{10}
+\newlabel{fig:aqi}{{14}{11}{\textbf {AQI}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores}{figure.caption.39}{}}
+\newlabel{fig:aqi@cref}{{[figure][14][]14}{[1][11][]11}}
+\@LN{486}{10}
 \newlabel{sec:combined_analysis}{{7.2}{11}{Combined Analysis}{subsection.7.2}{}}
 \newlabel{sec:combined_analysis@cref}{{[subsection][2][7]7.2}{[1][11][]11}}
-\newlabel{fig:heatmap}{{14}{11}{\textbf {Performance Heatmap}: Original scores with column-normalized colors. Green = best, red = worst.\relax }{figure.caption.40}{}}
-\newlabel{fig:heatmap@cref}{{[figure][14][]14}{[1][11][]11}}
-\@LN{484}{10}
-\newlabel{sec:key_insights}{{7.3}{11}{Key Insights}{subsection.7.3}{}}
-\newlabel{sec:key_insights@cref}{{[subsection][3][7]7.3}{[1][11][]11}}
-\@LN{485}{10}
-\@LN{486}{10}
 \@LN{487}{10}
 \@LN{488}{10}
 \@LN{489}{10}
@@ -656,6 +641,8 @@
 \@LN{492}{10}
 \@LN{493}{10}
 \@LN{494}{10}
+\newlabel{sec:key_insights}{{7.3}{11}{Key Insights}{subsection.7.3}{}}
+\newlabel{sec:key_insights@cref}{{[subsection][3][7]7.3}{[1][11][]11}}
 \@LN{495}{10}
 \@LN{496}{10}
 \@LN{497}{10}
@@ -665,41 +652,36 @@
 \@LN{501}{10}
 \@LN{502}{10}
 \@LN{503}{10}
-\newlabel{sec:discussion}{{8}{11}{Discussion and Implications}{section.8}{}}
-\newlabel{sec:discussion@cref}{{[section][8][]8}{[1][11][]11}}
 \@LN{504}{10}
 \@LN{505}{10}
 \@LN{506}{10}
 \@LN{507}{10}
 \@LN{508}{10}
+\@LN{509}{10}
+\@LN{510}{10}
+\@LN{511}{10}
+\@LN{512}{10}
+\@LN{513}{10}
+\newlabel{sec:discussion}{{8}{11}{Discussion and Implications}{section.8}{}}
+\newlabel{sec:discussion@cref}{{[section][8][]8}{[1][11][]11}}
+\@LN{514}{10}
+\@LN{515}{10}
+\@LN{516}{10}
+\@LN{517}{10}
+\@LN{518}{10}
+\@LN{519}{10}
+\@LN{520}{10}
+\@LN{521}{10}
 \citation{touvron2023llama,jiang2023mistral,team2023gemini,chowdhery2022palm}
 \citation{azar2023general}
 \citation{sun2024trustllm}
 \citation{bai2022constitutional}
-\citation{wei2022finetuned,chung2022scaling}
-\citation{zou2023universal,wei2023jailbroken}
-\citation{bianchi2023safetytuned}
-\citation{wang2024survey}
-\bibstyle{acl_natbib}
-\bibdata{custom}
-\bibcite{akiba2019optuna}{{1}{2019}{{Akiba et~al.}}{{Akiba, Sano, Yanase, Ohta, and Koyama}}}
+\newlabel{fig:heatmap}{{15}{12}{\textbf {Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm $) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ISD and AQI lack per-sample decomposition (composite/cluster-based metrics)}{figure.caption.40}{}}
+\newlabel{fig:heatmap@cref}{{[figure][15][]15}{[1][11][]12}}
 \@LN@col{1}
-\@LN{509}{11}
-\@LN{510}{11}
-\@LN{511}{11}
-\@LN{512}{11}
-\newlabel{sec:key_findings}{{8.1}{12}{Key Findings}{subsection.8.1}{}}
-\newlabel{sec:key_findings@cref}{{[subsection][1][8]8.1}{[1][12][]12}}
-\@LN{513}{11}
-\@LN{514}{11}
-\@LN{515}{11}
-\@LN{516}{11}
-\@LN{517}{11}
-\@LN{518}{11}
-\@LN{519}{11}
-\@LN{520}{11}
-\@LN{521}{11}
 \@LN{522}{11}
+\newlabel{sec:key_findings}{{8.1}{12}{Key Findings}{subsection.8.1}{}}
+\newlabel{sec:key_findings@cref}{{[subsection][1][8]8.1}{[1][11][]12}}
 \@LN{523}{11}
 \@LN{524}{11}
 \@LN{525}{11}
@@ -712,8 +694,6 @@
 \@LN{532}{11}
 \@LN{533}{11}
 \@LN{534}{11}
-\newlabel{sec:implications}{{8.2}{12}{Implications}{subsection.8.2}{}}
-\newlabel{sec:implications@cref}{{[subsection][2][8]8.2}{[1][12][]12}}
 \@LN{535}{11}
 \@LN{536}{11}
 \@LN{537}{11}
@@ -723,7 +703,10 @@
 \@LN{541}{11}
 \@LN{542}{11}
 \@LN{543}{11}
+\@LN@col{2}
 \@LN{544}{11}
+\newlabel{sec:implications}{{8.2}{12}{Implications}{subsection.8.2}{}}
+\newlabel{sec:implications@cref}{{[subsection][2][8]8.2}{[1][12][]12}}
 \@LN{545}{11}
 \@LN{546}{11}
 \@LN{547}{11}
@@ -734,7 +717,6 @@
 \@LN{552}{11}
 \@LN{553}{11}
 \@LN{554}{11}
-\@LN@col{2}
 \@LN{555}{11}
 \@LN{556}{11}
 \@LN{557}{11}
@@ -743,42 +725,16 @@
 \@LN{560}{11}
 \@LN{561}{11}
 \@LN{562}{11}
-\newlabel{sec:reproducibility}{{8.3}{12}{Reproducibility}{subsection.8.3}{}}
-\newlabel{sec:reproducibility@cref}{{[subsection][3][8]8.3}{[1][12][]12}}
 \@LN{563}{11}
 \@LN{564}{11}
 \@LN{565}{11}
-\@LN{566}{11}
-\@LN{567}{11}
-\@LN{568}{11}
-\@LN{569}{11}
-\newlabel{sec:benefits}{{8.3}{12}{Reproducibility}{subsection.8.3}{}}
-\newlabel{sec:benefits@cref}{{[subsection][3][8]8.3}{[1][12][]12}}
-\@LN{570}{11}
-\@LN{571}{11}
-\@LN{572}{11}
-\@LN{573}{11}
-\@LN{574}{11}
-\@LN{575}{11}
-\@LN{576}{11}
-\@LN{577}{11}
-\@LN{578}{11}
-\@LN{579}{11}
-\@LN{580}{11}
-\@LN{581}{11}
-\@LN{582}{11}
-\@LN{583}{11}
-\@LN{584}{11}
-\@LN{585}{11}
-\@LN{586}{11}
-\newlabel{sec:comparison}{{8.4}{12}{CITA vs. Prior Methods}{subsection.8.4}{}}
-\newlabel{sec:comparison@cref}{{[subsection][4][8]8.4}{[1][12][]12}}
-\newlabel{tab:feature_comparison}{{11}{12}{Feature comparison across alignment methods. CITA uniquely supports instruction-conditioned behavioral switching with mandatory KL regularization.\relax }{table.caption.44}{}}
-\newlabel{tab:feature_comparison@cref}{{[table][11][]11}{[1][12][]12}}
-\@LN{587}{11}
-\@LN{588}{11}
-\@LN{589}{11}
-\@LN{590}{11}
+\citation{wei2022finetuned,chung2022scaling}
+\citation{zou2023universal,wei2023jailbroken}
+\citation{bianchi2023safetytuned}
+\citation{wang2024survey}
+\bibstyle{acl_natbib}
+\bibdata{custom}
+\bibcite{akiba2019optuna}{{1}{2019}{{Akiba et~al.}}{{Akiba, Sano, Yanase, Ohta, and Koyama}}}
 \bibcite{anthropic2023claude2}{{2}{2023}{{Anthropic}}{{}}}
 \bibcite{anthropic2024claude3addendum}{{3}{2024}{{Anthropic}}{{}}}
 \bibcite{azar2023general}{{4}{2023}{{Azar et~al.}}{{Azar, Rowland, Piot, Guo, Calandriello, Valko, and Munos}}}
@@ -792,24 +748,46 @@
 \bibcite{chen2025pad}{{12}{2025}{{Chen et~al.}}{{Chen, Zhang, Luo, Chai, and Liu}}}
 \bibcite{chen2020simple}{{13}{2020}{{Chen et~al.}}{{Chen, Kornblith, Norouzi, and Hinton}}}
 \bibcite{chowdhery2022palm}{{14}{2022}{{Chowdhery et~al.}}{{Chowdhery, Narang, Devlin, Bosma, Mishra, Roberts et~al.}}}
-\bibcite{chung2022scaling}{{15}{2022}{{Chung et~al.}}{{Chung, Hou, Longpre, Zoph, Tay, Fedus, Li, Wang et~al.}}}
-\bibcite{cui2023ultrafeedback}{{16}{2023}{{Cui et~al.}}{{Cui, Yuan, Ding, Yao, Zhu, Ni et~al.}}}
-\bibcite{dettmers2023qlora}{{17}{2023}{{Dettmers et~al.}}{{Dettmers, Pagnoni, Holtzman, and Zettlemoyer}}}
-\bibcite{dong-etal-2023-steerlm}{{18}{2023}{{Dong et~al.}}{{Dong, Wang, Sreedhar, Wu, and Kuchaiev}}}
-\bibcite{dubey2024llama}{{19}{2024{a}}{{Dubey et~al.}}{{Dubey, Jauhri, Pandey, Kadian, Al-Dahle, Letman, Mathur, Schelten, Yang, Fan et~al.}}}
-\bibcite{dubey2024llama3}{{20}{2024{b}}{{Dubey et~al.}}{{Dubey, Jauhri, Pandey, Kadian, Al-Dahle et~al.}}}
-\bibcite{ethayarajh2024kto}{{21}{2024}{{Ethayarajh et~al.}}{{Ethayarajh, Xu, Muennighoff, Jurafsky, and Kiela}}}
-\bibcite{french1999catastrophic}{{22}{1999}{{French}}{{}}}
-\bibcite{ganguli2022red}{{23}{2022}{{Ganguli et~al.}}{{Ganguli, Lovitt, Kernion, Askell, Bai, Kadavath et~al.}}}
-\bibcite{goyal2024beyond}{{24}{2024}{{Goyal et~al.}}{{Goyal, Madan, Sun, Huang, and Qu}}}
-\bibcite{hendrycks2023aligning}{{25}{2021}{{Hendrycks et~al.}}{{Hendrycks, Burns, Basart, Critch, Li, Song, and Steinhardt}}}
 \@LN@col{1}
+\@LN{566}{12}
+\@LN{567}{12}
+\@LN{568}{12}
+\@LN{569}{12}
+\@LN{570}{12}
+\@LN{571}{12}
+\@LN{572}{12}
+\newlabel{sec:reproducibility}{{8.3}{13}{Reproducibility}{subsection.8.3}{}}
+\newlabel{sec:reproducibility@cref}{{[subsection][3][8]8.3}{[1][13][]13}}
+\@LN{573}{12}
+\@LN{574}{12}
+\@LN{575}{12}
+\@LN{576}{12}
+\@LN{577}{12}
+\@LN{578}{12}
+\@LN{579}{12}
+\newlabel{sec:benefits}{{8.3}{13}{Reproducibility}{subsection.8.3}{}}
+\newlabel{sec:benefits@cref}{{[subsection][3][8]8.3}{[1][13][]13}}
+\@LN{580}{12}
+\@LN{581}{12}
+\@LN{582}{12}
+\@LN{583}{12}
+\@LN{584}{12}
+\@LN{585}{12}
+\@LN{586}{12}
+\@LN{587}{12}
+\@LN{588}{12}
+\@LN{589}{12}
+\@LN{590}{12}
 \@LN{591}{12}
 \@LN{592}{12}
 \@LN{593}{12}
 \@LN{594}{12}
 \@LN{595}{12}
 \@LN{596}{12}
+\newlabel{sec:comparison}{{8.4}{13}{CITA vs. Prior Methods}{subsection.8.4}{}}
+\newlabel{sec:comparison@cref}{{[subsection][4][8]8.4}{[1][13][]13}}
+\newlabel{tab:feature_comparison}{{10}{13}{Feature comparison across alignment methods. CITA uniquely supports instruction-conditioned behavioral switching with mandatory KL regularization}{table.caption.44}{}}
+\newlabel{tab:feature_comparison@cref}{{[table][10][]10}{[1][13][]13}}
 \@LN{597}{12}
 \@LN{598}{12}
 \@LN{599}{12}
@@ -817,6 +795,7 @@
 \@LN{601}{12}
 \@LN{602}{12}
 \@LN{603}{12}
+\@LN@col{2}
 \@LN{604}{12}
 \@LN{605}{12}
 \@LN{606}{12}
@@ -856,7 +835,6 @@
 \@LN{640}{12}
 \@LN{641}{12}
 \@LN{642}{12}
-\@LN@col{2}
 \@LN{643}{12}
 \@LN{644}{12}
 \@LN{645}{12}
@@ -872,45 +850,17 @@
 \@LN{655}{12}
 \@LN{656}{12}
 \@LN{657}{12}
-\@LN{658}{12}
-\@LN{659}{12}
-\@LN{660}{12}
-\@LN{661}{12}
-\@LN{662}{12}
-\@LN{663}{12}
-\@LN{664}{12}
-\@LN{665}{12}
-\@LN{666}{12}
-\@LN{667}{12}
-\@LN{668}{12}
-\@LN{669}{12}
-\@LN{670}{12}
-\@LN{671}{12}
-\@LN{672}{12}
-\@LN{673}{12}
-\@LN{674}{12}
-\@LN{675}{12}
-\@LN{676}{12}
-\@LN{677}{12}
-\@LN{678}{12}
-\@LN{679}{12}
-\@LN{680}{12}
-\@LN{681}{12}
-\@LN{682}{12}
-\@LN{683}{12}
-\@LN{684}{12}
-\@LN{685}{12}
-\@LN{686}{12}
-\@LN{687}{12}
-\@LN{688}{12}
-\@LN{689}{12}
-\@LN{690}{12}
-\@LN{691}{12}
-\@LN{692}{12}
-\@LN{693}{12}
-\@LN{694}{12}
-\@LN{695}{12}
-\@LN{696}{12}
+\bibcite{chung2022scaling}{{15}{2022}{{Chung et~al.}}{{Chung, Hou, Longpre, Zoph, Tay, Fedus, Li, Wang et~al.}}}
+\bibcite{cui2023ultrafeedback}{{16}{2023}{{Cui et~al.}}{{Cui, Yuan, Ding, Yao, Zhu, Ni et~al.}}}
+\bibcite{dettmers2023qlora}{{17}{2023}{{Dettmers et~al.}}{{Dettmers, Pagnoni, Holtzman, and Zettlemoyer}}}
+\bibcite{dong-etal-2023-steerlm}{{18}{2023}{{Dong et~al.}}{{Dong, Wang, Sreedhar, Wu, and Kuchaiev}}}
+\bibcite{dubey2024llama}{{19}{2024{a}}{{Dubey et~al.}}{{Dubey, Jauhri, Pandey, Kadian, Al-Dahle, Letman, Mathur, Schelten, Yang, Fan et~al.}}}
+\bibcite{dubey2024llama3}{{20}{2024{b}}{{Dubey et~al.}}{{Dubey, Jauhri, Pandey, Kadian, Al-Dahle et~al.}}}
+\bibcite{ethayarajh2024kto}{{21}{2024}{{Ethayarajh et~al.}}{{Ethayarajh, Xu, Muennighoff, Jurafsky, and Kiela}}}
+\bibcite{french1999catastrophic}{{22}{1999}{{French}}{{}}}
+\bibcite{ganguli2022red}{{23}{2022}{{Ganguli et~al.}}{{Ganguli, Lovitt, Kernion, Askell, Bai, Kadavath et~al.}}}
+\bibcite{goyal2024beyond}{{24}{2024}{{Goyal et~al.}}{{Goyal, Madan, Sun, Huang, and Qu}}}
+\bibcite{hendrycks2023aligning}{{25}{2021}{{Hendrycks et~al.}}{{Hendrycks, Burns, Basart, Critch, Li, Song, and Steinhardt}}}
 \bibcite{hinton2015distilling}{{26}{2015}{{Hinton et~al.}}{{Hinton, Vinyals, and Dean}}}
 \bibcite{hong2024orpo}{{27}{2024}{{Hong et~al.}}{{Hong, Lee, and Thorne}}}
 \bibcite{houlsby2019parameter}{{28}{2019}{{Houlsby et~al.}}{{Houlsby, Giurgiu, Jastrzebski, Morrone, De~Laroussilhe, Gesmundo et~al.}}}
@@ -924,19 +874,46 @@
 \bibcite{kirkpatrick2017overcoming}{{36}{2017}{{Kirkpatrick et~al.}}{{Kirkpatrick, Pascanu, Rabinowitz, Veness, Desjardins et~al.}}}
 \bibcite{kopf2023openassistant}{{37}{2023}{{K{\"o}pf et~al.}}{{K{\"o}pf, Kilcher, von R{\"u}tte, Anagnostidis, Tam et~al.}}}
 \bibcite{korbak2022rl}{{38}{2022}{{Korbak et~al.}}{{Korbak, Perez, and Buckley}}}
-\bibcite{lester2021power}{{39}{2021}{{Lester et~al.}}{{Lester, Al-Rfou, and Constant}}}
-\bibcite{li2021prefix}{{40}{2021}{{Li and Liang}}{{}}}
-\bibcite{li2017learning}{{41}{2017}{{Li and Hoiem}}{{}}}
-\bibcite{liang2023holistic}{{42}{2022}{{Liang et~al.}}{{Liang, Bommasani, Lee, Tsipras, Soylu, Yasunaga et~al.}}}
-\bibcite{lin2022truthfulqa}{{43}{2022}{{Lin et~al.}}{{Lin, Hilton, and Evans}}}
-\bibcite{liu2024kl}{{44}{2024{a}}{{Liu et~al.}}{{Liu, Jia, Zhang, Keskar, and Peng}}}
-\bibcite{liu2023jailbreaking}{{45}{2023}{{Liu et~al.}}{{Liu, Deng, Xu, Li, Zheng, Zhang et~al.}}}
-\bibcite{liu-etal-2024-inference}{{46}{2024{b}}{{Liu et~al.}}{{Liu, Zhou, Wang, Yang, and Qiao}}}
-\bibcite{longpre2023flan}{{47}{2023}{{Longpre et~al.}}{{Longpre, Hou, Vu, Webson, Chung, Tay, Zhou, Le et~al.}}}
-\bibcite{lopez2017gradient}{{48}{2017}{{Lopez-Paz and Ranzato}}{{}}}
-\bibcite{meng2024simpo}{{49}{2024}{{Meng et~al.}}{{Meng, Xia, and Chen}}}
-\bibcite{meta2024llama3}{{50}{2024}{{{Meta AI} et~al.}}{{}}}
 \@LN@col{1}
+\@LN{658}{13}
+\@LN{659}{13}
+\@LN{660}{13}
+\@LN{661}{13}
+\@LN{662}{13}
+\@LN{663}{13}
+\@LN{664}{13}
+\@LN{665}{13}
+\@LN{666}{13}
+\@LN{667}{13}
+\@LN{668}{13}
+\@LN{669}{13}
+\@LN{670}{13}
+\@LN{671}{13}
+\@LN{672}{13}
+\@LN{673}{13}
+\@LN{674}{13}
+\@LN{675}{13}
+\@LN{676}{13}
+\@LN{677}{13}
+\@LN{678}{13}
+\@LN{679}{13}
+\@LN{680}{13}
+\@LN{681}{13}
+\@LN{682}{13}
+\@LN{683}{13}
+\@LN{684}{13}
+\@LN{685}{13}
+\@LN{686}{13}
+\@LN{687}{13}
+\@LN{688}{13}
+\@LN{689}{13}
+\@LN{690}{13}
+\@LN{691}{13}
+\@LN{692}{13}
+\@LN{693}{13}
+\@LN{694}{13}
+\@LN{695}{13}
+\@LN{696}{13}
 \@LN{697}{13}
 \@LN{698}{13}
 \@LN{699}{13}
@@ -951,6 +928,7 @@
 \@LN{708}{13}
 \@LN{709}{13}
 \@LN{710}{13}
+\@LN@col{2}
 \@LN{711}{13}
 \@LN{712}{13}
 \@LN{713}{13}
@@ -990,7 +968,6 @@
 \@LN{747}{13}
 \@LN{748}{13}
 \@LN{749}{13}
-\@LN@col{2}
 \@LN{750}{13}
 \@LN{751}{13}
 \@LN{752}{13}
@@ -1006,45 +983,18 @@
 \@LN{762}{13}
 \@LN{763}{13}
 \@LN{764}{13}
-\@LN{765}{13}
-\@LN{766}{13}
-\@LN{767}{13}
-\@LN{768}{13}
-\@LN{769}{13}
-\@LN{770}{13}
-\@LN{771}{13}
-\@LN{772}{13}
-\@LN{773}{13}
-\@LN{774}{13}
-\@LN{775}{13}
-\@LN{776}{13}
-\@LN{777}{13}
-\@LN{778}{13}
-\@LN{779}{13}
-\@LN{780}{13}
-\@LN{781}{13}
-\@LN{782}{13}
-\@LN{783}{13}
-\@LN{784}{13}
-\@LN{785}{13}
-\@LN{786}{13}
-\@LN{787}{13}
-\@LN{788}{13}
-\@LN{789}{13}
-\@LN{790}{13}
-\@LN{791}{13}
-\@LN{792}{13}
-\@LN{793}{13}
-\@LN{794}{13}
-\@LN{795}{13}
-\@LN{796}{13}
-\@LN{797}{13}
-\@LN{798}{13}
-\@LN{799}{13}
-\@LN{800}{13}
-\@LN{801}{13}
-\@LN{802}{13}
-\@LN{803}{13}
+\bibcite{lester2021power}{{39}{2021}{{Lester et~al.}}{{Lester, Al-Rfou, and Constant}}}
+\bibcite{li2021prefix}{{40}{2021}{{Li and Liang}}{{}}}
+\bibcite{li2017learning}{{41}{2017}{{Li and Hoiem}}{{}}}
+\bibcite{liang2023holistic}{{42}{2022}{{Liang et~al.}}{{Liang, Bommasani, Lee, Tsipras, Soylu, Yasunaga et~al.}}}
+\bibcite{lin2022truthfulqa}{{43}{2022}{{Lin et~al.}}{{Lin, Hilton, and Evans}}}
+\bibcite{liu2024kl}{{44}{2024{a}}{{Liu et~al.}}{{Liu, Jia, Zhang, Keskar, and Peng}}}
+\bibcite{liu2023jailbreaking}{{45}{2023}{{Liu et~al.}}{{Liu, Deng, Xu, Li, Zheng, Zhang et~al.}}}
+\bibcite{liu-etal-2024-inference}{{46}{2024{b}}{{Liu et~al.}}{{Liu, Zhou, Wang, Yang, and Qiao}}}
+\bibcite{longpre2023flan}{{47}{2023}{{Longpre et~al.}}{{Longpre, Hou, Vu, Webson, Chung, Tay, Zhou, Le et~al.}}}
+\bibcite{lopez2017gradient}{{48}{2017}{{Lopez-Paz and Ranzato}}{{}}}
+\bibcite{meng2024simpo}{{49}{2024}{{Meng et~al.}}{{Meng, Xia, and Chen}}}
+\bibcite{meta2024llama3}{{50}{2024}{{{Meta AI} et~al.}}{{}}}
 \bibcite{mistral2024large}{{51}{2024}{{Microsoft Azure Blog}}{{}}}
 \bibcite{mishra2022cross}{{52}{2022}{{Mishra et~al.}}{{Mishra, Khashabi, Baral, and Hajishirzi}}}
 \bibcite{mukherjee2023orca}{{53}{2023}{{Mukherjee et~al.}}{{Mukherjee, Mitra, Jawahar, Agarwal, Palangi, and Awadallah}}}
@@ -1058,18 +1008,46 @@
 \bibcite{rafailov2023direct}{{61}{2023}{{Rafailov et~al.}}{{Rafailov, Sharma, Mitchell, Ermon, Manning, and Finn}}}
 \bibcite{reid2024gemini15}{{62}{2024}{{Reid et~al.}}{{}}}
 \bibcite{roy2025comprehensive}{{63}{2025}{{Roy et~al.}}{{Roy, Imanpour, Aziz, Bajpai, Singh, Biswas, Wanaskar, Patwa, Ghosh, Dixit, Pal, Rawte, Garimella, Jena, Sheth, Sharma, Reganti, Jain, Chadha, and Das}}}
-\bibcite{sanh2022multitask}{{64}{2022}{{Sanh et~al.}}{{Sanh, Webson, Raffel, Bach, Sutawika, Alyafeai, Chaffin, Stiegler et~al.}}}
-\bibcite{schulman2017proximal}{{65}{2017}{{Schulman et~al.}}{{Schulman, Wolski, Dhariwal, Radford, and Klimov}}}
-\bibcite{shi2024decodingtime}{{66}{2024}{{Shi et~al.}}{{Shi, Chen, Hu, Liu, Hajishirzi, Smith, and Du}}}
-\bibcite{stiennon2020learning}{{67}{2020}{{Stiennon et~al.}}{{Stiennon, Ouyang, Wu, Ziegler, Lowe, Voss, Radford, Amodei, and Christiano}}}
-\bibcite{sun2024trustllm}{{68}{2024}{{Sun et~al.}}{{Sun, Huang, Wang, Wu, Zhang, Gao et~al.}}}
-\bibcite{taori2023alpaca}{{69}{2023}{{Taori et~al.}}{{Taori, Gulrajani, Zhang, Dubois, Li, Guestrin, Liang, and Hashimoto}}}
-\bibcite{team2023gemini}{{70}{2023}{{Team et~al.}}{{Team, Anil, Borgeaud, Wu, Alayrac, Yu et~al.}}}
-\bibcite{touvron2023llama1}{{71}{2023{a}}{{Touvron et~al.}}{{Touvron, Lavril, Izacard, Martinet, Lachaux et~al.}}}
-\bibcite{touvron2023llama}{{72}{2023{b}}{{Touvron et~al.}}{{Touvron, Martin, Stone, Albert, Almahairi, Babaei et~al.}}}
-\bibcite{tunstall2023zephyr}{{73}{2023}{{Tunstall et~al.}}{{Tunstall, Beeching, Lambert, Rajani, Rasul, Belkada et~al.}}}
-\bibcite{wanaskar2025multimodal}{{74}{2025}{{Wanaskar et~al.}}{{Wanaskar, Jena, and Eirinaki}}}
 \@LN@col{1}
+\@LN{765}{14}
+\@LN{766}{14}
+\@LN{767}{14}
+\@LN{768}{14}
+\@LN{769}{14}
+\@LN{770}{14}
+\@LN{771}{14}
+\@LN{772}{14}
+\@LN{773}{14}
+\@LN{774}{14}
+\@LN{775}{14}
+\@LN{776}{14}
+\@LN{777}{14}
+\@LN{778}{14}
+\@LN{779}{14}
+\@LN{780}{14}
+\@LN{781}{14}
+\@LN{782}{14}
+\@LN{783}{14}
+\@LN{784}{14}
+\@LN{785}{14}
+\@LN{786}{14}
+\@LN{787}{14}
+\@LN{788}{14}
+\@LN{789}{14}
+\@LN{790}{14}
+\@LN{791}{14}
+\@LN{792}{14}
+\@LN{793}{14}
+\@LN{794}{14}
+\@LN{795}{14}
+\@LN{796}{14}
+\@LN{797}{14}
+\@LN{798}{14}
+\@LN{799}{14}
+\@LN{800}{14}
+\@LN{801}{14}
+\@LN{802}{14}
+\@LN{803}{14}
 \@LN{804}{14}
 \@LN{805}{14}
 \@LN{806}{14}
@@ -1082,6 +1060,7 @@
 \@LN{813}{14}
 \@LN{814}{14}
 \@LN{815}{14}
+\@LN@col{2}
 \@LN{816}{14}
 \@LN{817}{14}
 \@LN{818}{14}
@@ -1121,7 +1100,6 @@
 \@LN{852}{14}
 \@LN{853}{14}
 \@LN{854}{14}
-\@LN@col{2}
 \@LN{855}{14}
 \@LN{856}{14}
 \@LN{857}{14}
@@ -1137,45 +1115,17 @@
 \@LN{867}{14}
 \@LN{868}{14}
 \@LN{869}{14}
-\@LN{870}{14}
-\@LN{871}{14}
-\@LN{872}{14}
-\@LN{873}{14}
-\@LN{874}{14}
-\@LN{875}{14}
-\@LN{876}{14}
-\@LN{877}{14}
-\@LN{878}{14}
-\@LN{879}{14}
-\@LN{880}{14}
-\@LN{881}{14}
-\@LN{882}{14}
-\@LN{883}{14}
-\@LN{884}{14}
-\@LN{885}{14}
-\@LN{886}{14}
-\@LN{887}{14}
-\@LN{888}{14}
-\@LN{889}{14}
-\@LN{890}{14}
-\@LN{891}{14}
-\@LN{892}{14}
-\@LN{893}{14}
-\@LN{894}{14}
-\@LN{895}{14}
-\@LN{896}{14}
-\@LN{897}{14}
-\@LN{898}{14}
-\@LN{899}{14}
-\@LN{900}{14}
-\@LN{901}{14}
-\@LN{902}{14}
-\@LN{903}{14}
-\@LN{904}{14}
-\@LN{905}{14}
-\@LN{906}{14}
-\@LN{907}{14}
-\@LN{908}{14}
+\bibcite{sanh2022multitask}{{64}{2022}{{Sanh et~al.}}{{Sanh, Webson, Raffel, Bach, Sutawika, Alyafeai, Chaffin, Stiegler et~al.}}}
+\bibcite{schulman2017proximal}{{65}{2017}{{Schulman et~al.}}{{Schulman, Wolski, Dhariwal, Radford, and Klimov}}}
+\bibcite{shi2024decodingtime}{{66}{2024}{{Shi et~al.}}{{Shi, Chen, Hu, Liu, Hajishirzi, Smith, and Du}}}
+\bibcite{stiennon2020learning}{{67}{2020}{{Stiennon et~al.}}{{Stiennon, Ouyang, Wu, Ziegler, Lowe, Voss, Radford, Amodei, and Christiano}}}
+\bibcite{sun2024trustllm}{{68}{2024}{{Sun et~al.}}{{Sun, Huang, Wang, Wu, Zhang, Gao et~al.}}}
+\bibcite{taori2023alpaca}{{69}{2023}{{Taori et~al.}}{{Taori, Gulrajani, Zhang, Dubois, Li, Guestrin, Liang, and Hashimoto}}}
+\bibcite{team2023gemini}{{70}{2023}{{Team et~al.}}{{Team, Anil, Borgeaud, Wu, Alayrac, Yu et~al.}}}
+\bibcite{touvron2023llama1}{{71}{2023{a}}{{Touvron et~al.}}{{Touvron, Lavril, Izacard, Martinet, Lachaux et~al.}}}
+\bibcite{touvron2023llama}{{72}{2023{b}}{{Touvron et~al.}}{{Touvron, Martin, Stone, Albert, Almahairi, Babaei et~al.}}}
+\bibcite{tunstall2023zephyr}{{73}{2023}{{Tunstall et~al.}}{{Tunstall, Beeching, Lambert, Rajani, Rasul, Belkada et~al.}}}
+\bibcite{wanaskar2025multimodal}{{74}{2025}{{Wanaskar et~al.}}{{Wanaskar, Jena, and Eirinaki}}}
 \bibcite{wang2023openchat}{{75}{2023{a}}{{Wang et~al.}}{{Wang, Cheng, Zhan, Li, Song, and Liu}}}
 \bibcite{wang-etal-2024-arithmetic}{{76}{2024{a}}{{Wang et~al.}}{{Wang, Lin, Xiong, Yang, Diao, Qiu, Zhao, and Zhang}}}
 \bibcite{wang2024survey}{{77}{2024{b}}{{Wang et~al.}}{{Wang, Ma, Feng, Zhang, Yang, Zhang, Chen, Tang, Chen, Lin et~al.}}}
@@ -1188,20 +1138,46 @@
 \bibcite{xu2024dpo}{{84}{2024}{{Xu et~al.}}{{Xu, Fu, Gao, Ye, Liu, Mei, Wang et~al.}}}
 \bibcite{yang2023prompt}{{85}{2023}{{Yang et~al.}}{{Yang, Wanaskar, Shrivastava, Mansahia, Richhariya, and Eirinaki}}}
 \bibcite{yuan2023rrhf}{{86}{2023}{{Yuan et~al.}}{{Yuan, Yuan, Tan, Wang, Huang, and Huang}}}
-\bibcite{zhang2022opt}{{87}{2022}{{Zhang et~al.}}{{Zhang, Roller, Goyal, Artetxe, Chen, Chen et~al.}}}
-\bibcite{zhang2019bertscore}{{88}{2020}{{Zhang et~al.}}{{Zhang, Kishore, Wu, Weinberger, and Artzi}}}
-\bibcite{zhao2023slic}{{89}{2023}{{Zhao et~al.}}{{Zhao, Joshi, Liu, Khalman, Saleh, and Liu}}}
-\bibcite{zhou2023lima}{{90}{2023}{{Zhou et~al.}}{{Zhou, Liu, Xu, Iyer, Sun, Mao, Ma et~al.}}}
-\bibcite{ziegler2019fine}{{91}{2019}{{Ziegler et~al.}}{{Ziegler, Stiennon, Wu, Brown, Radford, Amodei, Christiano, and Irving}}}
-\bibcite{zou2023universal}{{92}{2023}{{Zou et~al.}}{{Zou, Wang, Carlini, Nasr, Kolter, and Fredrikson}}}
-\citation{dubey2024llama}
-\citation{ji2024pku}
-\citation{touvron2023llama,touvron2023llama1,dubey2024llama3}
-\citation{bai2022training}
-\citation{kopf2023openassistant}
-\citation{cui2023ultrafeedback}
-\citation{ivison2023camels}
 \@LN@col{1}
+\@LN{870}{15}
+\@LN{871}{15}
+\@LN{872}{15}
+\@LN{873}{15}
+\@LN{874}{15}
+\@LN{875}{15}
+\@LN{876}{15}
+\@LN{877}{15}
+\@LN{878}{15}
+\@LN{879}{15}
+\@LN{880}{15}
+\@LN{881}{15}
+\@LN{882}{15}
+\@LN{883}{15}
+\@LN{884}{15}
+\@LN{885}{15}
+\@LN{886}{15}
+\@LN{887}{15}
+\@LN{888}{15}
+\@LN{889}{15}
+\@LN{890}{15}
+\@LN{891}{15}
+\@LN{892}{15}
+\@LN{893}{15}
+\@LN{894}{15}
+\@LN{895}{15}
+\@LN{896}{15}
+\@LN{897}{15}
+\@LN{898}{15}
+\@LN{899}{15}
+\@LN{900}{15}
+\@LN{901}{15}
+\@LN{902}{15}
+\@LN{903}{15}
+\@LN{904}{15}
+\@LN{905}{15}
+\@LN{906}{15}
+\@LN{907}{15}
+\@LN{908}{15}
 \@LN{909}{15}
 \@LN{910}{15}
 \@LN{911}{15}
@@ -1215,6 +1191,7 @@
 \@LN{919}{15}
 \@LN{920}{15}
 \@LN{921}{15}
+\@LN@col{2}
 \@LN{922}{15}
 \@LN{923}{15}
 \@LN{924}{15}
@@ -1254,7 +1231,6 @@
 \@LN{958}{15}
 \@LN{959}{15}
 \@LN{960}{15}
-\@LN@col{2}
 \@LN{961}{15}
 \@LN{962}{15}
 \@LN{963}{15}
@@ -1270,68 +1246,74 @@
 \@LN{973}{15}
 \@LN{974}{15}
 \@LN{975}{15}
-\@LN{976}{15}
-\@LN{977}{15}
-\@LN{978}{15}
-\@LN{979}{15}
-\@LN{980}{15}
-\@LN{981}{15}
-\@LN{982}{15}
-\@LN{983}{15}
-\@LN{984}{15}
-\@LN{985}{15}
-\@LN{986}{15}
-\@LN{987}{15}
-\@LN{988}{15}
-\@LN{989}{15}
-\@LN{990}{15}
-\@LN{991}{15}
-\@LN{992}{15}
-\@LN{993}{15}
-\@LN{994}{15}
-\@LN{995}{15}
-\@LN{996}{15}
-\@LN{997}{15}
-\newlabel{sec:methodology}{{A}{16}{Methodology}{appendix.A}{}}
-\newlabel{sec:methodology@cref}{{[appendix][1][2147483647]A}{[1][16][]16}}
-\@LN{998}{15}
-\@LN{999}{15}
-\@LN{1000}{15}
-\@LN{1001}{15}
-\@LN{1002}{15}
-\newlabel{sec:phase0}{{A.1}{16}{Phase 0: Model and Infrastructure Setup}{subsection.A.1}{}}
-\newlabel{sec:phase0@cref}{{[subappendix][1][2147483647,1]A.1}{[1][16][]16}}
-\newlabel{tab:infrastructure}{{12}{16}{Training infrastructure and configuration.\relax }{table.caption.46}{}}
-\newlabel{tab:infrastructure@cref}{{[table][12][2147483647]12}{[1][16][]16}}
+\bibcite{zhang2022opt}{{87}{2022}{{Zhang et~al.}}{{Zhang, Roller, Goyal, Artetxe, Chen, Chen et~al.}}}
+\bibcite{zhang2019bertscore}{{88}{2020}{{Zhang et~al.}}{{Zhang, Kishore, Wu, Weinberger, and Artzi}}}
+\bibcite{zhao2023slic}{{89}{2023}{{Zhao et~al.}}{{Zhao, Joshi, Liu, Khalman, Saleh, and Liu}}}
+\bibcite{zhou2023lima}{{90}{2023}{{Zhou et~al.}}{{Zhou, Liu, Xu, Iyer, Sun, Mao, Ma et~al.}}}
+\bibcite{ziegler2019fine}{{91}{2019}{{Ziegler et~al.}}{{Ziegler, Stiennon, Wu, Brown, Radford, Amodei, Christiano, and Irving}}}
+\bibcite{zou2023universal}{{92}{2023}{{Zou et~al.}}{{Zou, Wang, Carlini, Nasr, Kolter, and Fredrikson}}}
+\citation{dubey2024llama}
+\citation{ji2024pku}
+\citation{touvron2023llama,touvron2023llama1,dubey2024llama3}
+\citation{bai2022training}
+\citation{kopf2023openassistant}
+\citation{cui2023ultrafeedback}
+\citation{ivison2023camels}
 \citation{akiba2019optuna}
 \citation{hu2022lora,dettmers2023qlora}
 \citation{houlsby2019parameter}
 \citation{lester2021power}
 \citation{li2021prefix}
-\citation{wei2022finetuned,sanh2022multitask}
-\citation{rafailov2023direct,chen2020simple}
-\citation{schulman2017proximal,korbak2022rl}
-\citation{rafailov2023direct,ziegler2019fine}
-\citation{jaques2019way,korbak2022rl}
-\citation{kirkpatrick2017overcoming,li2017learning}
 \@LN@col{1}
+\@LN{976}{16}
+\@LN{977}{16}
+\@LN{978}{16}
+\@LN{979}{16}
+\@LN{980}{16}
+\@LN{981}{16}
+\@LN{982}{16}
+\@LN{983}{16}
+\@LN{984}{16}
+\@LN{985}{16}
+\@LN{986}{16}
+\@LN{987}{16}
+\@LN{988}{16}
+\@LN{989}{16}
+\@LN{990}{16}
+\@LN{991}{16}
+\@LN{992}{16}
+\@LN{993}{16}
+\@LN{994}{16}
+\@LN{995}{16}
+\@LN{996}{16}
+\@LN{997}{16}
+\@LN{998}{16}
+\@LN{999}{16}
+\@LN{1000}{16}
+\@LN{1001}{16}
+\@LN{1002}{16}
 \@LN{1003}{16}
 \@LN{1004}{16}
 \@LN{1005}{16}
 \@LN{1006}{16}
 \@LN{1007}{16}
+\newlabel{sec:methodology}{{A}{17}{Methodology}{appendix.A}{}}
+\newlabel{sec:methodology@cref}{{[appendix][1][2147483647]A}{[1][17][]17}}
 \@LN{1008}{16}
 \@LN{1009}{16}
 \@LN{1010}{16}
 \@LN{1011}{16}
 \@LN{1012}{16}
+\newlabel{sec:phase0}{{A.1}{17}{Phase 0: Model and Infrastructure Setup}{subsection.A.1}{}}
+\newlabel{sec:phase0@cref}{{[subappendix][1][2147483647,1]A.1}{[1][17][]17}}
+\newlabel{tab:infrastructure}{{11}{17}{Training infrastructure and configuration}{table.caption.46}{}}
+\newlabel{tab:infrastructure@cref}{{[table][11][2147483647]11}{[1][17][]17}}
 \@LN{1013}{16}
 \@LN{1014}{16}
-\newlabel{sec:phase1}{{A.2}{17}{Phase 1: Dataset Formatting}{subsection.A.2}{}}
-\newlabel{sec:phase1@cref}{{[subappendix][2][2147483647,1]A.2}{[1][17][]17}}
 \@LN{1015}{16}
 \@LN{1016}{16}
 \@LN{1017}{16}
+\@LN@col{2}
 \@LN{1018}{16}
 \@LN{1019}{16}
 \@LN{1020}{16}
@@ -1339,6 +1321,8 @@
 \@LN{1022}{16}
 \@LN{1023}{16}
 \@LN{1024}{16}
+\newlabel{sec:phase1}{{A.2}{17}{Phase 1: Dataset Formatting}{subsection.A.2}{}}
+\newlabel{sec:phase1@cref}{{[subappendix][2][2147483647,1]A.2}{[1][17][]17}}
 \@LN{1025}{16}
 \@LN{1026}{16}
 \@LN{1027}{16}
@@ -1352,101 +1336,105 @@
 \@LN{1035}{16}
 \@LN{1036}{16}
 \@LN{1037}{16}
-\newlabel{sec:phase2}{{A.3}{17}{Phase 2: Training Configuration}{subsection.A.3}{}}
-\newlabel{sec:phase2@cref}{{[subappendix][3][2147483647,1]A.3}{[1][17][]17}}
-\newlabel{tab:training_config}{{13}{17}{Training hyperparameters for all 5 alignment methods. All use LoRA (r=16, $\alpha $=16) for parameter-efficient fine-tuning.\relax }{table.caption.50}{}}
-\newlabel{tab:training_config@cref}{{[table][13][2147483647]13}{[1][17][]17}}
 \@LN{1038}{16}
 \@LN{1039}{16}
 \@LN{1040}{16}
 \@LN{1041}{16}
 \@LN{1042}{16}
 \@LN{1043}{16}
-\@LN@col{2}
 \@LN{1044}{16}
 \@LN{1045}{16}
 \@LN{1046}{16}
 \@LN{1047}{16}
+\newlabel{sec:phase2}{{A.3}{17}{Phase 2: Training Configuration}{subsection.A.3}{}}
+\newlabel{sec:phase2@cref}{{[subappendix][3][2147483647,1]A.3}{[1][17][]17}}
+\newlabel{tab:training_config}{{12}{17}{Training hyperparameters for all 5 alignment methods. All use LoRA (r=16, $\alpha $=16) for parameter-efficient fine-tuning}{table.caption.50}{}}
+\newlabel{tab:training_config@cref}{{[table][12][2147483647]12}{[1][17][]17}}
 \@LN{1048}{16}
 \@LN{1049}{16}
 \@LN{1050}{16}
 \@LN{1051}{16}
-\newlabel{sec:unified_loss}{{B}{17}{Unified Training Objective}{appendix.B}{}}
-\newlabel{sec:unified_loss@cref}{{[appendix][2][2147483647]B}{[1][17][]17}}
 \@LN{1052}{16}
 \@LN{1053}{16}
 \@LN{1054}{16}
 \@LN{1055}{16}
 \@LN{1056}{16}
 \@LN{1057}{16}
-\@LN{1058}{16}
-\@LN{1059}{16}
-\@LN{1060}{16}
-\@LN{1061}{16}
-\@LN{1062}{16}
-\@LN{1063}{16}
-\newlabel{sec:loss_formulation}{{B.1}{17}{Loss Formulation}{subsection.B.1}{}}
-\newlabel{sec:loss_formulation@cref}{{[subappendix][1][2147483647,2]B.1}{[1][17][]17}}
-\@LN{1064}{16}
-\newlabel{eq:unified_loss}{{2}{17}{Loss Formulation}{equation.B.2}{}}
-\newlabel{eq:unified_loss@cref}{{[equation][2][2147483647]2}{[1][17][]17}}
-\@LN{1065}{16}
-\@LN{1066}{16}
-\@LN{1067}{16}
-\@LN{1068}{16}
-\@LN{1069}{16}
-\@LN{1070}{16}
-\newlabel{eq:sft_loss}{{3}{17}{SFT Loss (Response Quality)}{equation.B.3}{}}
-\newlabel{eq:sft_loss@cref}{{[equation][3][2147483647]3}{[1][17][]17}}
-\@LN{1071}{16}
-\@LN{1072}{16}
-\@LN{1073}{16}
-\@LN{1074}{16}
-\@LN{1075}{16}
-\@LN{1076}{16}
-\@LN{1077}{16}
-\newlabel{eq:dpo_loss}{{4}{17}{DPO Loss (Preference Alignment)}{equation.B.4}{}}
-\newlabel{eq:dpo_loss@cref}{{[equation][4][2147483647]4}{[1][17][]17}}
-\@LN{1078}{16}
-\@LN{1079}{16}
-\newlabel{eq:delta}{{5}{17}{DPO Loss (Preference Alignment)}{equation.B.5}{}}
-\newlabel{eq:delta@cref}{{[equation][5][2147483647]5}{[1][17][]17}}
-\@LN{1080}{16}
-\@LN{1081}{16}
-\@LN{1082}{16}
+\citation{wei2022finetuned,sanh2022multitask}
+\citation{rafailov2023direct,chen2020simple}
+\citation{schulman2017proximal,korbak2022rl}
+\citation{rafailov2023direct,ziegler2019fine}
+\citation{jaques2019way,korbak2022rl}
+\citation{kirkpatrick2017overcoming,li2017learning}
 \citation{french1999catastrophic,kirkpatrick2017overcoming}
 \citation{hinton2015distilling}
 \citation{schulman2017proximal}
 \citation{azar2023general,zhao2023slic}
 \citation{lopez2017gradient}
-\citation{dubey2024llama}
-\citation{jiang2023mistral,zhang2022opt,openai2023gpt4}
 \@LN@col{1}
+\@LN{1058}{17}
+\@LN{1059}{17}
+\@LN{1060}{17}
+\@LN{1061}{17}
+\newlabel{sec:unified_loss}{{B}{18}{Unified Training Objective}{appendix.B}{}}
+\newlabel{sec:unified_loss@cref}{{[appendix][2][2147483647]B}{[1][18][]18}}
+\@LN{1062}{17}
+\@LN{1063}{17}
+\@LN{1064}{17}
+\@LN{1065}{17}
+\@LN{1066}{17}
+\@LN{1067}{17}
+\@LN{1068}{17}
+\@LN{1069}{17}
+\@LN{1070}{17}
+\@LN{1071}{17}
+\@LN{1072}{17}
+\@LN{1073}{17}
+\newlabel{sec:loss_formulation}{{B.1}{18}{Loss Formulation}{subsection.B.1}{}}
+\newlabel{sec:loss_formulation@cref}{{[subappendix][1][2147483647,2]B.1}{[1][18][]18}}
+\@LN{1074}{17}
+\newlabel{eq:unified_loss}{{2}{18}{Loss Formulation}{equation.B.2}{}}
+\newlabel{eq:unified_loss@cref}{{[equation][2][2147483647]2}{[1][18][]18}}
+\@LN{1075}{17}
+\@LN{1076}{17}
+\@LN{1077}{17}
+\@LN{1078}{17}
+\@LN{1079}{17}
+\@LN{1080}{17}
+\newlabel{eq:sft_loss}{{3}{18}{SFT Loss (Response Quality)}{equation.B.3}{}}
+\newlabel{eq:sft_loss@cref}{{[equation][3][2147483647]3}{[1][18][]18}}
+\@LN{1081}{17}
+\@LN{1082}{17}
 \@LN{1083}{17}
 \@LN{1084}{17}
 \@LN{1085}{17}
 \@LN{1086}{17}
 \@LN{1087}{17}
-\newlabel{eq:kl_loss}{{6}{18}{KL Loss (Stability --- Mandatory)}{equation.B.6}{}}
-\newlabel{eq:kl_loss@cref}{{[equation][6][2147483647]6}{[1][18][]18}}
+\newlabel{eq:dpo_loss}{{4}{18}{DPO Loss (Preference Alignment)}{equation.B.4}{}}
+\newlabel{eq:dpo_loss@cref}{{[equation][4][2147483647]4}{[1][18][]18}}
 \@LN{1088}{17}
 \@LN{1089}{17}
+\newlabel{eq:delta}{{5}{18}{DPO Loss (Preference Alignment)}{equation.B.5}{}}
+\newlabel{eq:delta@cref}{{[equation][5][2147483647]5}{[1][18][]18}}
 \@LN{1090}{17}
 \@LN{1091}{17}
-\newlabel{sec:mandatory_kl}{{B.2}{18}{Why Mandatory KL?}{subsection.B.2}{}}
-\newlabel{sec:mandatory_kl@cref}{{[subappendix][2][2147483647,2]B.2}{[1][18][]18}}
-\newlabel{tab:kl_effects}{{14}{18}{Effect of mandatory KL regularization on training stability.\relax }{table.caption.54}{}}
-\newlabel{tab:kl_effects@cref}{{[table][14][2147483647]14}{[1][18][]18}}
 \@LN{1092}{17}
+\@LN@col{2}
 \@LN{1093}{17}
 \@LN{1094}{17}
 \@LN{1095}{17}
 \@LN{1096}{17}
 \@LN{1097}{17}
+\newlabel{eq:kl_loss}{{6}{18}{KL Loss (Stability --- Mandatory)}{equation.B.6}{}}
+\newlabel{eq:kl_loss@cref}{{[equation][6][2147483647]6}{[1][18][]18}}
 \@LN{1098}{17}
 \@LN{1099}{17}
 \@LN{1100}{17}
 \@LN{1101}{17}
+\newlabel{sec:mandatory_kl}{{B.2}{18}{Why Mandatory KL?}{subsection.B.2}{}}
+\newlabel{sec:mandatory_kl@cref}{{[subappendix][2][2147483647,2]B.2}{[1][18][]18}}
+\newlabel{tab:kl_effects}{{13}{18}{Effect of mandatory KL regularization on training stability}{table.caption.54}{}}
+\newlabel{tab:kl_effects@cref}{{[table][13][2147483647]13}{[1][18][]18}}
 \@LN{1102}{17}
 \@LN{1103}{17}
 \@LN{1104}{17}
@@ -1458,14 +1446,9 @@
 \@LN{1110}{17}
 \@LN{1111}{17}
 \@LN{1112}{17}
-\newlabel{sec:gradient}{{B.3}{18}{Gradient Analysis}{subsection.B.3}{}}
-\newlabel{sec:gradient@cref}{{[subappendix][3][2147483647,2]B.3}{[1][18][]18}}
 \@LN{1113}{17}
 \@LN{1114}{17}
-\newlabel{eq:gradient}{{7}{18}{Gradient Analysis}{equation.B.7}{}}
-\newlabel{eq:gradient@cref}{{[equation][7][2147483647]7}{[1][18][]18}}
 \@LN{1115}{17}
-\@LN@col{2}
 \@LN{1116}{17}
 \@LN{1117}{17}
 \@LN{1118}{17}
@@ -1473,50 +1456,54 @@
 \@LN{1120}{17}
 \@LN{1121}{17}
 \@LN{1122}{17}
-\newlabel{sec:limitations}{{C}{18}{Limitations}{appendix.C}{}}
-\newlabel{sec:limitations@cref}{{[appendix][3][2147483647]C}{[1][18][]18}}
+\newlabel{sec:gradient}{{B.3}{18}{Gradient Analysis}{subsection.B.3}{}}
+\newlabel{sec:gradient@cref}{{[subappendix][3][2147483647,2]B.3}{[1][18][]18}}
 \@LN{1123}{17}
 \@LN{1124}{17}
+\newlabel{eq:gradient}{{7}{18}{Gradient Analysis}{equation.B.7}{}}
+\newlabel{eq:gradient@cref}{{[equation][7][2147483647]7}{[1][18][]18}}
 \@LN{1125}{17}
-\newlabel{sec:experimental_scope}{{C.1}{18}{Experimental Scope}{subsection.C.1}{}}
-\newlabel{sec:experimental_scope@cref}{{[subappendix][1][2147483647,3]C.1}{[1][18][]18}}
-\newlabel{tab:limitations}{{15}{18}{Current experimental limitations and mitigation paths.\relax }{table.caption.55}{}}
-\newlabel{tab:limitations@cref}{{[table][15][2147483647]15}{[1][18][]18}}
-\@LN{1126}{17}
-\@LN{1127}{17}
-\@LN{1128}{17}
-\@LN{1129}{17}
-\@LN{1130}{17}
-\@LN{1131}{17}
-\@LN{1132}{17}
-\@LN{1133}{17}
-\@LN{1134}{17}
-\@LN{1135}{17}
-\@LN{1136}{17}
-\@LN{1137}{17}
-\@LN{1138}{17}
-\@LN{1139}{17}
-\@LN{1140}{17}
-\@LN{1141}{17}
-\@LN{1142}{17}
-\newlabel{sec:deployment}{{C.2}{18}{Deployment Considerations}{subsection.C.2}{}}
-\newlabel{sec:deployment@cref}{{[subappendix][2][2147483647,3]C.2}{[1][18][]18}}
-\@LN{1143}{17}
-\@LN{1144}{17}
-\@LN{1145}{17}
-\@LN{1146}{17}
-\@LN{1147}{17}
-\@LN{1148}{17}
-\@LN{1149}{17}
-\@LN{1150}{17}
+\citation{dubey2024llama}
+\citation{jiang2023mistral,zhang2022opt,openai2023gpt4}
 \citation{zou2023universal,carlini2023aligned,pace2024west}
 \citation{bai2022constitutional}
 \@LN@col{1}
+\@LN{1126}{18}
+\@LN{1127}{18}
+\@LN{1128}{18}
+\@LN{1129}{18}
+\@LN{1130}{18}
+\@LN{1131}{18}
+\@LN{1132}{18}
+\newlabel{sec:limitations}{{C}{19}{Limitations}{appendix.C}{}}
+\newlabel{sec:limitations@cref}{{[appendix][3][2147483647]C}{[1][19][]19}}
+\@LN{1133}{18}
+\@LN{1134}{18}
+\@LN{1135}{18}
+\newlabel{sec:experimental_scope}{{C.1}{19}{Experimental Scope}{subsection.C.1}{}}
+\newlabel{sec:experimental_scope@cref}{{[subappendix][1][2147483647,3]C.1}{[1][19][]19}}
+\newlabel{tab:limitations}{{14}{19}{Current experimental limitations and mitigation paths}{table.caption.55}{}}
+\newlabel{tab:limitations@cref}{{[table][14][2147483647]14}{[1][19][]19}}
+\@LN{1136}{18}
+\@LN{1137}{18}
+\@LN{1138}{18}
+\@LN{1139}{18}
+\@LN{1140}{18}
+\@LN{1141}{18}
+\@LN{1142}{18}
+\@LN{1143}{18}
+\@LN{1144}{18}
+\@LN{1145}{18}
+\@LN{1146}{18}
+\@LN{1147}{18}
+\@LN{1148}{18}
+\@LN{1149}{18}
+\@LN{1150}{18}
 \@LN{1151}{18}
 \@LN{1152}{18}
+\newlabel{sec:deployment}{{C.2}{19}{Deployment Considerations}{subsection.C.2}{}}
+\newlabel{sec:deployment@cref}{{[subappendix][2][2147483647,3]C.2}{[1][19][]19}}
 \@LN{1153}{18}
-\newlabel{sec:safety_ethics}{{C.3}{19}{Safety \& Ethical Considerations}{subsection.C.3}{}}
-\newlabel{sec:safety_ethics@cref}{{[subappendix][3][2147483647,3]C.3}{[1][19][]19}}
 \@LN{1154}{18}
 \@LN{1155}{18}
 \@LN{1156}{18}
@@ -1524,9 +1511,12 @@
 \@LN{1158}{18}
 \@LN{1159}{18}
 \@LN{1160}{18}
+\@LN@col{2}
 \@LN{1161}{18}
 \@LN{1162}{18}
 \@LN{1163}{18}
+\newlabel{sec:safety_ethics}{{C.3}{19}{Safety \& Ethical Considerations}{subsection.C.3}{}}
+\newlabel{sec:safety_ethics@cref}{{[subappendix][3][2147483647,3]C.3}{[1][19][]19}}
 \@LN{1164}{18}
 \@LN{1165}{18}
 \@LN{1166}{18}
@@ -1536,8 +1526,6 @@
 \@LN{1170}{18}
 \@LN{1171}{18}
 \@LN{1172}{18}
-\newlabel{sec:future_work}{{C.4}{19}{Future Work}{subsection.C.4}{}}
-\newlabel{sec:future_work@cref}{{[subappendix][4][2147483647,3]C.4}{[1][19][]19}}
 \@LN{1173}{18}
 \@LN{1174}{18}
 \@LN{1175}{18}
@@ -1548,25 +1536,26 @@
 \@LN{1180}{18}
 \@LN{1181}{18}
 \@LN{1182}{18}
+\newlabel{sec:future_work}{{C.4}{19}{Future Work}{subsection.C.4}{}}
+\newlabel{sec:future_work@cref}{{[subappendix][4][2147483647,3]C.4}{[1][19][]19}}
 \@LN{1183}{18}
 \@LN{1184}{18}
 \@LN{1185}{18}
-\@LN@col{2}
+\@LN{1186}{18}
+\@LN{1187}{18}
+\@LN{1188}{18}
+\@LN{1189}{18}
+\@LN{1190}{18}
+\@LN{1191}{18}
+\@LN{1192}{18}
+\@LN{1193}{18}
+\@LN{1194}{18}
+\@LN{1195}{18}
 \citation{lin2022truthfulqa}
 \citation{hendrycks2023aligning}
-\@LN{1186}{19}
+\@LN{1196}{19}
 \newlabel{sec:faq}{{D}{20}{Frequently Asked Questions (FAQ)}{appendix.D}{}}
 \newlabel{sec:faq@cref}{{[appendix][4][2147483647]D}{[1][20][]20}}
-\@LN{1187}{19}
-\@LN{1188}{19}
-\@LN{1189}{19}
-\@LN{1190}{19}
-\@LN{1191}{19}
-\@LN{1192}{19}
-\@LN{1193}{19}
-\@LN{1194}{19}
-\@LN{1195}{19}
-\@LN{1196}{19}
 \@LN{1197}{19}
 \@LN{1198}{19}
 \@LN{1199}{19}
@@ -1591,21 +1580,21 @@
 \@LN{1218}{19}
 \@LN{1219}{19}
 \@LN{1220}{19}
+\@LN{1221}{19}
+\@LN{1222}{19}
+\@LN{1223}{19}
+\@LN{1224}{19}
+\@LN{1225}{19}
+\@LN{1226}{19}
+\@LN{1227}{19}
+\@LN{1228}{19}
+\@LN{1229}{19}
+\@LN{1230}{19}
 \citation{ji2024pku}
 \citation{bai2022training}
 \citation{openai2023gpt4}
 \citation{jiang2023mistral}
 \citation{team2023gemini}
-\@LN{1221}{20}
-\@LN{1222}{20}
-\@LN{1223}{20}
-\@LN{1224}{20}
-\@LN{1225}{20}
-\@LN{1226}{20}
-\@LN{1227}{20}
-\@LN{1228}{20}
-\@LN{1229}{20}
-\@LN{1230}{20}
 \@LN{1231}{20}
 \@LN{1232}{20}
 \@LN{1233}{20}
@@ -1630,17 +1619,17 @@
 \@LN{1252}{20}
 \@LN{1253}{20}
 \@LN{1254}{20}
+\@LN{1255}{20}
+\@LN{1256}{20}
+\@LN{1257}{20}
+\@LN{1258}{20}
+\@LN{1259}{20}
+\@LN{1260}{20}
+\@LN{1261}{20}
+\@LN{1262}{20}
+\@LN{1263}{20}
+\@LN{1264}{20}
 \citation{bai2022constitutional}
-\@LN{1255}{21}
-\@LN{1256}{21}
-\@LN{1257}{21}
-\@LN{1258}{21}
-\@LN{1259}{21}
-\@LN{1260}{21}
-\@LN{1261}{21}
-\@LN{1262}{21}
-\@LN{1263}{21}
-\@LN{1264}{21}
 \@LN{1265}{21}
 \@LN{1266}{21}
 \@LN{1267}{21}
@@ -1665,16 +1654,16 @@
 \@LN{1286}{21}
 \@LN{1287}{21}
 \@LN{1288}{21}
-\@LN{1289}{22}
-\@LN{1290}{22}
-\@LN{1291}{22}
-\@LN{1292}{22}
-\@LN{1293}{22}
-\@LN{1294}{22}
-\@LN{1295}{22}
-\@LN{1296}{22}
-\@LN{1297}{22}
-\@LN{1298}{22}
+\@LN{1289}{21}
+\@LN{1290}{21}
+\@LN{1291}{21}
+\@LN{1292}{21}
+\@LN{1293}{21}
+\@LN{1294}{21}
+\@LN{1295}{21}
+\@LN{1296}{21}
+\@LN{1297}{21}
+\@LN{1298}{21}
 \@LN{1299}{22}
 \@LN{1300}{22}
 \@LN{1301}{22}
@@ -1687,18 +1676,18 @@
 \@LN{1308}{22}
 \@LN{1309}{22}
 \@LN{1310}{22}
+\@LN{1311}{22}
+\@LN{1312}{22}
+\@LN{1313}{22}
+\@LN{1314}{22}
+\@LN{1315}{22}
+\@LN{1316}{22}
+\@LN{1317}{22}
+\@LN{1318}{22}
+\@LN{1319}{22}
+\@LN{1320}{22}
 \citation{rafailov2023direct}
 \citation{wanaskar2025multimodal}
-\@LN{1311}{23}
-\@LN{1312}{23}
-\@LN{1313}{23}
-\@LN{1314}{23}
-\@LN{1315}{23}
-\@LN{1316}{23}
-\@LN{1317}{23}
-\@LN{1318}{23}
-\@LN{1319}{23}
-\@LN{1320}{23}
 \@LN{1321}{23}
 \@LN{1322}{23}
 \@LN{1323}{23}
@@ -1721,16 +1710,16 @@
 \@LN{1340}{23}
 \@LN{1341}{23}
 \@LN{1342}{23}
-\@LN{1343}{24}
-\@LN{1344}{24}
-\@LN{1345}{24}
-\@LN{1346}{24}
-\@LN{1347}{24}
-\@LN{1348}{24}
-\@LN{1349}{24}
-\@LN{1350}{24}
-\@LN{1351}{24}
-\@LN{1352}{24}
+\@LN{1343}{23}
+\@LN{1344}{23}
+\@LN{1345}{23}
+\@LN{1346}{23}
+\@LN{1347}{23}
+\@LN{1348}{23}
+\@LN{1349}{23}
+\@LN{1350}{23}
+\@LN{1351}{23}
+\@LN{1352}{23}
 \@LN{1353}{24}
 \@LN{1354}{24}
 \@LN{1355}{24}
@@ -1738,21 +1727,21 @@
 \@LN{1357}{24}
 \@LN{1358}{24}
 \@LN{1359}{24}
+\@LN{1360}{24}
+\@LN{1361}{24}
+\@LN{1362}{24}
+\@LN{1363}{24}
+\@LN{1364}{24}
+\@LN{1365}{24}
+\@LN{1366}{24}
+\@LN{1367}{24}
+\@LN{1368}{24}
+\@LN{1369}{24}
 \citation{liu2024kl}
 \citation{rafailov2023direct}
 \citation{liu2024kl}
 \citation{liu2024kl,goyal2024beyond}
 \citation{goyal2024beyond}
-\@LN{1360}{25}
-\@LN{1361}{25}
-\@LN{1362}{25}
-\@LN{1363}{25}
-\@LN{1364}{25}
-\@LN{1365}{25}
-\@LN{1366}{25}
-\@LN{1367}{25}
-\@LN{1368}{25}
-\@LN{1369}{25}
 \@LN{1370}{25}
 \@LN{1371}{25}
 \@LN{1372}{25}
@@ -1770,20 +1759,30 @@
 \@LN{1384}{25}
 \@LN{1385}{25}
 \@LN{1386}{25}
+\@LN{1387}{25}
+\@LN{1388}{25}
+\@LN{1389}{25}
+\@LN{1390}{25}
+\@LN{1391}{25}
+\@LN{1392}{25}
+\@LN{1393}{25}
+\@LN{1394}{25}
+\@LN{1395}{25}
+\@LN{1396}{25}
 \citation{wang2024comprehensive}
-\@LN{1387}{26}
-\@LN{1388}{26}
-\@LN{1389}{26}
-\@LN{1390}{26}
-\@LN{1391}{26}
-\@LN{1392}{26}
-\@LN{1393}{26}
-\@LN{1394}{26}
-\@LN{1395}{26}
-\@LN{1396}{26}
 \@LN{1397}{26}
 \@LN{1398}{26}
 \@LN{1399}{26}
+\@LN{1400}{26}
+\@LN{1401}{26}
+\@LN{1402}{26}
+\@LN{1403}{26}
+\@LN{1404}{26}
+\@LN{1405}{26}
+\@LN{1406}{26}
+\@LN{1407}{26}
+\@LN{1408}{26}
+\@LN{1409}{26}
 \citation{wei2022finetuned,chung2022scaling,longpre2023flan}
 \citation{sanh2022multitask}
 \citation{wang2023self,iyer2022opt,mishra2022cross}
@@ -1813,19 +1812,9 @@
 \citation{rafailov2023direct}
 \citation{schulman2017proximal,korbak2022rl}
 \@LN@col{1}
-\@LN{1400}{27}
+\@LN{1410}{27}
 \newlabel{sec:appendix}{{A}{28}{Appendix}{appendix.A}{}}
 \newlabel{sec:appendix@cref}{{[appendix][1][2147483647]A}{[1][28][]28}}
-\@LN{1401}{27}
-\@LN{1402}{27}
-\@LN{1403}{27}
-\@LN{1404}{27}
-\@LN{1405}{27}
-\@LN{1406}{27}
-\@LN{1407}{27}
-\@LN{1408}{27}
-\@LN{1409}{27}
-\@LN{1410}{27}
 \@LN{1411}{27}
 \@LN{1412}{27}
 \@LN{1413}{27}
@@ -1837,8 +1826,6 @@
 \@LN{1419}{27}
 \@LN{1420}{27}
 \@LN{1421}{27}
-\newlabel{sec:appendix_related}{{B}{28}{Related Works}{appendix.B}{}}
-\newlabel{sec:appendix_related@cref}{{[appendix][2][2147483647]B}{[1][28][]28}}
 \@LN{1422}{27}
 \@LN{1423}{27}
 \@LN{1424}{27}
@@ -1849,6 +1836,8 @@
 \@LN{1429}{27}
 \@LN{1430}{27}
 \@LN{1431}{27}
+\newlabel{sec:appendix_related}{{B}{28}{Related Works}{appendix.B}{}}
+\newlabel{sec:appendix_related@cref}{{[appendix][2][2147483647]B}{[1][28][]28}}
 \@LN{1432}{27}
 \@LN{1433}{27}
 \@LN{1434}{27}
@@ -1861,7 +1850,6 @@
 \@LN{1441}{27}
 \@LN{1442}{27}
 \@LN{1443}{27}
-\@LN@col{2}
 \@LN{1444}{27}
 \@LN{1445}{27}
 \@LN{1446}{27}
@@ -1872,6 +1860,7 @@
 \@LN{1451}{27}
 \@LN{1452}{27}
 \@LN{1453}{27}
+\@LN@col{2}
 \@LN{1454}{27}
 \@LN{1455}{27}
 \@LN{1456}{27}
@@ -1888,8 +1877,6 @@
 \@LN{1467}{27}
 \@LN{1468}{27}
 \@LN{1469}{27}
-\newlabel{tab:method_comparison}{{16}{28}{Comparison of alignment methods. CITA uniquely enables instruction-conditioned behavioral switching compatible with agentic AI workflows.\relax }{table.caption.79}{}}
-\newlabel{tab:method_comparison@cref}{{[table][16][2147483647]16}{[1][28][]28}}
 \@LN{1470}{27}
 \@LN{1471}{27}
 \@LN{1472}{27}
@@ -1898,28 +1885,28 @@
 \@LN{1475}{27}
 \@LN{1476}{27}
 \@LN{1477}{27}
-\newlabel{sec:appendix_unified}{{C}{28}{Unified Training Objective}{appendix.C}{}}
-\newlabel{sec:appendix_unified@cref}{{[appendix][3][2147483647]C}{[1][28][]28}}
 \@LN{1478}{27}
 \@LN{1479}{27}
+\newlabel{tab:method_comparison}{{15}{28}{Comparison of alignment methods. CITA uniquely enables instruction-conditioned behavioral switching compatible with agentic AI workflows}{table.caption.79}{}}
+\newlabel{tab:method_comparison@cref}{{[table][15][2147483647]15}{[1][28][]28}}
 \@LN{1480}{27}
+\@LN{1481}{27}
+\@LN{1482}{27}
+\@LN{1483}{27}
+\@LN{1484}{27}
+\@LN{1485}{27}
+\@LN{1486}{27}
+\@LN{1487}{27}
+\newlabel{sec:appendix_unified}{{C}{28}{Unified Training Objective}{appendix.C}{}}
+\newlabel{sec:appendix_unified@cref}{{[appendix][3][2147483647]C}{[1][28][]28}}
+\@LN{1488}{27}
+\@LN{1489}{27}
+\@LN{1490}{27}
 \@LN@col{1}
-\@LN{1481}{28}
-\@LN{1482}{28}
+\@LN{1491}{28}
+\@LN{1492}{28}
 \newlabel{eq:unified_full}{{8}{29}{Unified Training Objective}{equation.C.8}{}}
 \newlabel{eq:unified_full@cref}{{[equation][8][2147483647]8}{[1][29][]29}}
-\@LN{1483}{28}
-\@LN{1484}{28}
-\@LN{1485}{28}
-\@LN{1486}{28}
-\@LN{1487}{28}
-\@LN{1488}{28}
-\@LN{1489}{28}
-\@LN{1490}{28}
-\@LN{1491}{28}
-\newlabel{eq:sft_full}{{9}{29}{Supervised Fine-Tuning Loss ($\mathcal {L}_{\text {SFT}}$)}{equation.C.9}{}}
-\newlabel{eq:sft_full@cref}{{[equation][9][2147483647]9}{[1][29][]29}}
-\@LN{1492}{28}
 \@LN{1493}{28}
 \@LN{1494}{28}
 \@LN{1495}{28}
@@ -1929,13 +1916,13 @@
 \@LN{1499}{28}
 \@LN{1500}{28}
 \@LN{1501}{28}
+\newlabel{eq:sft_full}{{9}{29}{Supervised Fine-Tuning Loss ($\mathcal {L}_{\text {SFT}}$)}{equation.C.9}{}}
+\newlabel{eq:sft_full@cref}{{[equation][9][2147483647]9}{[1][29][]29}}
 \@LN{1502}{28}
 \@LN{1503}{28}
 \@LN{1504}{28}
 \@LN{1505}{28}
 \@LN{1506}{28}
-\newlabel{eq:dpo_full}{{10}{29}{Direct Preference Optimization Loss ($\mathcal {L}_{\text {DPO}}$)}{equation.C.10}{}}
-\newlabel{eq:dpo_full@cref}{{[equation][10][2147483647]10}{[1][29][]29}}
 \@LN{1507}{28}
 \@LN{1508}{28}
 \@LN{1509}{28}
@@ -1943,64 +1930,62 @@
 \@LN{1511}{28}
 \@LN{1512}{28}
 \@LN{1513}{28}
-\@LN@col{2}
 \@LN{1514}{28}
 \@LN{1515}{28}
 \@LN{1516}{28}
+\newlabel{eq:dpo_full}{{10}{29}{Direct Preference Optimization Loss ($\mathcal {L}_{\text {DPO}}$)}{equation.C.10}{}}
+\newlabel{eq:dpo_full@cref}{{[equation][10][2147483647]10}{[1][29][]29}}
 \@LN{1517}{28}
 \@LN{1518}{28}
 \@LN{1519}{28}
-\newlabel{eq:kl_full}{{11}{29}{KL Regularization Loss ($\mathcal {L}_{\text {KL}}$)}{equation.C.11}{}}
-\newlabel{eq:kl_full@cref}{{[equation][11][2147483647]11}{[1][29][]29}}
 \@LN{1520}{28}
 \@LN{1521}{28}
 \@LN{1522}{28}
 \@LN{1523}{28}
+\@LN@col{2}
 \@LN{1524}{28}
 \@LN{1525}{28}
 \@LN{1526}{28}
 \@LN{1527}{28}
 \@LN{1528}{28}
 \@LN{1529}{28}
-\newlabel{eq:full_expanded}{{12}{29}{Full Expanded Loss}{equation.C.12}{}}
-\newlabel{eq:full_expanded@cref}{{[equation][12][2147483647]12}{[1][29][]29}}
+\newlabel{eq:kl_full}{{11}{29}{KL Regularization Loss ($\mathcal {L}_{\text {KL}}$)}{equation.C.11}{}}
+\newlabel{eq:kl_full@cref}{{[equation][11][2147483647]11}{[1][29][]29}}
 \@LN{1530}{28}
 \@LN{1531}{28}
-\newlabel{sec:appendix_cita_kl}{{D}{29}{CITA-KL Loss Derivation}{appendix.D}{}}
-\newlabel{sec:appendix_cita_kl@cref}{{[appendix][4][2147483647]D}{[1][29][]29}}
 \@LN{1532}{28}
 \@LN{1533}{28}
 \@LN{1534}{28}
 \@LN{1535}{28}
-\newlabel{eq:cita_kl_full}{{13}{29}{CITA-KL Loss Formulation}{equation.D.13}{}}
-\newlabel{eq:cita_kl_full@cref}{{[equation][13][2147483647]13}{[1][29][]29}}
 \@LN{1536}{28}
 \@LN{1537}{28}
 \@LN{1538}{28}
 \@LN{1539}{28}
+\newlabel{eq:full_expanded}{{12}{29}{Full Expanded Loss}{equation.C.12}{}}
+\newlabel{eq:full_expanded@cref}{{[equation][12][2147483647]12}{[1][29][]29}}
 \@LN{1540}{28}
 \@LN{1541}{28}
+\newlabel{sec:appendix_cita_kl}{{D}{29}{CITA-KL Loss Derivation}{appendix.D}{}}
+\newlabel{sec:appendix_cita_kl@cref}{{[appendix][4][2147483647]D}{[1][29][]29}}
 \@LN{1542}{28}
+\@LN{1543}{28}
+\@LN{1544}{28}
+\@LN{1545}{28}
+\newlabel{eq:cita_kl_full}{{13}{29}{CITA-KL Loss Formulation}{equation.D.13}{}}
+\newlabel{eq:cita_kl_full@cref}{{[equation][13][2147483647]13}{[1][29][]29}}
+\@LN{1546}{28}
+\@LN{1547}{28}
+\@LN{1548}{28}
+\@LN{1549}{28}
+\@LN{1550}{28}
+\@LN{1551}{28}
+\@LN{1552}{28}
 \citation{tunstall2023zephyr}
 \citation{akiba2019optuna}
 \@LN@col{1}
-\@LN{1543}{29}
-\@LN{1544}{29}
-\@LN{1545}{29}
-\@LN{1546}{29}
-\@LN{1547}{29}
-\@LN{1548}{29}
-\@LN{1549}{29}
-\@LN{1550}{29}
-\@LN{1551}{29}
-\@LN{1552}{29}
 \@LN{1553}{29}
-\newlabel{eq:softmax_pref}{{16}{30}{Gradient Intuition}{equation.D.16}{}}
-\newlabel{eq:softmax_pref@cref}{{[equation][16][2147483647]16}{[1][30][]30}}
 \@LN{1554}{29}
 \@LN{1555}{29}
-\newlabel{eq:cita_gradient}{{17}{30}{Gradient Intuition}{equation.D.17}{}}
-\newlabel{eq:cita_gradient@cref}{{[equation][17][2147483647]17}{[1][30][]30}}
 \@LN{1556}{29}
 \@LN{1557}{29}
 \@LN{1558}{29}
@@ -2009,15 +1994,16 @@
 \@LN{1561}{29}
 \@LN{1562}{29}
 \@LN{1563}{29}
+\newlabel{eq:softmax_pref}{{16}{30}{Gradient Intuition}{equation.D.16}{}}
+\newlabel{eq:softmax_pref@cref}{{[equation][16][2147483647]16}{[1][30][]30}}
 \@LN{1564}{29}
 \@LN{1565}{29}
+\newlabel{eq:cita_gradient}{{17}{30}{Gradient Intuition}{equation.D.17}{}}
+\newlabel{eq:cita_gradient@cref}{{[equation][17][2147483647]17}{[1][30][]30}}
 \@LN{1566}{29}
-\newlabel{tab:method_comparison_appendix}{{17}{30}{Comparison of alignment methods. CITA uniquely combines instruction-awareness with mandatory KL.\relax }{table.caption.80}{}}
-\newlabel{tab:method_comparison_appendix@cref}{{[table][17][2147483647]17}{[1][30][]30}}
 \@LN{1567}{29}
 \@LN{1568}{29}
 \@LN{1569}{29}
-\@LN@col{2}
 \@LN{1570}{29}
 \@LN{1571}{29}
 \@LN{1572}{29}
@@ -2025,49 +2011,52 @@
 \@LN{1574}{29}
 \@LN{1575}{29}
 \@LN{1576}{29}
+\newlabel{tab:method_comparison_appendix}{{16}{30}{Comparison of alignment methods. CITA uniquely combines instruction-awareness with mandatory KL}{table.caption.80}{}}
+\newlabel{tab:method_comparison_appendix@cref}{{[table][16][2147483647]16}{[1][30][]30}}
+\@LN{1577}{29}
+\@LN{1578}{29}
+\@LN{1579}{29}
+\@LN@col{2}
+\@LN{1580}{29}
+\@LN{1581}{29}
+\@LN{1582}{29}
+\@LN{1583}{29}
+\@LN{1584}{29}
+\@LN{1585}{29}
+\@LN{1586}{29}
 \newlabel{sec:appendix_implementation}{{E}{30}{Implementation Details}{appendix.E}{}}
 \newlabel{sec:appendix_implementation@cref}{{[appendix][5][2147483647]E}{[1][30][]30}}
-\@LN{1577}{29}
-\newlabel{tab:hardware}{{18}{30}{Hardware and software configuration.\relax }{table.caption.81}{}}
-\newlabel{tab:hardware@cref}{{[table][18][2147483647]18}{[1][30][]30}}
-\@LN{1578}{29}
-\newlabel{tab:full_hyperparams}{{19}{30}{Complete hyperparameters for all training stages. PPO uses mini\_batch=4, ppo\_epochs=4, cliprange=0.2. GRPO uses num\_generations=6, max\_completion=512.\relax }{table.caption.82}{}}
-\newlabel{tab:full_hyperparams@cref}{{[table][19][2147483647]19}{[1][30][]30}}
-\@LN{1579}{29}
-\newlabel{tab:compute}{{20}{30}{Compute requirements per training stage. SFT/DPO/CITA trained on A100-40GB; PPO/GRPO require A100-80GB due to online generation overhead.\relax }{table.caption.83}{}}
-\newlabel{tab:compute@cref}{{[table][20][2147483647]20}{[1][30][]30}}
+\@LN{1587}{29}
+\newlabel{tab:hardware}{{17}{30}{Hardware and software configuration}{table.caption.81}{}}
+\newlabel{tab:hardware@cref}{{[table][17][2147483647]17}{[1][30][]30}}
+\@LN{1588}{29}
+\newlabel{tab:full_hyperparams}{{18}{30}{Complete hyperparameters for all training stages. PPO uses mini\_batch=4, ppo\_epochs=4, cliprange=0.2. GRPO uses num\_generations=6, max\_completion=512}{table.caption.82}{}}
+\newlabel{tab:full_hyperparams@cref}{{[table][18][2147483647]18}{[1][30][]30}}
+\@LN{1589}{29}
+\newlabel{tab:compute}{{19}{30}{Compute requirements per training stage. SFT/DPO/CITA trained on A100-40GB; PPO/GRPO require A100-80GB due to online generation overhead}{table.caption.83}{}}
+\newlabel{tab:compute@cref}{{[table][19][2147483647]19}{[1][30][]30}}
 \@LN@col{1}
-\@LN{1580}{30}
+\@LN{1590}{30}
 \newlabel{sec:appendix_dataset}{{F}{31}{Dataset Details}{appendix.F}{}}
 \newlabel{sec:appendix_dataset@cref}{{[appendix][6][2147483647]F}{[1][31][]31}}
-\@LN{1581}{30}
-\newlabel{tab:pku_stats}{{21}{31}{PKU-SafeRLHF dataset statistics.\relax }{table.caption.84}{}}
-\newlabel{tab:pku_stats@cref}{{[table][21][2147483647]21}{[1][31][]31}}
-\@LN{1582}{30}
-\newlabel{tab:instruction_templates}{{22}{31}{Full instruction templates for each ISD type.\relax }{table.caption.85}{}}
-\newlabel{tab:instruction_templates@cref}{{[table][22][2147483647]22}{[1][31][]31}}
-\@LN{1583}{30}
+\@LN{1591}{30}
+\newlabel{tab:pku_stats}{{20}{31}{PKU-SafeRLHF dataset statistics}{table.caption.84}{}}
+\newlabel{tab:pku_stats@cref}{{[table][20][2147483647]20}{[1][31][]31}}
+\@LN{1592}{30}
+\newlabel{tab:instruction_templates}{{21}{31}{Full instruction templates for each ISD type}{table.caption.85}{}}
+\newlabel{tab:instruction_templates@cref}{{[table][21][2147483647]21}{[1][31][]31}}
+\@LN{1593}{30}
 \newlabel{sec:appendix_ablations}{{G}{31}{Ablation Studies}{appendix.G}{}}
 \newlabel{sec:appendix_ablations@cref}{{[appendix][7][2147483647]G}{[1][31][]31}}
-\@LN{1584}{30}
-\newlabel{tab:kl_ablation}{{23}{31}{Effect of KL weight on training stability and performance. Optimal $\lambda \approx 0.0002$--$0.0003$.\relax }{table.caption.86}{}}
-\newlabel{tab:kl_ablation@cref}{{[table][23][2147483647]23}{[1][31][]31}}
-\@LN{1585}{30}
-\@LN{1586}{30}
-\@LN@col{2}
-\@LN{1587}{30}
-\newlabel{tab:beta_ablation}{{24}{31}{Effect of temperature on preference learning. Optimal $\beta \approx 0.1$.\relax }{table.caption.87}{}}
-\newlabel{tab:beta_ablation@cref}{{[table][24][2147483647]24}{[1][31][]31}}
-\@LN{1588}{30}
-\@LN{1589}{30}
-\@LN{1590}{30}
-\@LN{1591}{30}
-\@LN{1592}{30}
-\@LN{1593}{30}
 \@LN{1594}{30}
+\newlabel{tab:kl_ablation}{{22}{31}{Effect of KL weight on training stability and performance. Optimal $\lambda \approx 0.0002$--$0.0003$}{table.caption.86}{}}
+\newlabel{tab:kl_ablation@cref}{{[table][22][2147483647]22}{[1][31][]31}}
 \@LN{1595}{30}
 \@LN{1596}{30}
+\@LN@col{2}
 \@LN{1597}{30}
+\newlabel{tab:beta_ablation}{{23}{31}{Effect of temperature on preference learning. Optimal $\beta \approx 0.1$}{table.caption.87}{}}
+\newlabel{tab:beta_ablation@cref}{{[table][23][2147483647]23}{[1][31][]31}}
 \@LN{1598}{30}
 \@LN{1599}{30}
 \@LN{1600}{30}
@@ -2075,33 +2064,31 @@
 \@LN{1602}{30}
 \@LN{1603}{30}
 \@LN{1604}{30}
-\newlabel{fig:hp_ablation_combined}{{15}{32}{\textbf {Hyperparameter Ablation Study}: Reward margin sensitivity to $\beta $, $\lambda _{\text {KL}}$, learning rate, and weight decay across 13 Optuna trials. Trial 7 ($\star $) achieves the best trade-off. \textbf {Key findings}: (a) $\beta \in [0.10, 0.12]$ yields highest margins; (b) $\lambda _{\text {KL}} \approx 0.0002$ balances stability and performance; (c) Learning rate sensitivity is high---$\sim $5e-6 is optimal for instruction-augmented training; (d) Weight decay shows moderate sensitivity with optimal range $\sim $0.01.\relax }{figure.caption.88}{}}
-\newlabel{fig:hp_ablation_combined@cref}{{[figure][15][2147483647]15}{[1][31][]32}}
-\newlabel{fig:hp_pareto}{{16}{32}{\textbf {Pareto Frontier}: Margin vs. accuracy trade-off across trials. Trial 7 lies on the Pareto frontier, achieving near-optimal balance (margin=7.52, accuracy=89\%).\relax }{figure.caption.89}{}}
-\newlabel{fig:hp_pareto@cref}{{[figure][16][2147483647]16}{[1][31][]32}}
+\@LN{1605}{30}
+\@LN{1606}{30}
+\@LN{1607}{30}
+\@LN{1608}{30}
+\@LN{1609}{30}
+\@LN{1610}{30}
+\@LN{1611}{30}
+\@LN{1612}{30}
+\@LN{1613}{30}
+\@LN{1614}{30}
+\newlabel{fig:hp_ablation_combined}{{16}{32}{\textbf {Hyperparameter Ablation Study}: Reward margin sensitivity to $\beta $, $\lambda _{\text {KL}}$, learning rate, and weight decay across 13 Optuna trials. Trial 7 ($\star $) achieves the best trade-off. \textbf {Key findings}: (a) $\beta \in [0.10, 0.12]$ yields highest margins; (b) $\lambda _{\text {KL}} \approx 0.0002$ balances stability and performance; (c) Learning rate sensitivity is high---$\sim $5e-6 is optimal for instruction-augmented training; (d) Weight decay shows moderate sensitivity with optimal range $\sim $0.01}{figure.caption.88}{}}
+\newlabel{fig:hp_ablation_combined@cref}{{[figure][16][2147483647]16}{[1][31][]32}}
+\newlabel{fig:hp_pareto}{{17}{32}{\textbf {Pareto Frontier}: Margin vs. accuracy trade-off across trials. Trial 7 lies on the Pareto frontier, achieving near-optimal balance (margin=7.52, accuracy=89\%)}{figure.caption.89}{}}
+\newlabel{fig:hp_pareto@cref}{{[figure][17][2147483647]17}{[1][31][]32}}
 \@LN@col{2}
-\newlabel{fig:hp_beta}{{17}{33}{\textbf {$\beta $ (DPO Temperature) Sensitivity}: Left: Reward margin peaks at $\beta \approx 0.10$--$0.12$. Middle: Accuracy stable (88--90\%). Right: Eval loss increases with higher $\beta $. Trial 7 ($\star $) at $\beta $=0.107 achieves optimal margin.\relax }{figure.caption.90}{}}
-\newlabel{fig:hp_beta@cref}{{[figure][17][2147483647]17}{[1][31][]33}}
-\newlabel{fig:hp_lambda}{{18}{34}{\textbf {$\lambda _{\text {KL}}$ (KL Regularization) Sensitivity}: Left: Reward margin shows inverted-U---too low causes instability, too high over-constrains. Middle: Accuracy stable. Right: Eval loss decreases with higher $\lambda $. Trial 7 ($\star $) at $\lambda $=0.00023 hits the sweet spot.\relax }{figure.caption.91}{}}
-\newlabel{fig:hp_lambda@cref}{{[figure][18][2147483647]18}{[1][31][]34}}
-\newlabel{fig:hp_lr}{{19}{35}{\textbf {Learning Rate Sensitivity}: Reward margin highly sensitive to LR---optimal $\sim $5e-6. Accuracy drops at higher LRs. \textbf {Key insight}: CITA\_Instruct requires $\sim $50\% lower LR than standard DPO due to 30--40\% longer instruction-augmented sequences.\relax }{figure.caption.92}{}}
-\newlabel{fig:hp_lr@cref}{{[figure][19][2147483647]19}{[1][31][]35}}
+\newlabel{fig:hp_beta}{{18}{33}{\textbf {$\beta $ (DPO Temperature) Sensitivity}: Left: Reward margin peaks at $\beta \approx 0.10$--$0.12$. Middle: Accuracy stable (88--90\%). Right: Eval loss increases with higher $\beta $. Trial 7 ($\star $) at $\beta $=0.107 achieves optimal margin}{figure.caption.90}{}}
+\newlabel{fig:hp_beta@cref}{{[figure][18][2147483647]18}{[1][31][]33}}
+\newlabel{fig:hp_lambda}{{19}{34}{\textbf {$\lambda _{\text {KL}}$ (KL Regularization) Sensitivity}: Left: Reward margin shows inverted-U---too low causes instability, too high over-constrains. Middle: Accuracy stable. Right: Eval loss decreases with higher $\lambda $. Trial 7 ($\star $) at $\lambda $=0.00023 hits the sweet spot}{figure.caption.91}{}}
+\newlabel{fig:hp_lambda@cref}{{[figure][19][2147483647]19}{[1][31][]34}}
+\newlabel{fig:hp_lr}{{20}{35}{\textbf {Learning Rate Sensitivity}: Reward margin highly sensitive to LR---optimal $\sim $5e-6. Accuracy drops at higher LRs. \textbf {Key insight}: CITA\_Instruct requires $\sim $50\% lower LR than standard DPO due to 30--40\% longer instruction-augmented sequences}{figure.caption.92}{}}
+\newlabel{fig:hp_lr@cref}{{[figure][20][2147483647]20}{[1][31][]35}}
 \@LN@col{1}
-\@LN{1605}{35}
+\@LN{1615}{35}
 \newlabel{sec:appendix_benefits}{{H}{36}{Evaluation Benefits of CITA}{appendix.H}{}}
 \newlabel{sec:appendix_benefits@cref}{{[appendix][8][2147483647]H}{[1][36][]36}}
-\@LN{1606}{35}
-\@LN{1607}{35}
-\@LN{1608}{35}
-\@LN{1609}{35}
-\@LN{1610}{35}
-\@LN{1611}{35}
-\@LN{1612}{35}
-\@LN{1613}{35}
-\@LN{1614}{35}
-\newlabel{sec:appendix_future}{{I}{36}{Extensions and Future Work}{appendix.I}{}}
-\newlabel{sec:appendix_future@cref}{{[appendix][9][2147483647]I}{[1][36][]36}}
-\@LN{1615}{35}
 \@LN{1616}{35}
 \@LN{1617}{35}
 \@LN{1618}{35}
@@ -2111,87 +2098,99 @@
 \@LN{1622}{35}
 \@LN{1623}{35}
 \@LN{1624}{35}
-\newlabel{sec:appendix_training_curves}{{J}{36}{Training Curves}{appendix.J}{}}
-\newlabel{sec:appendix_training_curves@cref}{{[appendix][10][2147483647]J}{[1][36][]36}}
+\newlabel{sec:appendix_future}{{I}{36}{Extensions and Future Work}{appendix.I}{}}
+\newlabel{sec:appendix_future@cref}{{[appendix][9][2147483647]I}{[1][36][]36}}
 \@LN{1625}{35}
 \@LN{1626}{35}
 \@LN{1627}{35}
 \@LN{1628}{35}
-\newlabel{fig:training_loss}{{20}{36}{\textbf {Eval Loss Across Training Methods}: 2$\times $2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf {SFT} (top-left): Loss $\sim $1.5--1.9, Instruct converges lower. \textbf {DPO} (top-right): Loss $\sim $0.21--0.28, smooth convergence. \textbf {CITA} (bottom-left): Loss $\sim $0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf {GRPO} (bottom-right): Loss oscillates near zero ($\pm $0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).\relax }{figure.caption.93}{}}
-\newlabel{fig:training_loss@cref}{{[figure][20][2147483647]20}{[1][36][]36}}
-\@LN@col{2}
 \@LN{1629}{35}
-\newlabel{sec:appendix_examples}{{K}{36}{Qualitative Examples}{appendix.K}{}}
-\newlabel{sec:appendix_examples@cref}{{[appendix][11][2147483647]K}{[1][36][]36}}
 \@LN{1630}{35}
 \@LN{1631}{35}
 \@LN{1632}{35}
-\newlabel{tab:good_example}{{25}{36}{Same prompt, different instructions yield behaviorally distinct responses.\relax }{table.caption.94}{}}
-\newlabel{tab:good_example@cref}{{[table][25][2147483647]25}{[1][36][]36}}
 \@LN{1633}{35}
 \@LN{1634}{35}
+\newlabel{sec:appendix_training_curves}{{J}{36}{Training Curves}{appendix.J}{}}
+\newlabel{sec:appendix_training_curves@cref}{{[appendix][10][2147483647]J}{[1][36][]36}}
 \@LN{1635}{35}
 \@LN{1636}{35}
 \@LN{1637}{35}
 \@LN{1638}{35}
+\newlabel{fig:training_loss}{{21}{36}{\textbf {Eval Loss Across Training Methods}: 2$\times $2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf {SFT} (top-left): Loss $\sim $1.5--1.9, Instruct converges lower. \textbf {DPO} (top-right): Loss $\sim $0.21--0.28, smooth convergence. \textbf {CITA} (bottom-left): Loss $\sim $0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf {GRPO} (bottom-right): Loss oscillates near zero ($\pm $0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue)}{figure.caption.93}{}}
+\newlabel{fig:training_loss@cref}{{[figure][21][2147483647]21}{[1][36][]36}}
+\@LN@col{2}
 \@LN{1639}{35}
+\newlabel{sec:appendix_examples}{{K}{36}{Qualitative Examples}{appendix.K}{}}
+\newlabel{sec:appendix_examples@cref}{{[appendix][11][2147483647]K}{[1][36][]36}}
 \@LN{1640}{35}
 \@LN{1641}{35}
 \@LN{1642}{35}
+\newlabel{tab:good_example}{{24}{36}{Same prompt, different instructions yield behaviorally distinct responses}{table.caption.94}{}}
+\newlabel{tab:good_example@cref}{{[table][24][2147483647]24}{[1][36][]36}}
 \@LN{1643}{35}
 \@LN{1644}{35}
+\@LN{1645}{35}
+\@LN{1646}{35}
+\@LN{1647}{35}
+\@LN{1648}{35}
+\@LN{1649}{35}
+\@LN{1650}{35}
+\@LN{1651}{35}
+\@LN{1652}{35}
+\@LN{1653}{35}
+\@LN{1654}{35}
 \citation{ji2024pku,bai2022training}
 \citation{hu2022lora}
 \citation{dubey2024llama}
 \@LN@col{1}
-\@LN{1645}{36}
+\@LN{1655}{36}
 \newlabel{sec:experiments}{{L}{37}{Experiments}{appendix.L}{}}
 \newlabel{sec:experiments@cref}{{[appendix][12][2147483647]L}{[1][37][]37}}
-\@LN{1646}{36}
-\@LN{1647}{36}
-\@LN{1648}{36}
-\@LN{1649}{36}
-\@LN{1650}{36}
-\newlabel{sec:training_pipeline_exp}{{L.1}{37}{Training Pipeline}{subsection.L.1}{}}
-\newlabel{sec:training_pipeline_exp@cref}{{[subappendix][1][2147483647,12]L.1}{[1][37][]37}}
-\@LN{1651}{36}
-\@LN{1652}{36}
-\@LN{1653}{36}
-\@LN{1654}{36}
-\@LN{1655}{36}
 \@LN{1656}{36}
 \@LN{1657}{36}
 \@LN{1658}{36}
 \@LN{1659}{36}
 \@LN{1660}{36}
+\newlabel{sec:training_pipeline_exp}{{L.1}{37}{Training Pipeline}{subsection.L.1}{}}
+\newlabel{sec:training_pipeline_exp@cref}{{[subappendix][1][2147483647,12]L.1}{[1][37][]37}}
 \@LN{1661}{36}
 \@LN{1662}{36}
 \@LN{1663}{36}
-\newlabel{sec:model_variants}{{L.2}{37}{Model Variants}{subsection.L.2}{}}
-\newlabel{sec:model_variants@cref}{{[subappendix][2][2147483647,12]L.2}{[1][37][]37}}
 \@LN{1664}{36}
 \@LN{1665}{36}
 \@LN{1666}{36}
-\newlabel{tab:model_variants}{{26}{37}{10 model variants. NI = NoInstruct (standard prompts), I = Instruct (with behavioral instructions). PPO, GRPO, DPO branch from SFT; CITA stacks on DPO.\relax }{table.caption.95}{}}
-\newlabel{tab:model_variants@cref}{{[table][26][2147483647]26}{[1][37][]37}}
 \@LN{1667}{36}
 \@LN{1668}{36}
 \@LN{1669}{36}
 \@LN{1670}{36}
 \@LN{1671}{36}
-\newlabel{sec:training_dynamics}{{L.3}{37}{Training Dynamics}{subsection.L.3}{}}
-\newlabel{sec:training_dynamics@cref}{{[subappendix][3][2147483647,12]L.3}{[1][37][]37}}
 \@LN{1672}{36}
 \@LN{1673}{36}
+\newlabel{sec:model_variants}{{L.2}{37}{Model Variants}{subsection.L.2}{}}
+\newlabel{sec:model_variants@cref}{{[subappendix][2][2147483647,12]L.2}{[1][37][]37}}
 \@LN{1674}{36}
 \@LN{1675}{36}
-\@LN@col{2}
-\newlabel{fig:training_accuracy}{{21}{37}{\textbf {Training Accuracy Metrics}: 1$\times $2 subplot comparing accuracy across methods. \textbf {Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf {Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.\relax }{figure.caption.96}{}}
-\newlabel{fig:training_accuracy@cref}{{[figure][21][2147483647]21}{[1][37][]37}}
-\newlabel{fig:training_margins}{{22}{37}{\textbf {Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim $6.0). Higher margins indicate stronger preference learning.\relax }{figure.caption.97}{}}
-\newlabel{fig:training_margins@cref}{{[figure][22][2147483647]22}{[1][37][]37}}
 \@LN{1676}{36}
+\newlabel{tab:model_variants}{{25}{37}{10 model variants. NI = NoInstruct (standard prompts), I = Instruct (with behavioral instructions). PPO, GRPO, DPO branch from SFT; CITA stacks on DPO}{table.caption.95}{}}
+\newlabel{tab:model_variants@cref}{{[table][25][2147483647]25}{[1][37][]37}}
 \@LN{1677}{36}
 \@LN{1678}{36}
 \@LN{1679}{36}
+\@LN{1680}{36}
+\@LN{1681}{36}
+\newlabel{sec:training_dynamics}{{L.3}{37}{Training Dynamics}{subsection.L.3}{}}
+\newlabel{sec:training_dynamics@cref}{{[subappendix][3][2147483647,12]L.3}{[1][37][]37}}
+\@LN{1682}{36}
+\@LN{1683}{36}
+\@LN{1684}{36}
+\@LN{1685}{36}
+\@LN@col{2}
+\newlabel{fig:training_accuracy}{{22}{37}{\textbf {Training Accuracy Metrics}: 1$\times $2 subplot comparing accuracy across methods. \textbf {Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf {Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences}{figure.caption.96}{}}
+\newlabel{fig:training_accuracy@cref}{{[figure][22][2147483647]22}{[1][37][]37}}
+\newlabel{fig:training_margins}{{23}{37}{\textbf {Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim $6.0). Higher margins indicate stronger preference learning}{figure.caption.97}{}}
+\newlabel{fig:training_margins@cref}{{[figure][23][2147483647]23}{[1][37][]37}}
+\@LN{1686}{36}
+\@LN{1687}{36}
+\@LN{1688}{36}
+\@LN{1689}{36}
 \gdef \@abspage@last{37}

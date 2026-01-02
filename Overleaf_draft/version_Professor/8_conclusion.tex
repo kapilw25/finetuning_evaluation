@@ -13,7 +13,7 @@ This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a
 \label{sec:key_findings}
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{95.6\%} efficiency---outperforming DPO (70.5\%) by 25.1 pp, GRPO (59.3\%) by 36.3 pp, PPO (50.4\%) by 45.2 pp, and SFT (15.9\%) by 79.7 pp.
+    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{95.6\%} efficiency---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, PPO (54.4\%) by 41.2 pp, and SFT (15.9\%) by 79.7 pp.
 
     \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
 

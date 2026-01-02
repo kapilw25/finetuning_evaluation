@@ -916,9 +916,9 @@ def generate_radar_chart_area_based(
     # Close the polygon for plotting
     method_data_closed = {m: method_data[m] + method_data[m][:1] for m in methods}
 
-    # Create figure - single column layout (radar + legend below)
-    fig, ax = plt.subplots(figsize=(8, 9), subplot_kw=dict(polar=True))
-    ax.set_position([0.1, 0.18, 0.8, 0.72])  # Leave room for legend at bottom
+    # Create figure - compact layout (radar + legend below)
+    fig, ax = plt.subplots(figsize=(7, 7.5), subplot_kw=dict(polar=True))
+    ax.set_position([0.08, 0.18, 0.84, 0.72])  # Maximize radar area, leave room for legend
 
     # Prepare CI data if provided (normalize CI bounds same as deltas)
     method_ci_lower = {m: [] for m in methods}
@@ -985,12 +985,27 @@ def generate_radar_chart_area_based(
 
             # Only annotate the winner for each eval
             if raw_val == max(all_vals):
-                r = method_data[method][i] + 0.20
                 method_color = method_colors.get(method, '#808080')
+                angle_deg = np.degrees(angle) % 360
+
+                # ISD is at angle ~0 (rightmost) - place annotation far outside, below label
+                if angle_deg < 30 or angle_deg > 330:  # Right side (ISD)
+                    r = 1.30  # Far outside circle
+                    ha, va = 'center', 'top'
+                    offset_angle = angle - 0.15  # Shift down-left
+                elif 150 < angle_deg < 210:  # Left side
+                    r = method_data[method][i] + 0.20
+                    ha, va = 'left', 'center'
+                    offset_angle = angle + 0.08
+                else:
+                    r = method_data[method][i] + 0.20
+                    ha, va = 'center', 'center'
+                    offset_angle = angle
+
                 ax.annotate(f'{raw_val:+.3f}',
-                           xy=(angle, r),
+                           xy=(offset_angle, r),
                            fontsize=16, fontweight='bold',
-                           color=method_color, ha='center', va='center')
+                           color=method_color, ha=ha, va=va)
 
     # Styling - LARGER FONT SIZE
     ax.set_ylim(0, 1.35)
@@ -1021,12 +1036,13 @@ def generate_radar_chart_area_based(
         legend_handles.append(handle)
         legend_labels.append(f'{method} ({avg_pct:.1f}%)')
 
-    # Place legend at bottom center in single horizontal row
+    # Place legend at bottom center in 2 rows (3 + 2 methods)
     fig.legend(handles=legend_handles, labels=legend_labels,
-               loc='lower center', bbox_to_anchor=(0.5, 0.02),
-               ncol=len(sorted_methods), fontsize=12,
+               loc='lower center', bbox_to_anchor=(0.5, 0.00),
+               ncol=3, fontsize=14,
                prop={'weight': 'bold'}, frameon=True,
-               title='Method (Avg %)', title_fontsize=13)
+               title='Method (Avg %)', title_fontsize=14,
+               columnspacing=1.5, handletextpad=0.5)
 
     # Save
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
@@ -1075,9 +1091,29 @@ def get_heatmap_figsize(n_rows: int, n_cols: int,
     Returns:
         Tuple of (width, height) for figsize
     """
-    margin_x = 2.5  # for y-axis labels like "CITA_NoInstruct"
+    margin_x = 1.8  # for y-axis labels (shortened: CITA_NI, CITA_I)
     margin_y = 1.8  # for title + colorbar
     return (n_cols * cell_width + margin_x, n_rows * cell_height + margin_y)
+
+
+def _shorten_model_labels(models: List[str]) -> List[str]:
+    """Shorten model labels: _NoInstruct -> _NI, _Instruct -> _I"""
+    return [m.replace('_NoInstruct', '_NI').replace('_Instruct', '_I') for m in models]
+
+
+def _wrap_eval_labels(eval_names: List[str]) -> List[str]:
+    """Wrap long eval labels with line breaks for compact display."""
+    wrapped = []
+    for name in eval_names:
+        if name == 'TruthfulQA':
+            wrapped.append('Truthful\nQA')
+        elif name == 'Cond. Safety':
+            wrapped.append('Cond.\nSafety')
+        elif name == 'Length Ctrl':
+            wrapped.append('Length\nCtrl')
+        else:
+            wrapped.append(name)
+    return wrapped
 
 
 def generate_combined_heatmap(
@@ -1173,17 +1209,25 @@ def generate_combined_heatmap(
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
 
-    # Create annotation matrix for seaborn
+    # Build annotation data: separate value and CI for different styling
     import pandas as pd
-    annot_matrix = []
+    value_annot = []  # Main values (bold)
+    ci_annot = []     # CI values (italic, not bold)
     for i in range(len(models)):
-        row = []
+        value_row = []
+        ci_row = []
         model = models[i]
         for j in range(len(eval_names)):
             val = raw_data[i, j]
             eval_name = eval_names[j]
 
             if not np.isnan(val):
+                # Format main value
+                if abs(val) >= 10:
+                    value_row.append(f'{val:.1f}')
+                else:
+                    value_row.append(f'{val:.3f}')
+
                 # Check if CI is available for this cell
                 ci_text = ""
                 if score_ci is not None and eval_name in score_ci:
@@ -1192,19 +1236,21 @@ def generate_combined_heatmap(
                         ci_lo, ci_hi = ci_data
                         ci_half = (ci_hi - ci_lo) / 2
                         if abs(val) >= 10:
-                            ci_text = f'\n+/-{ci_half:.1f}'
+                            ci_text = f'+/-{ci_half:.1f}'
                         else:
-                            ci_text = f'\n+/-{ci_half:.2f}'
-
-                if abs(val) >= 10:
-                    row.append(f'{val:.1f}{ci_text}')
-                else:
-                    row.append(f'{val:.3f}{ci_text}')
+                            ci_text = f'+/-{ci_half:.2f}'
+                ci_row.append(ci_text)
             else:
-                row.append('')
-        annot_matrix.append(row)
+                value_row.append('')
+                ci_row.append('')
+        value_annot.append(value_row)
+        ci_annot.append(ci_row)
 
-    # Use seaborn heatmap (no gaps between cells)
+    # Shorten labels for compact display
+    display_models = _shorten_model_labels(models)
+    display_evals = _wrap_eval_labels(eval_names)
+
+    # Use seaborn heatmap WITHOUT annotation (we'll add manually for mixed styling)
     import seaborn as sns
     sns.heatmap(
         color_data,
@@ -1212,18 +1258,32 @@ def generate_combined_heatmap(
         cmap=cmap,
         vmin=0,
         vmax=1,
-        annot=np.array(annot_matrix),
-        fmt='',
-        annot_kws={'fontsize': 14, 'fontweight': 'bold', 'color': 'black'},
+        annot=False,
         cbar_kws={'label': 'Normalized Score (per eval)', 'shrink': 0.8},
-        xticklabels=eval_names,
-        yticklabels=models,
+        xticklabels=display_evals,
+        yticklabels=display_models,
         linewidths=0,
         linecolor='none'
     )
 
-    # Style tick labels
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=14, fontweight='bold', color='black', rotation=45, ha='right')
+    # Manually add annotations with different styles
+    for i in range(len(models)):
+        for j in range(len(eval_names)):
+            val_text = value_annot[i][j]
+            ci_text = ci_annot[i][j]
+            if val_text:
+                # Main value: bold, consistent size across all columns
+                ax.text(j + 0.5, i + 0.38, val_text,
+                        ha='center', va='center',
+                        fontsize=14, fontweight='bold', color='black')
+                # CI value: smaller italic, not bold
+                if ci_text:
+                    ax.text(j + 0.5, i + 0.68, ci_text,
+                            ha='center', va='center',
+                            fontsize=11, fontstyle='italic', fontweight='normal', color='black')
+
+    # Style tick labels (no rotation needed - labels are wrapped)
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=13, fontweight='bold', color='black', rotation=0, ha='center')
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=13, fontweight='bold', color='black')
 
     # Title - clarify that numbers are original, colors are normalized

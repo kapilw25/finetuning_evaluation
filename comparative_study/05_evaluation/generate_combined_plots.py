@@ -415,15 +415,16 @@ def main():
         print(f"\n[INFO] No per-sample data found. Plots will not include error bars.")
         print(f"       To enable CI, re-run evaluations with per_sample_scores in metrics.json")
 
-    generated = {'heatmap': False, 'radar_area': False}
+    generated = {'heatmap': False, 'heatmap_no_ci': False, 'radar_area': False}
 
     # =========================================================================
-    # Generate Heatmap (absolute scores)
+    # Generate Heatmaps (absolute scores) - WITH and WITHOUT CI
     # =========================================================================
     if len(eval_scores) >= 2:
+        # Heatmap WITH CI values
         heatmap_path = COMBINED_PLOTS_DIR / "heatmap"
         print(f"\n{'=' * 70}")
-        print("Generating Heatmap (Absolute Scores)...")
+        print("Generating Heatmap WITH CI (Absolute Scores)...")
         if eval_score_ci:
             print("  [CI] Including confidence intervals in heatmap")
         print(f"{'=' * 70}")
@@ -437,6 +438,22 @@ def main():
         )
         generated['heatmap'] = True
         print(f"  [OK] heatmap.{{pdf,png}}")
+
+        # Heatmap WITHOUT CI values
+        heatmap_no_ci_path = COMBINED_PLOTS_DIR / "heatmap_no_ci"
+        print(f"\n{'=' * 70}")
+        print("Generating Heatmap WITHOUT CI (Absolute Scores)...")
+        print(f"{'=' * 70}")
+
+        generate_combined_heatmap(
+            eval_scores=eval_scores,
+            output_path=heatmap_no_ci_path,
+            normalize_per_column=True,
+            show_raw_values=True,
+            score_ci=None  # No CI values
+        )
+        generated['heatmap_no_ci'] = True
+        print(f"  [OK] heatmap_no_ci.{{pdf,png}}")
     else:
         print(f"\n[WARN] Need at least 2 evals for heatmap, got {len(eval_scores)}")
 
@@ -474,7 +491,9 @@ def main():
     print(f"Generated: {plot_count} plots ({plot_count * 2} files: PDF + PNG each)")
 
     if generated['heatmap']:
-        print(f"  - heatmap.{{pdf,png}}")
+        print(f"  - heatmap.{{pdf,png}} (with CI)")
+    if generated['heatmap_no_ci']:
+        print(f"  - heatmap_no_ci.{{pdf,png}} (without CI)")
     if generated['radar_area']:
         print(f"  - radar_area.{{pdf,png}}")
 
