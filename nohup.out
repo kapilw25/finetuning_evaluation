@@ -1,0 +1,629 @@
+==============================================================================
+AUTOMATED EVALUATION RUNNER - ALL 5 EVALS
+==============================================================================
+Started at: Sat Jan  3 07:14:40 UTC 2026
+Master log: /workspace/finetuning_evaluation/logs/eval_runner_20260103_071440.log
+==============================================================================
+
+==============================================================================
+[1/5] ISD EVALUATION (Max mode)
+==============================================================================
+[2026-01-03 07:14:40] Starting ISD...
+✅ Loaded .env from: /workspace/finetuning_evaluation/.env
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+✅ HuggingFace authenticated
+📝 Logging initialized: /workspace/finetuning_evaluation/logs/ISD_evaluation_training_20260103_071446.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+
+================================================================================
+🔧 CACHED DATA OPTIONS
+================================================================================
+
+Detected:
+  ✅ Inference checkpoints (10 files)
+  ✅ Metrics JSONs (10 models)
+  ✅ Comparison plot
+
+What do you want to re-run?
+
+  1) Regenerate plots only (keep inference + metrics)
+  2) Re-calculate metrics + plots (keep inference, re-run LLM-as-judge)
+  3) Re-run everything (delete all, start fresh)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Will regenerate plots using cached metrics
+
+================================================================================
+🎯 ISD EVALUATION: Mode Selection
+================================================================================
+
+Choose evaluation mode:
+  1) Sanity Check    - 50 prompts x 10 instructions = 500 test cases (~15 min)
+  2) Full Evaluation - 300 prompts x 10 instructions = 3,000 test cases (~60 min)
+  3) Max Available   - 100% of dataset (fetches from HF)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Running Max Available
+Generating train split:   0%|          | 0/3000 [00:00<?, ? examples/s]Generating train split: 100%|██████████| 3000/3000 [00:00<00:00, 462777.20 examples/s]
+   Max Available: 300 prompts x 10 = 3,000 [fetched]
+
+================================================================================
+Verifying HuggingFace repositories...
+================================================================================
+  ✅ SFT_NoInstruct: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  ✅ SFT_Instruct: kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct
+  ✅ DPO_NoInstruct: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+  ✅ DPO_Instruct: kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+  ✅ CITA_NoInstruct: kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct
+  ✅ CITA_Instruct: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+  ✅ PPO_NoInstruct: kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct
+  ✅ PPO_Instruct: kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct
+  ✅ GRPO_NoInstruct: kapilw25/llama3-8b-pku-GRPO-NoInstruct-SFT-NoInstruct
+  ✅ GRPO_Instruct: kapilw25/llama3-8b-pku-GRPO-Instruct-SFT-Instruct
+================================================================================
+ISD Evaluation
+================================================================================
+Prompts: 300
+Instructions: 10
+Total test cases: 3000
+Models: 10
+================================================================================
+
+================================================================================
+Evaluating: SFT NoInstruct
+Instruction-Aware: False
+================================================================================
+
+================================================================================
+Loading SFT NoInstruct for evaluation
+================================================================================
+Loading from HuggingFace: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+Set Llama-3.1 chat template
+Loading base model in BF16: meta-llama/Llama-3.1-8B
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files:   0%|          | 0/4 [02:17<?, ?it/s]
+Flash Attention 2 unavailable, using eager mode
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 2.51 MB free disk space.
+  warnings.warn(
+/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 2.50 MB free disk space.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:25<?, ?it/s]
+
+Log saved to: /workspace/finetuning_evaluation/logs/ISD_evaluation_training_20260103_071446.log
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/model_loader.py", line 151, in load_model_for_eval
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 571, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 279, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4261, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1152, in _get_resolved_checkpoint_files
+    checkpoint_files, sharded_metadata = get_checkpoint_shard_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 1115, in get_checkpoint_shard_files
+    cached_filenames = cached_files(
+                       ^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 517, in cached_files
+    raise EnvironmentError(
+OSError: meta-llama/Llama-3.1-8B does not appear to have a file named model-00001-of-00004.safetensors. Checkout 'https://huggingface.co/meta-llama/Llama-3.1-8B/tree/main'for available files.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/isd/evaluation.py", line 668, in <module>
+    main()
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/isd/evaluation.py", line 520, in main
+    results = run_isd_evaluation(
+              ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/isd/evaluation.py", line 343, in run_isd_evaluation
+    model, tokenizer = load_model_for_eval(model_key)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/model_loader.py", line 162, in load_model_for_eval
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 571, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 279, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4261, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1152, in _get_resolved_checkpoint_files
+    checkpoint_files, sharded_metadata = get_checkpoint_shard_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 1115, in get_checkpoint_shard_files
+    cached_filenames = cached_files(
+                       ^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 517, in cached_files
+    raise EnvironmentError(
+OSError: meta-llama/Llama-3.1-8B does not appear to have a file named model-00001-of-00004.safetensors. Checkout 'https://huggingface.co/meta-llama/Llama-3.1-8B/tree/main'for available files.
+[2026-01-03 07:17:35] ISD COMPLETED
+
+==============================================================================
+[2/5] TRUTHFULQA EVALUATION (Max mode)
+==============================================================================
+[2026-01-03 07:17:40] Starting TruthfulQA...
+✅ Loaded .env from: /workspace/finetuning_evaluation/.env
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+✅ HuggingFace authenticated
+📝 Logging initialized: /workspace/finetuning_evaluation/logs/truthfulqa_evaluation_training_20260103_071747.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+
+================================================================================
+🔧 CACHED DATA OPTIONS
+================================================================================
+
+Detected:
+  ✅ Inference checkpoints (20 files)
+  ✅ Metrics JSONs (10 models)
+  ✅ Comparison plot
+
+What do you want to re-run?
+
+  1) Regenerate plots only (keep inference + metrics)
+  2) Re-calculate metrics + plots (keep inference, re-run LLM-as-judge)
+  3) Re-run everything (delete all, start fresh)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Will regenerate plots using cached metrics
+
+================================================================================
+🎯 TRUTHFULQA EVALUATION: Mode Selection
+================================================================================
+
+Choose evaluation mode:
+  1) Sanity Check    - 50 questions × 2 variants = 100 test cases (~15 min)
+  2) Full Evaluation - 817 questions × 2 variants = 1,634 test cases (~60 min)
+  3) Max Available   - 100% of dataset (fetches from HF)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Running Max Available
+Generating validation split:   0%|          | 0/817 [00:00<?, ? examples/s]Generating validation split: 100%|██████████| 817/817 [00:00<00:00, 122813.65 examples/s]
+   Max Available: 817 Qs x 2 = 1,634 [fetched]
+
+================================================================================
+TruthfulQA Evaluation
+================================================================================
+Mode: max
+Samples: 817
+================================================================================
+
+================================================================================
+Loading TruthfulQA Dataset
+================================================================================
+✅ Loaded 817 questions
+
+Category distribution:
+   Misconceptions: 100
+   Law: 64
+   Health: 55
+   Sociology: 55
+   Economics: 31
+   Fiction: 30
+   Paranormal: 26
+   Conspiracies: 25
+   Stereotypes: 24
+   History: 24
+   ... and 28 more categories
+
+================================================================================
+Verifying HuggingFace repositories...
+================================================================================
+  ✅ SFT_NoInstruct: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  ✅ SFT_Instruct: kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct
+  ✅ DPO_NoInstruct: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+  ✅ DPO_Instruct: kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+  ✅ CITA_NoInstruct: kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct
+  ✅ CITA_Instruct: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+  ✅ PPO_NoInstruct: kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct
+  ✅ PPO_Instruct: kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct
+  ✅ GRPO_NoInstruct: kapilw25/llama3-8b-pku-GRPO-NoInstruct-SFT-NoInstruct
+  ✅ GRPO_Instruct: kapilw25/llama3-8b-pku-GRPO-Instruct-SFT-Instruct
+
+Models to evaluate: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct', 'PPO_NoInstruct', 'PPO_Instruct', 'GRPO_NoInstruct', 'GRPO_Instruct']
+Batch size: 16
+
+================================================================================
+Evaluating: SFT_NoInstruct
+================================================================================
+
+================================================================================
+Loading SFT NoInstruct for evaluation
+================================================================================
+Loading from HuggingFace: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+Set Llama-3.1 chat template
+Loading base model in BF16: meta-llama/Llama-3.1-8B
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 1.58 MB free disk space.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:23<?, ?it/s]
+Flash Attention 2 unavailable, using eager mode
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 1.45 MB free disk space.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:21<?, ?it/s]
+
+✅ Log saved to: /workspace/finetuning_evaluation/logs/truthfulqa_evaluation_training_20260103_071747.log
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/model_loader.py", line 151, in load_model_for_eval
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 571, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 279, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4261, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1152, in _get_resolved_checkpoint_files
+    checkpoint_files, sharded_metadata = get_checkpoint_shard_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 1115, in get_checkpoint_shard_files
+    cached_filenames = cached_files(
+                       ^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 517, in cached_files
+    raise EnvironmentError(
+OSError: meta-llama/Llama-3.1-8B does not appear to have a file named model-00001-of-00004.safetensors. Checkout 'https://huggingface.co/meta-llama/Llama-3.1-8B/tree/main'for available files.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/truthfulqa/evaluation.py", line 862, in <module>
+    main()
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/truthfulqa/evaluation.py", line 755, in main
+    all_results = run_truthfulqa_evaluation(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/truthfulqa/evaluation.py", line 496, in run_truthfulqa_evaluation
+    model, tokenizer = load_model_for_eval(model_key)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/model_loader.py", line 162, in load_model_for_eval
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 571, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 279, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4261, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1152, in _get_resolved_checkpoint_files
+    checkpoint_files, sharded_metadata = get_checkpoint_shard_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 1115, in get_checkpoint_shard_files
+    cached_filenames = cached_files(
+                       ^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 517, in cached_files
+    raise EnvironmentError(
+OSError: meta-llama/Llama-3.1-8B does not appear to have a file named model-00001-of-00004.safetensors. Checkout 'https://huggingface.co/meta-llama/Llama-3.1-8B/tree/main'for available files.
+[2026-01-03 07:18:37] TruthfulQA COMPLETED
+
+==============================================================================
+[3/5] CONDITIONAL SAFETY EVALUATION (Max mode)
+==============================================================================
+[2026-01-03 07:18:42] Starting Conditional Safety...
+✅ Loaded .env from: /workspace/finetuning_evaluation/.env
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+✅ HuggingFace authenticated
+📝 Logging initialized: /workspace/finetuning_evaluation/logs/conditional_safety_evaluation_training_20260103_071848.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+
+================================================================================
+🔧 CACHED DATA OPTIONS
+================================================================================
+
+Detected:
+  ✅ Inference checkpoints (20 files)
+  ✅ Metrics JSONs (10 models)
+  ✅ Comparison plot
+
+What do you want to re-run?
+
+  1) Regenerate plots only (keep inference + metrics)
+  2) Re-calculate metrics + plots (keep inference, re-run LLM-as-judge)
+  3) Re-run everything (delete all, start fresh)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Will regenerate plots using cached metrics
+
+================================================================================
+🎯 CONDITIONAL SAFETY EVALUATION: Mode Selection
+================================================================================
+
+Choose evaluation mode:
+  1) Sanity Check    - 100 prompts x 2 variants = 200 test cases (~15 min)
+  2) Full Evaluation - 500 prompts x 2 variants = 1,000 test cases (~60 min)
+  3) Max Available   - 100% of dataset (fetches from HF)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Running Max Available
+⚠️  Conditional Safety: Using fallback (reason: Not enough disk space. Needed: 335.09 MiB (download: 221.90 MiB, generated: 113.19 MiB, post-processed: Unknown size))
+   Max Available: 1,222 prompts x 2 = 2,444 [fallback]
+
+================================================================================
+Conditional Safety Evaluation
+================================================================================
+Mode: max
+Samples: 1222
+================================================================================
+
+================================================================================
+Loading PKU-SafeRLHF Test Split (Borderline-Harmful Prompts)
+================================================================================
+
+Log saved to: /workspace/finetuning_evaluation/logs/conditional_safety_evaluation_training_20260103_071848.log
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/conditional_safety/evaluation.py", line 853, in <module>
+    main()
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/conditional_safety/evaluation.py", line 735, in main
+    prompts, harm_categories_list = load_safety_test_set(max_samples=max_samples)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/conditional_safety/evaluation.py", line 247, in load_safety_test_set
+    test_data = load_dataset("PKU-Alignment/PKU-SafeRLHF", split="test")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/datasets/load.py", line 1417, in load_dataset
+    builder_instance.download_and_prepare(
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/datasets/builder.py", line 845, in download_and_prepare
+    raise OSError(
+OSError: Not enough disk space. Needed: 335.09 MiB (download: 221.90 MiB, generated: 113.19 MiB, post-processed: Unknown size)
+[2026-01-03 07:18:51] Conditional Safety COMPLETED
+
+==============================================================================
+[4/5] LENGTH CONTROL EVALUATION (Max mode)
+==============================================================================
+[2026-01-03 07:18:56] Starting Length Control...
+✅ Loaded .env from: /workspace/finetuning_evaluation/.env
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+✅ HuggingFace authenticated
+📝 Logging initialized: /workspace/finetuning_evaluation/logs/length_control_evaluation_training_20260103_071902.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+
+================================================================================
+🔧 CACHED DATA OPTIONS
+================================================================================
+
+Detected:
+  ✅ Inference checkpoints (20 files)
+  ✅ Metrics JSONs (10 models)
+  ✅ Comparison plot
+
+What do you want to re-run?
+
+  1) Regenerate plots only (keep inference + metrics)
+  2) Re-calculate metrics + plots (keep inference, re-run LLM-as-judge)
+  3) Re-run everything (delete all, start fresh)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Will regenerate plots using cached metrics
+
+================================================================================
+🎯 LENGTH CONTROL EVALUATION: Mode Selection
+================================================================================
+
+Choose evaluation mode:
+  1) Sanity Check    - 100 prompts x 2 variants = 200 test cases (~15 min)
+  2) Full Evaluation - 500 prompts x 2 variants = 1,000 test cases (~60 min)
+  3) Max Available   - 100% of dataset (fetches from HF)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Running Max Available
+   Max Available: 805 prompts x 2 = 1,610 [fetched]
+
+================================================================================
+Length Control Evaluation
+================================================================================
+Mode: max
+Samples: 805
+================================================================================
+
+================================================================================
+Loading AlpacaEval Dataset
+================================================================================
+Loaded 805 prompts
+
+================================================================================
+Verifying HuggingFace repositories...
+================================================================================
+  ✅ SFT_NoInstruct: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+  ✅ SFT_Instruct: kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct
+  ✅ DPO_NoInstruct: kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
+  ✅ DPO_Instruct: kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
+  ✅ CITA_NoInstruct: kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct
+  ✅ CITA_Instruct: kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct
+  ✅ PPO_NoInstruct: kapilw25/llama3-8b-pku-PPO-NoInstruct-SFT-NoInstruct
+  ✅ PPO_Instruct: kapilw25/llama3-8b-pku-PPO-Instruct-SFT-Instruct
+  ✅ GRPO_NoInstruct: kapilw25/llama3-8b-pku-GRPO-NoInstruct-SFT-NoInstruct
+  ✅ GRPO_Instruct: kapilw25/llama3-8b-pku-GRPO-Instruct-SFT-Instruct
+
+Models to evaluate: ['SFT_NoInstruct', 'SFT_Instruct', 'DPO_NoInstruct', 'DPO_Instruct', 'CITA_NoInstruct', 'CITA_Instruct', 'PPO_NoInstruct', 'PPO_Instruct', 'GRPO_NoInstruct', 'GRPO_Instruct']
+Batch size: 32
+
+================================================================================
+Evaluating: SFT_NoInstruct
+================================================================================
+
+================================================================================
+Loading SFT NoInstruct for evaluation
+================================================================================
+Loading from HuggingFace: kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct
+Set Llama-3.1 chat template
+Loading base model in BF16: meta-llama/Llama-3.1-8B
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 1.26 MB free disk space.
+  warnings.warn(
+/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 1.25 MB free disk space.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:16<?, ?it/s]
+Flash Attention 2 unavailable, using eager mode
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/huggingface_hub/file_download.py:798: UserWarning: Not enough free disk space to download the file. The expected file size is: 4976.70 MB. The target location /workspace/.hf_home/hub/models--meta-llama--Llama-3.1-8B/blobs only has 1.13 MB free disk space.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:26<?, ?it/s]
+
+Log saved to: /workspace/finetuning_evaluation/logs/length_control_evaluation_training_20260103_071902.log
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/model_loader.py", line 151, in load_model_for_eval
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 571, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 279, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4261, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1152, in _get_resolved_checkpoint_files
+    checkpoint_files, sharded_metadata = get_checkpoint_shard_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 1115, in get_checkpoint_shard_files
+    cached_filenames = cached_files(
+                       ^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 517, in cached_files
+    raise EnvironmentError(
+OSError: meta-llama/Llama-3.1-8B does not appear to have a file named model-00001-of-00004.safetensors. Checkout 'https://huggingface.co/meta-llama/Llama-3.1-8B/tree/main'for available files.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/length_control/evaluation.py", line 733, in <module>
+    main()
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/length_control/evaluation.py", line 630, in main
+    all_results = run_style_evaluation(
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/length_control/evaluation.py", line 366, in run_style_evaluation
+    model, tokenizer = load_model_for_eval(model_key)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/comparative_study/05_evaluation/eval_utils/model_loader.py", line 162, in load_model_for_eval
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 571, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 279, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4261, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1152, in _get_resolved_checkpoint_files
+    checkpoint_files, sharded_metadata = get_checkpoint_shard_files(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 1115, in get_checkpoint_shard_files
+    cached_filenames = cached_files(
+                       ^^^^^^^^^^^^^
+  File "/workspace/finetuning_evaluation/venv_CITA/lib/python3.12/site-packages/transformers/utils/hub.py", line 517, in cached_files
+    raise EnvironmentError(
+OSError: meta-llama/Llama-3.1-8B does not appear to have a file named model-00001-of-00004.safetensors. Checkout 'https://huggingface.co/meta-llama/Llama-3.1-8B/tree/main'for available files.
+[2026-01-03 07:19:48] Length Control COMPLETED
+
+==============================================================================
+[5/5] AQI EVALUATION (Full mode)
+==============================================================================
+[2026-01-03 07:19:53] Starting AQI...
+✅ Loaded .env from: /workspace/finetuning_evaluation/.env
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+✅ HuggingFace authenticated
+Info: umap-learn not installed. UMAP dimensionality reduction unavailable.
+📝 Logging initialized: /workspace/finetuning_evaluation/logs/aqi_evaluation_training_20260103_071959.log
+📝 All terminal output will be saved to this log file
+📝 For guaranteed unbuffered output, run with: python -u <script.py>
+================================================================================
+
+
+================================================================================
+🔧 CACHED DATA OPTIONS
+================================================================================
+
+Detected:
+  ✅ Inference checkpoints (10 files)
+  ✅ Metrics JSONs (10 models)
+  ✅ Comparison plot
+
+What do you want to re-run?
+
+  1) Regenerate plots only (keep inference + metrics)
+  2) Re-calculate metrics + plots (keep inference, re-run LLM-as-judge)
+  3) Re-run everything (delete all, start fresh)
+================================================================================
+
+Enter choice (1, 2, or 3): 
+✅ Will regenerate plots using cached metrics
+
+================================================================================
+LOADING CACHED METRICS (Skipping recalculation)
+================================================================================
+
+Loading cached metrics from /workspace/finetuning_evaluation/outputs/evaluation/AQI_Evaluation
+  Loaded: SFT_NoInstruct (AQI: 52.05)
+  Loaded: SFT_Instruct (AQI: 25.83)
+  Loaded: DPO_NoInstruct (AQI: 17.98)
+  Loaded: DPO_Instruct (AQI: 11.75)
+  Loaded: CITA_NoInstruct (AQI: 28.61)
+  Loaded: CITA_Instruct (AQI: 55.00)
+  Loaded: PPO_NoInstruct (AQI: 40.77)
+  Loaded: PPO_Instruct (AQI: 43.49)
+  Loaded: GRPO_NoInstruct (AQI: 24.59)
+  Loaded: GRPO_Instruct (AQI: 31.53)
+  [INFO] Filtered out SFT models (2 removed)
+Saved plot:
+  PDF: /workspace/finetuning_evaluation/outputs/evaluation/AQI_Evaluation/aqi_comparison.pdf
+  PNG: /workspace/finetuning_evaluation/outputs/evaluation/AQI_Evaluation/aqi_comparison.png
+
+Ranking (Best to Worst):
+   1. CITA_Instruct: 55.0
+   2. PPO_Instruct: 43.5
+   3. PPO_NoInstruct: 40.8
+   4. GRPO_Instruct: 31.5
+   5. CITA_NoInstruct: 28.6
+   6. GRPO_NoInstruct: 24.6
+   7. DPO_NoInstruct: 18.0
+   8. DPO_Instruct: 11.8
+
+================================================================================
+PLOTS REGENERATED FROM CACHED METRICS
+================================================================================
+
+Log saved to: /workspace/finetuning_evaluation/logs/aqi_evaluation_training_20260103_071959.log
+[2026-01-03 07:20:00] AQI COMPLETED
+
+==============================================================================
+ALL 5 EVALUATIONS COMPLETE!
+==============================================================================
+Finished at: Sat Jan  3 07:20:00 UTC 2026
+
+Logs saved to:
+  - /workspace/finetuning_evaluation/logs/eval_runner_20260103_071440.log (this log)
+  - /workspace/finetuning_evaluation/logs/isd_auto_20260103_071440.log
+  - /workspace/finetuning_evaluation/logs/truthfulqa_auto_20260103_071440.log
+  - /workspace/finetuning_evaluation/logs/conditional_safety_auto_20260103_071440.log
+  - /workspace/finetuning_evaluation/logs/length_control_auto_20260103_071440.log
+  - /workspace/finetuning_evaluation/logs/aqi_auto_20260103_071440.log
+==============================================================================

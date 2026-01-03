@@ -242,14 +242,17 @@ def generate_comparison_plots(
             if model in error_bars:
                 ci_lower, ci_upper = error_bars[model]
                 score = overall_scores[models.index(model)]
-                yerr_lower.append(score - ci_lower)
-                yerr_upper.append(ci_upper - score)
+                # Clamp to non-negative (matplotlib requires yerr >= 0)
+                yerr_lower.append(max(0, score - ci_lower))
+                yerr_upper.append(max(0, ci_upper - score))
             else:
                 yerr_lower.append(0)
                 yerr_upper.append(0)
 
-        ax.errorbar(x, overall_sorted, yerr=[yerr_lower, yerr_upper],
-                    fmt='none', ecolor='black', elinewidth=2, capsize=5, capthick=2)
+        # Only add error bars if we have valid values
+        if any(y > 0 for y in yerr_lower + yerr_upper):
+            ax.errorbar(x, overall_sorted, yerr=[yerr_lower, yerr_upper],
+                        fmt='none', ecolor='black', elinewidth=2, capsize=5, capthick=2)
 
     ax.set_ylabel(ylabel, fontsize=14, fontweight='bold', color='black')
     # Remove "Overall vs Valid-Only" from title if present

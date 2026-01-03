@@ -7,7 +7,12 @@
 # =============================================================================
 #
 # USAGE:
-#   nohup /workspace/finetuning_evaluation/comparative_study/05_evaluation/run_remaining_evals.sh &
+#     # Option 1: Background (recommended)
+#   `nohup bash comparative_study/05_evaluation/run_all_evals_sequentially.sh &`
+#   `tail -f logs/eval_runner_*.log`
+
+#   # Option 2: Foreground
+#   `bash comparative_study/05_evaluation/run_all_evals_sequentially.sh`
 #
 # =============================================================================
 

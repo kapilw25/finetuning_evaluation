@@ -481,8 +481,9 @@ def main():
         ) if checkpoint_dir.exists() else False
         results_exist = results_dir.exists() and any(results_dir.iterdir())
 
+        cache_choice = None
         if checkpoints_exist or results_exist:
-            show_cached_data_menu(
+            cache_choice = show_cached_data_menu(
                 checkpoint_dir=checkpoint_dir,
                 results_dir=results_dir,
                 eval_type="ISD",
@@ -490,6 +491,60 @@ def main():
                 metrics_filename="{model}_isd_metrics.json",
                 plot_filename="isd_comparison.png"
             )
+
+        # Option 1: Regenerate plots only from cached metrics (skip model loading)
+        if cache_choice == "1":
+            print("\n" + "=" * 80)
+            print("LOADING CACHED METRICS (Skipping inference)")
+            print("=" * 80)
+
+            all_metrics = {}
+            all_stratified = {}
+
+            for model_dir in output_dir.iterdir():
+                if model_dir.is_dir():
+                    model_key = model_dir.name
+                    metrics_path = model_dir / f"{model_key}_isd_metrics.json"
+
+                    if metrics_path.exists():
+                        with open(metrics_path, 'r') as f:
+                            cached = json.load(f)
+
+                        metrics = ModelMetrics(
+                            model_name=cached['model_name'],
+                            mean_fidelity=cached['mean_fidelity'],
+                            fidelity_by_instruction=cached['fidelity_by_instruction'],
+                            mean_semantic_shift=cached['mean_semantic_shift'],
+                            instruction_awareness_score=cached['instruction_awareness_score'],
+                            n_evaluated=cached['n_evaluated']
+                        )
+                        all_metrics[model_key] = metrics
+
+                        all_stratified[model_key] = {
+                            'valid_rate': cached.get('valid_response_rate', 1.0),
+                            'gibberish_rate': cached.get('gibberish_rate', 0.0),
+                            'repetitive_rate': cached.get('repetitive_rate', 0.0),
+                            'valid_fidelity': cached.get('valid_fidelity'),
+                            'valid_awareness': cached.get('valid_awareness'),
+                            'valid_shift': cached.get('valid_shift')
+                        }
+                        print(f"  Loaded: {model_key} (Awareness: {metrics.instruction_awareness_score:.3f})")
+
+            if len(all_metrics) < 2:
+                print("\nError: Need at least 2 models with cached metrics. Run full evaluation first.")
+                sys.exit(1)
+
+            # Generate plots from cached data
+            print("\n" + "=" * 80)
+            print("Generating Comparison Plots")
+            print("=" * 80)
+            generate_isd_comparison_plots(all_metrics, output_dir, all_stratified)
+
+            print("\n" + "=" * 80)
+            print("PLOTS REGENERATED FROM CACHED METRICS")
+            print("=" * 80)
+            print(f"Results saved to: {output_dir}")
+            return
 
         # Interactive mode selection (max_desc shown without HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(

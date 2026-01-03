@@ -620,7 +620,7 @@ def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, st
         perfect_label="Perfect = 1.0",
         score_format=".3f",
         higher_is_better=True,
-        error_bars=error_bars if error_bars else None
+        error_bars=None  # CI disabled - overlaps with values, kept for combined plots
     )
 
     # Generate box/violin plots for per-sample ADAPTATION distribution
@@ -693,8 +693,9 @@ def main():
         ) if checkpoint_dir.exists() else False
         results_exist = results_dir.exists() and any(results_dir.iterdir())
 
+        cache_choice = None
         if checkpoints_exist or results_exist:
-            show_cached_data_menu(
+            cache_choice = show_cached_data_menu(
                 checkpoint_dir=checkpoint_dir,
                 results_dir=results_dir,
                 eval_type="TruthfulQA",
@@ -702,6 +703,58 @@ def main():
                 metrics_filename="metrics.json",
                 plot_filename="truthfulqa_comparison.png"
             )
+
+        # Option 1: Regenerate plots only from cached metrics (skip model loading)
+        if cache_choice == "1":
+            print("\n" + "=" * 80)
+            print("LOADING CACHED METRICS (Skipping inference)")
+            print("=" * 80)
+
+            all_results = {}
+            all_stratified = {}
+
+            for model_dir in EVAL_OUTPUT_DIR.iterdir():
+                if model_dir.is_dir():
+                    model_key = model_dir.name
+                    metrics_path = model_dir / "metrics.json"
+
+                    if metrics_path.exists():
+                        with open(metrics_path, 'r') as f:
+                            cached = json.load(f)
+
+                        # Build result structure expected by generate_truthfulqa_comparison_plots
+                        all_results[model_key] = {
+                            'metrics': {
+                                'adaptation_score': cached.get('adaptation_score', 0),
+                                'honest_uncertainty_rate': cached.get('honest_uncertainty_rate', 0),
+                                'confident_uncertainty_rate': cached.get('confident_uncertainty_rate', 0)
+                            }
+                        }
+
+                        all_stratified[model_key] = {
+                            'honest_valid_rate': cached.get('honest_valid_rate', 1.0),
+                            'confident_valid_rate': cached.get('confident_valid_rate', 1.0),
+                            'valid_honest_uncertainty_rate': cached.get('valid_honest_uncertainty_rate'),
+                            'valid_confident_uncertainty_rate': cached.get('valid_confident_uncertainty_rate'),
+                            'valid_adaptation_score': cached.get('valid_adaptation_score')
+                        }
+                        print(f"  Loaded: {model_key} (Adaptation: {cached.get('adaptation_score', 0):.3f})")
+
+            if len(all_results) < 2:
+                print("\nError: Need at least 2 models with cached metrics. Run full evaluation first.")
+                sys.exit(1)
+
+            # Generate plots from cached data
+            print("\n" + "=" * 80)
+            print("Generating Comparison Plots")
+            print("=" * 80)
+            generate_truthfulqa_comparison_plots(all_results, EVAL_OUTPUT_DIR, all_stratified)
+
+            print("\n" + "=" * 80)
+            print("PLOTS REGENERATED FROM CACHED METRICS")
+            print("=" * 80)
+            print(f"Results saved to: {EVAL_OUTPUT_DIR}")
+            return
 
         # Interactive mode selection (defer HF fetch to avoid M1 mutex lock)
         mode, _ = show_mode_selection_menu(
