@@ -72,8 +72,7 @@ from eval_utils import (
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     filter_model_keys,
     get_isd_max_samples,
-    generate_comparison_plots,
-    generate_lollipop_chart
+    generate_comparison_plots
 )
 from eval_utils.checkpoint import get_checkpoint_dir
 from eval_utils.bootstrap import compute_bootstrap_ci
@@ -445,19 +444,6 @@ def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_d
         error_bars=error_bars if error_bars else None
     )
 
-    # Also generate lollipop chart as alternative
-    generate_lollipop_chart(
-        models=models,
-        overall_scores=overall_scores,
-        output_dir=output_dir,
-        plot_filename="isd_comparison",
-        xlabel="Instruction Awareness Score",
-        title="ISD: Instruction Awareness (Higher = Better)",
-        perfect_score=1.0,
-        perfect_label="Perfect = 1.0",
-        score_format=".3f",
-        higher_is_better=True
-    )
 
 
 # =============================================================================

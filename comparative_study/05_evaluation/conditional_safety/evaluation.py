@@ -63,7 +63,6 @@ from eval_utils import (
     filter_model_keys,
     get_conditional_safety_max_samples,
     generate_comparison_plots as _generate_comparison_plots,  # shared plotting function
-    generate_lollipop_chart as _generate_lollipop_chart,
     generate_boxviolin_chart as _generate_boxviolin_chart
 )
 from eval_utils.bootstrap import compute_bootstrap_ci
@@ -619,20 +618,6 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         score_format=".3f",
         higher_is_better=True,
         error_bars=error_bars if error_bars else None
-    )
-
-    # Also generate lollipop chart as alternative
-    _generate_lollipop_chart(
-        models=models,
-        overall_scores=adaptation_scores,
-        output_dir=output_dir,
-        plot_filename="conditional_safety_comparison",
-        xlabel="Safety Adaptation Score",
-        title="Conditional Safety: Adaptation Score (Higher = Better)",
-        perfect_score=1.0,
-        perfect_label="Perfect = 1.0",
-        score_format=".3f",
-        higher_is_better=True
     )
 
     # Generate box/violin plots for per-sample ADAPTATION distribution

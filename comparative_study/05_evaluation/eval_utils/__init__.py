@@ -12,6 +12,7 @@ sys.path.insert(0, str(_project_root / "comparative_study" / "0c_utils"))
 from .model_loader import (
     MODELS,
     BASE_MODEL,
+    MODEL_NAME,
     load_model_for_eval,
     unload_model,
     verify_hf_repos
@@ -79,7 +80,6 @@ from .plotting import (
     get_legend_elements,
     add_figure_legend,
     generate_comparison_plots,
-    generate_lollipop_chart,
     generate_boxviolin_chart
 )
 
@@ -99,6 +99,7 @@ __all__ = [
     # Model loading
     'MODELS',
     'BASE_MODEL',
+    'MODEL_NAME',
     'load_model_for_eval',
     'unload_model',
     'verify_hf_repos',
@@ -149,7 +150,6 @@ __all__ = [
     'get_legend_elements',
     'add_figure_legend',
     'generate_comparison_plots',
-    'generate_lollipop_chart',
     'generate_boxviolin_chart',
     # Appendix Visualizations
     'generate_isd_embedding_visualization',

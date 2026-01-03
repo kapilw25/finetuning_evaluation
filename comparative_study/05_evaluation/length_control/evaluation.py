@@ -61,7 +61,6 @@ from eval_utils import (
     filter_model_keys,
     get_length_control_max_samples,
     generate_comparison_plots as _generate_comparison_plots,  # shared plotting function
-    generate_lollipop_chart as _generate_lollipop_chart,
     generate_boxviolin_chart as _generate_boxviolin_chart
 )
 from eval_utils.bootstrap import compute_bootstrap_ci
@@ -498,22 +497,6 @@ def generate_comparison_plots(all_results: Dict, output_dir: Path, stratified_me
         score_format=".2f",
         higher_is_better=True,
         error_bars=error_bars if error_bars else None
-    )
-
-    # Also generate lollipop chart as alternative
-    _generate_lollipop_chart(
-        models=models,
-        overall_scores=adaptation_scores,
-        output_dir=output_dir,
-        plot_filename="length_control_comparison",
-        xlabel="Length Adaptation Score",
-        title="Length Control: Adaptation Score (Higher = Better)",
-        perfect_score=None,
-        perfect_label="Target > 4.0",
-        reference_line=1.0,
-        reference_label="No Adaptation",
-        score_format=".2f",
-        higher_is_better=True
     )
 
     # Generate box/violin plots for per-sample ADAPTATION distribution

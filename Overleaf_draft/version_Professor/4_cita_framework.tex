@@ -170,7 +170,7 @@ P^{+}&=\sigma(\beta\Delta_\theta).
 
 
 This yields two switching-critical properties: \textbf{(i) self-quenching} ($P^+\!\to1 \Rightarrow \|\nabla\mathcal{L}\|\to0$), reducing over-steering across competing instructions; and
-\textbf{(ii) directional purity} (a signed difference of two conditional policy gradients under the \emph{same} $(I,X)$), isolating the effect of $I$ rather than prompt artifacts.
+\textbf{(ii) directional purity} (a signed difference of two conditional policy gradients under the \emph{same} $(I,X)$), isolating the effect of $I$ rather than prompt artifacts. See in detail \cref{fig:cita_objective_box}.
 
 \vspace{-0.35em}
 \paragraph{Why the KL term is mandatory (trust-region view).}
@@ -186,6 +186,33 @@ for small parameter moves, it induces a quadratic penalty shaped by the \textbf{
 \vspace{-1mm}
 so CITA performs preference optimization \textbf{on a Riemannian chart} where steps are scaled by curvature.
 Practically, this keeps instruction-conditioned policies \textbf{nearby and controllable}, making switching a \textbf{stable move across neighboring optima} rather than a brittle prompt hack.
+
+
+
+\begin{table}[ht!]
+\vspace{-1em}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Capability} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+\textbf{No Reward Model} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\ \hline
+\textbf{Preference Pairs} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\ \hline
+\textbf{Online Generation} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} \\ \hline
+\textbf{Instruction-Conditioned} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\ \hline
+\textbf{Dynamic Policy Switch} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\ \hline
+\textbf{Explicit KL Control} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textbf{Implicit} & \textbf{Mandatory} \\
+\bottomrule
+\end{tabular}
+\vspace{-1mm}
+\caption{\textbf{Feature comparison across policy optimization methods.} CITA uniquely supports instruction-conditioned behavioral switching with mandatory KL regularization.}
+\label{tab:feature_comparison}
+\vspace{-1em}
+\end{table}
+
 
 \vspace{-0.35em}
 \paragraph{Identifiability under prompt-held-constant switching.}
@@ -235,7 +262,10 @@ Accuracy               & 89.5\%   & 89.0\%   \\
 
 \vspace{-0.35em}
 \paragraph{Takeaway.}
-\textbf{CITA optimizes an instruction-indexed family of nearby optima; KL term supplies the geometry that makes switching reliable.}
+\textbf{CITA optimizes an instruction-indexed family of nearby optima, with the KL anchor supplying the geometry that makes switching reliable; Table~\ref{tab:feature_comparison} summarizes how this differs from prior alignment methods.}
+
+
+
 
 
 

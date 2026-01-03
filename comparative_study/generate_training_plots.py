@@ -1,21 +1,28 @@
 """
 Generate Publication-Quality Training Plots from TensorBoard Logs
 
-Generates 5 PDFs total:
-- DPO vs CITA (4 models): accuracy, loss, margins = 3 PDFs
-- SFT (2 models): loss, mean_token_accuracy = 2 PDFs
+Model: Llama-3.1-8B (meta-llama/Llama-3.1-8B)
+
+Generates dual versions:
+- Primary (no SFT): Policy optimization methods only (DPO, CITA, GRPO, PPO)
+- Secondary (_withSFT): Includes SFT for completeness
 
 Usage:
     python comparative_study/generate_training_plots.py
 
 Output:
     Overleaf_draft/figures/training/
+    ├── combined_eval_loss.{pdf,png}        # DPO, CITA, GRPO (no SFT)
+    ├── combined_eval_loss_withSFT.{pdf,png} # includes SFT
+    ├── combined_accuracy.{pdf,png}          # DPO/CITA only
+    ├── combined_accuracy_withSFT.{pdf,png}  # includes SFT
     ├── dpo_cita_accuracy.{pdf,png}
     ├── dpo_cita_loss.{pdf,png}
-    ├── dpo_cita_margins.{pdf,png}
-    ├── sft_loss.{pdf,png}
-    └── sft_mean_token_accuracy.{pdf,png}
+    └── dpo_cita_margins.{pdf,png}
 """
+
+# Model identifier for figure titles
+MODEL_NAME = "Llama-3.1-8B"
 
 from pathlib import Path
 
@@ -36,31 +43,30 @@ OUTPUT_DIR = PROJECT_ROOT / "Overleaf_draft" / "figures" / "training"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Color palette (publication friendly)
-COLORS = {
-    'CITA_Instruct': '#00008B',      # dark blue
-    'CITA_NoInstruct': '#87CEEB',    # light blue
-    'DPO_Instruct': '#006400',       # dark green
-    'DPO_NoInstruct': '#90EE90',     # light green
-    'PPO_Instruct': '#4B0082',       # indigo (dark purple)
-    'PPO_NoInstruct': '#DDA0DD',     # plum (light purple)
-    'GRPO_Instruct': '#FF8C00',      # dark orange
-    'GRPO_NoInstruct': '#FFDAB9',    # peach (light orange)
-    'SFT_Instruct': '#8B0000',       # dark red
-    'SFT_NoInstruct': '#FF6B6B',     # light red
+# Same color per method, differentiated by line style (solid=Instruct, dashed=NoInstruct)
+METHOD_COLORS = {
+    'CITA': '#00008B',      # dark blue
+    'DPO': '#006400',       # dark green
+    'PPO': '#4B0082',       # indigo
+    'GRPO': '#E07000',      # burnt orange
+    'SFT': '#8B0000',       # dark red
 }
 
-LINESTYLES = {
-    'CITA_Instruct': '-',
-    'CITA_NoInstruct': '--',
-    'DPO_Instruct': '-',
-    'DPO_NoInstruct': '--',
-    'PPO_Instruct': '-',
-    'PPO_NoInstruct': '--',
-    'GRPO_Instruct': '-',
-    'GRPO_NoInstruct': '--',
-    'SFT_Instruct': '-',
-    'SFT_NoInstruct': '--',
-}
+def get_color(model_name: str) -> str:
+    """Get color for model - same color for Instruct/NoInstruct variants."""
+    for method in METHOD_COLORS:
+        if model_name.startswith(method):
+            return METHOD_COLORS[method]
+    return '#333333'  # fallback gray
+
+def get_linestyle(model_name: str) -> str:
+    """Get line style - solid for Instruct, dashed for NoInstruct."""
+    return '--' if 'NoInstruct' in model_name else '-'
+
+# Legacy dicts for backward compatibility (maps to functions above)
+COLORS = {f"{m}_{s}": METHOD_COLORS[m] for m in METHOD_COLORS for s in ['Instruct', 'NoInstruct']}
+LINESTYLES = {f"{m}_Instruct": '-' for m in METHOD_COLORS}
+LINESTYLES.update({f"{m}_NoInstruct": '--' for m in METHOD_COLORS})
 
 # Metric tag mappings (TensorBoard tags)
 METRIC_TAGS = {
@@ -186,9 +192,9 @@ def generate_dpo_cita_plots():
             print(f"  [MISS] {log_dir}")
 
     metrics = {
-        'accuracy': ('Reward Accuracy', 'DPO vs CITA: Reward Accuracy'),
-        'loss': ('Eval Loss', 'DPO vs CITA: Eval Loss'),
-        'margins': ('Reward Margin', 'DPO vs CITA: Reward Margins'),
+        'accuracy': ('Reward Accuracy', f'DPO vs CITA: Reward Accuracy ({MODEL_NAME})'),
+        'loss': ('Eval Loss', f'DPO vs CITA: Eval Loss ({MODEL_NAME})'),
+        'margins': ('Reward Margin', f'DPO vs CITA: Reward Margins ({MODEL_NAME})'),
     }
 
     generated_files = []
@@ -232,8 +238,8 @@ def generate_sft_plots():
             print(f"  [MISS] {log_dir}")
 
     metrics = {
-        'loss': ('Training Loss', 'SFT: Training Loss'),
-        'mean_token_accuracy': ('Mean Token Accuracy', 'SFT: Mean Token Accuracy'),
+        'loss': ('Training Loss', f'SFT: Training Loss ({MODEL_NAME})'),
+        'mean_token_accuracy': ('Mean Token Accuracy', f'SFT: Mean Token Accuracy ({MODEL_NAME})'),
     }
 
     generated_files = []
@@ -277,9 +283,9 @@ def generate_grpo_plots():
             print(f"  [MISS] {log_dir}")
 
     metrics = {
-        'grpo_loss': ('Eval Loss', 'GRPO: Eval Loss'),
-        'grpo_reward': ('Eval Reward', 'GRPO: Eval Reward'),
-        'grpo_entropy': ('Eval Entropy', 'GRPO: Eval Entropy'),
+        'grpo_loss': ('Eval Loss', f'GRPO: Eval Loss ({MODEL_NAME})'),
+        'grpo_reward': ('Eval Reward', f'GRPO: Eval Reward ({MODEL_NAME})'),
+        'grpo_entropy': ('Eval Entropy', f'GRPO: Eval Entropy ({MODEL_NAME})'),
     }
 
     generated_files = []
@@ -303,12 +309,12 @@ def generate_grpo_plots():
 
 def generate_combined_loss_subplot():
     """
-    Combined 2x2 subplot: All trainers' eval_loss in one figure.
-    Each subplot has its own y-axis scale.
-    Output: combined_eval_loss.{pdf,png}
+    Combined eval loss subplots - generates TWO versions:
+    1. combined_eval_loss.{pdf,png} - Policy optimization methods only (DPO, CITA, GRPO) - 1x3
+    2. combined_eval_loss_withSFT.{pdf,png} - Includes SFT (2x2)
     """
     print("\n" + "="*60)
-    print("COMBINED EVAL LOSS (2x2 subplot)")
+    print("COMBINED EVAL LOSS (dual versions)")
     print("="*60)
 
     # Load all trainer data
@@ -328,19 +334,74 @@ def generate_combined_loss_subplot():
         else:
             print(f"  [MISS] {log_dir}")
 
-    # Subplot configuration
-    subplot_config = {
+    generated_files = []
+
+    # =========================================================================
+    # VERSION 1: WITHOUT SFT (1x3 layout) - Policy optimization methods only
+    # =========================================================================
+    subplot_config_no_sft = [
+        {'models': ['DPO_Instruct', 'DPO_NoInstruct'], 'title': 'DPO'},
+        {'models': ['CITA_Instruct', 'CITA_NoInstruct'], 'title': 'CITA'},
+        {'models': ['GRPO_Instruct', 'GRPO_NoInstruct'], 'title': 'GRPO'},
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig.suptitle(f'Eval Loss: Policy Optimization Methods ({MODEL_NAME})', fontsize=28, fontweight='bold', y=0.98)
+
+    for idx, config in enumerate(subplot_config_no_sft):
+        ax = axes[idx]
+        models = config['models']
+        title = config['title']
+
+        for model in models:
+            if model not in runs_data:
+                continue
+            data = runs_data[model]
+            steps, values = None, None
+            for tag in ['eval/loss', 'train/loss']:
+                if tag in data:
+                    steps = data[tag]['steps']
+                    values = data[tag]['values']
+                    break
+            if steps and values:
+                color = COLORS.get(model, '#808080')
+                linestyle = LINESTYLES.get(model, '-')
+                label = model.replace('_', ' ')
+                ax.plot(steps, values, color=color, linestyle=linestyle, linewidth=4, label=label)
+
+        ax.set_title(title, fontsize=24, fontweight='bold')
+        ax.set_xlabel('Training Steps', fontsize=20, fontweight='bold')
+        ax.set_ylabel('Eval Loss', fontsize=20, fontweight='bold')
+        ax.legend(loc='best', fontsize=14, frameon=True, fancybox=False, edgecolor='black')
+        ax.tick_params(axis='both', labelsize=16)
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
+    output_path = OUTPUT_DIR / "combined_eval_loss"
+    pdf_path = output_path.with_suffix('.pdf')
+    png_path = output_path.with_suffix('.png')
+    fig.savefig(pdf_path, format='pdf', dpi=300, bbox_inches='tight', facecolor='white')
+    fig.savefig(png_path, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close(fig)
+    print(f"  [OK] combined_eval_loss.{{pdf,png}} (no SFT)")
+    generated_files.extend([pdf_path, png_path])
+
+    # =========================================================================
+    # VERSION 2: WITH SFT (2x2 layout) - All training stages
+    # =========================================================================
+    subplot_config_with_sft = {
         (0, 0): {'models': ['SFT_Instruct', 'SFT_NoInstruct'], 'title': 'SFT'},
         (0, 1): {'models': ['DPO_Instruct', 'DPO_NoInstruct'], 'title': 'DPO'},
         (1, 0): {'models': ['CITA_Instruct', 'CITA_NoInstruct'], 'title': 'CITA'},
         (1, 1): {'models': ['GRPO_Instruct', 'GRPO_NoInstruct'], 'title': 'GRPO'},
     }
 
-    # Create figure (DOUBLED fontsize and linewidth for publication)
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle('Eval Loss Across Training Methods', fontsize=32, fontweight='bold', y=0.98)
+    fig.suptitle(f'Eval Loss: All Training Stages ({MODEL_NAME})', fontsize=32, fontweight='bold', y=0.98)
 
-    for (row, col), config in subplot_config.items():
+    for (row, col), config in subplot_config_with_sft.items():
         ax = axes[row, col]
         models = config['models']
         title = config['title']
@@ -348,22 +409,18 @@ def generate_combined_loss_subplot():
         for model in models:
             if model not in runs_data:
                 continue
-
             data = runs_data[model]
-            # Find loss metric
             steps, values = None, None
             for tag in ['eval/loss', 'train/loss']:
                 if tag in data:
                     steps = data[tag]['steps']
                     values = data[tag]['values']
                     break
-
             if steps and values:
                 color = COLORS.get(model, '#808080')
                 linestyle = LINESTYLES.get(model, '-')
                 label = model.replace('_', ' ')
-                ax.plot(steps, values, color=color, linestyle=linestyle,
-                        linewidth=4, label=label)  # DOUBLED linewidth
+                ax.plot(steps, values, color=color, linestyle=linestyle, linewidth=4, label=label)
 
         ax.set_title(title, fontsize=28, fontweight='bold')
         ax.set_ylabel('Eval Loss', fontsize=22, fontweight='bold')
@@ -373,33 +430,30 @@ def generate_combined_loss_subplot():
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
-    # Common x-label for bottom row (DOUBLED fontsize)
     axes[1, 0].set_xlabel('Training Steps', fontsize=22, fontweight='bold')
     axes[1, 1].set_xlabel('Training Steps', fontsize=22, fontweight='bold')
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-    # Save
-    output_path = OUTPUT_DIR / "combined_eval_loss"
+    output_path = OUTPUT_DIR / "combined_eval_loss_withSFT"
     pdf_path = output_path.with_suffix('.pdf')
     png_path = output_path.with_suffix('.png')
     fig.savefig(pdf_path, format='pdf', dpi=300, bbox_inches='tight', facecolor='white')
     fig.savefig(png_path, format='png', dpi=300, bbox_inches='tight', facecolor='white')
     plt.close(fig)
+    print(f"  [OK] combined_eval_loss_withSFT.{{pdf,png}}")
+    generated_files.extend([pdf_path, png_path])
 
-    print(f"  [OK] combined_eval_loss.{{pdf,png}}")
-    return [pdf_path, png_path]
+    return generated_files
 
 
 def generate_combined_accuracy_subplot():
     """
-    Combined 1x2 subplot: DPO/CITA reward accuracy + SFT token accuracy.
-    Left: DPO_Instruct, DPO_NoInstruct, CITA_Instruct, CITA_NoInstruct (reward accuracy)
-    Right: SFT_Instruct, SFT_NoInstruct (mean token accuracy)
-    Output: combined_accuracy.{pdf,png}
+    Combined accuracy subplots - generates TWO versions:
+    1. combined_accuracy.{pdf,png} - DPO/CITA reward accuracy only (single plot)
+    2. combined_accuracy_withSFT.{pdf,png} - 1x2 with SFT token accuracy
     """
     print("\n" + "="*60)
-    print("COMBINED ACCURACY (1x2 subplot)")
+    print("COMBINED ACCURACY (dual versions)")
     print("="*60)
 
     # Load all required data
@@ -418,14 +472,54 @@ def generate_combined_accuracy_subplot():
         else:
             print(f"  [MISS] {log_dir}")
 
-    # Create 1x2 figure (BOLD: doubled fontsize and linewidth)
+    generated_files = []
+
+    # =========================================================================
+    # VERSION 1: WITHOUT SFT - DPO/CITA Reward Accuracy only (single plot)
+    # =========================================================================
+    fig, ax = plt.subplots(figsize=(10, 7), facecolor='white')
+    ax.set_facecolor('white')
+
+    dpo_cita_models = ['DPO_Instruct', 'DPO_NoInstruct', 'CITA_Instruct', 'CITA_NoInstruct']
+    for model in dpo_cita_models:
+        if model not in runs_data:
+            continue
+        data = runs_data[model]
+        steps, values = find_metric_data(data, 'accuracy')
+        if steps and values:
+            color = COLORS.get(model, '#808080')
+            linestyle = LINESTYLES.get(model, '-')
+            label = model.replace('_', ' ')
+            ax.plot(steps, values, color=color, linestyle=linestyle, linewidth=4, label=label)
+
+    ax.set_title(f'DPO / CITA: Reward Accuracy ({MODEL_NAME})', fontsize=26, fontweight='bold')
+    ax.set_xlabel('Training Steps', fontsize=22, fontweight='bold')
+    ax.set_ylabel('Reward Accuracy', fontsize=22, fontweight='bold')
+    ax.legend(loc='best', fontsize=16, frameon=True, fancybox=False, edgecolor='black')
+    ax.tick_params(axis='both', labelsize=18)
+    ax.grid(True, alpha=0.3, linestyle='--')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.tight_layout()
+    output_path = OUTPUT_DIR / "combined_accuracy"
+    pdf_path = output_path.with_suffix('.pdf')
+    png_path = output_path.with_suffix('.png')
+    fig.savefig(pdf_path, format='pdf', dpi=300, bbox_inches='tight', facecolor='white')
+    fig.savefig(png_path, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close(fig)
+    print(f"  [OK] combined_accuracy.{{pdf,png}} (no SFT)")
+    generated_files.extend([pdf_path, png_path])
+
+    # =========================================================================
+    # VERSION 2: WITH SFT - 1x2 layout (DPO/CITA + SFT token accuracy)
+    # =========================================================================
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    fig.suptitle('Training Accuracy Metrics', fontsize=32, fontweight='bold', y=0.98)
+    fig.suptitle(f'Training Accuracy Metrics ({MODEL_NAME})', fontsize=32, fontweight='bold', y=0.98)
 
     # Left subplot: DPO/CITA Reward Accuracy
     ax_left = axes[0]
     ax_left.set_facecolor('white')
-    dpo_cita_models = ['DPO_Instruct', 'DPO_NoInstruct', 'CITA_Instruct', 'CITA_NoInstruct']
 
     for model in dpo_cita_models:
         if model not in runs_data:
@@ -436,8 +530,7 @@ def generate_combined_accuracy_subplot():
             color = COLORS.get(model, '#808080')
             linestyle = LINESTYLES.get(model, '-')
             label = model.replace('_', ' ')
-            ax_left.plot(steps, values, color=color, linestyle=linestyle,
-                        linewidth=4, label=label)
+            ax_left.plot(steps, values, color=color, linestyle=linestyle, linewidth=4, label=label)
 
     ax_left.set_title('DPO / CITA: Reward Accuracy', fontsize=28, fontweight='bold')
     ax_left.set_xlabel('Training Steps', fontsize=22, fontweight='bold')
@@ -462,8 +555,7 @@ def generate_combined_accuracy_subplot():
             color = COLORS.get(model, '#808080')
             linestyle = LINESTYLES.get(model, '-')
             label = model.replace('_', ' ')
-            ax_right.plot(steps, values, color=color, linestyle=linestyle,
-                         linewidth=4, label=label)
+            ax_right.plot(steps, values, color=color, linestyle=linestyle, linewidth=4, label=label)
 
     ax_right.set_title('SFT: Mean Token Accuracy', fontsize=28, fontweight='bold')
     ax_right.set_xlabel('Training Steps', fontsize=22, fontweight='bold')
@@ -475,17 +567,16 @@ def generate_combined_accuracy_subplot():
     ax_right.spines['right'].set_visible(False)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-    # Save
-    output_path = OUTPUT_DIR / "combined_accuracy"
+    output_path = OUTPUT_DIR / "combined_accuracy_withSFT"
     pdf_path = output_path.with_suffix('.pdf')
     png_path = output_path.with_suffix('.png')
     fig.savefig(pdf_path, format='pdf', dpi=300, bbox_inches='tight', facecolor='white')
     fig.savefig(png_path, format='png', dpi=300, bbox_inches='tight', facecolor='white')
     plt.close(fig)
+    print(f"  [OK] combined_accuracy_withSFT.{{pdf,png}}")
+    generated_files.extend([pdf_path, png_path])
 
-    print(f"  [OK] combined_accuracy.{{pdf,png}}")
-    return [pdf_path, png_path]
+    return generated_files
 
 
 def main():

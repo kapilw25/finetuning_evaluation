@@ -13,7 +13,7 @@ This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a
 \label{sec:key_findings}
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{95.6\%} efficiency---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, PPO (54.4\%) by 41.2 pp, and SFT (15.9\%) by 79.7 pp.
+    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{95.6\%} efficiency---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, and PPO (54.4\%) by 41.2 pp.
 
     \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
 
@@ -102,28 +102,7 @@ All code, trained models, and the Instruction Switch Dataset are publicly availa
 
 
 
-\vspace{-3mm}
-\subsection{CITA vs. Prior Methods}
-\label{sec:comparison}
-
-\begin{table}[H]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-\textbf{Capability} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
-\midrule
-No Reward Model & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\ \hline
-Preference Pairs & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} \\ \hline
-Online Generation & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} \\ \hline
-Instruction-Conditioned & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\ \hline
-Dynamic Policy Switch & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} \\ \hline
-Explicit KL Control & \textcolor{red}{\ding{55}} & \textcolor{green}{\ding{51}} & \textcolor{red}{\ding{55}} & Implicit & \textbf{Mandatory} \\
-\bottomrule
-\end{tabular}
-\caption{Feature comparison across alignment methods. CITA uniquely supports instruction-conditioned behavioral switching with mandatory KL regularization.}
-\label{tab:feature_comparison}
-\vspace{-4mm}
-\end{table}
+% =============================================================================
+% NOTE: Table "CITA vs. Prior Methods" moved to Section 3 (4_cita_framework.tex)
+% See Table~\ref{tab:feature_comparison} in Section~\ref{sec:cita_framework}
+% =============================================================================

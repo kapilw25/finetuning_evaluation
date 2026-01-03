@@ -2,11 +2,7 @@
 % EXPERIMENTS - CITA Paper in ALKALI Format
 % =============================================================================
 
-\vspace{-2mm}
-\section{Experiments}
-\label{sec:experiments}
 
-We present our experimental setup, including the training pipeline, model variants, evaluation benchmarks, hyperparameter optimization, and training dynamics.
 
 \vspace{-2mm}
 \subsection{Training Pipeline}
@@ -14,23 +10,26 @@ We present our experimental setup, including the training pipeline, model varian
 
 Following the staged approach from Section~\ref{sec:methodology}, we train on PKU-SafeRLHF~\cite{ji2024pku,bai2022training} using NVIDIA A100 GPUs with LoRA~\cite{hu2022lora} adapters (SFT/DPO/CITA on A100-40GB; PPO/GRPO on A100-80GB). Training proceeds through four stages:
 
-\begin{enumerate}[leftmargin=*,itemsep=1pt]
-    \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} (pretrained weights)
-    \item \textbf{SFT}: Fine-tune on PKU chosen responses
-    \item \textbf{DPO}: Train on PKU preference pairs
-    \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
-\end{enumerate}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/pipeline/training_pipeline.pdf}
 \caption{\textbf{Training Pipeline}: All methods branch from SFT. PPO and GRPO are online methods requiring reward model/functions. DPO uses offline preference pairs. CITA stacks on DPO with instruction-conditioning and mandatory KL regularization.}
 \label{fig:training_pipeline}
-\vspace{-3mm}
+\vspace{-1em}
 \end{figure}
 
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+    \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} (pretrained weights)
+    \item \textbf{SFT}: Fine-tune on PKU chosen responses
+    \item \textbf{DPO}: Train on PKU preference pairs
+    \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
+\end{enumerate}
+
+
+
 \vspace{-2mm}
-\subsection{Model Variants}
+\subsection*{Model Variants}
 \label{sec:model_variants}
 
 We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct).
@@ -66,7 +65,7 @@ We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$
 \textbf{Comparison Design.} By evaluating NoInstruct vs. Instruct variants, we measure each method's \textit{instruction sensitivity}---the improvement from adding alignment instructions.
 
 \vspace{-2mm}
-\subsection{Hyperparameter Optimization}
+\subsection*{Hyperparameter Optimization}
 \label{sec:hyperparams}
 
 We use Optuna~\cite{akiba2019optuna} with TPE sampler (12 trials) to optimize hyperparameters, following best practices from hyperparameter optimization literature~\cite{liang2023holistic}. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
@@ -96,26 +95,15 @@ Accuracy & 89.5\% & 89.0\% \\
 \end{table}
 
 \vspace{-2mm}
-\subsection{Training Dynamics}
+\subsection*{Training epochs}
 \label{sec:training_dynamics}
 
-We analyze key training curves across all alignment methods.
+We analyze key training curves across all alignment methods. Training accuracy metrics (reward accuracy for DPO/CITA, mean token accuracy for SFT) are provided in Appendix~\ref{sec:appendix_training_curves}, Figure~\ref{fig:training_accuracy_appendix}.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/training/combined_eval_loss.pdf}
-\caption{\textbf{Eval Loss Across Training Methods}: 2$\times$2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf{SFT} (top-left): Loss $\sim$1.5--1.9, Instruct converges lower. \textbf{DPO} (top-right): Loss $\sim$0.21--0.28, smooth convergence. \textbf{CITA} (bottom-left): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (bottom-right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
-\label{fig:training_loss}
-\vspace{-3mm}
-\end{figure}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/training/combined_accuracy.pdf}
-\caption{\textbf{Training Accuracy Metrics}: 1$\times$2 subplot comparing accuracy across methods. \textbf{Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf{Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.}
-\label{fig:training_accuracy}
-\vspace{-3mm}
-\end{figure}
+
+% Training accuracy figure moved to Appendix (see Figure~\ref{fig:training_accuracy_appendix})
+% for detailed 1x2 subplot comparing DPO/CITA reward accuracy and SFT mean token accuracy
 
 \begin{figure}[H]
 \centering

@@ -78,8 +78,7 @@ from eval_utils import (
     show_cached_data_menu, show_mode_selection_menu, show_checkpoint_resume_menu,
     get_model_colors, filter_model_keys,
     get_aqi_max_samples,
-    generate_comparison_plots as _generate_comparison_plots,  # shared plotting function
-    generate_lollipop_chart as _generate_lollipop_chart
+    generate_comparison_plots as _generate_comparison_plots  # shared plotting function
 )
 from eval_utils.plotting import save_figure_dual_format
 from eval_utils.checkpoint import get_checkpoint_dir
@@ -606,22 +605,6 @@ def generate_comparison_plots(
         perfect_label="Perfect = 100",
         ylim_max=100,
         ylim_min=0,
-        score_format=".1f",
-        higher_is_better=True
-    )
-
-    # Also generate lollipop chart as alternative
-    _generate_lollipop_chart(
-        models=models,
-        overall_scores=aqi_scores,
-        output_dir=output_dir,
-        plot_filename="aqi_comparison",
-        xlabel="AQI Score [0-100]",
-        title="AQI: Alignment Quality Index (Higher = Better)",
-        perfect_score=100.0,
-        perfect_label="Perfect = 100",
-        xlim_max=100,
-        xlim_min=0,
         score_format=".1f",
         higher_is_better=True
     )

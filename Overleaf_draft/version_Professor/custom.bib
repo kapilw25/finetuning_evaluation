@@ -987,3 +987,107 @@
   year={2024},
   url={https://arxiv.org/abs/2407.16216}
 }
+
+
+
+@inproceedings{borah-etal-2025-alignment,
+    title = "Alignment Quality Index ({AQI}) : Beyond Refusals: {AQI} as an Intrinsic Alignment Diagnostic via Latent Geometry, Cluster Divergence, and Layer wise Pooled Representations",
+    author = "Borah, Abhilekh  and
+      Sharma, Chhavi  and
+      Khanna, Danush  and
+      Bhatt, Utkarsh  and
+      Singh, Gurpreet  and
+      Abdullah, Hasnat Md  and
+      Ravi, Raghav Kaushik  and
+      Jain, Vinija  and
+      Patel, Jyoti  and
+      Singh, Shubham  and
+      Sharma, Vasu  and
+      Vats, Arpita  and
+      Raja, Rahul  and
+      Chadha, Aman  and
+      Das, Amitava",
+    editor = "Christodoulopoulos, Christos  and
+      Chakraborty, Tanmoy  and
+      Rose, Carolyn  and
+      Peng, Violet",
+    booktitle = "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2025",
+    address = "Suzhou, China",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.emnlp-main.145/",
+    doi = "10.18653/v1/2025.emnlp-main.145",
+    pages = "2888--2947",
+    ISBN = "979-8-89176-332-6",
+    abstract = "Alignment is no longer a luxury; it is a necessity. As large language models (LLMs) enter high-stakes domains like education, healthcare, governance, and law, their behavior must reliably reflect human-aligned values and safety constraints. Yet current evaluations rely heavily on behavioral proxies such as refusal rates, G-Eval scores, and toxicity classifiers, all of which have critical blind spots. Aligned models are often vulnerable to jailbreaking, stochasticity of generation, and alignment faking. To address this issue, we introduce the **Alignment Quality Index (AQI)**. This novel geometric and prompt-invariant metric empirically assesses LLM alignment by analyzing the separation of safe and unsafe activations in latent space. By combining measures such as the *Davies-Bouldin score (DBS)*, *Dunn index (DI)*, *Xie-Beni index (XBI)*, and *Calinski-Harabasz index (CHI)* across various formulations, AQI captures clustering quality to detect hidden misalignments and jailbreak risks, even when outputs appear compliant. AQI also serves as an early warning signal for alignment faking, offering a robust, decoding-invariant tool for behavior-agnostic safety auditing. Additionally, we propose the **LITMUS** dataset to facilitate robust evaluation under these challenging conditions. Empirical tests on LITMUS across different models trained under DPO, GRPO, and RLHF conditions demonstrate AQI{'}s correlation with external judges and ability to reveal vulnerabilities missed by refusal metrics. We make our implementation publicly available to foster future research in this area."
+}
+
+
+
+@inproceedings{10.5555/3737916.3741544,
+author = {Obi, Ike and Pant, Rohan and Agrawal, Srishti Shekhar and Ghazanfar, Maham and Basiletti, Aaron},
+title = {Value imprint: a technique for auditing the human values embedded in RLHF datasets},
+year = {2024},
+isbn = {9798331314385},
+publisher = {Curran Associates Inc.},
+address = {Red Hook, NY, USA},
+abstract = {LLMs are increasingly fine-tuned using RLHF datasets to align them with human preferences and values. However, very limited research has investigated which specific human values are operationalized through these datasets. In this paper, we introduce Value Imprint, a framework for auditing and classifying the human values embedded within RLHF datasets. To investigate the viability of this framework, we conducted three case study experiments by auditing the Anthropic/hh-rlhf, OpenAI WebGPT Comparisons, and Alpaca GPT-4-LLM datasets to examine the human values embedded within them. Our analysis involved a two-phase process. During the first phase, we developed a taxonomy of human values through an integrated review of prior works from philosophy, axiology, and ethics. Then, we applied this taxonomy to annotate 6,501 RLHF preferences. During the second phase, we employed the labels generated from the annotation as ground truth data for training a transformer-based machine learning model to audit and classify the three RLHF datasets. Through this approach, we discovered that information-utility values, including Wisdom/Knowledge and Information Seeking, were the most dominant human values within all three RLHF datasets. In contrast, prosocial and democratic values, including Well-being, Justice, and Human/Animal Rights, were the least represented human values. These findings have significant implications for developing language models that align with societal values and norms. We contribute our datasets to support further research in this area. https://github.com/hv-rsrch/valueimprint},
+booktitle = {Proceedings of the 38th International Conference on Neural Information Processing Systems},
+articleno = {3628},
+numpages = {26},
+location = {Vancouver, BC, Canada},
+series = {NIPS '24}
+}
+
+
+
+@inproceedings{zhang2025cosa,
+  title     = {Controllable Safety Alignment: Inference-Time Adaptation to Diverse Safety Requirements},
+  author    = {Jingyu Zhang and Ahmed Elgohary and Ahmed Magooda and Daniel Khashabi and Benjamin Van Durme},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2025},
+  url       = {https://proceedings.iclr.cc/paper_files/paper/2025/file/a9fa03d8b6b0564580337c985ad10a04-Paper-Conference.pdf}
+}
+
+@misc{zhang2024cosa_arxiv,
+  title         = {Controllable Safety Alignment: Inference-Time Adaptation to Diverse Safety Requirements},
+  author        = {Jingyu Zhang and Ahmed Elgohary and Ahmed Magooda and Daniel Khashabi and Benjamin Van Durme},
+  year          = {2024},
+  eprint        = {2410.08968},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2410.08968}
+}
+
+@inproceedings{maeng-etal-2025-goal,
+  title     = {Goal-Conditioned {DPO}: Prioritizing Safety in Misaligned Instructions},
+  author    = {Maeng, Joo Bon and Lee, Seongmin and Seo, Seokin and Kim, Kee-Eung},
+  editor    = {Chiruzzo, Luis and Ritter, Alan and Wang, Lu},
+  booktitle = {Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},
+  month     = apr,
+  year      = {2025},
+  address   = {Albuquerque, New Mexico},
+  publisher = {Association for Computational Linguistics},
+  url       = {https://aclanthology.org/2025.naacl-long.369/},
+  doi       = {10.18653/v1/2025.naacl-long.369},
+  pages     = {7196--7211},
+  isbn      = {979-8-89176-189-6}
+}
+
+@article{pan2025omni_safetybench,
+  title   = {Omni-SafetyBench: A Benchmark for Safety Evaluation of Audio-Visual Large Language Models},
+  author  = {Leyi Pan and Zheyu Fu and Yunpeng Zhai and Shuchang Tao and Sheng Guan and Shiyu Huang and Lingzhe Zhang and Zhaoyang Liu and Bolin Ding and Felix Henry and Lijie Wen and Aiwei Liu},
+  journal = {CoRR},
+  volume  = {abs/2508.07173},
+  year    = {2025},
+  url     = {https://arxiv.org/abs/2508.07173}
+}
+
+@misc{pham2024robust_concept_erasure,
+  title         = {Robust Concept Erasure Using Task Vectors},
+  author        = {Minh Pham and Kelly O. Marshall and Chinmay Hegde and Niv Cohen},
+  year          = {2024},
+  eprint        = {2404.03631},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2404.03631}
+}

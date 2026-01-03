@@ -32,6 +32,7 @@ from model_utils import load_hf_token
 # ===================================================================
 
 BASE_MODEL = "meta-llama/Llama-3.1-8B"
+MODEL_NAME = "Llama-3.1-8B"  # Short name for figure titles
 HF_TOKEN = load_hf_token(project_root)
 
 # Standardized model configurations (used by ALL evaluation scripts)

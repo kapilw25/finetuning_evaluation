@@ -64,7 +64,11 @@ METRIC_KEYS = {
     "AQI": "aqi_score",
 }
 
-METHODS = ['SFT', 'DPO', 'PPO', 'GRPO', 'CITA']
+# Model name for figure titles
+MODEL_NAME = "Llama-3.1-8B"
+
+# Policy optimization methods only (SFT is a training stage, not a method)
+METHODS = ['DPO', 'PPO', 'GRPO', 'CITA']
 
 # Per-sample score keys to look for
 PER_SAMPLE_KEYS = ['per_sample_scores', 'per_sample', 'scores', 'sample_scores']
@@ -434,7 +438,8 @@ def main():
             output_path=heatmap_path,
             normalize_per_column=True,
             show_raw_values=True,
-            score_ci=eval_score_ci if eval_score_ci else None
+            score_ci=eval_score_ci if eval_score_ci else None,
+            model_name=MODEL_NAME
         )
         generated['heatmap'] = True
         print(f"  [OK] heatmap.{{pdf,png}}")
@@ -450,7 +455,8 @@ def main():
             output_path=heatmap_no_ci_path,
             normalize_per_column=True,
             show_raw_values=True,
-            score_ci=None  # No CI values
+            score_ci=None,  # No CI values
+            model_name=MODEL_NAME
         )
         generated['heatmap_no_ci'] = True
         print(f"  [OK] heatmap_no_ci.{{pdf,png}}")
@@ -459,7 +465,7 @@ def main():
 
     # =========================================================================
     # Generate Radar Chart (Average Radius - instruction alignment efficiency)
-    # NOTE: CI bands disabled - radar already cluttered with 5 methods x 5 evals
+    # NOTE: CI bands disabled - radar already cluttered with 4 methods x 5 evals
     # =========================================================================
     if len(eval_deltas) >= 2:
         radar_area_path = COMBINED_PLOTS_DIR / "radar_area"
@@ -473,7 +479,8 @@ def main():
             output_path=radar_area_path,
             methods=METHODS,
             normalize=True,
-            delta_ci=None  # Skip CI bands - radar too cluttered
+            delta_ci=None,  # Skip CI bands - radar too cluttered
+            model_name=MODEL_NAME
         )
         generated['radar_area'] = True
         print(f"  [OK] radar_area.{{pdf,png}}")

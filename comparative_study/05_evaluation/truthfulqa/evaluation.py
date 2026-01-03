@@ -62,7 +62,6 @@ from eval_utils import (
     show_cached_data_menu, show_mode_selection_menu,
     get_truthfulqa_max_samples,
     generate_comparison_plots,
-    generate_lollipop_chart,
     generate_boxviolin_chart
 )
 from eval_utils.bootstrap import compute_bootstrap_ci
@@ -622,20 +621,6 @@ def generate_truthfulqa_comparison_plots(all_results: Dict, output_dir: Path, st
         score_format=".3f",
         higher_is_better=True,
         error_bars=error_bars if error_bars else None
-    )
-
-    # Also generate lollipop chart as alternative
-    generate_lollipop_chart(
-        models=models,
-        overall_scores=overall_scores,
-        output_dir=output_dir,
-        plot_filename="truthfulqa_comparison",
-        xlabel="Confidence Adaptation Score",
-        title="TruthfulQA: Adaptation Score (Positive = Correct)",
-        perfect_score=1.0,
-        perfect_label="Perfect = 1.0",
-        score_format=".3f",
-        higher_is_better=True
     )
 
     # Generate box/violin plots for per-sample ADAPTATION distribution

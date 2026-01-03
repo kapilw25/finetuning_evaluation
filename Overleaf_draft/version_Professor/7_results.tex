@@ -2,30 +2,17 @@
 % RESULTS - CITA Paper in ALKALI Format
 % =============================================================================
 
-
-
-
-
 \vspace{-0.5mm}
 \section{Experiments \& Results}
 \label{sec:results}
 
-\textls[0]{We evaluate whether \textsc{CITA} supports \emph{instruction-conditioned behavioral switching}—a \textbf{policy-level} change under a fixed user prompt—rather than merely inducing \emph{surface-form compliance}. Our study spans \textbf{5 benchmarks} and \textbf{10 model variants}, enabling a controlled comparison of both \emph{base performance} and \emph{instruction sensitivity}. Unless noted otherwise, we report \textbf{deterministic, non-LLM metrics} to reduce evaluator drift and improve reproducibility, consistent with holistic evaluation practice~\cite{liang2023holistic,sun2024trustllm}. Across this suite, \textsc{CITA} attains \textbf{\colorbox{bg-green}{95.6\%}} instruction-alignment efficiency, surpassing \textsc{GRPO} (67.3\%) by \textbf{+28.3 pp}, \textsc{DPO} (64.7\%) by \textbf{+30.9 pp}, and outperforming \textsc{PPO}/\textsc{SFT} by wider margins.}
+\textls[0]{We evaluate whether \textsc{CITA} supports \emph{instruction-conditioned behavioral switching}—a \textbf{policy-level} change under a fixed user prompt—rather than merely inducing \emph{surface-form compliance}. Our study spans \textbf{5 benchmarks} [ISD (our), TruthfulQA, Conditional Safety, Length Control - see ~\cref{tab:benchmarks}] and \textbf{10 model variants} [LLaMa, Qwen], enabling a controlled comparison of both \emph{base performance} and \emph{instruction sensitivity}. Unless noted otherwise, we report \textbf{deterministic, non-LLM metrics} to reduce evaluator drift and improve reproducibility, consistent with holistic evaluation practice~\cite{liang2023holistic,sun2024trustllm}. Across this suite, \textsc{CITA} attains \textbf{95.6\%} instruction-alignment efficiency, surpassing \textsc{GRPO} (67.3\%) by \textbf{+28.3 pp}, \textsc{DPO} (64.7\%) by \textbf{+30.9 pp}, and outperforming \textsc{PPO}/\textsc{SFT} by wider margins.}
 
 
-\vspace{-2mm}
-\subsection{Training Pipeline}
-\label{sec:training_pipeline_exp}
 
-\noindent\textbf{Setup.} Following the staged pipeline from \cref{sec:methodology}, we train on PKU-SafeRLHF~\cite{ji2024pku,bai2022training} using NVIDIA A100 GPUs with LoRA adapters~\cite{hu2022lora} (SFT/DPO/CITA on A100-40GB; PPO/GRPO on A100-80GB due to online generation overhead). Training proceeds through four stages: \vspace{-1mm}
-\begin{enumerate}[leftmargin=*,itemsep=0pt]
-    \item \textbf{Base:} Llama-3.1-8B pretrained weights~\cite{dubey2024llama}
-    \item \textbf{SFT:} fine-tune on PKU \emph{chosen} responses
-    \item \textbf{DPO:} \textls[0]{preference optimization on PKU preference pairs}
-    \item \textbf{CITA:} instruction-conditioning + \textbf{mandatory} KL anchoring
-\end{enumerate}
-\vspace{-1em}
 
+\begin{comment}
+    
 
 \paragraph{Training Dynamics}
 \label{sec:training_dynamics}
@@ -87,37 +74,7 @@ We separate \textbf{format competence} from \textbf{instruction-conditioned pref
 % \end{figure}
 
 
-\vspace{-1mm}
-\subsection*{Hyperparameter Optimization}
-\label{sec:hyperparams}
-\vspace{-1mm}
-\noindent We tune hyperparameters using Optuna (TPE, 12 trials)~\cite{akiba2019optuna} following established HPO practices~\cite{liang2023holistic}. \textbf{Observation.} \textsc{CITA}\_\textsc{Instruct} prefers a \textbf{lower learning rate} (about 50\% lower than NoInstruct), consistent with longer instruction-augmented sequences (30--40\% longer) yielding larger effective gradients.
 
-\vspace{-1em}
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Hyperparameter} & \textbf{NoInstruct (T5)} & \textbf{Instruct (T7)} \\
-\midrule
-Learning rate & 6.83e-6 & 5.41e-6 \\ \hline
-$\lambda_{\text{KL}}$ & 0.00052 & 0.00023 \\ \hline
-$\beta$ (DPO temp.) & 0.119 & 0.107 \\ \hline
-Weight decay & 0.0091 & 0.0109 \\ \hline
-Warmup ratio & 7.5\% & 10.0\% \\
-\midrule
-Final margin & 6.95 & 7.52 \\ \hline
-Accuracy & 89.5\% & 89.0\% \\
-\bottomrule
-\end{tabular}
-\vspace{-1mm}
-\caption{\textbf{Best Optuna configurations.} T5/T7 denote the best trial index in each setting.}
-\label{tab:hyperparams}
-\vspace{-1em}
-\end{table}
 
 
 
@@ -142,10 +99,12 @@ where $\bar{r}$ is the average normalized radius across all benchmark axes.
 \vspace{-2mm}
 \subsection{Evaluation Benchmarks \& Metrics}
 \label{sec:benchmarks}
+\end{comment}
 
-\noindent\textbf{Benchmarks.} We evaluate on 5 benchmarks spanning instruction-switch diagnostics, truthfulness under uncertainty, conditional safety regimes, explicit length control, and axiom-level alignment behavior.
+%\noindent\textbf{Benchmarks.} We evaluate on 5 benchmarks spanning instruction-switch diagnostics, truthfulness under uncertainty, conditional safety regimes, explicit length control, and axiom-level alignment behavior.
 
 \begin{table}[H]
+\vspace{-0.5em}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -164,39 +123,43 @@ AQI & 2,800; 7 axioms & (CHI + XB)/ 2 clustering (100) \\
 \vspace{-1mm}
 \caption{\textbf{Evaluation suite and metrics.} All benchmarks use deterministic metrics; higher is better (TruthfulQA: positive separation HON $>$ CONF).}
 \label{tab:benchmarks}
-\vspace{-4mm}
+\vspace{-1em}
 \end{table}
 
-\noindent\textbf{Instruction sets.} \textbf{ISD types:} Neutral, Conservative, Liberal, Regulatory, Empathetic, Safety, Educational, Concise, Professional, Creative. \textbf{AQI axioms:} Civility, Duty, Empathy, Information, Justice, Well-being, Wisdom.
+\noindent
+Please refer to \citep{borah-etal-2025-alignment} for Alignment Quality Index (AQI), evalutead on axioms: Civility, Duty, Empathy, Information, Justice, Well-being, Wisdom taken from \citep{10.5555/3737916.3741544}.
 
 \vspace{-2mm}
-\section{Performance}
+\section*{Performance}
 \label{sec:overall_results}
 
-\noindent\textbf{Aggregate instruction-alignment efficiency.} We summarize overall instruction-alignment using the normalized radar-area score (see \cref{eq:efficiency}); the headline comparison is \textsc{CITA} vs.\ established alignment baselines. Figure~\ref{fig:radar} visualizes the instruction-alignment efficiency across all five benchmarks, with Table~\ref{tab:improvement_comparison} reporting instruction sensitivity ($\Delta$) and Table~\ref{tab:ranking_avg_radius} showing the final ranking.
+We present average results accross 10 models, for details see Appendix \ref{}. Figure~\ref{fig:radar} visualizes the instruction-alignment efficiency across all five benchmarks, with Table~\ref{tab:improvement_comparison} reporting instruction sensitivity ($\Delta$) and Table~\ref{tab:ranking_avg_radius} showing the final ranking.
 
-\begin{figure}[t]
+\begin{figure}[ht!]
 \centering
 \includegraphics[width=\columnwidth]{figures/evaluation/combined_plots/radar_area.pdf}
-\vspace{-2mm}
-\caption{\textbf{Instruction-alignment efficiency (radar-area).} \textsc{CITA} attains \textbf{\colorbox{bg-green}{95.6\%}}, outperforming \textsc{DPO} (64.7\%), \textsc{GRPO} (67.3\%), \textsc{PPO} (54.4\%), and \textsc{SFT} (15.9\%). Delta annotations show the winning method's improvement (Instruct $-$ NoInstruct) per benchmark.}
+\vspace{-2em}
+\caption{\textbf{Instruction-alignment efficiency (radar-area).} \textsc{CITA} attains \textbf{95.6\%}, outperforming \textsc{GRPO} (67.3\%), \textsc{DPO} (64.7\%), and \textsc{PPO} (54.4\%). Delta annotations show the winning method's improvement (Instruct $-$ NoInstruct) per benchmark.}
 \label{fig:radar}
-\vspace{-3mm}
+\vspace{-2em}
 \end{figure}
 
 \noindent\textbf{Benchmark-wise results.} Figure~\ref{fig:heatmap_results} reports scores across all five benchmarks for all 10 model variants (cf. Appendix~\ref{sec:appendix_examples} for detailed per-benchmark analysis).
 
-\begin{figure}[t]
+
+
+
+\begin{figure}[ht!]
 \centering
 \includegraphics[width=\columnwidth]{figures/evaluation/combined_plots/heatmap_no_ci.pdf}
-\vspace{-2mm}
+\vspace{-2em}
 \caption{\textbf{Performance heatmap across 5 benchmarks.} Original scores with column-normalized colors (green = best, red = worst per column). NI = NoInstruct, I = Instruct. \textsc{CITA\_I} achieves highest AQI (55.0) and competitive performance across all metrics.}
 \label{fig:heatmap_results}
-\vspace{-3mm}
+\vspace{-1.5em}
 \end{figure}
 
 \vspace{-2mm}
-\subsection{Instruction Sensitivity: CITA vs.\ DPO}
+\subsection*{Instruction Sensitivity: CITA vs.\ DPO}
 \label{sec:improvement_comparison}
 
 \noindent\textbf{Primary controlled comparison.} Instruction sensitivity measures how much a method \emph{moves} when we add behavioral instructions: $\Delta = \text{Instruct} - \text{NoInstruct}$. This isolates switching behavior from base capability.
@@ -206,15 +169,15 @@ AQI & 2,800; 7 axioms & (CHI + XB)/ 2 clustering (100) \\
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Benchmark} & \textbf{SFT$\Delta$} & \textbf{DPO$\Delta$} & \textbf{PPO$\Delta$} & \textbf{GRPO$\Delta$} & \textbf{CITA$\Delta$} \\
+\textbf{Benchmark} & \textbf{DPO$\Delta$} & \textbf{PPO$\Delta$} & \textbf{GRPO$\Delta$} & \textbf{CITA$\Delta$} \\
 \midrule
-ISD & +0.016 & \cellcolor{green!30}\textbf{+0.172} & +0.138 & +0.141 & +0.162 \\ \hline
-TruthfulQA & +0.018 & +0.001 & +0.017 & +0.045 & \cellcolor{green!30}\textbf{+0.054} \\ \hline
-Cond.\ Safety & +0.020 & \cellcolor{green!30}\textbf{+0.475} & +0.295 & +0.304 & +0.391 \\ \hline
-Length Control & +0.063 & +0.130 & +0.086 & +0.092 & \cellcolor{green!30}\textbf{+0.164} \\ \hline
-AQI & $-$26.2 & $-$6.2 & +2.7 & +6.9 & \cellcolor{green!30}\textbf{+26.4} \\
+ISD & \textbf{+0.172} & +0.138 & +0.141 & +0.162 \\ \hline
+Truthful-QA & +0.001 & +0.017 & +0.045 & \textbf{+0.054} \\ \hline
+Cond.\ Saf. & \textbf{+0.475} & +0.295 & +0.304 & +0.391 \\ \hline
+Len.\ Ctrl & +0.130 & +0.086 & +0.092 & \textbf{+0.164} \\ \hline
+AQI & $-$6.2 & +2.7 & +6.9 & \textbf{+26.4} \\
 \bottomrule
 \end{tabular}
 \vspace{-1mm}
@@ -232,19 +195,19 @@ AQI & $-$26.2 & $-$6.2 & +2.7 & +6.9 & \cellcolor{green!30}\textbf{+26.4} \\
 \toprule
 \textbf{Rank} & \textbf{Method} & \textbf{Avg Radius} \\
 \midrule
-\#1 & \cellcolor{green!30}\textbf{CITA} & \cellcolor{green!30}\textbf{95.6\%} \\ \hline
+\#1 & \textbf{CITA} & \textbf{95.6\%} \\ \hline
 \#2 & GRPO & 67.3\% \\ \hline
 \#3 & DPO & 64.7\% \\ \hline
-\#4 & PPO & 54.4\% \\ \hline
-\#5 & SFT & 15.9\% \\
+\#4 & PPO & 54.4\% \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Ranking by average radius} (higher = better instruction alignment). \textbf{Overall instruction-alignment efficiency}: \colorbox{green!30}{\textbf{CITA 95.6\%}} vs GRPO 67.3\% (+28.3 pp), DPO 64.7\% (+30.9 pp), PPO 54.4\% (+41.2 pp), SFT 15.9\% (+79.7 pp).}
+\caption{\textbf{Ranking by average radius} (higher = better instruction alignment). \textbf{Overall instruction-alignment efficiency}: \textbf{CITA 95.6\%} vs GRPO 67.3\% (+28.3 pp), DPO 64.7\% (+30.9 pp), PPO 54.4\% (+41.2 pp).}
 \label{tab:ranking_avg_radius}
 \vspace{-4mm}
 \end{table}
 
-\noindent\textbf{Takeaway.} \textsc{CITA} exhibits consistently strong instruction sensitivity on metrics that require \emph{controlled switching} (truthfulness-under-uncertainty separation, explicit length control, and axiom-level clustering), supporting the claim that it better sustains instruction-conditioned behavioral regimes under a shared backbone.
+\noindent\textbf{Takeaway \& Interpretation.} \textsc{CITA} delivers consistently strong \emph{instruction sensitivity} on \emph{controlled-switching} metrics—truthfulness-under-uncertainty separation, explicit length control, and axiom-level clustering—supporting the claim that it preserves distinct instruction-conditioned behavioral regimes within a shared backbone; moreover, at comparable accuracy it achieves larger margins than \textsc{DPO}, indicating sharper preference separation without sacrificing classification performance, a pattern \emph{consistent with} mandatory KL anchoring stabilizing instruction-conditioned updates.
+
 
 
 
@@ -283,44 +246,13 @@ We presented \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a method f
 
 More broadly, this work reframes alignment as a \emph{runtime-controllable interface} rather than a training-time artifact. Instruction-conditioned alignment enables a single deployed model to serve multiple roles and policy contexts without retraining or maintaining separate checkpoints, while preserving stable and auditable behavior under switching.
 
+% =============================================================================
+% NOTE: Sections 7.1-7.3 (Benchmark-Specific Analysis, Combined Analysis, Key Insights)
+% moved to separate file: 12_extended_results.tex (included in Appendix)
+% See Appendix \ref{sec:appendix_extended_results} for detailed benchmark analysis
+% =============================================================================
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\clearpage
-\newpage
-
-
-
-% \vspace{-2mm}
-% \subsection{Evaluation Benchmarks}
-% \label{sec:benchmarks}
-
-% We evaluate on 5 benchmarks with deterministic metrics:
 
 % \begin{table}[H]
 % \centering
@@ -374,147 +306,8 @@ More broadly, this work reframes alignment as a \emph{runtime-controllable inter
 
 
 
-\vspace{-2mm}
-% \section{Performance}
-% \label{sec:overall_results}
-
-% \begin{table}[H]
-% \centering
-% \footnotesize
-% \begin{tabular}{@{}lccccc@{}}
-% \toprule
-% \textbf{Model} & \textbf{ISD} & \textbf{TQA} & \textbf{CS} & \textbf{LC} & \textbf{AQI} \\
-% \midrule
-% SFT\_NI & .126 & $-$.006 & .002 & 0.95 & 37.6 \\
-% \hline
-% SFT\_I & .142 & .012 & .022 & 1.02 & 47.7 \\
-% \hline
-% DPO\_NI & .217 & $-$.006 & .015 & 0.99 & 11.0 \\
-% \hline
-% DPO\_I & \textbf{.389} & $-$.005 & \textbf{.489} & 1.12 & 55.0 \\
-% \hline
-% CITA\_NI & .204 & $-$.040 & .009 & 0.98 & 9.4 \\
-% \hline
-% CITA\_I & .367 & \textbf{.013} & .400 & \textbf{1.14} & \textbf{55.5} \\
-% \bottomrule
-% \end{tabular}
-% \caption{Results across 5 benchmarks. TQA = TruthfulQA, CS = Conditional Safety, LC = Length Control. \textbf{Bold} = best per column. NI = NoInstruct, I = Instruct.}
-% \label{tab:overall_results}
-% \vspace{-4mm}
-% \end{table}
-
-\vspace{-2mm}
-\subsection{Benchmark-Specific Analysis}
-\label{sec:benchmark_analysis}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\columnwidth]{figures/evaluation/isd_comparison.pdf}
-\caption{\textbf{ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.}
-\label{fig:isd}
-\vspace{-3mm}
-\end{figure}
-
-% COMMENTED OUT - lollipop variant not available in updated figures
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.95\columnwidth]{figures/evaluation/isd_comparison_lollipop.pdf}
-% \caption{\textbf{ISD Lollipop}: Instruction sensitivity scores with emphasis on relative differences.}
-% \label{fig:isd_lollipop}
-% \vspace{-3mm}
-% \end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\columnwidth]{figures/evaluation/truthfulqa_comparison.pdf}
-\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit{positive} adaptation scores.}
-\label{fig:truthfulqa}
-\vspace{-3mm}
-\end{figure}
-
-% COMMENTED OUT - lollipop variant not available in updated figures
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.95\columnwidth]{figures/evaluation/truthfulqa_comparison_lollipop.pdf}
-% \caption{\textbf{TruthfulQA Lollipop}: Adaptation scores highlighting CITA's superior uncertainty calibration.}
-% \label{fig:truthfulqa_lollipop}
-% \vspace{-3mm}
-% \end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\columnwidth]{figures/evaluation/conditional_safety_comparison.pdf}
-\caption{\textbf{Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show behavioral gap between STRICT vs. PERMISSIVE.}
-\label{fig:conditional_safety}
-\vspace{-3mm}
-\end{figure}
-
-% COMMENTED OUT - lollipop variant not available in updated figures
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.95\columnwidth]{figures/evaluation/conditional_safety_comparison_lollipop.pdf}
-% \caption{\textbf{Conditional Safety Lollipop}: Safety adaptation scores across STRICT vs. PERMISSIVE contexts.}
-% \label{fig:conditional_safety_lollipop}
-% \vspace{-3mm}
-% \end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\columnwidth]{figures/evaluation/length_control_comparison.pdf}
-\caption{\textbf{Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation.}
-\label{fig:length_control}
-\vspace{-3mm}
-\end{figure}
-
-% COMMENTED OUT - lollipop variant not available in updated figures
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.95\columnwidth]{figures/evaluation/length_control_comparison_lollipop.pdf}
-% \caption{\textbf{Length Control Lollipop}: Response length adaptation ratios with baseline reference.}
-% \label{fig:length_control_lollipop}
-% \vspace{-3mm}
-% \end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\columnwidth]{figures/evaluation/aqi_comparison.pdf}
-\caption{\textbf{AQI}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores.}
-\label{fig:aqi}
-\vspace{-3mm}
-\end{figure}
-
-% COMMENTED OUT - lollipop variant not available in updated figures
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.95\columnwidth]{figures/evaluation/aqi_comparison_lollipop.pdf}
-% \caption{\textbf{AQI Lollipop}: Alignment quality scores emphasizing CITA and DPO performance gap.}
-% \label{fig:aqi_lollipop}
-% \vspace{-3mm}
-% \end{figure}
-
-\vspace{-2mm}
-\subsection{Combined Analysis}
-\label{sec:combined_analysis}
-
-
-
-\begin{figure*}[ht!]
-\centering
-\includegraphics[width=0.75\textwidth]{figures/evaluation/combined_plots/heatmap.pdf}
-\vspace{-1mm}
-\caption{\textbf{Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ISD and AQI lack per-sample decomposition (composite/cluster-based metrics).}
-\label{fig:heatmap}
-\vspace{-2mm}
-\end{figure*}
-
-\noindent\textbf{Statistical reliability.} Bootstrap confidence intervals (N=1,000 resamples) are reported for benchmarks with per-sample metrics. The narrow CIs on TruthfulQA ($\pm$0.05--0.28) and Cond.\ Safety ($\pm$0.01--0.03) indicate stable estimates; Length Ctrl shows larger variance ($\pm$0.02--4.67) due to response length variability across prompts.
-
-\vspace{-2mm}
-\subsection{Key Insights}
-\label{sec:key_insights}
-
-\paragraph{TruthfulQA is the Differentiator.} On TruthfulQA, CITA improves by +0.054 (becoming appropriately more/less confident when instructed), while DPO shows negligible change (+0.001). This demonstrates CITA's superior ability to \textit{internalize} uncertainty calibration instructions.
-
-\paragraph{CITA Achieves Higher Margins with Lower Accuracy.} Despite similar training accuracy ($\sim$89\%), CITA achieves higher reward margins (7.5 vs. 6.0). This validates that mandatory KL prevents margin collapse while enabling stable behavioral switching.
-
-\paragraph{Instruction-Alignment $\neq$ Instruction-Following.} DPO\_I achieves higher absolute ISD scores, but CITA\_I shows more consistent improvement across diverse benchmarks. This suggests CITA achieves \textit{deeper} instruction-alignment rather than surface-level following.
+% =============================================================================
+% NOTE: Sections 7.1-7.3 (Benchmark-Specific Analysis, Combined Analysis, Key Insights)
+% moved to separate file: 12_extended_results.tex (included in Appendix)
+% See Appendix \ref{sec:appendix_extended_results} for detailed benchmark analysis
+% =============================================================================

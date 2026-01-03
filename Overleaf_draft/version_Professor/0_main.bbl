@@ -52,15 +52,6 @@ Yuntao Bai et~al. 2022{\natexlab{c}}.
   from human feedback.
 \newblock \emph{arXiv preprint arXiv:2204.05862}.
 
-\bibitem[{Bianchi et~al.(2023)Bianchi, Suzgun, Attanasio, R{\"o}ttger,
-  Jurafsky, Hashimoto, and Zou}]{bianchi2023safetytuned}
-Federico Bianchi, Mirac Suzgun, Giuseppe Attanasio, Paul R{\"o}ttger, Dan
-  Jurafsky, Tatsunori Hashimoto, and James Zou. 2023.
-\newblock \href {https://arxiv.org/abs/2309.07875} {Safety-tuned llamas:
-  Lessons from improving the safety of large language models that follow
-  instructions}.
-\newblock \emph{arXiv preprint arXiv:2309.07875}.
-
 \bibitem[{Bianchi et~al.(2024)Bianchi, Suzgun, Attanasio, Röttger, Jurafsky,
   Hashimoto, and Zou}]{bianchi2024safetytuned}
 Federico Bianchi, Mirac Suzgun, Giuseppe Attanasio, Paul Röttger, Dan
@@ -69,6 +60,21 @@ Federico Bianchi, Mirac Suzgun, Giuseppe Attanasio, Paul Röttger, Dan
   Lessons from improving the safety of large language models that follow
   instructions}.
 \newblock \emph{International Conference on Learning Representations}.
+
+\bibitem[{Borah et~al.(2025)Borah, Sharma, Khanna, Bhatt, Singh, Abdullah,
+  Ravi, Jain, Patel, Singh, Sharma, Vats, Raja, Chadha, and
+  Das}]{borah-etal-2025-alignment}
+Abhilekh Borah, Chhavi Sharma, Danush Khanna, Utkarsh Bhatt, Gurpreet Singh,
+  Hasnat~Md Abdullah, Raghav~Kaushik Ravi, Vinija Jain, Jyoti Patel, Shubham
+  Singh, Vasu Sharma, Arpita Vats, Rahul Raja, Aman Chadha, and Amitava Das.
+  2025.
+\newblock \href {https://doi.org/10.18653/v1/2025.emnlp-main.145} {Alignment
+  quality index ({AQI}) : Beyond refusals: {AQI} as an intrinsic alignment
+  diagnostic via latent geometry, cluster divergence, and layer wise pooled
+  representations}.
+\newblock In \emph{Proceedings of the 2025 Conference on Empirical Methods in
+  Natural Language Processing}, pages 2888--2947, Suzhou, China. Association
+  for Computational Linguistics.
 
 \bibitem[{Brown et~al.(2020)Brown, Mann, Ryder, Subbiah, Kaplan, Dhariwal
   et~al.}]{brown2020language}
@@ -100,14 +106,6 @@ Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. 2020.
   contrastive learning of visual representations}.
 \newblock \emph{International Conference on Machine Learning}, pages
   1597--1607.
-
-\bibitem[{Chowdhery et~al.(2022)Chowdhery, Narang, Devlin, Bosma, Mishra,
-  Roberts et~al.}]{chowdhery2022palm}
-Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra,
-  Adam Roberts, et~al. 2022.
-\newblock \href {https://arxiv.org/abs/2204.02311} {Palm: Scaling language
-  modeling with pathways}.
-\newblock \emph{arXiv preprint arXiv:2204.02311}.
 
 \bibitem[{Chung et~al.(2022)Chung, Hou, Longpre, Zoph, Tay, Fedus, Li, Wang
   et~al.}]{chung2022scaling}
@@ -403,6 +401,16 @@ Subhabrata Mukherjee, Arindam Mitra, Ganesh Jawahar, Sahaj Agarwal, Hamid
 \newblock \href {https://arxiv.org/abs/2306.02707} {Orca: Progressive learning
   from complex explanation traces of gpt-4}.
 \newblock \emph{arXiv preprint arXiv:2306.02707}.
+
+\bibitem[{Obi et~al.(2024)Obi, Pant, Agrawal, Ghazanfar, and
+  Basiletti}]{10.5555/3737916.3741544}
+Ike Obi, Rohan Pant, Srishti~Shekhar Agrawal, Maham Ghazanfar, and Aaron
+  Basiletti. 2024.
+\newblock Value imprint: a technique for auditing the human values embedded in
+  rlhf datasets.
+\newblock In \emph{Proceedings of the 38th International Conference on Neural
+  Information Processing Systems}, NIPS '24, Red Hook, NY, USA. Curran
+  Associates Inc.
 
 \bibitem[{OpenAI(2023)}]{openai2023gpt4}
 OpenAI. 2023.

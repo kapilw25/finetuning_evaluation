@@ -1,4 +1,4 @@
-This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+This is BibTeX, Version 0.99d (TeX Live 2023)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: 0_main.aux
 The style file: acl_natbib.bst
@@ -10,42 +10,42 @@ Database file #1: custom.bib
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 You've used 92 entries,
             3571 wiz_defined-function locations,
-            1173 strings with 27995 characters,
-and the built_in function-call counts, 75391 in all, are:
-= -- 5659
-> -- 5422
-< -- 36
-+ -- 1766
-- -- 1644
-* -- 5562
-:= -- 11901
-add.period$ -- 370
+            1181 strings with 28637 characters,
+and the built_in function-call counts, 76104 in all, are:
+= -- 5724
+> -- 5475
+< -- 37
++ -- 1784
+- -- 1662
+* -- 5620
+:= -- 11983
+add.period$ -- 372
 call.type$ -- 92
-change.case$ -- 985
+change.case$ -- 996
 chr.to.int$ -- 98
 cite$ -- 92
-duplicate$ -- 4765
-empty$ -- 4662
-format.name$ -- 1917
-if$ -- 16041
+duplicate$ -- 4813
+empty$ -- 4702
+format.name$ -- 1935
+if$ -- 16197
 int.to.chr$ -- 9
 int.to.str$ -- 1
-missing$ -- 1029
+missing$ -- 1040
 newline$ -- 463
 num.names$ -- 368
-pop$ -- 2174
+pop$ -- 2197
 preamble$ -- 1
-purify$ -- 880
+purify$ -- 887
 quote$ -- 0
-skip$ -- 3194
+skip$ -- 3210
 stack$ -- 0
-substring$ -- 1646
-swap$ -- 2328
-text.length$ -- 10
+substring$ -- 1686
+swap$ -- 2364
+text.length$ -- 11
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 828
 warning$ -- 0
-while$ -- 318
+while$ -- 321
 width$ -- 0
-write$ -- 1130
+write$ -- 1136

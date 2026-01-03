@@ -18,6 +18,8 @@ from matplotlib.patches import Patch
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 
+from .model_loader import MODEL_NAME
+
 
 def save_figure_dual_format(fig, output_path: Path, dpi: int = 300) -> Tuple[str, str]:
     """
@@ -198,6 +200,19 @@ def generate_comparison_plots(
         print("Need at least 2 models for comparison plots")
         return None, None
 
+    # Filter out SFT models (SFT is a training stage, not a policy optimization method)
+    filtered_indices = [i for i, m in enumerate(models) if not m.startswith('SFT')]
+    if len(filtered_indices) < len(models):
+        print(f"  [INFO] Filtered out SFT models ({len(models) - len(filtered_indices)} removed)")
+        models = [models[i] for i in filtered_indices]
+        overall_scores = [overall_scores[i] for i in filtered_indices]
+        if error_bars:
+            error_bars = {k: v for k, v in error_bars.items() if not k.startswith('SFT')}
+
+    if len(models) < 2:
+        print("Need at least 2 models after filtering")
+        return None, None
+
     # Sort by overall score (ascending = best on right for higher_is_better)
     sorted_indices = np.argsort(overall_scores)
     if not higher_is_better:
@@ -239,6 +254,9 @@ def generate_comparison_plots(
     ax.set_ylabel(ylabel, fontsize=14, fontweight='bold', color='black')
     # Remove "Overall vs Valid-Only" from title if present
     clean_title = title.replace(" - Overall vs Valid-Only", "").replace("Overall vs Valid-Only", "")
+    # Auto-append MODEL_NAME to title if not already present
+    if MODEL_NAME and MODEL_NAME not in clean_title:
+        clean_title = f"{clean_title} ({MODEL_NAME})"
     ax.set_title(clean_title, fontsize=14, fontweight='bold', color='black', pad=15)
 
     # Set y-axis limits
@@ -294,146 +312,6 @@ def generate_comparison_plots(
     print(f"\nRanking ({direction}):")
     for rank, (model, score) in enumerate(zip(reversed(models_sorted), reversed(overall_sorted)), 1):
         print(f"   {rank}. {model}: {score:{score_format}}")
-
-    return pdf_path, png_path
-
-
-# =============================================================================
-# HORIZONTAL LOLLIPOP CHART (Alternative to bar chart)
-# =============================================================================
-
-def generate_lollipop_chart(
-    models: List[str],
-    overall_scores: List[float],
-    output_dir: Path = None,
-    plot_filename: str = None,
-    xlabel: str = "Score",
-    title: str = "Model Comparison",
-    perfect_score: float = 1.0,
-    perfect_label: str = "Perfect = 1.0",
-    xlim_max: Optional[float] = None,
-    xlim_min: float = 0,
-    reference_line: Optional[float] = None,
-    reference_label: str = "Reference",
-    score_format: str = ".3f",
-    higher_is_better: bool = True
-) -> Tuple[str, str]:
-    """
-    Generate horizontal lollipop chart for model comparison.
-
-    Modern alternative to bar charts - cleaner and more visually appealing.
-    Models sorted by score (best at top).
-
-    Args:
-        models: List of model names
-        overall_scores: Overall scores for each model
-        output_dir: Directory to save plot
-        plot_filename: Filename without extension (e.g., "isd_lollipop")
-        xlabel: X-axis label
-        title: Plot title
-        perfect_score: Perfect score value for annotation
-        perfect_label: Label for perfect score annotation
-        xlim_max: Maximum x-axis limit (auto if None)
-        xlim_min: Minimum x-axis limit (default 0)
-        reference_line: X value for vertical reference line (optional)
-        reference_label: Label for reference line
-        score_format: Format string for score labels
-        higher_is_better: If True, sort descending (best at top)
-
-    Returns:
-        Tuple of (pdf_path, png_path)
-    """
-    if len(models) < 2:
-        print("Need at least 2 models for lollipop chart")
-        return None, None
-
-    # Sort by score (descending = best at top for higher_is_better)
-    sorted_indices = np.argsort(overall_scores)
-    if higher_is_better:
-        sorted_indices = sorted_indices  # Ascending, so best at bottom visually (top in plot)
-    else:
-        sorted_indices = sorted_indices[::-1]
-
-    models_sorted = [models[i] for i in sorted_indices]
-    scores_sorted = [overall_scores[i] for i in sorted_indices]
-
-    # Get colors using shared utility
-    colors_sorted = get_model_colors(models_sorted)
-
-    # Create figure
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    y_pos = np.arange(len(models_sorted))
-
-    # Set x-axis limits
-    if xlim_max is None:
-        xlim_max = max(scores_sorted) * 1.25 if scores_sorted else 1.0
-
-    # Handle negative values
-    if min(scores_sorted) < 0:
-        x_margin = max(abs(min(scores_sorted)), abs(max(scores_sorted))) * 0.2
-        xlim_min = min(scores_sorted) - x_margin
-        xlim_max = max(scores_sorted) + x_margin
-        ax.axvline(x=0, color='black', linestyle='-', linewidth=1, alpha=0.5)
-
-    # Draw horizontal lines (stems)
-    # Positive: line from 0 to score (right), Negative: line from score to 0 (left)
-    for i, (score, color) in enumerate(zip(scores_sorted, colors_sorted)):
-        ax.hlines(y=i, xmin=min(0, score), xmax=max(0, score),
-                  color=color, linewidth=2.5, alpha=0.8)
-
-    # Draw dots at the end
-    ax.scatter(scores_sorted, y_pos, c=colors_sorted, s=150, zorder=3,
-               edgecolors='black', linewidths=1.5)
-
-    # Add score labels next to dots
-    for i, score in enumerate(scores_sorted):
-        offset = (xlim_max - xlim_min) * 0.02
-        ha = 'left' if score >= 0 else 'right'
-        x_pos = score + offset if score >= 0 else score - offset
-        ax.text(x_pos, i, f'{score:{score_format}}', va='center', ha=ha,
-                fontsize=10, fontweight='bold', color='black')
-
-    # Add reference line if specified
-    if reference_line is not None:
-        ax.axvline(x=reference_line, color='red', linestyle='--', linewidth=1.5,
-                   alpha=0.7, label=reference_label)
-
-    # Add Perfect score annotation
-    ax.text(0.98, 0.02, perfect_label, transform=ax.transAxes,
-            fontsize=10, fontweight='bold', color='black', ha='right', va='bottom',
-            bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
-
-    # Labels and styling
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(models_sorted, fontsize=11, fontweight='bold', color='black')
-    ax.set_xlabel(xlabel, fontsize=14, fontweight='bold', color='black')
-    # Clean title
-    clean_title = title.replace(" - Overall vs Valid-Only", "").replace("Overall vs Valid-Only", "")
-    clean_title = clean_title.replace("(Higher = Better)", "").strip()
-    ax.set_title(clean_title, fontsize=14, fontweight='bold', color='black', pad=15)
-    ax.set_xlim(xlim_min, xlim_max)
-    ax.grid(axis='x', alpha=0.3, linestyle='--')
-
-    # Remove top and right spines for cleaner look
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-    plt.tight_layout()
-
-    # Save with "_lollipop" suffix
-    if plot_filename and not plot_filename.endswith('_lollipop'):
-        lollipop_filename = plot_filename.replace('.pdf', '').replace('.png', '') + '_lollipop'
-    else:
-        lollipop_filename = plot_filename or 'comparison_lollipop'
-
-    plot_path = output_dir / lollipop_filename
-    pdf_path, png_path = save_figure_dual_format(fig, plot_path, dpi=300)
-    plt.close(fig)
-
-    print(f"Saved lollipop chart:")
-    print(f"  PDF: {pdf_path}")
-    print(f"  PNG: {png_path}")
 
     return pdf_path, png_path
 
@@ -536,7 +414,11 @@ def generate_boxviolin_chart(
 
         ax.set_xlabel('')
         ax.set_ylabel(ylabel, fontsize=14, fontweight='bold', color='black')
-        ax.set_title(f'{title} (Box Plot)', fontsize=14, fontweight='bold', color='black', pad=15)
+        # Auto-append MODEL_NAME to title if not already present
+        box_title = f'{title} (Box Plot)'
+        if MODEL_NAME and MODEL_NAME not in title:
+            box_title = f'{title} ({MODEL_NAME}) (Box Plot)'
+        ax.set_title(box_title, fontsize=14, fontweight='bold', color='black', pad=15)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='center', fontsize=11, fontweight='bold', color='black')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
 
@@ -575,7 +457,11 @@ def generate_boxviolin_chart(
 
         ax.set_xlabel('')
         ax.set_ylabel(ylabel, fontsize=14, fontweight='bold', color='black')
-        ax.set_title(f'{title} (Violin Plot)', fontsize=14, fontweight='bold', color='black', pad=15)
+        # Auto-append MODEL_NAME to title if not already present
+        violin_title = f'{title} (Violin Plot)'
+        if MODEL_NAME and MODEL_NAME not in title:
+            violin_title = f'{title} ({MODEL_NAME}) (Violin Plot)'
+        ax.set_title(violin_title, fontsize=14, fontweight='bold', color='black', pad=15)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='center', fontsize=11, fontweight='bold', color='black')
         ax.grid(axis='y', alpha=0.3, linestyle='--')
 
@@ -837,9 +723,10 @@ def calculate_avg_radius(radii: List[float]) -> float:
 def generate_radar_chart_area_based(
     eval_deltas: Dict[str, Dict[str, float]],
     output_path: Path,
-    methods: List[str] = ['SFT', 'DPO', 'CITA'],
+    methods: List[str] = ['DPO', 'PPO', 'GRPO', 'CITA'],
     normalize: bool = True,
-    delta_ci: Optional[Dict[str, Dict[str, Tuple[float, float]]]] = None
+    delta_ci: Optional[Dict[str, Dict[str, Tuple[float, float]]]] = None,
+    model_name: str = None
 ) -> Optional[str]:
     """
     Generate radar chart with AVERAGE RADIUS ranking (higher avg = better overall performance).
@@ -1015,9 +902,11 @@ def generate_radar_chart_area_based(
     # Subtle grid: thin lines, slightly darker than default
     ax.grid(True, linestyle='--', alpha=0.5, linewidth=1.2, color='#606060')
 
-    # Title - LARGER FONT SIZE
-    ax.set_title('Instruction Alignment Efficiency\n(Average Radius = Overall Performance)',
-                 fontsize=22, fontweight='bold', color='black', pad=30)
+    # Title - LARGER FONT SIZE (include model name if provided)
+    title = 'Instruction Alignment Efficiency\n(Average Radius = Overall Performance)'
+    if model_name:
+        title = f'Instruction Alignment Efficiency ({model_name})\n(Average Radius = Overall Performance)'
+    ax.set_title(title, fontsize=22, fontweight='bold', color='black', pad=30)
 
     # =========================================================================
     # LEGEND: Single horizontal line below radar chart
@@ -1123,7 +1012,8 @@ def generate_combined_heatmap(
     normalize_per_column: bool = True,
     show_raw_values: bool = True,
     cmap: str = 'RdYlGn',
-    score_ci: Optional[Dict[str, Dict[str, Tuple[float, float]]]] = None
+    score_ci: Optional[Dict[str, Dict[str, Tuple[float, float]]]] = None,
+    model_name: str = None
 ) -> Optional[str]:
     """
     Generate heatmap showing absolute scores across all evals for all models.
@@ -1155,9 +1045,9 @@ def generate_combined_heatmap(
         all_models.update(scores.keys())
 
     # Default model order: group by method, NoInstruct before Instruct
+    # Note: SFT excluded - it's a training stage, not a policy optimization method
     if models is None:
         models = [
-            'SFT_NoInstruct', 'SFT_Instruct',
             'DPO_NoInstruct', 'DPO_Instruct',
             'PPO_NoInstruct', 'PPO_Instruct',
             'GRPO_NoInstruct', 'GRPO_Instruct',
@@ -1287,11 +1177,13 @@ def generate_combined_heatmap(
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=13, fontweight='bold', color='black')
 
     # Title - clarify that numbers are original, colors are normalized
-    ax.set_title('Model Performance Across All Evaluations\n(Values = Original, Colors = Normalized)',
-                 fontsize=16, fontweight='bold', color='black', pad=15)
+    title = 'Model Performance Across All Evaluations\n(Values = Original, Colors = Normalized)'
+    if model_name:
+        title = f'Model Performance ({model_name})\n(Values = Original, Colors = Normalized)'
+    ax.set_title(title, fontsize=16, fontweight='bold', color='black', pad=15)
 
-    # Add method separators (horizontal lines between SFT/DPO/PPO/GRPO/CITA)
-    for idx in [2, 4, 6, 8]:  # After each method group
+    # Add method separators (horizontal lines between DPO/PPO/GRPO/CITA)
+    for idx in [2, 4, 6]:  # After each method group (4 methods = 8 rows)
         if idx < len(models):
             ax.axhline(y=idx, color='black', linewidth=3)
 

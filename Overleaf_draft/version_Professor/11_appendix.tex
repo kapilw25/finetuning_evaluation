@@ -268,28 +268,28 @@ Gradient Checkpointing & Enabled \\
 \scriptsize
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Parameter} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
+\textbf{Parameter} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-Epochs & 1 & 1 & 1 & 1 & 1 \\ \hline
-Batch Size & 2 & 16 & 12 & 1 & 1 \\ \hline
-Grad. Accum. & 4 & 4 & 2 & 8 & 8 \\ \hline
-Eff. Batch & 8 & 64 & 24 & 8 & 8 \\ \hline
-Max Seq. Len. & 2048 & 2048 & 2048 & 2048 & 2048 \\ \hline
-Learning Rate & 2e-4 & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\ \hline
-LR Scheduler & Cosine & --- & Cosine & Cosine & Cosine \\ \hline
-Warmup & 100 steps & --- & 10\% & 100 steps & 10\% \\ \hline
-Weight Decay & 0.01 & --- & 0.1 & 0.01 & 0.011 \\ \hline
-$\beta$ (temp.) & --- & --- & --- & 0.1 & 0.107 \\ \hline
-KL Coef. & --- & 0.1 & --- & --- & 2.3e-4 \\ \hline
-Max Grad Norm & --- & 1.0 & 0.1 & --- & 1.0 \\ \hline
-LoRA Rank & 16 & 16 & 16 & 16 & 16 \\ \hline
-LoRA Alpha & 16 & 16 & 16 & 16 & 16 \\ \hline
-Target Modules & \multicolumn{5}{c}{q, k, v, o, gate, up, down\_proj} \\
+Epochs & 1 & 1 & 1 & 1 \\ \hline
+Batch Size & 16 & 12 & 1 & 1 \\ \hline
+Grad. Accum. & 4 & 2 & 8 & 8 \\ \hline
+Eff. Batch & 64 & 24 & 8 & 8 \\ \hline
+Max Seq. Len. & 2048 & 2048 & 2048 & 2048 \\ \hline
+Learning Rate & 1e-5 & 5e-6 & 1e-5 & 5.4e-6 \\ \hline
+LR Scheduler & --- & Cosine & Cosine & Cosine \\ \hline
+Warmup & --- & 10\% & 100 steps & 10\% \\ \hline
+Weight Decay & --- & 0.1 & 0.01 & 0.011 \\ \hline
+$\beta$ (temp.) & --- & --- & 0.1 & 0.107 \\ \hline
+KL Coef. & 0.1 & --- & --- & 2.3e-4 \\ \hline
+Max Grad Norm & 1.0 & 0.1 & --- & 1.0 \\ \hline
+LoRA Rank & 16 & 16 & 16 & 16 \\ \hline
+LoRA Alpha & 16 & 16 & 16 & 16 \\ \hline
+Target Modules & \multicolumn{4}{c}{q, k, v, o, gate, up, down\_proj} \\
 \bottomrule
 \end{tabular}
-\caption{Complete hyperparameters for all training stages. PPO uses mini\_batch=4, ppo\_epochs=4, cliprange=0.2. GRPO uses num\_generations=6, max\_completion=512.}
+\caption{Complete hyperparameters for all policy optimization methods. PPO uses mini\_batch=4, ppo\_epochs=4, cliprange=0.2. GRPO uses num\_generations=6, max\_completion=512.}
 \label{tab:full_hyperparams}
 \end{table}
 
@@ -299,17 +299,17 @@ Target Modules & \multicolumn{5}{c}{q, k, v, o, gate, up, down\_proj} \\
 \centering
 \scriptsize
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Metric} & \textbf{SFT} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
+\textbf{Metric} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
 \midrule
-GPU Used & 40GB & 80GB & 80GB & 40GB & 40GB \\ \hline
-Training Time & 43min & 17h & 12h & 103min & 120min \\ \hline
-GPU Memory & 38GB & 72GB & 68GB & 39GB & 39GB \\ \hline
-Checkpoint Size & 1.2GB & 1.2GB & 1.2GB & 1.2GB & 1.2GB \\
+GPU Used & 80GB & 80GB & 40GB & 40GB \\ \hline
+Training Time & 17h & 12h & 103min & 120min \\ \hline
+GPU Memory & 72GB & 68GB & 39GB & 39GB \\ \hline
+Checkpoint Size & 1.2GB & 1.2GB & 1.2GB & 1.2GB \\
 \bottomrule
 \end{tabular}
-\caption{Compute requirements per training stage. SFT/DPO/CITA trained on A100-40GB; PPO/GRPO require A100-80GB due to online generation overhead.}
+\caption{Compute requirements per policy optimization method. DPO/CITA trained on A100-40GB; PPO/GRPO require A100-80GB due to online generation overhead.}
 \label{tab:compute}
 \end{table}
 
@@ -503,13 +503,13 @@ Additional training dynamics plots that provide supplementary context to the mai
 
 \subsection{DPO/CITA Eval Loss}
 
-\begin{figure}[H]
+\begin{figure*}[ht!]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/training/combined_eval_loss.pdf}
+\includegraphics[width=0.9\textwidth]{figures/training/combined_eval_loss.pdf}
 \caption{\textbf{Eval Loss Across Training Methods}: 2$\times$2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf{SFT} (top-left): Loss $\sim$1.5--1.9, Instruct converges lower. \textbf{DPO} (top-right): Loss $\sim$0.21--0.28, smooth convergence. \textbf{CITA} (bottom-left): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (bottom-right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
 \label{fig:training_loss}
 \vspace{-3mm}
-\end{figure}
+\end{figure*}
 
 % COMMENTED OUT - SFT figures not available in updated figures (combined plots used instead)
 % \subsection{SFT Training Curves}
@@ -675,13 +675,13 @@ CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
 
 We analyze key training curves comparing DPO and CITA variants. Additional training curves (eval loss, SFT loss, SFT token accuracy) are provided in Appendix~\ref{sec:appendix_training_curves}.
 
-\begin{figure}[H]
+\begin{figure*}[ht!]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/training/combined_accuracy.pdf}
+\includegraphics[width=0.9\textwidth]{figures/training/combined_accuracy.pdf}
 \caption{\textbf{Training Accuracy Metrics}: 1$\times$2 subplot comparing accuracy across methods. \textbf{Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf{Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.}
-\label{fig:training_accuracy}
+\label{fig:training_accuracy_appendix}
 \vspace{-3mm}
-\end{figure}
+\end{figure*}
 
 \begin{figure}[H]
 \centering
@@ -692,3 +692,92 @@ We analyze key training curves comparing DPO and CITA variants. Additional train
 \end{figure}
 
 \textbf{Key Observation.} CITA achieves higher reward margins (7.5 vs. 6.0) than DPO despite similar accuracy, validating that mandatory KL regularization leads to 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\clearpage
+\newpage
+
+\section{Extended Results}
+\label{sec:appendix_extended_results}
+
+This section provides detailed benchmark-specific analysis, combined performance heatmaps, and key insights from our evaluation. For summary results, see Section~\ref{sec:overall_results} in the main paper.
+
+\subsection{Benchmark-Specific Analysis}
+\label{sec:benchmark_analysis}
+
+\begin{figure*}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/evaluation/isd_comparison.pdf}
+\caption{\textbf{ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.}
+\label{fig:isd}
+\vspace{-3mm}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/evaluation/truthfulqa_comparison.pdf}
+\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit{positive} adaptation scores.}
+\label{fig:truthfulqa}
+\vspace{-3mm}
+\end{figure*}
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/evaluation/conditional_safety_comparison.pdf}
+\caption{\textbf{Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show behavioral gap between STRICT vs. PERMISSIVE.}
+\label{fig:conditional_safety}
+\vspace{-3mm}
+\end{figure*}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/evaluation/length_control_comparison.pdf}
+\caption{\textbf{Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation.}
+\label{fig:length_control}
+\vspace{-3mm}
+\end{figure}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/evaluation/aqi_comparison.pdf}
+\caption{\textbf{AQI}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores.}
+\label{fig:aqi}
+\vspace{-3mm}
+\end{figure}
+
+\vspace{-2mm}
+\subsection{Combined Analysis}
+\label{sec:combined_analysis}
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/evaluation/combined_plots/heatmap.pdf}
+\vspace{-1mm}
+\caption{\textbf{Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ISD and AQI lack per-sample decomposition (composite/cluster-based metrics).}
+\label{fig:heatmap}
+\vspace{-2mm}
+\end{figure*}
+
+\noindent\textbf{Statistical reliability.} Bootstrap confidence intervals (N=1,000 resamples) are reported for benchmarks with per-sample metrics. The narrow CIs on TruthfulQA ($\pm$0.05--0.28) and Cond.\ Safety ($\pm$0.01--0.03) indicate stable estimates; Length Ctrl shows larger variance ($\pm$0.02--4.67) due to response length variability across prompts.
+
+\vspace{-2mm}
+\subsection{Key Insights}
+\label{sec:key_insights}
+
+\paragraph{TruthfulQA is the Differentiator.} On TruthfulQA, CITA improves by +0.054 (becoming appropriately more/less confident when instructed), while DPO shows negligible change (+0.001). This demonstrates CITA's superior ability to \textit{internalize} uncertainty calibration instructions.
+
+\paragraph{CITA Achieves Higher Margins with Lower Accuracy.} Despite similar training accuracy ($\sim$89\%), CITA achieves higher reward margins (7.5 vs. 6.0). This validates that mandatory KL prevents margin collapse while enabling stable behavioral switching.
+
+\paragraph{Instruction-Alignment $\neq$ Instruction-Following.} DPO\_I achieves higher absolute ISD scores, but CITA\_I shows more consistent improvement across diverse benchmarks. This suggests CITA achieves \textit{deeper} instruction-alignment rather than surface-level following.
