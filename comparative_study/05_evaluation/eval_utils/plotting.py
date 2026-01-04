@@ -859,15 +859,34 @@ def generate_radar_chart_area_based(
                 label=f'{method} ({avg_pct:.1f}%)', color=color, markersize=10)
         ax.fill(angles_closed, method_data_closed[method], alpha=0.20, color=color)
 
-    # Set labels - LARGER FONT SIZE and BOLD
+    # Set labels - Place OUTSIDE circle with TANGENTIAL orientation (perpendicular to radius)
     ax.set_xticks(angles)
-    ax.set_xticklabels(eval_names, fontsize=18, fontweight='bold', color='black')
+    ax.set_xticklabels([])  # Hide default labels
 
-    # Add raw delta annotations at each vertex (show all values, not just winners)
+    # Manually place labels at radius endpoint, tangential (perpendicular to radius)
+    label_radius = 1.22  # Outside the 100% circle with padding for delta annotations
+    for i, (angle, label) in enumerate(zip(angles, eval_names)):
+        angle_deg = np.degrees(angle) % 360
+
+        # TANGENTIAL = perpendicular to radius = angle - 90 degrees
+        # Adjust for readability (text should not be upside down)
+        if 0 <= angle_deg <= 180:
+            # Top half: text flows clockwise
+            rotation = angle_deg - 90
+            va = 'bottom'
+        else:
+            # Bottom half: text flows counter-clockwise (flip to stay readable)
+            rotation = angle_deg + 90
+            va = 'top'
+
+        ax.text(angle, label_radius, label,
+                fontsize=15, fontweight='bold', color='black',
+                ha='center', va=va, rotation=rotation, rotation_mode='anchor')
+
+    # Add raw delta annotations at each vertex (winner only, TANGENTIAL orientation)
     for i, eval_name in enumerate(eval_names):
         angle = angles[i]
-        # Find the method with max value at this vertex to position annotation outside
-        max_r = max(method_data[m][i] for m in methods)
+        angle_deg = np.degrees(angle) % 360
 
         for method in methods:
             raw_val = raw_deltas[method][i]
@@ -876,34 +895,41 @@ def generate_radar_chart_area_based(
             # Only annotate the winner for each eval
             if raw_val == max(all_vals):
                 method_color = method_colors.get(method, '#808080')
-                angle_deg = np.degrees(angle) % 360
+                # Position annotation just outside the data point
+                r = method_data[method][i] + 0.15
 
-                # ECLIPTICA is at angle ~0 (rightmost) - place annotation far outside, below label
-                if angle_deg < 30 or angle_deg > 330:  # Right side (ECLIPTICA)
-                    r = 1.30  # Far outside circle
-                    ha, va = 'center', 'top'
-                    offset_angle = angle - 0.15  # Shift down-left
-                elif 150 < angle_deg < 210:  # Left side
-                    r = method_data[method][i] + 0.20
-                    ha, va = 'left', 'center'
-                    offset_angle = angle + 0.08
+                # TANGENTIAL rotation (perpendicular to radius)
+                if 0 <= angle_deg <= 180:
+                    rotation = angle_deg - 90
                 else:
-                    r = method_data[method][i] + 0.20
-                    ha, va = 'center', 'center'
-                    offset_angle = angle
+                    rotation = angle_deg + 90
 
-                ax.annotate(f'{raw_val:+.3f}',
-                           xy=(offset_angle, r),
-                           fontsize=16, fontweight='bold',
-                           color=method_color, ha=ha, va=va)
+                ax.text(angle, r, f'{raw_val:+.3f}',
+                        fontsize=13, fontweight='bold', color=method_color,
+                        ha='center', va='center', rotation=rotation, rotation_mode='anchor')
 
     # Styling - LARGER FONT SIZE
-    ax.set_ylim(0, 1.35)
+    ax.set_ylim(0, 1.45)  # Extended to fit labels outside circle
     ax.set_yticks([0.25, 0.5, 0.75, 1.0])
-    ax.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=14, fontweight='bold', color='black')
+    ax.set_yticklabels([])  # Hide default labels
+
+    # Manually place percentage labels with TANGENTIAL orientation
+    # Position them at angle between first two data points for visibility
+    pct_angle = (angles[0] + angles[1]) / 2  # Between ECLIPTICA and TruthfulQA
+    pct_angle_deg = np.degrees(pct_angle) % 360
+    # Tangential rotation for this angle
+    if 0 <= pct_angle_deg <= 180:
+        pct_rotation = pct_angle_deg - 90
+    else:
+        pct_rotation = pct_angle_deg + 90
+
+    for r_val, label in [(0.25, '25%'), (0.5, '50%'), (0.75, '75%'), (1.0, '100%')]:
+        ax.text(pct_angle, r_val, label,
+                fontsize=12, fontweight='bold', color='#404040',
+                ha='center', va='center', rotation=pct_rotation, rotation_mode='anchor')
 
     # Subtle grid: thin lines, slightly darker than default
-    ax.grid(True, linestyle='--', alpha=0.5, linewidth=1.2, color='#606060')
+    ax.grid(True, linestyle='--', alpha=0.7, linewidth=1.5, color='#404040')
 
     # Title - LARGER FONT SIZE (include model name if provided)
     title = 'Instruction Alignment Efficiency\n(Average Radius = Overall Performance)'
@@ -994,13 +1020,14 @@ def _shorten_model_labels(models: List[str]) -> List[str]:
 
 
 def _wrap_eval_labels(eval_names: List[str]) -> List[str]:
-    """Map eval names to short metric labels for heatmap columns."""
+    """Format eval names for heatmap columns - use full names with line breaks."""
+    # Use full names with line break for better readability
     metric_map = {
-        'ECLIPTICA (M₁)': 'M₁',
-        'TruthfulQA (M₂)': 'M₂',
-        'Cond. Safety (M₃)': 'M₃',
-        'Length Ctrl (M₄)': 'M₄',
-        'LITMUS (AQI-M₅)': 'AQI',
+        'ECLIPTICA (M₁)': 'ECLIPTICA\n(M₁)',
+        'TruthfulQA (M₂)': 'TruthfulQA\n(M₂)',
+        'Cond. Safety (M₃)': 'Cond. Safety\n(M₃)',
+        'Length Ctrl (M₄)': 'Length Ctrl\n(M₄)',
+        'LITMUS (AQI-M₅)': 'LITMUS\n(AQI-M₅)',
     }
     return [metric_map.get(name, name) for name in eval_names]
 
@@ -1162,18 +1189,18 @@ def generate_combined_heatmap(
             val_text = value_annot[i][j]
             ci_text = ci_annot[i][j]
             if val_text:
-                # Main value: bold, consistent size across all columns
+                # Main value: bold, larger font for visibility
                 ax.text(j + 0.5, i + 0.38, val_text,
                         ha='center', va='center',
-                        fontsize=14, fontweight='bold', color='black')
+                        fontsize=16, fontweight='bold', color='black')
                 # CI value: smaller italic, not bold
                 if ci_text:
                     ax.text(j + 0.5, i + 0.68, ci_text,
                             ha='center', va='center',
                             fontsize=11, fontstyle='italic', fontweight='normal', color='black')
 
-    # Style tick labels (no rotation needed - labels are wrapped)
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=13, fontweight='bold', color='black', rotation=0, ha='center')
+    # Style tick labels - rotate 20 degrees, centered alignment
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=13, fontweight='bold', color='black', rotation=20, ha='center')
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=13, fontweight='bold', color='black')
 
     # Title - clarify that numbers are original, colors are normalized

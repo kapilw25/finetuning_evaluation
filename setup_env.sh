@@ -32,30 +32,38 @@ sudo apt update && sudo apt install -y \
     biber \
     tree
 
-# 1. Create virtual environment
+# 1. Install Python 3.12
 echo ""
-echo "[1/5] Creating virtual environment..."
+echo "[1/6] Installing Python 3.12..."
+sudo apt install -y software-properties-common
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev
+
+# 2. Create virtual environment
+echo ""
+echo "[2/6] Creating virtual environment..."
 python3.12 -m venv venv_CITA
 source venv_CITA/bin/activate
 
-# 2. Install PyTorch 2.5.1 with CUDA 12.4
+# 3. Install PyTorch 2.5.1 with CUDA 12.4
 echo ""
-echo "[2/5] Installing PyTorch 2.5.1+cu124..."
+echo "[3/6] Installing PyTorch 2.5.1+cu124..."
 pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
 
-# 3. Verify PyTorch installation
+# 4. Verify PyTorch installation
 echo ""
-echo "[3/5] Verifying PyTorch..."
+echo "[4/6] Verifying PyTorch..."
 python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.version.cuda}, Available: {torch.cuda.is_available()}')"
 
-# 4. Install requirements
+# 5. Install requirements
 echo ""
-echo "[4/5] Installing requirements.txt..."
+echo "[5/6] Installing requirements.txt..."
 pip install -r requirements.txt
 
-# 5. Install Flash-Attention (pre-built wheel for torch2.5+cu12+cp312)
+# 6. Install Flash-Attention (pre-built wheel for torch2.5+cu12+cp312)
 echo ""
-echo "[5/5] Installing Flash-Attention 2.8.3..."
+echo "[6/6] Installing Flash-Attention 2.8.3..."
 WHEEL_NAME="flash_attn-2.8.3+cu12torch2.5cxx11abiFALSE-cp312-cp312-linux_x86_64.whl"
 WHEEL_URL="https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3%2Bcu12torch2.5cxx11abiFALSE-cp312-cp312-linux_x86_64.whl"
 
