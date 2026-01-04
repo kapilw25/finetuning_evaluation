@@ -806,9 +806,9 @@ def generate_radar_chart_area_based(
     # Close the polygon for plotting
     method_data_closed = {m: method_data[m] + method_data[m][:1] for m in methods}
 
-    # Create figure - VERTICAL layout (taller than wide to reduce left/right whitespace)
-    fig, ax = plt.subplots(figsize=(6, 9), subplot_kw=dict(polar=True))
-    ax.set_position([0.10, 0.15, 0.80, 0.72])  # Maximize radar area, leave room for legend
+    # Create figure - compact layout (radar + legend below)
+    fig, ax = plt.subplots(figsize=(7, 7.5), subplot_kw=dict(polar=True))
+    ax.set_position([0.08, 0.18, 0.84, 0.72])  # Maximize radar area, leave room for legend
 
     # Prepare CI data if provided (normalize CI bounds same as deltas)
     method_ci_lower = {m: [] for m in methods}
@@ -931,11 +931,11 @@ def generate_radar_chart_area_based(
     # Subtle grid: thin lines, slightly darker than default
     ax.grid(True, linestyle='--', alpha=0.7, linewidth=1.5, color='#404040')
 
-    # Title - LARGER FONT SIZE (include model name if provided)
+    # Title - reduced font size so width ≤ outer circle diameter
     title = 'Instruction Alignment Efficiency\n(Average Radius = Overall Performance)'
     if model_name:
         title = f'Instruction Alignment Efficiency ({model_name})\n(Average Radius = Overall Performance)'
-    ax.set_title(title, fontsize=22, fontweight='bold', color='black', pad=30)
+    ax.set_title(title, fontsize=13, fontweight='bold', color='black', pad=15)
 
     # =========================================================================
     # LEGEND: Single horizontal line below radar chart
@@ -954,13 +954,16 @@ def generate_radar_chart_area_based(
         legend_handles.append(handle)
         legend_labels.append(f'{method} ({avg_pct:.1f}%)')
 
-    # Place legend at bottom center in 2 rows (3 + 2 methods)
-    fig.legend(handles=legend_handles, labels=legend_labels,
-               loc='lower center', bbox_to_anchor=(0.5, 0.00),
-               ncol=3, fontsize=14,
+    # Place legend at bottom center in 2 rows x 2 cols (more padding from circle)
+    legend = fig.legend(handles=legend_handles, labels=legend_labels,
+               loc='lower center', bbox_to_anchor=(0.5, 0.04),
+               ncol=2, fontsize=14, labelcolor='black',
                prop={'weight': 'bold'}, frameon=True,
-               title='Method (Avg %)', title_fontsize=14,
+               title='Method (Avg %)', title_fontsize=13,
                columnspacing=1.5, handletextpad=0.5)
+    # Make legend title bold black
+    legend.get_title().set_fontweight('bold')
+    legend.get_title().set_color('black')
 
     # Save
     pdf_path, png_path = save_figure_dual_format(fig, output_path, dpi=300)
