@@ -261,28 +261,28 @@ def load_eval_metrics_with_samples(
             # Load per-sample from CSV/JSON files (if not already loaded)
             # ================================================================
             if model_name not in per_sample:
-                if eval_name == "TruthfulQA":
+                if "TruthfulQA" in eval_name:
                     csv_per_sample = _load_truthfulqa_per_sample(model_dir)
                     if csv_per_sample:
                         per_sample[model_name] = csv_per_sample
 
-                elif eval_name == "Cond. Safety":
+                elif "Cond. Safety" in eval_name:
                     csv_per_sample = _load_cond_safety_per_sample(model_dir)
                     if csv_per_sample:
                         per_sample[model_name] = csv_per_sample
 
-                elif eval_name == "Length Ctrl":
+                elif "Length Ctrl" in eval_name:
                     csv_per_sample = _load_length_ctrl_per_sample(model_dir)
                     if csv_per_sample:
                         per_sample[model_name] = csv_per_sample
 
-                elif eval_name == "ISD":
-                    # ISD: Load per_sample_fidelity from metrics.json
+                elif "ECLIPTICA" in eval_name:
+                    # ISD/ECLIPTICA: Load per_sample_fidelity from metrics.json
                     isd_per_sample = _load_isd_per_sample(model_dir, model_name)
                     if isd_per_sample:
                         per_sample[model_name] = isd_per_sample
 
-                # AQI: Skip (cluster-based metric, no per-sample scores)
+                # AQI/LITMUS: Skip (cluster-based metric, no per-sample scores)
 
     return scores, per_sample
 
