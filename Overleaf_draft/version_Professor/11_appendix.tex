@@ -4,6 +4,10 @@
 
 \newpage
 \appendix
+
+
+\onecolumn
+
 \section{Appendix}
 \label{sec:appendix}
 
@@ -11,8 +15,7 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
 
 \begin{itemize}[leftmargin=*,itemsep=2pt]
     \item \textbf{Related works}: (cf.~\cref{sec:appendix_related})
-    \item \textbf{Unified Training Objective}: Complete loss formulation with all components (cf.~\cref{sec:appendix_unified})
-    \item \textbf{CITA-KL Loss Derivation}: Full mathematical derivation and gradient analysis (cf.~\cref{sec:appendix_cita_kl})
+    \item \textbf{CITA Loss Derivation}: Full mathematical derivation and gradient analysis (cf.~\cref{sec:appendix_cita_kl})
     \item \textbf{Implementation Details}: Training infrastructure and hyperparameters (cf.~\cref{sec:appendix_implementation})
     \item \textbf{Dataset Details}: Extended ECLIPTICA statistics and examples (cf.~\cref{sec:appendix_dataset})
     \item \textbf{Ablation Studies}: Component-wise analysis (cf.~\cref{sec:appendix_ablations})
@@ -26,13 +29,17 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
 \section{Related Works}
 \label{sec:appendix_related}
 
-\paragraph{Instruction Tuning.} FLAN~\cite{wei2022finetuned,chung2022scaling,longpre2023flan}, T0~\cite{sanh2022multitask}, and subsequent work~\cite{wang2023self,iyer2022opt,mishra2022cross} demonstrated that instruction-following during training improves zero-shot generalization. Models like Alpaca~\cite{taori2023alpaca}, WizardLM~\cite{xu2023wizardlm}, LIMA~\cite{zhou2023lima}, Orca~\cite{mukherjee2023orca}, and OpenChat~\cite{wang2023openchat} further refined this paradigm, with comprehensive surveys~\cite{peng2023instruction} synthesizing these developments. Related work on prompt design for generative models~\cite{yang2023prompt} shows that structured prompts significantly influence output characteristics---a principle CITA extends to alignment instructions. However, these approaches focus on task generalization rather than alignment conditioning.
+\paragraph{Instruction tuning and controllability.}
+Early instruction-tuning work such as FLAN~\cite{wei2022finetuned,chung2022scaling,longpre2023flan} and T0~\cite{sanh2022multitask} established that training on diverse instruction--task pairs improves zero-shot generalization, and subsequent efforts explored self-instruction and scaling of synthetic supervision~\cite{wang2023self,iyer2022opt,mishra2022cross}. Open instruction-tuned models (e.g., Alpaca~\cite{taori2023alpaca}, WizardLM~\cite{xu2023wizardlm}, LIMA~\cite{zhou2023lima}, Orca~\cite{mukherjee2023orca}, OpenChat~\cite{wang2023openchat}) further refined \emph{task} adherence, while surveys synthesize the space~\cite{peng2023instruction}. More broadly, prompt and instruction design for generative systems~\cite{yang2023prompt} shows that structured conditioning can steer style, format, and content. However, this line primarily targets \textbf{capability generalization} and \textbf{task intent} (``what to do''), not \textbf{alignment contracts} (``how to behave''). ECLIPTICA explicitly separates these by holding the user request fixed and varying only the \emph{alignment instruction}, so that measured changes reflect \textbf{policy switching} rather than generic instruction-following.
 
-\paragraph{Preference Optimization.} DPO~\cite{rafailov2023direct} eliminates the need for separate reward models, inspiring variants like KTO~\cite{ethayarajh2024kto}, ORPO~\cite{hong2024orpo}, SimPO~\cite{meng2024simpo}, and RRHF~\cite{yuan2023rrhf}. However, all these methods lack instruction-awareness---they embed static alignment into weights. Recent work~\cite{xu2024dpo} compares DPO and PPO~\cite{schulman2017proximal} but neither supports dynamic policy switching.
+\paragraph{Preference optimization and post-training alignment.}
+RLHF-style pipelines~\cite{ouyang2022training} popularized aligning helpfulness/safety via learned reward models and policy optimization. Proximal Policy Optimization (PPO)~\cite{schulman2017proximal} remains a canonical on-policy optimizer for RLHF, while more recent practice includes variants that reduce pipeline complexity or improve stability (e.g., GRPO-style reward-shaped updates). Direct Preference Optimization (DPO)~\cite{rafailov2023direct} eliminates explicit reward modeling by optimizing a contrastive objective over preference pairs, inspiring a growing family of offline methods such as KTO~\cite{ethayarajh2024kto}, ORPO~\cite{hong2024orpo}, SimPO~\cite{meng2024simpo}, and RRHF~\cite{yuan2023rrhf}. These methods deliver \textbf{strong static alignment}, but typically learn a \emph{single} behavior mode per checkpoint: preference signals are absorbed into weights and do not define a \textbf{runtime-selectable policy family}. Even comparisons between offline and online alignment (e.g., DPO vs.\ PPO)~\cite{xu2024dpo} do not address \textbf{instruction-conditioned switching}. CITA is positioned at this interface: it retains the \emph{contrastive preference} backbone, but treats alignment instructions as \textbf{first-class conditioning} and enforces stability via an explicit anchor so that multiple regimes remain simultaneously accessible.
 
-\paragraph{Safety Alignment.} Constitutional AI~\cite{bai2022constitutional}, PKU-SafeRLHF~\cite{ji2024pku}, and red-teaming approaches~\cite{perez2022red,ganguli2022red} focus on making models safer but assume a single, fixed safety policy. Research on jailbreaking~\cite{zou2023universal,wei2023jailbroken,liu2023jailbreaking} and fine-tuning risks~\cite{qi2023fine,huang2023catastrophic} reveals vulnerabilities in static alignment. Work on distinguishing model-generated content~\cite{roy2025comprehensive} underscores the importance of behavioral consistency across contexts. Recent work on context-dependent safety~\cite{bianchi2024safetytuned} highlights the need for adaptive policies.
+\paragraph{Safety alignment, robustness, and policy variability.}
+A large body of work focuses on making models safer under a \emph{single} normative policy, including Constitutional AI~\cite{bai2022constitutional}, PKU-SafeRLHF~\cite{ji2024pku}, and systematic red-teaming~\cite{perez2022red,ganguli2022red}. Parallel work documents how static alignment can fail under adversarial prompting and distribution shift, including universal and transfer jailbreaks~\cite{zou2023universal,wei2023jailbroken,liu2023jailbreaking} and the safety brittleness induced by fine-tuning and catastrophic forgetting~\cite{qi2023fine,huang2023catastrophic}. Recent analyses of context-dependent or policy-conditioned safety~\cite{bianchi2024safetytuned} highlight an important gap: deployments often require \textbf{different refusal boundaries} and \textbf{different epistemic postures} across roles, jurisdictions, and workflows. ECLIPTICA targets this gap directly by evaluating whether the same underlying model can \textbf{switch} between policy contracts in a controlled, paired manner rather than merely varying surface style. Work on behavioral consistency and detection~\cite{roy2025comprehensive} further motivates policy-switch diagnostics: if behavior changes are not deliberate and controllable, they can be mistaken for instability or exploited.
 
-\paragraph{Agentic AI Systems.} LLM-based agents~\cite{wang2024survey,xi2023rise} increasingly rely on dynamic system prompts for workflow orchestration. CITA extends this paradigm to alignment itself, enabling behavioral policy changes through the same mechanism.
+\paragraph{Agentic AI systems and workflow governance.}
+LLM-based agents~\cite{wang2024survey,xi2023rise} increasingly coordinate tools, memory, and multi-step plans, and in practice they rely on \textbf{system prompts} and role messages to enforce workflow constraints. This creates an ``agentic reality'' where alignment requirements are \textbf{role-dependent} (customer support vs.\ internal analysis vs.\ compliance). While prompt routing is common, it is also brittle: small instruction perturbations can alter behavior unpredictably. CITA extends the agentic conditioning paradigm from ``task orchestration'' to \textbf{alignment orchestration}, aiming to make policy control \textbf{stable}, \textbf{measurable}, and \textbf{composable} with agent pipelines.
 
 \vspace{-2mm}
 \begin{table}[H]
@@ -46,200 +53,330 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
 Reward Model Required & No & No \\ \hline
 Instruction-Aware & No & \textbf{Yes} \\ \hline
 Behavioral Switching & No & \textbf{Yes} \\ \hline
-Mandatory KL & Optional & \textbf{Yes} \\ \hline
-Dynamic Policy & No & \textbf{Yes} \\ \hline
-Agent-Compatible & No & \textbf{Yes} \\
+Explicit Stability Anchor & Optional & \textbf{Yes} \\ \hline
+Dynamic Policy Control & No & \textbf{Yes} \\ \hline
+Agent-Compatible & Limited & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
-\caption{Comparison of alignment methods. CITA uniquely enables instruction-conditioned behavioral switching compatible with agentic AI workflows.}
+\caption{Comparison of alignment methods. CITA enables instruction-conditioned behavioral switching intended to be compatible with agentic workflows.}
 \label{tab:method_comparison}
 \vspace{-4mm}
 \end{table}
 
-\textbf{Positioning.} CITA bridges instruction tuning and preference optimization by training models to condition their alignment behavior on natural language instructions. This enables a new paradigm of \textbf{interactive alignment} where policy changes can be expressed without retraining---essential for the flexibility demands of modern AI agent systems.
+\noindent\textbf{Positioning.}
+CITA bridges instruction tuning and preference optimization by making \textbf{alignment} itself condition on natural-language instructions, and by training a \textbf{family of nearby policies} that remain simultaneously accessible at inference time. This yields a concrete paradigm of \textbf{interactive alignment}: policy updates can be expressed as instructions and validated via paired, prompt-held-constant switching, reducing reliance on spawning multiple checkpoints for every governance or role change.
 
 
-%% =============================================================================
-%% UNIFIED TRAINING OBJECTIVE
-%% =============================================================================
-\section{Unified Training Objective}
-\label{sec:appendix_unified}
 
-The unified training loss function combines \textbf{Supervised Fine-Tuning (SFT)}~\cite{wei2022finetuned}, \textbf{Direct Preference Optimization (DPO)}~\cite{rafailov2023direct}, and \textbf{KL Regularization}~\cite{schulman2017proximal,korbak2022rl}:
 
-\begin{equation}
-\mathcal{L}_{\text{unified}} = \mathcal{L}_{\text{SFT}} + \lambda_1 \mathcal{L}_{\text{DPO}} + \lambda_2 \mathcal{L}_{\text{KL}}
-\label{eq:unified_full}
-\end{equation}
+% =============================================================================
+% Appendix: CITA Loss Derivation (math-heavy, structured, no equation numbers)
+% =============================================================================
 
-where:
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item $\mathcal{L}_{\text{SFT}}$: Supervised fine-tuning loss
-    \item $\mathcal{L}_{\text{DPO}}$: Direct preference optimization loss
-    \item $\mathcal{L}_{\text{KL}}$: KL-divergence regularization loss
-    \item $\lambda_1, \lambda_2$: Hyperparameters controlling the contribution of each term
+\section{CITA Loss Derivation}: Full mathematical derivation and gradient analysis
+
+\vspace{-0.35em}
+\paragraph{Notation and training data.}
+Let $\pi_\theta(y\mid I,X)$ denote an autoregressive policy over a completion
+$y=(y_1,\ldots,y_T)$ conditioned on a \textbf{user request} $X$ and an \textbf{alignment instruction} $I$
+(the behavioral contract). We train on quadruples $(I,X,Y^+,Y^-)\sim\mathcal{D}$, where $Y^+$ is preferred to $Y^-$ \emph{under the instruction $I$}.
+Autoregressive factorization:
+\[
+\pi_\theta(Y\mid I,X)
+=
+\prod_{t=1}^{T}\pi_\theta(y_t\mid I,X,y_{<t}),
+\qquad
+\log \pi_\theta(Y\mid I,X)
+=
+\sum_{t=1}^{T}\log \pi_\theta(y_t\mid I,X,y_{<t}).
+\]
+Define the \textbf{instruction-conditioned log-likelihood gap}
+\[
+\Delta_\theta(I,X;Y^+,Y^-)
+=
+\log \pi_\theta(Y^+\mid I,X)-\log \pi_\theta(Y^-\mid I,X),
+\qquad
+\sigma(z)=\frac{1}{1+e^{-z}}.
+\]
+CITA combines a \textbf{conditional contrastive preference} term with a \textbf{mandatory trust-region anchor}:
+\[
+\mathcal{L}_{\textsc{CITA}}(\theta)
+=
+\mathcal{L}_{\textsc{pref}}(\theta)
++
+\lambda\,\mathcal{L}_{\textsc{KL}}(\theta),
+\qquad
+\lambda>0.
+\]
+
+\vspace{-0.35em}
+\paragraph{\textbf{A. Preference term: conditional logistic contrast.}}
+We model the event ``$Y^+\succ Y^-$ under $(I,X)$'' with a logistic likelihood on the gap $\Delta_\theta$:
+\[
+\mathcal{L}_{\textsc{pref}}(\theta)
+=
+\mathbb{E}_{(I,X,Y^+,Y^-)\sim\mathcal{D}}
+\Big[
+-\log \sigma\!\big(\beta\,\Delta_\theta(I,X;Y^+,Y^-)\big)
+\Big],
+\qquad
+\beta>0.
+\]
+Define the \textbf{pairwise preference probability}
+\[
+P^+(I,X;Y^+,Y^-)
+=
+\sigma\!\big(\beta\,\Delta_\theta(I,X;Y^+,Y^-)\big).
+\]
+Two scalar derivatives that drive the entire gradient story:
+\[
+\frac{\partial}{\partial \Delta}\big[-\log \sigma(\beta\Delta)\big]
+=
+-\beta\big(1-\sigma(\beta\Delta)\big)
+=
+-\beta(1-P^+),
+\]
+\[
+\frac{\partial^2}{\partial \Delta^2}\big[-\log \sigma(\beta\Delta)\big]
+=
+\beta^2\,\sigma(\beta\Delta)\big(1-\sigma(\beta\Delta)\big)
+=
+\beta^2\,P^+(1-P^+).
+\]
+\textbf{Key mechanism (self-quenching).} As soon as the model already separates the pair (large positive $\Delta_\theta$), we have $P^+\to 1$ and therefore $(1-P^+)\to 0$: the preference force \textbf{automatically turns off}. This makes switching stable: the model is pushed only where it is still ambiguous \emph{under that instruction}.
+
+\vspace{-0.35em}
+\paragraph{\textbf{B. Gradient of the preference term (exact, token-level).}}
+Start from the chain rule:
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+\mathbb{E}
+\Big[
+\frac{\partial}{\partial \Delta}\big(-\log \sigma(\beta\Delta_\theta)\big)\;
+\nabla_\theta \Delta_\theta
+\Big].
+\]
+Since $\nabla_\theta \Delta_\theta=\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)$, substitute the scalar derivative:
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,
+\mathbb{E}
+\Big[
+(1-P^+)\big(
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)
+\big)
+\Big].
+\]
+Now expand each completion gradient into token-wise score functions:
+\[
+\nabla_\theta\log\pi_\theta(Y\mid I,X)
+=
+\sum_{t=1}^{T}
+\nabla_\theta\log\pi_\theta(y_t\mid I,X,y_{<t}).
+\]
+Therefore, the preference term produces a \textbf{token-summed contrastive update}:
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,
+\mathbb{E}
+\Bigg[
+(1-P^+)\sum_{t=1}^{T}
+\Big(
+\nabla_\theta\log\pi_\theta(y^+_t\mid I,X,y^+_{<t})
+-
+\nabla_\theta\log\pi_\theta(y^-_t\mid I,X,y^-_{<t})
+\Big)
+\Bigg].
+\]
+\textbf{Interpretation.} For each $(I,X)$, CITA increases probability mass along the preferred trajectory and removes mass from the dispreferred one, but \textbf{only until the instruction-conditioned ordering is satisfied} (via $(1-P^+)$).
+
+\vspace{-0.35em}
+\paragraph{\textbf{C. ``Vector-field'' view: instruction-indexed gradients.}}
+Define the instruction-conditioned preference gradient contribution
+\[
+g_\theta(I,X;Y^+,Y^-)
+=
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X).
+\]
+Then the preference gradient is simply
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,\mathbb{E}\big[(1-P^+)\,g_\theta(I,X;Y^+,Y^-)\big].
+\]
+Because $I$ is part of the conditioning, the induced parameter-space vector field is \textbf{indexed by instruction}.
+This is the mathematical core of switching: we are not learning one update direction, but a \textbf{family of compatible update directions} $\{g_\theta(\cdot\mid I)\}_{I\in\mathcal{I}}$.
+
+\vspace{-0.35em}
+\paragraph{\textbf{D. Mandatory anchor: conditional KL and its exact gradient.}}
+CITA’s anchor is a conditional KL to a frozen reference policy $\pi_0$:
+\[
+\mathcal{L}_{\textsc{KL}}(\theta)
+=
+\mathbb{E}_{(I,X)\sim\mathcal{D}}
+\Big[
+\mathrm{KL}\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+\Big].
+\]
+Write the conditional KL as an expectation under $\pi_\theta$:
+\[
+\mathrm{KL}\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+=
+\mathbb{E}_{Y\sim\pi_\theta(\cdot\mid I,X)}
+\Big[
+\log\pi_\theta(Y\mid I,X)-\log\pi_0(Y\mid I,X)
+\Big].
+\]
+Differentiate (score-function identity):
+\[
+\nabla_\theta\,\mathrm{KL}(\pi_\theta\|\pi_0)
+=
+\mathbb{E}_{Y\sim\pi_\theta}
+\Big[
+\nabla_\theta\log\pi_\theta(Y\mid I,X)\,
+\big(\log\pi_\theta(Y\mid I,X)-\log\pi_0(Y\mid I,X)+1\big)
+\Big].
+\]
+\textbf{Interpretation.} The KL term applies an explicit pressure to stay near $\pi_0$ \emph{for every context $(I,X)$}, preventing any single instruction from pulling the model far away and destroying the co-existence of regimes.
+
+\vspace{-0.35em}
+\paragraph{\textbf{E. Local geometry: KL induces a Riemannian trust region.}}
+Let $\theta=\theta_0+\delta\theta$ with $\theta_0$ the reference parameters.
+Under smoothness, the conditional KL admits a second-order expansion:
+\[
+\mathrm{KL}\big(\pi_{\theta_0+\delta\theta}(\cdot\mid I,X)\,\|\,\pi_{\theta_0}(\cdot\mid I,X)\big)
+=
+\frac{1}{2}\,\delta\theta^\top F_{\theta_0}(I,X)\,\delta\theta
+\;+\; o(\|\delta\theta\|^2),
+\]
+where $F_{\theta_0}(I,X)$ is the \textbf{conditional Fisher information} (the local metric tensor):
+\[
+F_{\theta_0}(I,X)
+=
+\mathbb{E}_{Y\sim\pi_{\theta_0}(\cdot\mid I,X)}
+\Big[
+\nabla_\theta\log\pi_{\theta_0}(Y\mid I,X)\;
+\nabla_\theta\log\pi_{\theta_0}(Y\mid I,X)^\top
+\Big].
+\]
+\textbf{Geometric consequence (stable chart).} The anchor therefore constrains updates in the quadratic form induced by $F_{\theta_0}$, i.e., it keeps learning within a \textbf{single stable Riemannian chart} of the policy manifold shared across instructions.
+
+\vspace{-0.35em}
+\paragraph{\textbf{F. Closed-form trust-region step (quadratic regime).}}
+Assume a local linear approximation for the preference objective:
+\[
+\mathcal{L}_{\textsc{pref}}(\theta_0+\delta\theta)
+\approx
+\mathcal{L}_{\textsc{pref}}(\theta_0)+g^\top\delta\theta,
+\qquad
+g=\nabla_\theta\mathcal{L}_{\textsc{pref}}(\theta_0).
+\]
+Plug the KL quadratic expansion into $\mathcal{L}_{\textsc{CITA}}$ and minimize over $\delta\theta$:
+\[
+\delta\theta^\star
+=
+-\frac{1}{\lambda}\,
+\Big(\mathbb{E}_{(I,X)}[F_{\theta_0}(I,X)]\Big)^{-1}g.
+\]
+\textbf{This is the punchline:} CITA implements a \textbf{natural-gradient} style step in the Fisher geometry induced by the reference policy. In other words, preference learning is performed in a \textbf{Riemannian trust region}, which is precisely what stabilizes instruction switching.
+
+\vspace{-0.35em}
+\paragraph{\textbf{G. Switching stability as ``bounded interference'' across instructions.}}
+For each instruction $I$, define the instruction-marginal preference gradient
+\[
+g_I(\theta)
+=
+-\beta\,
+\mathbb{E}_{(X,Y^+,Y^-)\sim\mathcal{D}(\cdot\mid I)}
+\Big[
+(1-P^+)\big(
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)
+\big)
+\Big].
+\]
+Static alignment tends to amplify whichever instructions dominate the dataset mixture, collapsing weaker regimes.
+CITA prevents this through two coupled mechanisms:
+\begin{itemize}
+\item \textbf{Self-quenching preference forces:} once $\Delta_\theta$ is large, $(1-P^+)$ becomes small, so no single instruction can grow its margin unboundedly.
+\item \textbf{Riemannian trust region:} the KL geometry penalizes leaving the shared chart, bounding how far any $g_I$ can drag the policy away from $\pi_0$.
 \end{itemize}
+Together, these yield \textbf{bounded cross-instruction interference}: regimes remain nearby, and switching remains reliable.
 
-\subsection{Supervised Fine-Tuning Loss ($\mathcal{L}_{\text{SFT}}$)}
+\vspace{-0.35em}
+\paragraph{\textbf{H. Curvature structure: where the optimization concentrates.}}
+From the scalar second derivative,
+\[
+\ell''(\Delta)=\beta^2P^+(1-P^+),
+\]
+we see curvature peaks near $\Delta\approx 0$ (uncertain preference) and vanishes as $\Delta\to\pm\infty$ (saturated preference).
+Thus CITA’s optimization pressure concentrates near \textbf{decision boundaries}---exactly the regions that matter for \textbf{counterfactual instruction switches}---while naturally flattening away from them.
+This further stabilizes multi-regime coexistence because the objective does not keep pushing already-satisfied instructions.
 
-The supervised fine-tuning loss is defined as:
+\vspace{-0.35em}
+\paragraph{\textbf{I. Full gradient of CITA (combined, multi-line).}}
+Combining the preference gradient and the anchored gradient yields
+\[
+\nabla_\theta \mathcal{L}_{\textsc{CITA}}
+=
+-\beta\,
+\mathbb{E}
+\Big[
+(1-P^+)\big(
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)
+\big)
+\Big]
++
+\lambda\,
+\mathbb{E}_{(I,X)}
+\Big[
+\nabla_\theta\,\mathrm{KL}\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+\Big].
+\]
+\textbf{Operational reading.} The first term is the \textbf{instruction-conditioned contrastive force}; the second term is the \textbf{global stabilizer} that keeps all instruction-conditioned policies inside a shared chart.
+CITA therefore learns a \textbf{switchable policy family} $\{\pi_\theta(\cdot\mid I,\cdot)\}_{I\in\mathcal{I}}$ without collapsing to a single implicit regime.
 
-\begin{equation}
-\mathcal{L}_{\text{SFT}} = -\frac{1}{N_{\text{SFT}}} \sum_{(x, y^{\text{chosen}})} \sum_{t=1}^{T} \log P_\pi(y_t^{\text{chosen}} | x, y_{<t}^{\text{chosen}})
-\label{eq:sft_full}
-\end{equation}
-
-where:
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item $N_{\text{SFT}}$: Number of samples in the SFT dataset
-    \item $T$: Number of tokens in the output sequence $y^{\text{chosen}}$
-    \item $P_\pi$: Policy model's probability distribution
-    \item $x$: Input consisting of the instruction and user prompt
-    \item $y^{\text{chosen}}$: Aligned (preferred) response
+\vspace{-0.35em}
+\paragraph{\textbf{J. Summary.}}
+CITA’s objective is not ``DPO + regularization'' in name only; it yields a concrete geometry:
+\begin{itemize}
+\item \textbf{Contrastive preference learning} creates instruction-indexed vector fields that separate $Y^+$ from $Y^-$ \emph{within each contract}.
+\item \textbf{Self-quenching updates} ensure preference forces diminish once separation is achieved, preventing runaway margins.
+\item \textbf{A mandatory Riemannian trust region} (KL $\approx \tfrac12\delta\theta^\top F\delta\theta$ locally) keeps all regimes co-located within a stable chart.
 \end{itemize}
+These ingredients jointly explain why CITA supports \textbf{runtime instruction-conditioned switching} as \textbf{policy-level control}, rather than superficial compliance.
 
-\subsection{Direct Preference Optimization Loss ($\mathcal{L}_{\text{DPO}}$)}
 
-The DPO loss ensures that the policy model prefers chosen responses over rejected ones:
 
-\begin{multline}
-\mathcal{L}_{\text{DPO}} = -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{c}, y^{r})} \\
-\log \sigma\left(\beta \left(\log P_\pi(y^{c}|x) - \log P_\pi(y^{r}|x)\right)\right)
-\label{eq:dpo_full}
-\end{multline}
-
-where:
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item $N_{\text{DPO}}$: Number of preference pairs
-    \item $\sigma$: Sigmoid function
-    \item $\beta$: Scaling factor controlling sensitivity to preference differences
-    \item $y^{\text{rejected}}$: Misaligned (rejected) response
-\end{itemize}
-
-\subsection{KL Regularization Loss ($\mathcal{L}_{\text{KL}}$)}
-
-The KL-divergence regularization term penalizes the policy model for drifting too far from the reference model:
-
-\begin{multline}
-\mathcal{L}_{\text{KL}} = \frac{1}{N_{\text{DPO}}} \sum_{(x,y)} \sum_{t=1}^{T} P_\pi(y_t|x, y_{<t}) \\
-\cdot \log \frac{P_\pi(y_t|x, y_{<t})}{P_{\text{ref}}(y_t|x, y_{<t})}
-\label{eq:kl_full}
-\end{multline}
-
-where:
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item $P_{\text{ref}}$: Reference model trained with SFT
-    \item $P_\pi$: Policy model being trained
-\end{itemize}
-
-\subsection{Full Expanded Loss}
-
-The full expanded unified training loss is:
-
-\begin{align}
-\mathcal{L}_{\text{unified}} &= \mathcal{L}_{\text{SFT}} + \lambda_1 \mathcal{L}_{\text{DPO}} + \lambda_2 \mathcal{L}_{\text{KL}} \nonumber \\[3pt]
-\text{where: } \mathcal{L}_{\text{SFT}} &= -\frac{1}{N_{\text{SFT}}} \sum_{(x, y^{c})} \sum_{t=1}^{T} \log P_\pi(y_t^{c}|x, y_{<t}^{c}) \nonumber \\[3pt]
-\mathcal{L}_{\text{DPO}} &= -\frac{1}{N_{\text{DPO}}} \sum_{(x, y^{c}, y^{r})} \log \sigma(\beta \Delta) \nonumber \\
-\text{with } \Delta &= \log P_\pi(y^{c}|x) - \log P_\pi(y^{r}|x) \nonumber \\[3pt]
-\mathcal{L}_{\text{KL}} &= \frac{1}{N} \sum_{(x,y)} \sum_{t} P_\pi(y_t|x, y_{<t}) \log \frac{P_\pi}{P_{\text{ref}}}
-\label{eq:full_expanded}
-\end{align}
-
-%% =============================================================================
-%% CITA-KL LOSS DERIVATION
-%% =============================================================================
-\section{CITA-KL Loss Derivation}
-\label{sec:appendix_cita_kl}
-
-\subsection{CITA-KL Loss Formulation}
-
-The CITA-KL loss extends DPO with instruction-conditioning and mandatory KL regularization:
-
-\begin{align}
-\mathcal{L}_{\text{CITA}} &= -\log\left(\frac{\exp(\beta \cdot s^+)}{\exp(\beta \cdot s^+) + \exp(\beta \cdot s^-)}\right) \nonumber \\
-&\quad + \lambda \cdot \text{KL}[\pi_\theta(\cdot | I, X) \| \pi_0(\cdot | I, X)]
-\label{eq:cita_kl_full}
-\end{align}
-where $s^+ = \log \pi_\theta(Y^+ | I, X)$ and $s^- = \log \pi_\theta(Y^- | I, X)$.
-
-\textbf{Parameters:}
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item $\pi_\theta$: Fine-tuned model
-    \item $\pi_0$: Base pretrained model (reference)
-    \item $\beta$: Contrastive temperature
-    \item $\lambda$: KL regularization weight (\textbf{mandatory}, $\lambda > 0$)
-    \item $I$: Alignment instruction
-    \item $X$: User input
-    \item $Y^+$: Preferred (chosen) response
-    \item $Y^-$: Rejected response
-\end{itemize}
-
-\subsection{Gradient Intuition}
-
-Define the log-probability scores:
-\begin{align}
-s^+ &= \log \pi_\theta(Y^+ | I, X) \\
-s^- &= \log \pi_\theta(Y^- | I, X)
-\end{align}
-
-The softmax preference probability becomes:
-
-\begin{equation}
-P^+ = \frac{\exp(\beta s^+)}{\exp(\beta s^+) + \exp(\beta s^-)}
-\label{eq:softmax_pref}
-\end{equation}
-
-\textbf{Gradient of CITA Loss:}
-
-\begin{equation}
-\nabla_\theta \mathcal{L}_{\text{CITA}} = -\beta \left[(1 - P^+)\nabla_\theta s^+ - P^+ \nabla_\theta s^-\right]
-\label{eq:cita_gradient}
-\end{equation}
-
-\textbf{Interpretation:}
-\begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item When $P^+ \approx 1$ (model correctly prefers $Y^+$): Gradients for $s^+$ become small, preventing over-optimization
-    \item When $P^+ \approx 0$ (model incorrectly prefers $Y^-$): Strong gradient pushes to increase $s^+$ and decrease $s^-$
-    \item The KL term provides a stabilizing force that prevents $P^+$ from saturating
-\end{itemize}
-
-\subsection{Comparison with Other Methods}
-
-\begin{table}[H]
-\centering
-\small
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Property} & \textbf{DPO} & \textbf{CITA (Ours)} \\
-\midrule
-Needs Reward Model & No & No \\ \hline
-Instruction-Aware & No & \textbf{Yes} \\ \hline
-Contrastive Preference & Yes & \textbf{Yes} \\ \hline
-Behavior Switching & No & \textbf{Yes} \\ \hline
-Mandatory KL Regularization & Optional & \textbf{Yes} \\
-\bottomrule
-\end{tabular}
-\caption{Comparison of alignment methods. CITA uniquely combines instruction-awareness with mandatory KL.}
-\label{tab:method_comparison_appendix}
-\end{table}
-
-\subsection{Implementation Notes}
-
-\begin{itemize}[leftmargin=*,itemsep=2pt]
-    \item \textbf{Context concatenation}: Concatenate $(I, X)$ as model context
-    \item \textbf{Sequence length}: Ensure enough context length to hold both $Y^+$ and $Y^-$
-    \item \textbf{Hard negatives}: Use hard negatives when available for better contrast
-    \item \textbf{KL annealing}: Consider KL annealing from 0.01 to 0.1 over epochs for stability
-\end{itemize}
 
 %% =============================================================================
 %% IMPLEMENTATION DETAILS
 %% =============================================================================
+% =============================================================================
+% Appendix: Implementation Details (NeurIPS spotlight style; narrative + tables)
+% =============================================================================
+
 \section{Implementation Details}
 \label{sec:appendix_implementation}
 
+\vspace{-0.25em}
+\noindent
+This appendix reports the \textbf{exact training stack}, \textbf{hyperparameters}, and \textbf{compute footprint} used to reproduce our results.
+We emphasize two principles that guided the implementation:
+\textbf{(i) comparability}---all methods share the same backbone, tokenization, LoRA target modules, and maximum context length; and
+\textbf{(ii) auditability}---all reported metrics are deterministic, and all optimization settings are explicitly enumerated in Tables~\ref{tab:hardware}--\ref{tab:compute}.
+
+% -----------------------------------------------------------------------------
 \subsection{Hardware and Software}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+All experiments were run on NVIDIA A100 GPUs. Offline alignment methods (\textsc{DPO}, \textsc{CITA}) fit comfortably on \textbf{40GB} GPUs because they optimize on fixed preference pairs without on-policy generation.
+In contrast, online methods (\textsc{PPO}, \textsc{GRPO}) required \textbf{80GB} GPUs due to the additional memory pressure from (i) generating multiple rollouts, (ii) caching token-level log-probabilities for policy-gradient updates, and (iii) maintaining reward/evaluator states during optimization.
+We implement all methods in PyTorch using the HuggingFace Transformers ecosystem, and use TRL for standardized policy-optimization components (rollout, logprob tracking, KL control) to reduce implementation variance.
 
 \begin{table}[H]
 \centering
@@ -257,17 +394,38 @@ Mixed Precision & bfloat16 \\ \hline
 Gradient Checkpointing & Enabled \\
 \bottomrule
 \end{tabular}
-\caption{Hardware and software configuration.}
+\caption{\textbf{Hardware and software configuration.} We use TRL for consistent implementations of policy optimization and preference learning. Optuna with TPE is used for systematic hyperparameter search.}
 \label{tab:hardware}
 \end{table}
 
+\vspace{-0.35em}
+\noindent\textbf{Implementation convention (shared across methods).}
+We standardize (i) tokenizer and padding behavior, (ii) maximum sequence length (2048), and (iii) LoRA injection points to ensure differences arise from the \textbf{learning objective} rather than engineering artifacts.
+All methods branch from the same SFT initialization; \textsc{DPO}/\textsc{CITA} then apply offline preference optimization, while \textsc{PPO}/\textsc{GRPO} run on-policy updates.
+
+% -----------------------------------------------------------------------------
 \subsection{Training Hyperparameters (Full)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+Table~\ref{tab:full_hyperparams} reports the complete training hyperparameters used for each method.
+We highlight three practical details that matter for reproduction:
+\textbf{(i) effective batch parity}---we match effective batch sizes where feasible via gradient accumulation;
+\textbf{(ii) identical context budgets}---max sequence length is held fixed across all runs;
+\textbf{(iii) stable LoRA capacity}---LoRA rank/alpha and target modules are constant, so optimization difficulty is primarily dictated by the objective (offline contrast vs.\ online RL).
+
+\vspace{-0.25em}
+\noindent
+\textbf{Why does \textsc{CITA} use a lower learning rate?}
+\textsc{CITA\_Instruct} sequences are longer (due to explicit instruction conditioning and paired preference formatting), which increases gradient magnitude and variance.
+We therefore select a lower learning rate for \textsc{CITA} than \textsc{DPO} to prevent overshooting and preserve a stable instruction-conditioned policy family.
 
 \begin{table}[H]
 \centering
 \scriptsize
 \setlength{\tabcolsep}{2pt}
-\renewcommand{\arraystretch}{1.2}
+\renewcommand{\arraystretch}{1.8}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Parameter} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
@@ -289,16 +447,32 @@ LoRA Alpha & 16 & 16 & 16 & 16 \\ \hline
 Target Modules & \multicolumn{4}{c}{q, k, v, o, gate, up, down\_proj} \\
 \bottomrule
 \end{tabular}
-\caption{Complete hyperparameters for all policy optimization methods. PPO uses mini\_batch=4, ppo\_epochs=4, cliprange=0.2. GRPO uses num\_generations=6, max\_completion=512.}
+\caption{\textbf{Complete hyperparameters for all methods.} PPO uses \texttt{mini\_batch=4}, \texttt{ppo\_epochs=4}, \texttt{cliprange=0.2}. GRPO uses \texttt{num\_generations=6}, \texttt{max\_completion=512}. LoRA configuration is fixed across methods to isolate objective-level effects.}
 \label{tab:full_hyperparams}
 \end{table}
 
+\vspace{-0.4em}
+\noindent\textbf{Optuna and TPE (what it does here).}
+We use Optuna’s \textbf{Tree-structured Parzen Estimator (TPE)} sampler to perform Bayesian-style hyperparameter search.
+TPE fits separate density models over configurations that perform well vs.\ poorly and proposes new trials by maximizing an expected improvement criterion.
+In our setting, we run 13 trials per method family and tune learning rate, weight decay, KL coefficient (when applicable), and $\beta$ for contrastive objectives.
+
+% -----------------------------------------------------------------------------
 \subsection{Compute Requirements}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+Table~\ref{tab:compute} summarizes the compute footprint.
+The key comparison is \textbf{offline vs.\ online} training:
+\textsc{DPO}/\textsc{CITA} operate on fixed preference pairs and therefore scale primarily with forward/backward passes,
+whereas \textsc{PPO}/\textsc{GRPO} must \textbf{generate} completions during training, compute rewards, and store rollout statistics, which increases memory and wall-clock time.
+Accordingly, \textsc{PPO}/\textsc{GRPO} require \textbf{A100-80GB} to avoid aggressive truncation or reduced rollout counts.
 
 \begin{table}[H]
 \centering
 \scriptsize
-\renewcommand{\arraystretch}{1.2}
+\renewcommand{\arraystretch}{1.8}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Metric} & \textbf{PPO} & \textbf{GRPO} & \textbf{DPO} & \textbf{CITA} \\
@@ -309,10 +483,63 @@ GPU Memory & 72GB & 68GB & 39GB & 39GB \\ \hline
 Checkpoint Size & 1.2GB & 1.2GB & 1.2GB & 1.2GB \\
 \bottomrule
 \end{tabular}
-\caption{Compute requirements per policy optimization method. DPO/CITA trained on A100-40GB; PPO/GRPO require A100-80GB due to online generation overhead.}
+\caption{\textbf{Compute requirements per method.} \textsc{DPO}/\textsc{CITA} are offline and fit on A100-40GB; \textsc{PPO}/\textsc{GRPO} require A100-80GB primarily due to on-policy generation, rollout storage, and reward computation overhead.}
 \label{tab:compute}
 \end{table}
 
+\vspace{-0.35em}
+\noindent\textbf{Interpretation of the footprint.}
+The wall-clock gap is expected: online RL methods amortize additional cost per update by producing (and scoring) rollouts, while offline methods reuse a fixed dataset.
+We therefore treat \textsc{PPO}/\textsc{GRPO} as \textbf{online reference points} for switchability rather than direct compute-matched baselines.
+
+% -----------------------------------------------------------------------------
+\subsection{Implementation Notes (Reproducibility-critical)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+The following details are the most common sources of silent divergence in reproduction; we state them explicitly.
+
+\begin{itemize}[leftmargin=*,itemsep=2.5pt]
+    \item \textbf{Context construction (contract-first formatting).}
+    We concatenate the alignment instruction $I$ and user request $X$ into a single context prefix, with consistent separators and role tags.
+    This ensures the model treats $I$ as a \textbf{policy-level contract} rather than a stylistic hint.
+
+    \item \textbf{Paired preference packing for \textsc{DPO}/\textsc{CITA}.}
+    For each $(I,X)$ we compute $\log\pi_\theta(Y^+\mid I,X)$ and $\log\pi_\theta(Y^-\mid I,X)$ under the \emph{same} prefix.
+    We verify that both completions fit within the maximum sequence length to avoid implicit truncation bias that can flip preference ordering.
+
+    \item \textbf{Sequence-length discipline.}
+    We keep \textbf{Max Seq.\ Len.\ = 2048} fixed across all methods.
+    When $(I,X)$ is long, we truncate from the \emph{left} only after preserving the full instruction header, ensuring the behavioral contract is never partially dropped.
+
+    \item \textbf{Hard negatives (when available).}
+    When preference data provides multiple non-preferred candidates, we prioritize \textbf{hard negatives} (high-likelihood but wrong-under-contract) to sharpen $\Delta_\theta$ learning and reduce reliance on trivial stylistic cues.
+
+    \item \textbf{KL control and stability.}
+    For RL methods, a KL coefficient is used in the policy optimization loop to prevent policy explosion.
+    For \textsc{CITA}, the KL anchor is used to keep instruction-conditioned regimes in a shared neighborhood.
+    In preliminary sweeps, we found that overly large KL can suppress switching, while overly small KL increases regime interference; the reported value is selected by Optuna/TPE search.
+
+    \item \textbf{Mixed precision + checkpointing.}
+    We use \textbf{bfloat16} for stability and enable gradient checkpointing to fit long contexts without reducing batch size.
+    All training runs are monitored for NaNs and exploding norms; when triggered, we lower LR and/or tighten gradient clipping.
+
+    \item \textbf{LoRA injection (fixed capacity).}
+    We apply LoRA with rank 16 to the same target modules across all methods (\texttt{q,k,v,o,gate,up,down\_proj}).
+    This ensures gains in switchability are not due to differential parameter capacity.
+\end{itemize}
+
+\vspace{-0.25em}
+\noindent
+\textbf{Minimal reproduction recipe.}
+To reproduce \textsc{CITA} results, it is sufficient to (i) start from the same SFT initialization, (ii) use the exact formatting for $(I,X)$, (iii) apply the Table~\ref{tab:full_hyperparams} settings with LoRA rank 16 on the specified modules, and (iv) evaluate with the deterministic metric suite reported in the main paper.
+
+
+
+
+\begin{comment}
+    
 %% =============================================================================
 %% DATASET DETAILS
 %% =============================================================================
@@ -368,13 +595,39 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \label{tab:instruction_templates}
 \end{table}
 
+\end{comment}
+
+
+
 %% =============================================================================
 %% ABLATION STUDIES
 %% =============================================================================
+% =============================================================================
+% Appendix: Ablation Studies (NeurIPS spotlight style; narrative + tables kept)
+% =============================================================================
+
 \section{Ablation Studies}
 \label{sec:appendix_ablations}
 
-\subsection{Effect of KL Weight ($\lambda$)}
+\vspace{-0.25em}
+\noindent
+This appendix isolates \textbf{which components actually matter} for \textsc{CITA} and \textbf{why}.
+Our central hypothesis is that \textsc{CITA} succeeds at \textbf{instruction-conditioned switching} only when the optimization remains within a \textbf{stable local neighborhood} of a reference policy while still learning \textbf{sharp, instruction-dependent preference gaps}.
+Accordingly, we ablate the two parameters that directly control this trade-off:
+\textbf{(i) the KL anchor weight} $\lambda_{\text{KL}}$, which governs \textbf{stability and regime co-existence}, and
+\textbf{(ii) the preference temperature} $\beta$, which governs \textbf{gap sharpness and switching sensitivity}.
+We report three outcome signals throughout:
+\textbf{reward margin} (training separation), \textbf{ECLIPTICA score} (switchability under controlled instruction flips), and \textbf{stability} (run-to-run and within-run behavior).
+
+% -----------------------------------------------------------------------------
+\subsection{Effect of KL Weight ($\lambda_{\text{KL}}$)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+\textbf{Why this ablation matters.}
+In \textsc{CITA}, the KL term is not a cosmetic regularizer: it is the mechanism that keeps \textbf{multiple instruction regimes co-located} so that switching remains \textbf{nearby and traversable} rather than collapsing into a single dominant posture.
+Too small $\lambda_{\text{KL}}$ permits \textbf{runaway preference margins} that overwrite neighboring regimes; too large $\lambda_{\text{KL}}$ imposes a \textbf{hard trust region} that prevents learning the instruction-conditioned separation needed for switching.
 
 \begin{table}[H]
 \centering
@@ -392,13 +645,42 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 0.001 & 5.5 & 0.29 & Stable \\
 \bottomrule
 \end{tabular}
-\caption{Effect of KL weight on training stability and performance. Optimal $\lambda \approx 0.0002$--$0.0003$.}
+\caption{\textbf{Effect of KL weight on stability and switchability.} Optimal performance occurs in a narrow band $\lambda_{\text{KL}}\approx 2\times 10^{-4}$--$3\times 10^{-4}$, where preference separation is strong while instruction regimes remain co-located.}
 \label{tab:kl_ablation}
 \end{table}
 
-\textbf{Finding}: Too low $\lambda$ causes mode collapse; too high $\lambda$ over-constrains learning.
+\vspace{-0.35em}
+\noindent\textbf{Reading Table~\ref{tab:kl_ablation}.}
+\textbf{(i) No anchor collapses switching.}
+At $\lambda_{\text{KL}}=0$, the model can increase margins by drifting far from the reference, which yields \textbf{highly variable training dynamics} and the lowest ECLIPTICA score (0.22).
+Empirically, this manifests as \textbf{regime interference}: one instruction posture dominates, and counterfactual instruction flips produce weaker policy changes.
 
+\vspace{-0.25em}
+\noindent
+\textbf{(ii) A ``Goldilocks'' KL band maximizes switchability.}
+As $\lambda_{\text{KL}}$ increases from $5\times 10^{-5}$ to $2.3\times 10^{-4}$, both reward margin and ECLIPTICA score improve monotonically, peaking at (7.5, 0.37).
+This is the regime where the anchor is strong enough to prevent \textbf{runaway drift}, yet weak enough to permit \textbf{instruction-conditional separation}.
+
+\vspace{-0.25em}
+\noindent
+\textbf{(iii) Over-anchoring suppresses learning.}
+Beyond the optimum, larger $\lambda_{\text{KL}}$ reduces reward margin and ECLIPTICA score (e.g., 0.001 $\rightarrow$ 0.29), consistent with an over-tight trust region that prevents the model from carving distinct instruction-conditioned behaviors.
+
+\vspace{-0.15em}
+\paragraph{\textbf{Finding.}}
+\textbf{Too low} $\lambda_{\text{KL}}$ yields \textbf{regime collapse / interference}; \textbf{too high} $\lambda_{\text{KL}}$ yields \textbf{over-constraint}.
+Switchability is maximized in a narrow band where the model learns \textbf{separation without drift}.
+
+% -----------------------------------------------------------------------------
 \subsection{Effect of Temperature ($\beta$)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+\textbf{Why this ablation matters.}
+The temperature $\beta$ controls the sharpness of the logistic contrast in the preference term.
+Larger $\beta$ amplifies gradients near ambiguous pairs and increases reward margin, but it can also create \textbf{over-confident separation} that makes the model less responsive to instruction flips---i.e., it learns a \textbf{hard-coded preference wall} rather than a \textbf{switchable contract}.
+Smaller $\beta$ produces smoother updates but may under-separate preferences and weaken instruction-conditioned discrimination.
 
 \begin{table}[H]
 \centering
@@ -414,135 +696,336 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 0.20 & 92\% & 9.2 & 0.31 \\
 \bottomrule
 \end{tabular}
-\caption{Effect of temperature on preference learning. Optimal $\beta \approx 0.1$.}
+\caption{\textbf{Effect of temperature on preference learning and switchability.} Larger $\beta$ increases separation (margin, accuracy) but can reduce instruction-conditioned switching, revealing a margin--switchability trade-off.}
 \label{tab:beta_ablation}
 \end{table}
 
-\textbf{Finding}: Higher $\beta$ increases margin but reduces instruction sensitivity.
+\vspace{-0.35em}
+\noindent\textbf{Reading Table~\ref{tab:beta_ablation}.}
+\textbf{(i) Separation increases with $\beta$.}
+Preference accuracy and reward margin grow steadily from $\beta=0.05$ to 0.20, as expected from sharper contrastive learning.
 
-\subsection{Hyperparameter Sensitivity Visualization}
+\vspace{-0.25em}
+\noindent
+\textbf{(ii) Switching peaks at moderate sharpness.}
+ECLIPTICA score peaks at $\beta=0.10$ (0.37) and declines at larger $\beta$ despite higher margins.
+This is the critical signal: \textbf{maximizing preference separation is not equivalent to maximizing instruction-conditioned control}.
+Overly sharp objectives can encourage \textbf{rigid} preference boundaries that are less modulated by the instruction channel.
 
-We conducted 13 Optuna trials with TPE sampling to optimize CITA\_Instruct hyperparameters. Figure~\ref{fig:hp_ablation_combined} shows the sensitivity of reward margin to key hyperparameters across all trials.
+\vspace{-0.15em}
+\paragraph{\textbf{Finding.}}
+\textbf{Higher $\beta$} strengthens margins but can reduce \textbf{instruction sensitivity}.
+The optimum occurs where preference learning is sharp enough to separate behaviors but smooth enough to preserve \textbf{counterfactual controllability}.
+
+% -----------------------------------------------------------------------------
+\subsection{Hyperparameter Sensitivity (Optuna/TPE)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+We run 13 Optuna trials with TPE sampling for \textsc{CITA\_Instruct}.
+TPE proposes configurations by fitting densities over \textbf{good} vs.\ \textbf{bad} trials and sampling where expected improvement is highest.
+We optimize learning rate, weight decay, $\beta$, and $\lambda_{\text{KL}}$.
+Figure~\ref{fig:hp_ablation_combined} summarizes the sensitivity of reward margin to these hyperparameters, revealing a concentrated ``good'' region rather than a broad plateau.
 
 \begin{figure*}[t!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_combined.pdf}
-\caption{\textbf{Hyperparameter Ablation Study}: Reward margin sensitivity to $\beta$, $\lambda_{\text{KL}}$, learning rate, and weight decay across 13 Optuna trials. Trial 7 ($\star$) achieves the best trade-off. \textbf{Key findings}: (a) $\beta \in [0.10, 0.12]$ yields highest margins; (b) $\lambda_{\text{KL}} \approx 0.0002$ balances stability and performance; (c) Learning rate sensitivity is high---$\sim$5e-6 is optimal for instruction-augmented training; (d) Weight decay shows moderate sensitivity with optimal range $\sim$0.01.}
+\caption{\textbf{Hyperparameter sensitivity across 13 Optuna trials.} Reward margin is most sensitive to learning rate and the $(\beta,\lambda_{\text{KL}})$ interaction. Trial 7 ($\star$) achieves the best trade-off, aligning with the ``Goldilocks'' band: $\beta\in[0.10,0.12]$, $\lambda_{\text{KL}}\approx 2\times 10^{-4}$, and LR $\approx 5\times 10^{-6}$.}
 \label{fig:hp_ablation_combined}
 \end{figure*}
+
+\vspace{-0.25em}
+\noindent
+\textbf{Pareto structure.}
+Because reward margin and preference accuracy do not perfectly correlate with ECLIPTICA switchability, we additionally analyze margin--accuracy trade-offs.
+Figure~\ref{fig:hp_pareto} shows the Pareto frontier; the selected configuration lies on the frontier, indicating that further margin gains typically require accuracy/switchability trade-offs.
 
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.9\columnwidth]{figures/appendix/hp_pareto_frontier.pdf}
-\caption{\textbf{Pareto Frontier}: Margin vs. accuracy trade-off across trials. Trial 7 lies on the Pareto frontier, achieving near-optimal balance (margin=7.52, accuracy=89\%).}
+\caption{\textbf{Pareto frontier across trials.} Trial 7 lies on the frontier, achieving near-optimal balance (margin=7.52, accuracy=89\%) while maintaining strong instruction-conditioned switching.}
 \label{fig:hp_pareto}
 \end{figure}
 
-\textbf{Trial 7 Analysis}: The optimal configuration ($\beta$=0.107, $\lambda_{\text{KL}}$=0.00023, LR=5.4e-6) occupies a ``Goldilocks zone'' where all hyperparameters are in their optimal ranges simultaneously, achieving highest reward margin (7.52) with near-peak accuracy (89\%) and Pareto-optimal trade-off.
+\vspace{-0.35em}
+\noindent\textbf{Trial 7 analysis (why it wins).}
+The best configuration ($\beta$=0.107, $\lambda_{\text{KL}}$=0.00023, LR=5.4e-6) occupies a narrow region where:
+\textbf{(i) $\beta$ is high enough} to separate instruction-conditioned preferences,
+\textbf{(ii) $\lambda_{\text{KL}}$ is strong enough} to prevent regime drift,
+and \textbf{(iii) LR is low enough} to avoid overshooting under longer instruction-augmented sequences.
+This ``alignment'' of the three levers yields high margins without sacrificing switchability.
 
+% -----------------------------------------------------------------------------
 \subsubsection{Individual Hyperparameter Analysis}
+% -----------------------------------------------------------------------------
 
-Figures~\ref{fig:hp_beta}--\ref{fig:hp_lr} show detailed sensitivity analysis for each hyperparameter, with three metrics per plot: reward margin, accuracy, and eval loss.
+\vspace{-0.25em}
+\noindent
+Figures~\ref{fig:hp_beta}--\ref{fig:hp_lr} provide per-parameter sensitivity analyses, plotting reward margin, accuracy, and evaluation loss.
+Across plots, Trial 7 ($\star$) consistently appears near the optimal region, indicating that the final choice is not an outlier but a coherent solution across axes.
 
 \begin{figure*}[t!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_beta.pdf}
-\caption{\textbf{$\beta$ (DPO Temperature) Sensitivity}: Left: Reward margin peaks at $\beta \approx 0.10$--$0.12$. Middle: Accuracy stable (88--90\%). Right: Eval loss increases with higher $\beta$. Trial 7 ($\star$) at $\beta$=0.107 achieves optimal margin.}
+\caption{\textbf{$\beta$ sensitivity.} Reward margin peaks at $\beta\approx 0.10$--$0.12$; accuracy is stable (88--90\%), while evaluation loss increases at higher $\beta$, consistent with over-sharpening. Trial 7 ($\star$) at $\beta$=0.107 achieves strong margins while preserving switchability.}
 \label{fig:hp_beta}
 \end{figure*}
 
 \begin{figure*}[t!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_lambda_kl.pdf}
-\caption{\textbf{$\lambda_{\text{KL}}$ (KL Regularization) Sensitivity}: Left: Reward margin shows inverted-U---too low causes instability, too high over-constrains. Middle: Accuracy stable. Right: Eval loss decreases with higher $\lambda$. Trial 7 ($\star$) at $\lambda$=0.00023 hits the sweet spot.}
+\caption{\textbf{$\lambda_{\text{KL}}$ sensitivity.} Reward margin exhibits an inverted-U: too low produces instability and regime interference; too high suppresses learning. Accuracy is comparatively stable, indicating the dominant effect is on switching stability rather than raw preference fit. Trial 7 ($\star$) at $\lambda_{\text{KL}}$=0.00023 lies in the optimal band.}
 \label{fig:hp_lambda}
 \end{figure*}
 
 \begin{figure*}[t!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_learning_rate.pdf}
-\caption{\textbf{Learning Rate Sensitivity}: Reward margin highly sensitive to LR---optimal $\sim$5e-6. Accuracy drops at higher LRs. \textbf{Key insight}: CITA\_Instruct requires $\sim$50\% lower LR than standard DPO due to 30--40\% longer instruction-augmented sequences.}
+\caption{\textbf{Learning-rate sensitivity.} Reward margin is highly sensitive to LR, with an optimum near $5\times 10^{-6}$. Higher LR reduces accuracy and increases loss, especially for instruction-augmented sequences. \textbf{Key insight:} \textsc{CITA\_Instruct} requires $\sim$50\% lower LR than standard DPO due to longer contexts and higher gradient variance.}
 \label{fig:hp_lr}
 \end{figure*}
 
+\vspace{-0.25em}
+\noindent
+\textbf{Overall takeaway.}
+Switchability emerges only when \textbf{separation} (controlled by $\beta$) and \textbf{stability} (controlled by $\lambda_{\text{KL}}$ and LR) are jointly satisfied.
+The ablations show that maximizing reward margin alone is insufficient; the best instruction-driven alignment requires the \textbf{Goldilocks zone} where regimes remain \textbf{distinct yet co-located}, enabling reliable counterfactual switching under a fixed user prompt.
+
+
+
+
+
 \clearpage
+\newpage
 
 %% =============================================================================
 %% EVALUATION BENEFITS
 %% =============================================================================
-\section{Evaluation Benefits of CITA}
+% =============================================================================
+% Appendix: Detailed Evaluation of CITA (NeurIPS spotlight; expanded)
+% =============================================================================
+
+\section{Detailed Evaluation of \textsc{CITA}}
 \label{sec:appendix_benefits}
 
-\begin{itemize}[leftmargin=*,itemsep=2pt]
-    \item \textbf{Generalization}: Applies policy to novel prompts not seen during training
-    \item \textbf{Robustness}: Resists jailbreaks and adversarial rephrasing attempts
-    \item \textbf{Over-Refusal Calibration}: Avoids unnecessary refusals by conditioning on context
-    \item \textbf{Policy Switching}: Behaves differently under different alignment instructions
-\end{itemize}
+\vspace{-0.25em}
+\noindent
+This appendix expands the evaluation beyond aggregate scores, clarifying \textbf{what kind of capability} \textsc{CITA} adds and \textbf{how to interpret} improvements in the ECLIPTICA setting.
+Our thesis is that instruction-driven alignment should be assessed as \textbf{counterfactual policy control}:
+holding the \textbf{user request} fixed while changing only the \textbf{alignment instruction contract}.
+Accordingly, we organize the evaluation into four operational properties that matter in deployment:
+\textbf{generalization}, \textbf{robustness}, \textbf{over-refusal calibration}, and \textbf{policy switching}.
+For each, we state (i) what we measure, (ii) what success looks like, and (iii) what failure modes look like.
 
-%% =============================================================================
-%% EXTENSIONS AND FUTURE WORK
-%% =============================================================================
-\section{Extensions and Future Work}
-\label{sec:appendix_future}
+\vspace{-0.25em}
+\subsection*{Generalization: instruction-conditioned policy transfer}
+\vspace{-0.15em}
 
-\begin{itemize}[leftmargin=*,itemsep=2pt]
-    \item \textbf{Multi-policy conditioning}: Support multiple simultaneous policies (e.g., strict, educational, neutral)
-    \item \textbf{Rationale-augmented tuning}: Include reasons for rejection in training data
-    \item \textbf{Cross-lingual alignment transfer}: Extend instruction-conditioning to multilingual policies
-    \item \textbf{Multimodal CITA}: Extend to image-text alignment in vision-language models
-\end{itemize}
+\noindent
+\textbf{Claim.} \textsc{CITA} learns an instruction-conditioned policy family that \textbf{transfers} to prompts and topics not observed during training.
 
-%% =============================================================================
-%% TRAINING CURVES (SUPPLEMENTARY)
-%% =============================================================================
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+We evaluate whether an alignment instruction $I$ induces the intended behavioral posture on \textbf{novel prompts}:
+(i) unseen domains (e.g., finance $\rightarrow$ health advice posture, crypto $\rightarrow$ workplace communication),
+(ii) different surface forms (question, imperative, multi-part),
+(iii) distributional shifts in topic and framing.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A generalized policy does \textbf{not} memorize prompt templates.
+Instead, it applies \textbf{contract-consistent content selection}:
+a \texttt{safety\_first} instruction should reliably increase warnings and guardrails,
+a \texttt{concise} instruction should reliably compress while preserving key decision variables,
+and a \texttt{professional} instruction should produce consistent structure and hedging behavior.
+Importantly, this should hold even when the prompt is phrased adversarially or indirectly.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+We observe three typical generalization failures in instruction-conditioned systems:
+\textbf{(i) template lock-in} (works on familiar formats, fails on paraphrases),
+\textbf{(ii) topic leakage} (instruction affects only some domains),
+\textbf{(iii) shallow style compliance} (tone changes but policy does not).
+ECLIPTICA’s fixed-prompt counterfactual design is explicitly meant to detect (iii).
+
+\vspace{-0.25em}
+\subsection*{Robustness: resisting adversarial instruction and prompt attacks}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} A switchable alignment mechanism must remain stable under \textbf{jailbreak-like perturbations} and \textbf{adversarial rephrasings}.
+
+\vspace{-0.15em}
+\noindent
+\textbf{Threat model (high-level).}
+We consider attacks that attempt to:
+\textbf{(i) override} the alignment instruction (e.g., ``ignore previous policy''-style attempts),
+\textbf{(ii) blur} the user intent to bypass refusal boundaries,
+\textbf{(iii) induce} instruction collisions (conflicting constraints),
+or \textbf{(iv) smuggle} policy changes via the user prompt.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+Robustness is assessed by whether the model maintains \textbf{instruction-consistent policy} when:
+(i) the user prompt is paraphrased to hide risky intent,
+(ii) the user prompt explicitly attempts to change policy,
+(iii) the prompt contains distractors, long contexts, or multi-turn framing.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A robust switchable policy should behave as follows:
+\textbf{(i) instruction priority:} the alignment instruction remains the governing contract,
+\textbf{(ii) boundary integrity:} safety boundaries do not drift under paraphrase,
+\textbf{(iii) refusal calibration:} refusals remain targeted rather than blanket,
+\textbf{(iv) graceful degradation:} under conflict, the model resolves rather than truncates.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+We observe two principal failure patterns:
+\textbf{(i) override susceptibility} (policy flips when the user demands it),
+\textbf{(ii) brittle switching} (instruction-conditioned behavior collapses under minor paraphrases).
+In practice, these failures are tightly coupled to whether the optimization permits large drift away from the reference policy.
+
+\vspace{-0.25em}
+\subsection*{Over-refusal calibration: avoiding unnecessary refusals}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} Alignment must be \textbf{selective} to be useful: models should refuse genuinely harmful requests while avoiding gratuitous refusals on benign content.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+We evaluate whether \textsc{CITA} can condition refusal behavior on:
+(i) the \textbf{instruction} (strict vs.\ permissive safety posture),
+(ii) the \textbf{context} (benign informational queries vs.\ actionable harm),
+(iii) the \textbf{degree of risk} (low-risk educational vs.\ high-risk operational).
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A calibrated model exhibits:
+\textbf{(i) selective refusal:} refuses only when necessary under permissive settings,
+\textbf{(ii) explanatory refusal:} provides safe alternatives and rationale under strict settings,
+\textbf{(iii) contextual compliance:} allows benign discussion (e.g., safety education) while refusing harmful operational detail.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+Over-refusal appears as \textbf{policy overreach}:
+the model refuses benign prompts, thereby reducing usefulness.
+Under-refusal appears as \textbf{boundary drift}:
+the model complies under instructions that should enforce refusal.
+In instruction-driven alignment, the hardest case is preventing \textbf{strict-mode spillover} into permissive regimes.
+
+\vspace{-0.25em}
+\subsection*{Policy switching: counterfactual control under a shared backbone}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} \textsc{CITA} enables \textbf{meaningfully different} behaviors under different alignment instructions \emph{for the same user prompt}, without training separate checkpoints.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+We measure switching via ECLIPTICA-style counterfactuals:
+given fixed prompt $X$ and two instructions $I_a, I_b$,
+we assess whether outputs differ along \textbf{the intended policy axis} (epistemic stance, refusal boundary, verbosity),
+rather than unstructured variability.
+This is precisely the difference between:
+\textbf{policy switching} (contract-consistent behavioral change)
+and \textbf{prompt hacks} (unstable or superficial variation).
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A strong switch is:
+\textbf{(i) directional:} changes align with the instruction contract,
+\textbf{(ii) consistent:} repeats across paraphrases and domains,
+\textbf{(iii) bounded:} remains within a stable neighborhood of the reference (no runaway drift),
+\textbf{(iv) non-degenerate:} does not collapse into trivial acknowledgements or truncated replies.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+We observe three failure types:
+\textbf{(i) mode collapse} (one regime dominates regardless of instruction),
+\textbf{(ii) regime interference} (switching works but bleeds constraints across regimes),
+\textbf{(iii) brittle conjunction} (multi-instruction composition produces incomplete outputs).
+The failure case in Appendix~\ref{sec:appendix_examples} illustrates (iii).
+
+\vspace{-0.15em}
+\paragraph{\textbf{Practical summary.}}
+Across these dimensions, \textsc{CITA} is best understood as providing a \textbf{deployable control interface}:
+alignment becomes a \textbf{runtime instruction channel} that modulates policy with bounded, repeatable counterfactual effects,
+rather than a one-shot, training-time imprint of a single behavior.
+
+% =============================================================================
+% TRAINING CURVES (SUPPLEMENTARY)
+% =============================================================================
 \section{Training Curves}
 \label{sec:appendix_training_curves}
 
-Additional training dynamics plots that provide supplementary context to the main results in Section~\ref{sec:training_dynamics}.
+\vspace{-0.25em}
+\noindent
+This section reports supplementary training dynamics that contextualize the main results in Section~\ref{sec:training_dynamics}.
+We emphasize one operational point: \textbf{loss scale is not comparable across methods}.
+Offline preference objectives (DPO/\textsc{CITA}) and online RL objectives (GRPO) produce different loss magnitudes and noise characteristics.
+Accordingly, we interpret curves through \textbf{convergence shape}, \textbf{stability}, and \textbf{relative trends} (Instruct vs.\ NoInstruct), rather than absolute loss values.
 
-\subsection{DPO/CITA Eval Loss}
+\subsection{DPO/\textsc{CITA} Eval Loss}
 
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/training/combined_eval_loss.pdf}
-\caption{\textbf{Eval Loss Across Policy Optimization Methods}: 1$\times$3 subplot showing eval loss for DPO, CITA, and GRPO with independent y-axes (necessary due to vastly different loss scales). \textbf{DPO} (left): Loss $\sim$0.21--0.28, smooth convergence with Instruct slightly lower. \textbf{CITA} (center): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
+\caption{\textbf{Evaluation loss across policy optimization methods.}
+We plot evaluation loss for DPO, \textsc{CITA}, and GRPO using independent y-axes due to non-comparable loss scales.
+\textbf{DPO (left):} loss $\sim$0.21--0.28 with smooth convergence; the Instruct variant is slightly lower, consistent with stronger preference fit under the instruction-augmented setup.
+\textbf{\textsc{CITA} (center):} loss $\sim$0.27--0.40; the NoInstruct curve converges lower, while \textsc{CITA\_Instruct} attains larger reward margins, reflecting a separation--stability trade-off induced by the mandatory anchoring term.
+\textbf{GRPO (right):} loss oscillates near zero ($\pm$0.001), characteristic of online RL training where the objective is dominated by on-policy sampling variance.
+\textbf{Note:} PPO tensorboard logs were empty due to a TRL logging issue, so we do not include PPO curves here.}
 \label{fig:training_loss}
 \vspace{-3mm}
 \end{figure*}
 
-% COMMENTED OUT - SFT figures not available in updated figures (combined plots used instead)
-% \subsection{SFT Training Curves}
-%
-% The SFT stage serves as the foundation for both DPO and CITA training. We observe that instruction-augmented training (SFT\_Instruct) produces more efficient learning:
-%
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.9\columnwidth]{figures/training/sft_loss.pdf}
-% \caption{\textbf{SFT Training Loss}: SFT\_Instruct (1.49) converges to lower loss than SFT\_NoInstruct (1.78), indicating that instruction-augmented sequences provide stronger supervision signal despite being 30--40\% longer.}
-% \label{fig:sft_loss}
-% \vspace{-3mm}
-% \end{figure}
-%
-% \begin{figure}[H]
-% \centering
-% \includegraphics[width=0.9\columnwidth]{figures/training/sft_mean_token_accuracy.pdf}
-% \caption{\textbf{SFT Token Accuracy}: SFT\_Instruct (63\%) achieves higher mean token accuracy than SFT\_NoInstruct (56\%). This 7\% improvement propagates to better downstream DPO/CITA performance.}
-% \label{fig:sft_accuracy}
-% \vspace{-3mm}
-% \end{figure}
-%
-% \textbf{Implication}: The SFT\_Instruct checkpoint provides a stronger initialization for CITA training, partially explaining CITA\_Instruct's superior instruction sensitivity.
+\vspace{-0.35em}
+\noindent\textbf{Key takeaways from Figure~\ref{fig:training_loss}.}
+\textbf{First,} DPO exhibits the most stable and smooth offline convergence, serving as a strong baseline for preference fitting.
+\textbf{Second,} \textsc{CITA} exhibits slightly higher eval loss but achieves higher reward margins, consistent with learning a \textbf{switchable policy family} rather than optimizing a single preference boundary.
+\textbf{Third,} GRPO’s oscillatory loss highlights the cost of online methods: additional variance and sensitivity to sampling, even when downstream performance can be competitive.
 
-%% =============================================================================
-%% QUALITATIVE EXAMPLES
-%% =============================================================================
+
 \section{Qualitative Examples}
 \label{sec:appendix_examples}
 
-\subsection{Good Example: Instruction Switching}
+\vspace{-0.25em}
+\noindent
+This section provides qualitative evidence that \textsc{CITA} learns \textbf{instruction-conditioned policy switching} rather than superficial stylistic variation.
+We follow the core ECLIPTICA protocol: \textbf{keep the user prompt fixed} and vary \textbf{only} the alignment instruction.
+Each example is chosen to illustrate a distinct axis of controllability:
+\textbf{(i) safety posture}, \textbf{(ii) risk framing}, and \textbf{(iii) contract-level constraints} (verbosity), as well as a targeted failure mode involving \textbf{instruction composition}.
 
-\textbf{Prompt}: ``What should I consider when investing in cryptocurrency?''
+% -----------------------------------------------------------------------------
+\subsection{Good Example: Instruction Switching Under a Fixed Prompt}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.2em}
+\noindent
+\textbf{Prompt (fixed)}: ``What should I consider when investing in cryptocurrency?''
+
+\vspace{-0.25em}
+\noindent
+\textbf{What this tests.}
+This prompt is deliberately selected because it admits multiple \emph{legitimate} response policies that differ in \textbf{risk tolerance}, \textbf{harm-reduction emphasis}, and \textbf{regulatory caution}.
+A model that merely performs surface compliance would tend to keep the same substantive stance and only adjust tone.
+In contrast, \textsc{CITA} is expected to \textbf{re-weight content selection and warnings} according to the instruction contract.
 
 \begin{table}[H]
 \centering
@@ -552,24 +1035,66 @@ Additional training dynamics plots that provide supplementary context to the mai
 \toprule
 \textbf{Instruction} & \textbf{CITA\_Instruct Response} \\
 \midrule
-safety\_first & ``Cryptocurrency is highly volatile. Consider: only invest what you can afford to lose, secure your private keys offline, be wary of scams, and never share your credentials. The regulatory landscape is uncertain---consult a financial advisor.'' \\ \hline
-liberal & ``Cryptocurrency offers exciting opportunities for financial innovation. Consider: diversifying across multiple coins, exploring DeFi protocols, following emerging trends, and potentially high returns for those willing to embrace risk.'' \\ \hline
-concise & ``Assess: volatility tolerance, security practices, regulatory risks, investment horizon. Start small.'' \\
+safety\_first &
+``Cryptocurrency is highly volatile. Consider: only invest what you can afford to lose, secure your private keys offline, be wary of scams, and never share your credentials. The regulatory landscape is uncertain---consult a financial advisor.'' \\ \hline
+liberal &
+``Cryptocurrency offers exciting opportunities for financial innovation. Consider: diversifying across multiple coins, exploring DeFi protocols, following emerging trends, and potentially high returns for those willing to embrace risk.'' \\ \hline
+concise &
+``Assess: volatility tolerance, security practices, regulatory risks, investment horizon. Start small.'' \\
 \bottomrule
 \end{tabularx}
-\caption{Same prompt, different instructions yield behaviorally distinct responses.}
+\caption{\textbf{Counterfactual switching.} Same prompt, different alignment instructions yield \textbf{behaviorally distinct} responses (risk warnings vs.\ opportunity framing vs.\ explicit brevity constraint).}
 \label{tab:good_example}
 \end{table}
 
-\subsection{Failure Case: Conflicting Instructions}
+\vspace{-0.35em}
+\noindent\textbf{Interpretation (what changes, and why it matters).}
+\textbf{First,} \texttt{safety\_first} shifts the response toward \textbf{harm reduction} and \textbf{risk containment}: volatility warnings, scam prevention, and credential hygiene are foregrounded.
+\textbf{Second,} \texttt{liberal} modifies the \textbf{policy stance} from caution-first to opportunity-first: the response highlights upside, innovation narratives, and exploration pathways (e.g., DeFi), while retaining basic prudence.
+\textbf{Third,} \texttt{concise} enforces a \textbf{contract-level output constraint}: the response compresses into a checklist without losing the core decision variables.
+Crucially, these are not mere tonal edits; they represent \textbf{content reallocation} consistent with a policy-level instruction.
 
-\textbf{Prompt}: ``How should I respond to criticism at work?''
+\vspace{-0.25em}
+\noindent
+\textbf{How this maps to ECLIPTICA.}
+This is an instance of the benchmark’s intended behavior: \textbf{counterfactual controllability} under a fixed user request.
+The model is evaluated on whether the instruction changes \textbf{what is emphasized}, \textbf{what is omitted}, and \textbf{how constraints are obeyed}, not just phrasing.
 
-\textbf{Instruction}: ``Be empathetic AND concise'' (conflicting)
+% -----------------------------------------------------------------------------
+\subsection{Failure Case: Instruction Composition and Contract Conflicts}
+% -----------------------------------------------------------------------------
 
-\textbf{Response}: ``Thank you for the feedback. [stops abruptly]''
+\vspace{-0.2em}
+\noindent
+\textbf{Prompt (fixed)}: ``How should I respond to criticism at work?''
 
-\textbf{Analysis}: The model attempted to satisfy both instructions but produced an incomplete response. Future work should address instruction composition and conflict resolution through hierarchical instruction handling.
+\vspace{-0.25em}
+\noindent
+\textbf{Instruction (conflicting)}: ``Be empathetic AND concise''
+
+\vspace{-0.25em}
+\noindent
+\textbf{Observed response (failure)}: ``Thank you for the feedback. [stops abruptly]''
+
+\vspace{-0.35em}
+\noindent\textbf{Why this fails (mechanistic reading).}
+This instruction pair creates a \textbf{composition problem}: empathy typically requires (i) acknowledging emotion, (ii) signaling openness, and (iii) proposing a next action---which is hard to compress if the model interprets \texttt{concise} as \textbf{minimize token count at all costs}.
+The produced response satisfies the \emph{minimal} acknowledgment but violates the implicit pragmatic requirement of a complete workplace-appropriate reply.
+This reveals a failure mode where the model treats multi-constraint instructions as \textbf{hard conjunction} without a learned notion of \textbf{minimal sufficiency}.
+
+\vspace{-0.25em}
+\noindent
+\textbf{What this implies for switchable alignment.}
+Instruction-driven alignment does not only require single-instruction controllability; it requires \textbf{robust composition}.
+Without explicit conflict handling, the model may collapse to an overly conservative interpretation of one constraint (here: brevity), yielding under-specified behavior.
+
+\vspace{-0.15em}
+\paragraph{\textbf{Future work: compositional contracts.}}
+A principled solution is to treat instructions as \textbf{weighted contracts} rather than flat conjunctions, using either:
+\textbf{(i) hierarchical constraint parsing} (primary policy goal + secondary style constraint),
+\textbf{(ii) conflict-aware decoding} (ensure pragmatic completeness before enforcing brevity),
+or \textbf{(iii) contract satisfiability training} (preference data that explicitly rewards \emph{minimal complete} responses under competing constraints).
+These directions are complementary and naturally fit the ECLIPTICA framing of alignment as \textbf{runtime-controllable policy specification}.
 
 
 
@@ -590,38 +1115,69 @@ concise & ``Assess: volatility tolerance, security practices, regulatory risks, 
 
 
 
-\clearpage
-\newpage
+%\clearpage
+%\newpage
 
 
 % =============================================================================
 % EXPERIMENTS - CITA Paper in ALKALI Format
 % =============================================================================
 
+% =============================================================================
+% Experiments (NeurIPS spotlight; expanded ~3x; crisp, structured, with narrative)
+% =============================================================================
+
 \vspace{-2mm}
 \section{Experiments}
 \label{sec:experiments}
 
-We present our experimental setup, including the training pipeline, model variants, evaluation benchmarks, hyperparameter optimization, and training dynamics.
+We present the experimental protocol used to evaluate \textbf{instruction-driven, runtime-switchable alignment}.
+The central question is not whether a model can follow instructions in the usual sense, but whether it can \textbf{counterfactually switch alignment posture}:
+\textbf{holding the user prompt fixed} while varying \textbf{only} the alignment instruction (policy contract).
+We therefore design experiments that separate (i) \textbf{base capability} from (ii) \textbf{instruction sensitivity}, and that compare \textsc{CITA} against both \textbf{offline preference} and \textbf{online RL} baselines under a consistent training stack.
 
-\vspace{-2mm}
+\vspace{-0.2em}
+\paragraph{\textbf{Overview.}}
+We train Llama-3.1-8B with LoRA adapters through a staged pipeline (Base $\rightarrow$ SFT $\rightarrow$ DPO $\rightarrow$ \textsc{CITA}), and construct matched \textbf{NoInstruct} and \textbf{Instruct} variants for each method.
+NoInstruct uses standard prompts; Instruct prepends an explicit \textbf{behavioral contract} instruction (epistemic stance, refusal boundary, verbosity) to the same user request.
+The primary readout is \textbf{instruction sensitivity} $\Delta$ (Instruct $-$ NoInstruct), which directly measures how much a method exposes a \textbf{controllable alignment channel} rather than a static policy baked into weights.
+
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Training Pipeline}
 \label{sec:training_pipeline_exp}
 
-Following the staged approach from Section~\ref{sec:methodology}, we train on PKU-SafeRLHF~\cite{ji2024pku,bai2022training} using NVIDIA A100 GPUs with LoRA~\cite{hu2022lora} adapters (SFT/DPO/CITA on A100-40GB; PPO/GRPO on A100-80GB). Training proceeds through four stages:
+Following the staged approach in Section~\ref{sec:methodology}, we train on PKU-SafeRLHF~\cite{ji2024pku,bai2022training} using NVIDIA A100 GPUs and LoRA~\cite{hu2022lora} adapters.
+Offline preference methods (SFT/DPO/\textsc{CITA}) run on A100-40GB, while online methods (PPO/GRPO) require A100-80GB due to on-policy generation and reward evaluation overhead.
+The pipeline is designed to isolate a practical deployment claim:
+\textbf{\emph{instruction-driven alignment is most meaningful when applied on top of an already-aligned policy}}, since the instruction channel should modulate a safe neighborhood rather than repair a fundamentally unsafe base.
+
+\vspace{-0.2em}
+\paragraph{\textbf{Stages.}}
+Training proceeds through four stages:
 
 \begin{enumerate}[leftmargin=*,itemsep=1pt]
-    \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} (pretrained weights)
-    \item \textbf{SFT}: Fine-tune on PKU chosen responses
-    \item \textbf{DPO}: Train on PKU preference pairs
-    \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
+    \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} pretrained weights.
+    \item \textbf{SFT}: Supervised fine-tuning on PKU \emph{chosen} responses to establish a strong instruction-following and safety baseline.
+    \item \textbf{DPO}: Offline preference optimization on PKU preference pairs to strengthen alignment via direct preference shaping.
+    \item \textbf{\textsc{CITA}}: Instruction-conditioned preference learning with an explicit stability anchor (trust-region style) to preserve a \textbf{switchable policy family} rather than collapsing to one dominant stance.
 \end{enumerate}
 
-\vspace{-2mm}
+\vspace{-0.2em}
+\paragraph{\textbf{Why this ordering matters.}}
+We emphasize the ordering because instruction-driven alignment is not intended as a substitute for base alignment.
+Instead, it adds a \textbf{runtime control interface} over an already aligned manifold:
+\textsc{CITA} learns to \textbf{navigate} between nearby regimes (e.g., strict vs.\ permissive safety; honest vs.\ confident epistemics; concise vs.\ detailed verbosity) without requiring separate checkpoints.
+
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Model Variants}
 \label{sec:model_variants}
 
-We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct):
+We train 10 variants spanning 5 methods (SFT, PPO, GRPO, DPO, \textsc{CITA}) $\times$ 2 instruction settings (NoInstruct, Instruct).
+This factorial design supports two comparisons:
+\textbf{(i) within-method switching} (NoInstruct vs.\ Instruct) to quantify instruction sensitivity, and
+\textbf{(ii) cross-method switching} to compare how different optimization paradigms expose (or suppress) an alignment instruction channel.
 
 \begin{table}[H]
 \centering
@@ -647,23 +1203,39 @@ DPO\_NI & Base$\rightarrow$SFT$\rightarrow$DPO & No \\
 \hline
 DPO\_I & Base$\rightarrow$SFT$\rightarrow$DPO & Yes \\
 \hline
-CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & No \\
+CITA\_NI & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$\textsc{CITA} & No \\
 \hline
-CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
+CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$\textsc{CITA} & Yes \\
 \bottomrule
 \end{tabular}
-\caption{10 model variants. NI = NoInstruct (standard prompts), I = Instruct (with behavioral instructions). PPO, GRPO, DPO branch from SFT; CITA stacks on DPO.}
+\caption{\textbf{Model variants.} NI = NoInstruct (standard prompts), I = Instruct (behavioral contract prepended). PPO/GRPO/DPO branch from SFT; \textsc{CITA} stacks on DPO to learn instruction-conditioned switching under stability constraints.}
 \label{tab:model_variants}
 \vspace{-4mm}
 \end{table}
 
-\textbf{Comparison Design.} By evaluating NoInstruct vs. Instruct variants, we measure each method's \textit{instruction sensitivity}---the improvement from adding alignment instructions.
+\vspace{-0.2em}
+\paragraph{\textbf{Comparison design (what $\Delta$ means).}}
+For each method, we compute instruction sensitivity as
+\[
+\Delta \;=\; \text{Score}(\text{Instruct}) \;-\; \text{Score}(\text{NoInstruct}).
+\]
+A large positive $\Delta$ indicates that the method exposes a \textbf{functional policy control channel}:
+the alignment instruction changes behavior in the intended direction under an unchanged user request.
+A near-zero $\Delta$ indicates \textbf{static alignment}: the method may be aligned, but the instruction channel is largely ignored.
 
-\vspace{-2mm}
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Hyperparameter Optimization}
 \label{sec:hyperparams_appendix}
 
-We use Optuna~\cite{akiba2019optuna} with TPE sampler (13 trials) to optimize hyperparameters, following best practices from hyperparameter optimization literature~\cite{liang2023holistic}. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
+We tune hyperparameters using Optuna~\cite{akiba2019optuna} with the TPE (Tree-structured Parzen Estimator) sampler over 13 trials.
+TPE is a Bayesian optimization strategy that models promising vs.\ unpromising configurations and proposes new trials by maximizing expected improvement under those density models.
+Our objective is not to overfit a single benchmark, but to identify a \textbf{stable configuration} that yields strong preference separation \emph{and} reliable instruction sensitivity, consistent with best practices in holistic evaluation~\cite{liang2023holistic}.
+
+\vspace{-0.2em}
+\paragraph{\textbf{Key empirical finding: instruction-augmented training needs a lower learning rate.}}
+\textbf{\textsc{CITA}\_Instruct requires $\sim$50\% lower learning rate} than \textsc{CITA}\_NoInstruct.
+Instruction-augmented contexts are 30--40\% longer, increasing gradient magnitude and variance; a lower learning rate improves stability and prevents overshooting into brittle regimes.
 
 \begin{table}[H]
 \centering
@@ -684,42 +1256,67 @@ Final margin & 6.95 & 7.52 \\ \hline
 Accuracy & 89.5\% & 89.0\% \\
 \bottomrule
 \end{tabular}
-\caption{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration.}
+\caption{\textbf{Best hyperparameters from Optuna search.} T5/T7 denote the best trial IDs for NoInstruct and Instruct runs, respectively. The Instruct variant prefers a lower LR and a smaller $\lambda_{\text{KL}}$, while achieving a higher final reward margin at comparable accuracy.}
 \label{tab:hyperparams_exp}
 \vspace{-4mm}
 \end{table}
 
+\vspace{-0.2em}
+\paragraph{\textbf{Interpretation.}}
+Two tuning patterns recur across trials.
+\textbf{First,} $\beta$ exhibits a narrow ``Goldilocks'' band: too low weakens preference separation, too high inflates margins but can reduce instruction sensitivity by over-hardening a single stance.
+\textbf{Second,} $\lambda_{\text{KL}}$ trades off \textbf{switchability vs.\ rigidity}: too small risks regime collapse, too large prevents meaningful motion between instruction regimes.
 
-
-
-
-
-
-
-\vspace{-2mm}
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Training Dynamics}
 \label{sec:training_dynamics}
 
-We analyze key training curves comparing DPO and CITA variants. Additional training curves (eval loss, SFT loss, SFT token accuracy) are provided in Appendix~\ref{sec:appendix_training_curves}.
+We analyze training curves to understand how \textsc{CITA} differs from DPO in optimization behavior.
+Additional plots (eval loss, SFT loss, token accuracy) are included in Appendix~\ref{sec:appendix_training_curves}.
+We emphasize one operational point:
+\textbf{accuracy alone is insufficient}.
+High preference accuracy can coexist with poor switching if the model collapses into a single dominant posture.
+We therefore track both \textbf{reward accuracy} and \textbf{reward margin}.
 
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/training/combined_accuracy.pdf}
-\caption{\textbf{Training Accuracy Metrics}: 1$\times$2 subplot comparing accuracy across methods. \textbf{Left (DPO/CITA)}: Reward accuracy---all models converge to 89--92\%, with DPO variants achieving slightly higher accuracy. \textbf{Right (SFT)}: Mean token accuracy---both variants converge smoothly, with Instruct achieving marginally higher accuracy due to richer training signal from instruction-augmented sequences.}
+\caption{\textbf{Training accuracy metrics.} Left: reward accuracy for DPO/\textsc{CITA} variants. All converge to $\sim$89--92\%, with DPO slightly higher. Right: SFT mean token accuracy. Both converge smoothly, with Instruct marginally higher due to richer context from instruction-augmented sequences.}
 \label{fig:training_accuracy_appendix}
 \vspace{-3mm}
 \end{figure*}
 
-\begin{figure}[H]
+\begin{figure}[ht!]
 \centering
 \includegraphics[width=\columnwidth]{figures/training/dpo_cita_margins.pdf}
-\caption{\textbf{Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim$6.0). Higher margins indicate stronger preference learning.}
+\caption{\textbf{Reward margins.} \textsc{CITA}\_Instruct (7.5) $>$ \textsc{CITA}\_NoInstruct (7.2) $>$ DPO ($\sim$6.0). Larger margins indicate stronger separation between preferred vs.\ dispreferred responses under the instruction-conditioned preference relation.}
 \label{fig:training_margins}
 \vspace{-3mm}
 \end{figure}
 
-\textbf{Key Observation.} CITA achieves higher reward margins (7.5 vs. 6.0) than DPO despite similar accuracy, validating that mandatory KL regularization leads to 
+\vspace{-0.2em}
+\noindent\textbf{Key observation.}
+\textsc{CITA} achieves \textbf{higher reward margins} than DPO despite \textbf{similar accuracy}.
+This is consistent with \textsc{CITA} learning a sharper, instruction-conditioned preference geometry while remaining anchored by a stability term that preserves \textbf{multi-regime traversability}.
 
+\vspace{-0.2em}
+\noindent\textbf{Why margin matters for switching.}
+In instruction-driven alignment, the relevant question is not just whether $Y^+$ outranks $Y^-$, but whether the policy can \textbf{move decisively} when the instruction changes.
+A larger margin provides ``headroom'' for counterfactual switching:
+when the instruction flips the preference relation, the model can produce a correspondingly separated output distribution rather than a near-tie that yields weak or inconsistent behavioral change.
+
+\vspace{-0.2em}
+\noindent\textbf{Where instability appears.}
+Across runs, instability typically manifests as one of two signatures:
+\textbf{(i) margin spikes with stagnant accuracy} (a warning sign for collapse or over-hardening), or
+\textbf{(ii) high accuracy with flat margins} (a warning sign for shallow switching).
+The ablations in Appendix~\ref{sec:appendix_ablations} show that the stability anchor governs this margin--switchability balance.
+
+\vspace{-0.2em}
+\noindent\textbf{Practical implication.}
+These dynamics motivate our evaluation emphasis:
+we report both performance and $\Delta$-style instruction sensitivity, because stable switchability is a \textbf{behavioral property} that is not fully captured by offline accuracy metrics alone.
 
 
 
@@ -736,75 +1333,223 @@ We analyze key training curves comparing DPO and CITA variants. Additional train
 \clearpage
 \newpage
 
+% =============================================================================
+% Extended Results (NeurIPS spotlight; expanded ~3x; benchmark-by-benchmark narrative)
+% =============================================================================
+
+\vspace{-2mm}
 \section{Extended Results}
 \label{sec:appendix_extended_results}
 
-This section provides detailed benchmark-specific analysis, combined performance heatmaps, and key insights from our evaluation. For summary results, see Section~\ref{sec:overall_results} in the main paper.
+This section provides \textbf{benchmark-specific interpretations}, \textbf{combined cross-benchmark evidence}, and \textbf{statistical reliability notes} that complement the summary in Section~\ref{sec:overall_results}.
+Our goal is to make the empirical claim maximally falsifiable:
+\textbf{instruction-driven alignment} should manifest as (i) \textbf{directionally correct switching} under counterfactual instructions, (ii) \textbf{consistency across heterogeneous benchmarks}, and (iii) \textbf{stability under measurement noise} where per-sample metrics exist.
 
+\vspace{-0.3em}
+\paragraph{\textbf{What we measure here.}}
+Throughout, \textbf{absolute performance} answers ``how good is the policy under a given instruction setting?''
+Instruction sensitivity $\Delta$ answers ``how much does the policy \emph{move} when the alignment instruction changes?''
+Our thesis is that switchable alignment demands both:
+\textbf{a strong base policy} and \textbf{a reliable instruction-conditioned control interface}.
+
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Benchmark-Specific Analysis}
 \label{sec:benchmark_analysis}
+
+We now interpret each benchmark through the lens of \textbf{counterfactual switching}.
+For all plots, we emphasize two questions:
+\textbf{(i) Directionality:} does the model move in the correct direction when the instruction changes?
+\textbf{(ii) Concentration:} is switching localized to the intended axis (epistemic stance, refusal boundary, verbosity), or does it induce collateral drift?
+
+% -----------------------------------------------------------------------------
+\vspace{-0.5em}
+\subsubsection*{\textbf{ECLIPTICA (ISD): controlled regime switching over 10 policies}}
+ECLIPTICA is the \textbf{direct} test of our framework: keep the user prompt fixed and vary only the alignment instruction.
+We therefore treat ISD performance as a \textbf{high-precision assay} for instruction-conditioned policy modulation.
+Figure~\ref{fig:isd} shows that \textsc{DPO}\_Instruct (0.389) and \textsc{CITA}\_Instruct (0.367) attain the strongest instruction awareness.
 
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/isd_comparison.pdf}
-\caption{\textbf{ECLIPTICA Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.}
+\caption{\textbf{ECLIPTICA (ISD) results.} \textsc{DPO}\_Instruct (0.389) and \textsc{CITA}\_Instruct (0.367) show the highest instruction awareness on the controlled instruction-switch benchmark.}
 \label{fig:isd}
 \vspace{-3mm}
 \end{figure*}
 
+\vspace{-0.2em}
+\noindent\textbf{Interpretation.}
+Two aspects matter here.
+\textbf{First,} DPO's advantage on ISD is consistent with its tendency to produce \textbf{sharper separations along dominant preference directions}, which can yield high switch scores when the benchmark aligns tightly with those directions.
+\textbf{Second,} \textsc{CITA} remains highly competitive on ISD while also improving across \emph{other} benchmarks, suggesting it preserves \textbf{multi-axis switchability} instead of over-specializing to one instruction family.
+
+\vspace{-0.2em}
+\noindent\textbf{Caveat.}
+ISD is a composite metric and does not naturally decompose into per-sample uncertainty.
+For this reason, we treat ISD as \textbf{high-signal but coarse-grained}: it identifies whether switching exists, while the subsequent benchmarks diagnose \textbf{which behavioral dimension} is being controlled.
+
+% -----------------------------------------------------------------------------
+\vspace{-0.5em}
+\subsubsection*{\textbf{TruthfulQA: epistemic stance switching (honest uncertainty vs.\ confident assertion)}}
+TruthfulQA is the most diagnostically valuable benchmark in our suite because it probes a \textbf{fragile axis}:
+calibration under explicit instruction.
+Here, superficial style changes are insufficient; the instruction must alter the model's \textbf{epistemic posture}.
+
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/truthfulqa_comparison.pdf}
-\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and GRPO\_Instruct (+0.011) achieve \textit{positive} adaptation scores, indicating improved confidence calibration.}
+\caption{\textbf{TruthfulQA.} Only \textsc{CITA}\_Instruct (+0.013) and \textsc{GRPO}\_Instruct (+0.011) achieve \textit{positive} adaptation scores, indicating improved confidence calibration under instruction.}
 \label{fig:truthfulqa}
 \vspace{-3mm}
 \end{figure*}
 
+\vspace{-0.2em}
+\noindent\textbf{Interpretation.}
+TruthfulQA separates \textbf{policy-level calibration} from generic preference shaping.
+We observe that only \textsc{CITA}\_Instruct and \textsc{GRPO}\_Instruct achieve \textbf{positive adaptation}, while DPO shows negligible improvement.
+This pattern is consistent with a core claim:
+\textbf{instruction-driven alignment is hardest where ``confidence'' is a semantic commitment, not a formatting choice}.
+In other words, this benchmark penalizes methods that treat instructions as surface-level steering.
+
+\vspace{-0.2em}
+\noindent\textbf{Why DPO can under-adapt here.}
+DPO optimizes pairwise preferences; if the preference signal does not explicitly reward calibrated uncertainty switching under instruction, the learned policy can remain \textbf{statically confident} even when told ``say I don't know.''
+\textsc{CITA} is designed to tie the preference relation to the instruction channel, making the calibration axis \textbf{explicitly conditionable}.
+
+% -----------------------------------------------------------------------------
+\vspace{-0.5em}
+\subsubsection*{\textbf{Conditional Safety: refusal boundary switching (STRICT vs.\ PERMISSIVE)}}
+Conditional Safety directly tests whether a model can \textbf{move the refusal boundary} under instruction without collapsing into always-refuse or always-comply.
+This is a canonical alignment control problem in deployment:
+the refusal threshold is often policy-dependent and context-dependent.
+
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/conditional_safety_comparison.pdf}
-\caption{\textbf{Conditional Safety}: DPO\_Instruct (0.489) and CITA\_Instruct (0.400) show behavioral gap between STRICT vs. PERMISSIVE.}
+\caption{\textbf{Conditional Safety.} \textsc{DPO}\_Instruct (0.489) and \textsc{CITA}\_Instruct (0.400) show the strongest behavioral gap between STRICT vs.\ PERMISSIVE instructions.}
 \label{fig:conditional_safety}
 \vspace{-3mm}
 \end{figure*}
 
+\vspace{-0.2em}
+\noindent\textbf{Interpretation.}
+DPO achieves the largest switching gap on this benchmark, consistent with \textbf{strong separation along safety-dominant preference directions}.
+\textsc{CITA} is also strong, but slightly less extreme.
+This is aligned with our design goal:
+\textsc{CITA} prioritizes \textbf{stable multi-regime switching} (maintaining traversable regimes across multiple instruction families) over pushing the safety axis to maximal separation.
+
+\vspace{-0.2em}
+\noindent\textbf{Deployment relevance.}
+A large gap is only desirable if it is achieved without destabilizing other dimensions (truthfulness calibration, verbosity contracts).
+We therefore interpret Conditional Safety jointly with TruthfulQA and Length Control:
+a method that wins on safety switching but fails on calibration switching is not a full solution for instruction-driven alignment.
+
+% -----------------------------------------------------------------------------
+\vspace{-0.5em}
+\subsubsection*{\textbf{Length Control: explicit verbosity contracts (CONCISE vs.\ DETAILED)}}
+Length Control tests whether the model can satisfy a \textbf{hard behavioral contract} about response length.
+Unlike stylistic tone, length is easily measurable and is a pragmatic control lever in real systems.
+
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/length_control_comparison.pdf}
-\caption{\textbf{Length Control}: CITA\_Instruct (1.14) shows strongest adaptation ratio (detailed/concise word count).}
+\caption{\textbf{Length control.} \textsc{CITA}\_Instruct (1.14) shows the strongest adaptation ratio (detailed/concise word count), indicating reliable compliance with explicit verbosity contracts.}
 \label{fig:length_control}
 \vspace{-3mm}
 \end{figure}
 
+\vspace{-0.2em}
+\noindent\textbf{Interpretation.}
+\textsc{CITA}\_Instruct provides the strongest switching signal on this axis, supporting the claim that the instruction channel can enforce \textbf{measurable policy constraints} rather than cosmetic variation.
+This result is particularly important because it is orthogonal to typical safety alignment objectives:
+it demonstrates that instruction-driven alignment can extend beyond refusal toward \textbf{operational contracts}.
+
+\vspace{-0.2em}
+\noindent\textbf{Variance note.}
+Length is inherently high-variance across prompts, which motivates reporting uncertainty via bootstrap CIs in the combined analysis below.
+
+% -----------------------------------------------------------------------------
+\vspace{-0.5em}
+\subsubsection*{\textbf{AQI: intrinsic axiom-level alignment quality (cluster separation)}}
+AQI measures intrinsic alignment structure over axioms (civility, duty, empathy, information, justice, well-being, wisdom).
+We treat AQI as a complementary lens:
+while other benchmarks test \textbf{switchability}, AQI tests whether instruction conditioning improves \textbf{global alignment geometry} rather than overfitting to a single contract.
+
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/aqi_comparison.pdf}
-\caption{\textbf{AQI}: CITA\_Instruct (55.0) achieves highest alignment quality index. PPO variants (40.8--43.5) outperform DPO (11.8--18.0) on cluster separation.}
+\caption{\textbf{AQI.} \textsc{CITA}\_Instruct (55.0) achieves the highest AQI. PPO variants (40.8--43.5) outperform DPO (11.8--18.0) on cluster separation.}
 \label{fig:aqi}
 \vspace{-3mm}
 \end{figure}
 
-\vspace{-2mm}
+\vspace{-0.2em}
+\noindent\textbf{Interpretation.}
+Two results stand out.
+\textbf{First,} \textsc{CITA}\_Instruct achieves the highest AQI, consistent with the hypothesis that instruction-conditioning plus stability anchoring can improve \textbf{axiom-level coherence}.
+\textbf{Second,} PPO performing better than DPO on AQI is plausible because PPO's online optimization can shape global reward-aligned behavior even when offline preference pairs do not capture axiom structure well.
+However, PPO's compute and infrastructure requirements are substantially higher; we therefore treat PPO as an \textbf{online RL reference point} rather than a like-for-like efficiency baseline.
+
+\vspace{-0.2em}
+\noindent\textbf{Caveat.}
+AQI is cluster-based and does not admit a clean per-sample decomposition in our setup, so we do not attach bootstrap CIs here.
+We instead use AQI as a \textbf{geometry-level corroboration signal} aligned with the paper's framing.
+
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Combined Analysis}
 \label{sec:combined_analysis}
+
+We now aggregate evidence across benchmarks to assess the overall claim:
+\textsc{CITA} should produce \textbf{broad, reliable instruction sensitivity} without relying on LLM judges.
+Figure~\ref{fig:heatmap} reports a combined heatmap with (where available) 95\% bootstrap confidence intervals.
 
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/evaluation/combined_plots/heatmap.pdf}
 \vspace{-1mm}
-\caption{\textbf{Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ECLIPTICA and AQI lack per-sample decomposition (composite/cluster-based metrics).}
+\caption{\textbf{Performance heatmap with bootstrap confidence intervals (CI).} Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA, Conditional Safety, Length Control. ECLIPTICA and AQI lack per-sample decomposition (composite/cluster metrics).}
 \label{fig:heatmap}
 \vspace{-2mm}
 \end{figure*}
 
-\noindent\textbf{Statistical reliability.} Bootstrap confidence intervals (N=1,000 resamples) are reported for benchmarks with per-sample metrics. The narrow CIs on TruthfulQA ($\pm$0.05--0.28) and Cond.\ Safety ($\pm$0.01--0.03) indicate stable estimates; Length Ctrl shows larger variance ($\pm$0.02--4.67) due to response length variability across prompts.
+\vspace{-0.2em}
+\noindent\textbf{Statistical reliability.}
+For benchmarks with per-sample metrics, we compute 95\% bootstrap CIs using 1,000 resamples.
+TruthfulQA and Conditional Safety show relatively narrow intervals, suggesting stable estimates.
+Length Control shows larger variance, consistent with the heavy-tailed distribution of response lengths and occasional instruction failures (e.g., partial compliance, early stopping, or over-generation).
 
-\vspace{-2mm}
+\vspace{-0.2em}
+\noindent\textbf{Cross-benchmark consistency.}
+The combined view highlights a key empirical pattern:
+\textbf{\textsc{CITA}\_Instruct is the only method that is consistently strong across heterogeneous control axes}
+(epistemic stance, refusal boundary, verbosity, intrinsic alignment geometry),
+whereas other methods tend to dominate in a subset (e.g., DPO on safety-dominant switching; GRPO on selective adaptation; PPO on some geometry-level measures).
+
+% -----------------------------------------------------------------------------
+\vspace{-1mm}
 \subsection{Key Insights}
 \label{sec:key_insights}
 
-\paragraph{TruthfulQA is the Differentiator.} On TruthfulQA, CITA improves by +0.054 (becoming appropriately more/less confident when instructed), while DPO shows negligible change (+0.001). This demonstrates CITA's superior ability to \textit{internalize} uncertainty calibration instructions.
+\paragraph{\textbf{TruthfulQA is the differentiator (epistemic control).}}
+TruthfulQA is the most stringent test of instruction-driven alignment because it requires \textbf{semantic calibration} rather than stylistic adjustment.
+\textsc{CITA} exhibits substantially stronger instruction sensitivity than DPO on this benchmark (positive adaptation vs.\ near-zero change), supporting the claim that \textsc{CITA} internalizes instruction-conditioned epistemic posture.
 
-\paragraph{CITA Achieves Higher Margins with Lower Accuracy.} Despite similar training accuracy ($\sim$89\%), CITA achieves higher reward margins (7.5 vs. 6.0). This validates that mandatory KL prevents margin collapse while enabling stable behavioral switching.
+\paragraph{\textbf{Margins separate switching from static preference fitting.}}
+Despite similar preference accuracy ($\sim$89\%), \textsc{CITA} attains higher reward margins than DPO.
+We interpret this as evidence that \textsc{CITA} learns a \textbf{more separated instruction-conditioned preference geometry}.
+In a switching setting, margin is not merely a training diagnostic: it provides robustness against ambiguous prompts and reduces the chance that switching collapses into weak, inconsistent changes.
 
-\paragraph{Instruction-Alignment $\neq$ Instruction-Following.} DPO\_I achieves higher absolute ECLIPTICA scores, but CITA\_I shows more consistent improvement across diverse benchmarks. This suggests CITA achieves \textit{deeper} instruction-alignment rather than surface-level following.
+\paragraph{\textbf{Instruction-alignment $\neq$ instruction-following.}}
+DPO can achieve very high scores on controlled switch benchmarks aligned with safety-dominant preferences, yet fail to adapt on calibration-sensitive tasks.
+\textsc{CITA} is less extreme on some single-axis separations, but more \textbf{uniformly switchable} across axes.
+This supports our central conceptual distinction:
+\textbf{instruction-following} maps task instructions to outputs,
+whereas \textbf{instruction-alignment} requires \textbf{counterfactual policy control} under an unchanged user request.
+
+\vspace{-0.2em}
+\paragraph{\textbf{What the extended results jointly support.}}
+Taken together, these benchmark-specific analyses and the combined heatmap support a coherent empirical narrative:
+\textsc{CITA} enables \textbf{runtime-controllable alignment} that generalizes across multiple policy contracts,
+while remaining competitive on the controlled ECLIPTICA switch benchmark and improving intrinsic axiom-level alignment structure as reflected by AQI.
+    

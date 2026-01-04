@@ -139,7 +139,7 @@ This turns policy switching into a paired test: the \emph{same} input must reali
 
 
 \paragraph{Construction and scale.}
-ECLIPTICA is a factorial grid of \textbf{300 prompts} and \textbf{10 alignment instruction types}, yielding
+ECLIPTICA is a factorial grid of \textbf{300 prompts} (taken from \citep{bai2022training}) and \textbf{10 alignment instruction types}, yielding
 \(\mathbf{300 \times 10 = 3{,}000}\) \textbf{prompt-held-constant} test cases.
 Each prompt appears exactly ten times (once per instruction), enabling \textbf{paired} comparisons where behavioral differences are attributable to the alignment instruction rather than prompt idiosyncrasies.
 Prompts are stratified across 12 topical categories (25 prompts each), summarized in Table~\ref{tab:prompt_categories}, to cover technical, social, and governance settings.

@@ -806,9 +806,9 @@ def generate_radar_chart_area_based(
     # Close the polygon for plotting
     method_data_closed = {m: method_data[m] + method_data[m][:1] for m in methods}
 
-    # Create figure - compact layout (radar + legend below)
-    fig, ax = plt.subplots(figsize=(7, 7.5), subplot_kw=dict(polar=True))
-    ax.set_position([0.08, 0.18, 0.84, 0.72])  # Maximize radar area, leave room for legend
+    # Create figure - VERTICAL layout (taller than wide to reduce left/right whitespace)
+    fig, ax = plt.subplots(figsize=(6, 9), subplot_kw=dict(polar=True))
+    ax.set_position([0.10, 0.15, 0.80, 0.72])  # Maximize radar area, leave room for legend
 
     # Prepare CI data if provided (normalize CI bounds same as deltas)
     method_ci_lower = {m: [] for m in methods}
@@ -1169,19 +1169,26 @@ def generate_combined_heatmap(
 
     # Use seaborn heatmap WITHOUT annotation (we'll add manually for mixed styling)
     import seaborn as sns
-    sns.heatmap(
+    heatmap = sns.heatmap(
         color_data,
         ax=ax,
         cmap=cmap,
         vmin=0,
         vmax=1,
         annot=False,
-        cbar_kws={'label': 'Normalized Score (per eval)', 'shrink': 0.8},
+        cbar_kws={'shrink': 0.8},
         xticklabels=display_evals,
         yticklabels=display_models,
         linewidths=0,
         linecolor='none'
     )
+
+    # Make colorbar text BOLD (tick labels + title)
+    cbar = heatmap.collections[0].colorbar
+    cbar.ax.tick_params(labelsize=12)
+    for label in cbar.ax.get_yticklabels():
+        label.set_fontweight('bold')
+    cbar.set_label('Normalized Score (per eval)', fontsize=13, fontweight='bold')
 
     # Manually add annotations with different styles
     for i in range(len(models)):

@@ -277,13 +277,33 @@ Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vaibhaav Tiwari$^{3}$ \quad V
 % =============================================================================
 \begin{abstract}
 \vspace{-1.5mm}
-Alignment in large language models is still predominantly \emph{static}: training-time methods such as RLHF and DPO imprint a single, fixed behavioral policy into the weights, making post-deployment policy updates slow, expensive, and brittle. We introduce \textbf{ECLIPTICA}, a framework that reframes alignment as \emph{instruction-driven} and \emph{runtime-controllable}: models should accept natural-language \emph{alignment instructions} that modulate behavior on-the-fly, enabling interactive alignment correction under evolving policies, user roles, and safety requirements.
+Alignment in large language models (LLMs) remains largely \emph{static}: frozen after training. Methods such as DPO/GRPO typically imprint a \emph{single} behavioral policy into the weights, leaving no room for \textbf{run-time policy control} beyond prompt hacks \textbf{or costly re-alignment cycles}. We introduce \textbf{ECLIPTICA}, which reframes alignment as \textbf{instruction-driven and runtime-controllable}: models should accept natural-language \emph{alignment instructions} as an explicit \textbf{behavioral contract} (epistemic stance, refusal boundary, verbosity) that modulates behavior \emph{on-the-fly}, enabling policy updates under evolving safety requirements, user roles, and governance constraints.
 
-We instantiate ECLIPTICA with \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstruction-\textbf{T}uned \textbf{A}lignment), an algorithm that unifies supervised fine-tuning and contrastive preference optimization with an \emph{explicit, mandatory} KL regularizer:
-$L_{\textsc{CITA}} = L_{\textsc{SFT}} + \lambda_1 L_{\textsc{DPO}} + \lambda_2 L_{\textsc{KL}}$.
-The KL term is not optional: it anchors the model to a reference policy to prevent mode collapse and enables stable \emph{instruction-conditioned} switching rather than shallow instruction compliance.
 
-\textls[0]{To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{ECLIPTICA benchmark}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS) show that \textbf{CITA achieves \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}---outperforming DPO (56.1\%) by 30.6 pp, GRPO (36.1\%) by 50.6 pp, and PPO (20.4\%) by 66.3 pp. On TruthfulQA, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments. To foster further research in this domain, we make the \href{https://github.com/kapilw25/finetuning_evaluation}{code} and \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{dataset} publicly available.}
+We introduce \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstruction-\textbf{T}uned \textbf{A}lignment), combining supervised fine-tuning with contrastive preference optimization under an \emph{explicit, mandatory} \textbf{geometric anchor} to a reference model:
+\(
+\mathcal{L}_{\textsc{CITA}}(\theta)
+=
+\mathbb{E}\!\left[\ell_{\textsc{pref}}\!\big(\Delta_\theta(I,X)\big)\right]
+\;+\;
+\alpha\,\mathbb{E}\!\left[\|\nabla_\theta \Delta_\theta(I,X)\|_{F(\theta)^{-1}}^{2}\right]
+\)
+, yielding \textbf{a stable Riemannian chart.} CITA keeps instruction updates within a \textbf{shared manifold neighborhood} of the reference policy, so regimes stay \textbf{nearby and traversable}—enabling \textbf{stable switching} over superficial variation.
+
+
+
+
+
+
+
+
+
+
+
+
+To separate \textbf{policy switching} from standard instruction following, we introduce the \textbf{ECLIPTICA benchmark}: $3{,}000$ controlled test cases ($300$ prompts $\times$ $10$ instruction types) in which the \emph{user request is held fixed} and only the alignment instruction varies. On \textbf{Llama-3.1-8B} across five suites (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS), \textbf{CITA attains \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}, exceeding DPO (56.1\%; +30.6 pp), GRPO (36.1\%; +50.6 pp), and PPO (20.4\%; +66.3 pp). Together, \textbf{ECLIPTICA + CITA} move alignment beyond \emph{one-policy-per-checkpoint} toward \textbf{switchable, instruction-governed behavior} aligned with modern deployment and agentic settings. \href{https://github.com/kapilw25/finetuning_evaluation}{Code} \& \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{Dataset}
+
+%To foster further research in this domain, we make the \href{https://github.com/kapilw25/finetuning_evaluation}{code} and \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{dataset} publicly available.
 \end{abstract}
 
 
@@ -296,55 +316,65 @@ The KL term is not optional: it anchors the model to a reference policy to preve
 \begin{itemize}[left=-4pt,itemsep=0pt,topsep=0pt,parsep=0pt]
 
 \item[\faBolt] \textbf{\textit{TL;DR}}:
-\textbf{ECLIPTICA is a framework for \emph{instruction-driven, runtime-switchable alignment}};
-\textbf{CITA is the algorithm that makes the switch \emph{stable}} via contrastive preference learning \emph{plus} a \textbf{mandatory} KL anchor.
+\textbf{ECLIPTICA} makes alignment \emph{instruction-driven and runtime-switchable};
+\textbf{CITA} makes switching \emph{reliable} via contrastive preference learning \emph{with a \textbf{mandatory} KL anchor} (stability, not prompt tricks).
 
 \item[\faGlobeAmericas] \textbf{\textit{Why now (agentic reality)}}:
-Modern deployments require \textbf{one model} to exhibit \textbf{different alignment postures} across workflows (e.g., customer support vs.\ internal research vs.\ compliance).
-Static alignment hard-codes a single policy; ECLIPTICA instead treats \textbf{alignment as a controllable instruction channel} at inference time.
+Real deployments need \textbf{one backbone} to adopt \textbf{multiple alignment postures} across roles (support, research, compliance, creative).
+Static alignment hard-codes one policy; ECLIPTICA instead elevates alignment to a \textbf{first-class inference-time control channel}.
 
 \item[\faCompass] \textbf{\textit{Framework (ECLIPTICA)}}:
-We shift alignment from \textbf{training-only} to \textbf{dialogue / instruction-driven correction}:
-a model receives \textbf{natural-language alignment instructions} that \textbf{modulate policy on-the-fly}, enabling \textbf{policy updates without exhaustive retraining}.
+We shift alignment from \textbf{train-and-freeze} to \textbf{instruction-governed policy control}:
+natural-language \emph{alignment instructions} specify a \textbf{behavioral contract} that the model must honor \emph{on-the-fly}, enabling policy updates \textbf{without retraining checkpoints}.
 
 \item[\faCogs] \textbf{\textit{Algorithm (CITA)}}:
-CITA operationalizes ECLIPTICA with a \textbf{unified objective} that couples response quality, preference contrast, and stability:
-
-\vspace{-0.7em}
-\[\boxed{
-L_{\textsc{CITA}} \;=\; L_{\textsc{SFT}} \;+\; \lambda_1\,L_{\textsc{DPO}} \;+\; \lambda_2\,L_{\textsc{KL}}.
+CITA instantiates ECLIPTICA with a \textbf{single objective} coupling quality, preference contrast, and stability:
+\vspace{-1em}
+\[
+\boxed{
+\begin{aligned}
+\mathcal{L}_{\textsc{CITA}}(\theta)
+\;=\;&
+\mathbb{E}\!\left[\ell_{\textsc{pref}}\!\big(\Delta_\theta(I,X)\big)\right]
+\\[0.25em]
+&+\;
+\alpha\,\mathbb{E}\!\left[\|\nabla_\theta \Delta_\theta(I,X)\|_{F(\theta)^{-1}}^{2}\right]
+\\[0.25em]
+&+\;
+\lambda\,\mathbb{E}\!\left[\mathrm{KL}\!\big(\pi_\theta \,\|\, \pi_0\big)\right]
+\end{aligned}
 }
 \]
-\vspace{-1em}
+\vspace{-1.5em}
 
-Crucially, \textbf{KL is explicit \& mandatory}: it \textbf{prevents mode collapse}, \textbf{bounds preference margins}, and preserves a \textbf{switchable} policy manifold.
+\textbf{Geometric view: a stable Riemannian chart.} The KL anchor induces a \textbf{local metric / trust region} around the reference policy, so instruction updates move within a \textbf{shared chart}—preserving \textbf{multiple nearby regimes} and enabling \textbf{switchable} behavior without collapsing into a single overfit stance.
+
 
 \item[\faRandom] \textbf{\textit{Instruction-conditioned switching (not prompt hacks)}}:
-CITA is designed so the \textbf{same user prompt} can yield \textbf{meaningfully different behaviors} \emph{solely} due to the alignment instruction
-(e.g., safety-first vs.\ professional vs.\ creative), enabling \textbf{multi-tenant} and \textbf{role-aware} deployment.
+Design goal: the \textbf{same user prompt} yields \textbf{different aligned behaviors} \emph{only} because the alignment instruction changes
+(e.g., strict refusal \(\leftrightarrow\) permissive safe guidance; professional \(\leftrightarrow\) educational), enabling \textbf{multi-tenant, role-aware} serving.
 
 \item[\faVial] \textbf{\textit{New diagnostic (ECLIPTICA benchmark)}}:
-We introduce the \textbf{ECLIPTICA benchmark} to isolate instruction effects:
-\textbf{keep prompts constant}, vary \textbf{only} the alignment instruction.
-ECLIPTICA is a \textbf{full-factorial} benchmark with
-\(\lvert\text{ECLIPTICA}\rvert = 300 \times 10 = 3{,}000\) test cases, enabling direct, controlled comparisons.
+We introduce \textbf{ECLIPTICA} to isolate instruction effects:
+\textbf{hold \(X\) fixed}, vary \textbf{only} instruction \(I\).
+Full-factorial grid with \(\lvert\text{ECLIPTICA}\rvert = 300 \times 10 = 3{,}000\) prompt-held-constant cases for direct, paired comparisons.
 
 \item[\faBalanceScale] \textbf{\textit{Key distinction: following vs.\ alignment}}:
-We explicitly test whether models exhibit \textbf{instruction-following} (surface format compliance)
-or \textbf{instruction-alignment} (internalized, robust policy embodiment consistent across contexts).
+We explicitly separate \textbf{instruction-following} (surface compliance: tone/format)
+from \textbf{instruction-alignment} (robust \emph{policy embodiment}: consistent contract adherence under counterfactual instruction switches).
 
 \item[\faChartLine] \textbf{\textit{Results (switchability without judges)}}:
-On \textbf{Llama-3.1-8B}, across \textbf{five deterministic benchmarks},
-\textbf{CITA achieves \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}---outperforming DPO (56.1\%) by 30.6 pp, GRPO (36.1\%) by 50.6 pp, and PPO (20.4\%) by 66.3 pp.
-On TruthfulQA, \textbf{CITA shows 54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
+On \textbf{Llama-3.1-8B} across \textbf{five deterministic suites},
+\textbf{CITA reaches \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}—beating DPO (56.1\%, +30.6 pp), GRPO (36.1\%, +50.6 pp), PPO (20.4\%, +66.3 pp).
 
 \item[\faTools] \textbf{\textit{Practical upshot}}:
 ECLIPTICA + CITA move from \textbf{one-policy-per-checkpoint} to \textbf{switchable, instruction-governed alignment}:
-a single deployed model can be \textbf{re-scoped} by policy instructions for safety level, tone, verbosity, compliance emphasis, or creativity---\textbf{without} spawning separate aligned models.
+a single deployed model can be \textbf{re-scoped} by policy instructions (safety, verbosity, tone, compliance emphasis, creativity) \textbf{without proliferating models}.
 
-\item[\faCode] \textbf{\textit{Release}}:
-\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation};
-\textbf{ECLIPTICA benchmark:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
+%\item[\faCode] \textbf{\textit{Release}}:
+%\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation};
+%\textbf{ECLIPTICA benchmark:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
+
 
 
 \end{itemize}
@@ -363,6 +393,23 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 \input{4_cita_framework}
 \input{6_experiments}
 \input{7_results}
+
+
+
+
+\vspace{-1mm}
+\section{Conclusion}
+\label{sec:conclusion}
+
+To the best of our knowledge, we formalize \textbf{instruction-aware alignment} as \textbf{explicit, run-time policy switching} within a single backbone: natural-language \emph{alignment} instructions specify a \textbf{behavioral contract} (epistemic stance, refusal boundary, verbosity) rather than task intent, and the model must switch accordingly at inference time. Beyond static alignment that bakes one policy into the weights, we introduce \textbf{ECLIPTICA}—a controlled benchmark that fixes the user prompt and varies only the policy instruction—and \textbf{CITA}, which learns \textbf{instruction-conditioned policy families} \textbf{under a shared backbone}, stabilized by a mandatory KL trust region. This differs from standard instruction following: we evaluate \textbf{counterfactual behavior} under an unchanged request (same prompt, different policy instruction), isolating \emph{policy control} from superficial compliance.
+
+
+
+
+
+
+
+
 
 
 \clearpage
@@ -387,10 +434,11 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 \appendix
 
 \input{12_extended_results}  % Benchmark-Specific Analysis, Combined Analysis, Key Insights (moved from main)
-\input{2_methodology}
-\input{3_unified_loss}
 %\input{8_conclusion}
 \input{10_faq}
 \input{11_appendix}
+%\input{2_methodology}
+%\input{3_unified_loss}
+
 
 \end{document}

@@ -518,6 +518,23 @@ This decoupling is why CITA achieves 86.7\% instruction-alignment efficiency whi
 
 \textbf{Key insight}: The problem isn't reverse KL \textit{per se}---it's \textit{implicit, uncontrolled} reverse KL. CITA's explicit, tunable KL avoids the trap.
 
+
+\item \textbf{Could CITA be ``cheating'' by learning an instruction-specific routing trick (a shallow prefix$\to$style map) rather than a genuinely switchable alignment policy? How do you rule out mere prompt-format overfitting?}
+\begin{description}[leftmargin=1.2em,itemsep=3pt]
+\item \textbf{We treat this as the key alternative hypothesis.} A weak explanation is that CITA maps a small instruction prefix to surface form (tone/verbosity) while leaving the underlying decision boundary (refuse vs comply; legal vs illegal; harm vs safe) mostly unchanged. Our evaluation therefore emphasizes tests that cannot be satisfied by stylistic compliance alone.
+\item \textbf{Paraphrase robustness (instruction semantics, not tokens).} We evaluate switching under instruction paraphrases and minor perturbations (synonyms, reordering, compressed variants) and require consistent posture changes. A brittle prefix lookup should degrade sharply under paraphrases; stable switching supports an instruction-semantics effect.
+\item \textbf{Compositional generalization.} We test composed instructions (e.g., ``concise \emph{and} professional''), including combinations not seen as atomic labels. Shallow routing tied to fixed labels typically fails under conjunction; we measure joint satisfaction and report residual composition failures.
+\item \textbf{Conditional safety/utility coupling (same $X$, different $I$).} Because ECLIPTICA holds content $X$ fixed and varies only $I$, measured differences isolate instruction sensitivity. We track \textbf{conditional} safety and utility: permissive-mode generations must remain within allowed/legal bounds while strict-mode must refuse/redirect appropriately; a pure style map cannot move these coupled outcomes in the required directions.
+\item \textbf{Anchor ablations as a sanity check.} We ablate the KL anchor and sweep $\lambda_{KL}$; switchability peaks in a ``Goldilocks'' regime and collapses when the anchor is removed or over-weighted. This is consistent with rehearsal-like coexistence of regimes, and is less compatible with a trivial prefix trick.
+\end{description}
+
+
+%% Q23 - FORMAT CHECK / ACLPUBCHECK
+\item \textbf{Did you verify that the paper conforms to the ACL/ARR formatting and submission checks?}
+
+Yes. We validated the final sources with \texttt{aclpubcheck} (\url{https://github.com/acl-org/aclpubcheck}) as a \textbf{pre-submission sanity check} for common ACL/ARR format issues (e.g., overfull boxes, margin/geometry problems, and reference/citation consistency). In our final build, \texttt{aclpubcheck} reports \textbf{no blocking format violations}, and the PDF compiles cleanly under the official ACL template.
+
+
 \end{enumerate}
 
 \twocolumn
