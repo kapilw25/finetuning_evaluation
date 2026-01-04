@@ -14,9 +14,9 @@ This section addresses anticipated critical questions about CITA's methodology, 
 \begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=*, itemsep=8pt]
 
 %% Q1 - ATTACKS MAIN RESULT
-\item \textbf{CITA achieves 95.6\% instruction-alignment efficiency. How is this metric computed and why is it meaningful?}
+\item \textbf{CITA achieves 86.7\% instruction-alignment efficiency. How is this metric computed and why is it meaningful?}
 
- The efficiency metric is the \textbf{average normalized radar radius} across 5 benchmarks (ISD, TruthfulQA, Conditional Safety, Length Control, AQI). Each benchmark's NoInstruct$\rightarrow$Instruct improvement ($\Delta$) is normalized to [0,1], then averaged:
+ The efficiency metric is the \textbf{average normalized radar radius} across 5 benchmarks (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS). Each benchmark's NoInstruct$\rightarrow$Instruct improvement ($\Delta$) is normalized to [0,1], then averaged:
 
 \begin{table}[H]
 \centering
@@ -35,40 +35,40 @@ AQI & +22.4 & \textbf{+41.7} & 86\% better \\
 
 On TruthfulQA, DPO shows \textit{negligible} instruction response (+0.001), while CITA improves by +0.054---a \textbf{54$\times$ difference}. This demonstrates CITA's core capability: \textit{internalizing} instruction-conditioned behavior, not just following surface patterns.
 
-DPO's wins (ISD, Conditional Safety) reflect higher \textit{absolute} scores, but CITA achieves more \textit{consistent} improvement across diverse benchmarks. Consistency matters for deployment reliability.
+DPO's wins (ECLIPTICA, Conditional Safety) reflect higher \textit{absolute} scores, but CITA achieves more \textit{consistent} improvement across diverse benchmarks. Consistency matters for deployment reliability.
 
 \vspace{4mm}
 
 %% Q2 - ATTACKS CORE BENCHMARK
-\item \textbf{DPO\_Instruct (0.389) beats CITA\_Instruct (0.367) on ISD---your own benchmark. Doesn't this undermine your entire paper?}
+\item \textbf{DPO\_Instruct (0.389) beats CITA\_Instruct (0.367) on ECLIPTICA---your own benchmark. Doesn't this undermine your entire paper?}
 
  No. This result is \textit{expected} and interpretable:
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{ISD measures behavioral shift magnitude}, not alignment quality. DPO produces larger shifts but less \textit{calibrated} shifts.
+    \item \textbf{ECLIPTICA measures behavioral shift magnitude}, not alignment quality. DPO produces larger shifts but less \textit{calibrated} shifts.
 
     \item \textbf{CITA prioritizes consistency over magnitude}. The mandatory KL term prevents extreme behavioral swings that could be unreliable.
 
     \item \textbf{Cross-benchmark consistency}: CITA wins on TruthfulQA, Length Control, and AQI---benchmarks measuring \textit{correct directional} adaptation, not just magnitude.
 \end{enumerate}
 
-\textbf{Analogy}: A model that swings wildly between behaviors (high ISD) may be less trustworthy than one that adapts consistently (moderate ISD, high TruthfulQA). CITA optimizes for the latter.
+\textbf{Analogy}: A model that swings wildly between behaviors (high ECLIPTICA) may be less trustworthy than one that adapts consistently (moderate ECLIPTICA, high TruthfulQA). CITA optimizes for the latter.
 
 \vspace{4mm}
 
 %% Q3 - ATTACKS BENCHMARK VALIDITY
-\item \textbf{ISD is your own benchmark. Isn't evaluating on your own dataset self-serving and potentially biased?}
+\item \textbf{ECLIPTICA is your own benchmark. Isn't evaluating on your own dataset self-serving and potentially biased?}
 
  This is a valid concern. We mitigate it through:
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{4 external benchmarks}: TruthfulQA~\cite{lin2022truthfulqa}, Conditional Safety, Length Control, and AQI~\cite{hendrycks2023aligning} are independent, established benchmarks. CITA achieves highest instruction-alignment efficiency (95.6\%) when evaluated across all 5 benchmarks.
+    \item \textbf{4 external benchmarks}: TruthfulQA~\cite{lin2022truthfulqa}, Conditional Safety, Length Control, and AQI~\cite{hendrycks2023aligning} are independent, established benchmarks. CITA achieves highest instruction-alignment efficiency (86.7\%) when evaluated across all 5 benchmarks.
 
-    \item \textbf{ISD is publicly available}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}---any researcher can validate or critique our methodology.
+    \item \textbf{ECLIPTICA is publicly available}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}---any researcher can validate or critique our methodology.
 
-    \item \textbf{ISD construction is principled}: 300 prompts $\times$ 10 instructions from 12 categories, with explicit expected characteristics. The full factorial design enables controlled ablations.
+    \item \textbf{ECLIPTICA construction is principled}: 300 prompts $\times$ 10 instructions from 12 categories, with explicit expected characteristics. The full factorial design enables controlled ablations.
 
-    \item \textbf{DPO beats CITA on ISD}: If ISD were biased toward CITA, DPO wouldn't win. This demonstrates benchmark fairness.
+    \item \textbf{DPO beats CITA on ECLIPTICA}: If ECLIPTICA were biased toward CITA, DPO wouldn't win. This demonstrates benchmark fairness.
 \end{enumerate}
 
 \vspace{4mm}
@@ -130,7 +130,7 @@ Instruction Sensitivity & Lower & \textbf{Higher} \\
 
     \item \textbf{Dynamic alignment paradigm}: DPO produces one fixed policy. CITA produces a policy that \textit{adapts at inference time}. This enables deployment scenarios impossible with DPO.
 
-    \item \textbf{ISD benchmark}: First benchmark designed to isolate instruction effects from prompt effects.
+    \item \textbf{ECLIPTICA benchmark}: First benchmark designed to isolate instruction effects from prompt effects.
 \end{enumerate}
 
 ``DPO + KL + instructions'' is like saying ``Transformers are just attention + FFN.'' The combination creates emergent capabilities.
@@ -157,7 +157,7 @@ CITA & Add instruction-conditioning & Static alignment only \\
 \end{tabular}
 \end{table}
 
-\textbf{Ablation evidence}: Training CITA directly on base Llama (skipping SFT/DPO) produces 40\% lower ISD scores. The staged approach is empirically necessary, not arbitrary complexity.
+\textbf{Ablation evidence}: Training CITA directly on base Llama (skipping SFT/DPO) produces 40\% lower ECLIPTICA scores. The staged approach is empirically necessary, not arbitrary complexity.
 
 \textbf{Practical cost}: Total training time is $\sim$4.5 hours on A100-40GB. The complexity is in methodology, not compute.
 
@@ -253,7 +253,7 @@ Domain Mismatch & Instructions far from training distribution (e.g., ``respond i
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{Method} & \textbf{ISD Score} & \textbf{Adversarial Robustness} & \textbf{Consistency} \\
+\textbf{Method} & \textbf{ECLIPTICA Score} & \textbf{Adversarial Robustness} & \textbf{Consistency} \\
 \midrule
 Zero-shot prompting & 0.12 & Low (easily overridden) & Variable \\ \hline
 Few-shot prompting & 0.18 & Low & Variable \\ \hline
@@ -280,7 +280,7 @@ DPO + prompting & 0.25 & Medium & Medium \\ \hline
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{Configuration} & \textbf{ISD} & \textbf{Margin} & \textbf{Stability} \\
+\textbf{Configuration} & \textbf{ECLIPTICA} & \textbf{Margin} & \textbf{Stability} \\
 \midrule
 CITA ($\lambda_{\text{KL}}=0$) & 0.22 & 4.0 & Unstable \\ \hline
 CITA ($\lambda_{\text{KL}}=0.0005$) & \textbf{0.37} & \textbf{7.5} & Stable \\
@@ -349,7 +349,7 @@ Hyperparameters & Many (PPO-specific) & Few ($\beta$, $\lambda_{\text{KL}}$) \\
 
     \item \textbf{MT-Bench}: Measures general instruction-following, not instruction-\textit{switching}. CITA's contribution is dynamic policy adaptation, not better following.
 
-    \item \textbf{Our benchmarks}: ISD, TruthfulQA, Conditional Safety, Length Control, AQI---all measure \textbf{behavioral adaptation} to instructions, which is CITA's core claim.
+    \item \textbf{Our benchmarks}: ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS---all measure \textbf{behavioral adaptation} to instructions, which is CITA's core claim.
 \end{itemize}
 
 \textbf{Capability preservation}: We verified CITA doesn't degrade base capabilities (perplexity, coherence). Following principles from multimodal benchmarking frameworks~\cite{wanaskar2025multimodal}, our evaluation emphasizes structured, deterministic metrics over subjective assessments.
@@ -395,7 +395,7 @@ Completely novel type & $\sim$30\% & ``Socratic questioning'' \\
 \textbf{Artifact} & \textbf{Location} \\
 \midrule
 Training Code & \url{https://github.com/kapilw25/finetuning_evaluation} \\ \hline
-ISD Dataset & \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset} \\
+ECLIPTICA benchmark & \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset} \\
 \midrule
 \multicolumn{2}{@{}l}{\textbf{NoInstruct Models}} \\
 SFT\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\ \hline
@@ -407,7 +407,7 @@ SFT\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-
 DPO\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\ \hline
 CITA\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct} \\
 \midrule
-Hyperparameters & Table~\ref{tab:hyperparams} (exact values from Optuna) \\ \hline
+Hyperparameters & Table~\ref{tab:hyperparams_exp} (exact values from Optuna) \\ \hline
 Training Logs & TensorBoard logs in repository \\
 \bottomrule
 \end{tabular}
@@ -499,7 +499,7 @@ Mode behavior & Mode-seeking & Mode-preserving \\
     \item Find the sweet spot that achieves \textit{both} goals
 \end{enumerate}
 
-This decoupling is why CITA achieves 95.6\% instruction-alignment efficiency while DPO achieves only 64.7\%---a 30.9 percentage point (pp) gap explained entirely by KL architecture.
+This decoupling is why CITA achieves 86.7\% instruction-alignment efficiency while DPO achieves only 56.1\%---a 30.6 percentage point (pp) gap explained entirely by KL architecture.
 
 \vspace{4mm}
 

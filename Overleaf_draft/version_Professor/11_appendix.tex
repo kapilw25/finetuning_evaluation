@@ -14,7 +14,7 @@ The Appendix provides comprehensive elaboration on theoretical constructs, exper
     \item \textbf{Unified Training Objective}: Complete loss formulation with all components (cf.~\cref{sec:appendix_unified})
     \item \textbf{CITA-KL Loss Derivation}: Full mathematical derivation and gradient analysis (cf.~\cref{sec:appendix_cita_kl})
     \item \textbf{Implementation Details}: Training infrastructure and hyperparameters (cf.~\cref{sec:appendix_implementation})
-    \item \textbf{Dataset Details}: Extended ISD statistics and examples (cf.~\cref{sec:appendix_dataset})
+    \item \textbf{Dataset Details}: Extended ECLIPTICA statistics and examples (cf.~\cref{sec:appendix_dataset})
     \item \textbf{Ablation Studies}: Component-wise analysis (cf.~\cref{sec:appendix_ablations})
     \item \textbf{Training Curves}: Supplementary training dynamics plots (cf.~\cref{sec:appendix_training_curves})
     \item \textbf{Qualitative Examples}: Good and failure case examples (cf.~\cref{sec:appendix_examples})
@@ -341,7 +341,7 @@ Safety Categories & 19 \\
 \label{tab:pku_stats}
 \end{table}
 
-\subsection{ISD Instruction Templates}
+\subsection{ECLIPTICA Instruction Templates}
 
 \begin{table}[H]
 \centering
@@ -364,7 +364,7 @@ professional & ``Respond with formal, business-appropriate language and structur
 creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \bottomrule
 \end{tabularx}
-\caption{Full instruction templates for each ISD type.}
+\caption{Full instruction templates for each ECLIPTICA type.}
 \label{tab:instruction_templates}
 \end{table}
 
@@ -382,7 +382,7 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{$\lambda_{\text{KL}}$} & \textbf{Reward Margin} & \textbf{ISD Score} & \textbf{Stability} \\
+\textbf{$\lambda_{\text{KL}}$} & \textbf{Reward Margin} & \textbf{ECLIPTICA Score} & \textbf{Stability} \\
 \midrule
 0 (no KL) & 3.8 & 0.22 & Unstable \\ \hline
 0.00005 & 5.1 & 0.28 & Marginal \\ \hline
@@ -406,7 +406,7 @@ creative & ``Respond with novel ideas and unconventional approaches.'' \\
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{$\beta$} & \textbf{Preference Accuracy} & \textbf{Reward Margin} & \textbf{ISD Score} \\
+\textbf{$\beta$} & \textbf{Preference Accuracy} & \textbf{Reward Margin} & \textbf{ECLIPTICA Score} \\
 \midrule
 0.05 & 85\% & 4.2 & 0.29 \\ \hline
 0.10 (best) & 89\% & 7.5 & 0.37 \\ \hline
@@ -506,7 +506,7 @@ Additional training dynamics plots that provide supplementary context to the mai
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/training/combined_eval_loss.pdf}
-\caption{\textbf{Eval Loss Across Training Methods}: 2$\times$2 subplot showing eval loss for all 4 trainer types with independent y-axes (necessary due to vastly different loss scales). \textbf{SFT} (top-left): Loss $\sim$1.5--1.9, Instruct converges lower. \textbf{DPO} (top-right): Loss $\sim$0.21--0.28, smooth convergence. \textbf{CITA} (bottom-left): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (bottom-right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
+\caption{\textbf{Eval Loss Across Policy Optimization Methods}: 1$\times$3 subplot showing eval loss for DPO, CITA, and GRPO with independent y-axes (necessary due to vastly different loss scales). \textbf{DPO} (left): Loss $\sim$0.21--0.28, smooth convergence with Instruct slightly lower. \textbf{CITA} (center): Loss $\sim$0.27--0.40, NoInstruct converges lower but CITA\_Instruct achieves better reward margins. \textbf{GRPO} (right): Loss oscillates near zero ($\pm$0.001), characteristic of online RL training dynamics. Note: PPO tensorboard logs were empty (TRL logging issue).}
 \label{fig:training_loss}
 \vspace{-3mm}
 \end{figure*}
@@ -659,8 +659,35 @@ CITA\_I & Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA & Yes \\
 
 \textbf{Comparison Design.} By evaluating NoInstruct vs. Instruct variants, we measure each method's \textit{instruction sensitivity}---the improvement from adding alignment instructions.
 
+\vspace{-2mm}
+\subsection{Hyperparameter Optimization}
+\label{sec:hyperparams_appendix}
 
+We use Optuna~\cite{akiba2019optuna} with TPE sampler (13 trials) to optimize hyperparameters, following best practices from hyperparameter optimization literature~\cite{liang2023holistic}. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
 
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{NoInstruct (T5)} & \textbf{Instruct (T7)} \\
+\midrule
+Learning rate & 6.83e-6 & 5.41e-6 \\ \hline
+$\lambda_{\text{KL}}$ & 0.00052 & 0.00023 \\ \hline
+$\beta$ (DPO temp.) & 0.119 & 0.107 \\ \hline
+Weight decay & 0.0091 & 0.0109 \\ \hline
+Warmup ratio & 7.5\% & 10.0\% \\
+\midrule
+Final margin & 6.95 & 7.52 \\ \hline
+Accuracy & 89.5\% & 89.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration.}
+\label{tab:hyperparams_exp}
+\vspace{-4mm}
+\end{table}
 
 
 
@@ -685,7 +712,7 @@ We analyze key training curves comparing DPO and CITA variants. Additional train
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/training/dpo_cita_margins.pdf}
+\includegraphics[width=\columnwidth]{figures/training/dpo_cita_margins.pdf}
 \caption{\textbf{Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim$6.0). Higher margins indicate stronger preference learning.}
 \label{fig:training_margins}
 \vspace{-3mm}
@@ -720,7 +747,7 @@ This section provides detailed benchmark-specific analysis, combined performance
 \begin{figure*}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/isd_comparison.pdf}
-\caption{\textbf{ISD Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.}
+\caption{\textbf{ECLIPTICA Results}: DPO\_Instruct (0.389) and CITA\_Instruct (0.367) show highest instruction awareness.}
 \label{fig:isd}
 \vspace{-3mm}
 \end{figure*}
@@ -728,7 +755,7 @@ This section provides detailed benchmark-specific analysis, combined performance
 \begin{figure*}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/truthfulqa_comparison.pdf}
-\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and SFT\_Instruct (+0.012) achieve \textit{positive} adaptation scores.}
+\caption{\textbf{TruthfulQA}: Only CITA\_Instruct (+0.013) and GRPO\_Instruct (+0.011) achieve \textit{positive} adaptation scores, indicating improved confidence calibration.}
 \label{fig:truthfulqa}
 \vspace{-3mm}
 \end{figure*}
@@ -744,7 +771,7 @@ This section provides detailed benchmark-specific analysis, combined performance
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/length_control_comparison.pdf}
-\caption{\textbf{Length Control}: CITA\_Instruct valid-only (1.77) shows strongest adaptation.}
+\caption{\textbf{Length Control}: CITA\_Instruct (1.14) shows strongest adaptation ratio (detailed/concise word count).}
 \label{fig:length_control}
 \vspace{-3mm}
 \end{figure}
@@ -752,7 +779,7 @@ This section provides detailed benchmark-specific analysis, combined performance
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/evaluation/aqi_comparison.pdf}
-\caption{\textbf{AQI}: CITA\_Instruct (55.5) and DPO\_Instruct (55.0) achieve highest clustering scores.}
+\caption{\textbf{AQI}: CITA\_Instruct (55.0) achieves highest alignment quality index. PPO variants (40.8--43.5) outperform DPO (11.8--18.0) on cluster separation.}
 \label{fig:aqi}
 \vspace{-3mm}
 \end{figure}
@@ -765,7 +792,7 @@ This section provides detailed benchmark-specific analysis, combined performance
 \centering
 \includegraphics[width=0.9\textwidth]{figures/evaluation/combined_plots/heatmap.pdf}
 \vspace{-1mm}
-\caption{\textbf{Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ISD and AQI lack per-sample decomposition (composite/cluster-based metrics).}
+\caption{\textbf{Performance Heatmap with Bootstrap Confidence Intervals (CI)}: Original scores (bold) with 95\% CI (italic, $\pm$) for 3/5 benchmarks. Colors are column-normalized (green = best, red = worst). CI computed via 1,000 bootstrap resamples from per-sample metrics: TruthfulQA (binary uncertainty difference), Cond.\ Safety (binary refusal difference), Length Ctrl (ratio of means). ECLIPTICA and AQI lack per-sample decomposition (composite/cluster-based metrics).}
 \label{fig:heatmap}
 \vspace{-2mm}
 \end{figure*}
@@ -780,4 +807,4 @@ This section provides detailed benchmark-specific analysis, combined performance
 
 \paragraph{CITA Achieves Higher Margins with Lower Accuracy.} Despite similar training accuracy ($\sim$89\%), CITA achieves higher reward margins (7.5 vs. 6.0). This validates that mandatory KL prevents margin collapse while enabling stable behavioral switching.
 
-\paragraph{Instruction-Alignment $\neq$ Instruction-Following.} DPO\_I achieves higher absolute ISD scores, but CITA\_I shows more consistent improvement across diverse benchmarks. This suggests CITA achieves \textit{deeper} instruction-alignment rather than surface-level following.
+\paragraph{Instruction-Alignment $\neq$ Instruction-Following.} DPO\_I achieves higher absolute ECLIPTICA scores, but CITA\_I shows more consistent improvement across diverse benchmarks. This suggests CITA achieves \textit{deeper} instruction-alignment rather than surface-level following.

@@ -4,35 +4,10 @@
 
 
 
-\vspace{-2mm}
-\subsection{Training Pipeline}
-\label{sec:training_pipeline_exp}
-
-Following the staged approach from Section~\ref{sec:methodology}, we train on PKU-SafeRLHF~\cite{ji2024pku,bai2022training} using NVIDIA A100 GPUs with LoRA~\cite{hu2022lora} adapters (SFT/DPO/CITA on A100-40GB; PPO/GRPO on A100-80GB). Training proceeds through four stages:
-
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/pipeline/training_pipeline.pdf}
-\caption{\textbf{Training Pipeline}: All methods branch from SFT. PPO and GRPO are online methods requiring reward model/functions. DPO uses offline preference pairs. CITA stacks on DPO with instruction-conditioning and mandatory KL regularization.}
-\label{fig:training_pipeline}
-\vspace{-1em}
-\end{figure}
-
-\begin{enumerate}[leftmargin=*,itemsep=0pt]
-    \item \textbf{Base}: Llama-3.1-8B~\cite{dubey2024llama} (pretrained weights)
-    \item \textbf{SFT}: Fine-tune on PKU chosen responses
-    \item \textbf{DPO}: Train on PKU preference pairs
-    \item \textbf{CITA}: Add instruction-conditioning with mandatory KL
-\end{enumerate}
 
 
 
-\vspace{-2mm}
-\subsection*{Model Variants}
-\label{sec:model_variants}
 
-We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$ 2 instruction settings (NoInstruct, Instruct).
 
 % \begin{table}[H]
 % \centering
@@ -62,56 +37,8 @@ We train 10 model variants across 5 methods (SFT, PPO, GRPO, DPO, CITA) $\times$
 % \vspace{-4mm}
 % \end{table}
 
-\textbf{Comparison Design.} By evaluating NoInstruct vs. Instruct variants, we measure each method's \textit{instruction sensitivity}---the improvement from adding alignment instructions.
-
-\vspace{-2mm}
-\subsection*{Hyperparameter Optimization}
-\label{sec:hyperparams}
-
-We use Optuna~\cite{akiba2019optuna} with TPE sampler (12 trials) to optimize hyperparameters, following best practices from hyperparameter optimization literature~\cite{liang2023holistic}. Key finding: \textbf{CITA\_Instruct requires $\sim$50\% lower learning rate} than CITA\_NoInstruct because instruction-augmented sequences are 30--40\% longer, causing larger gradients.
-
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Hyperparameter} & \textbf{NoInstruct (T5)} & \textbf{Instruct (T7)} \\
-\midrule
-Learning rate & 6.83e-6 & 5.41e-6 \\ \hline
-$\lambda_{\text{KL}}$ & 0.00052 & 0.00023 \\ \hline
-$\beta$ (DPO temp.) & 0.119 & 0.107 \\ \hline
-Weight decay & 0.0091 & 0.0109 \\ \hline
-Warmup ratio & 7.5\% & 10.0\% \\
-\midrule
-Final margin & 6.95 & 7.52 \\ \hline
-Accuracy & 89.5\% & 89.0\% \\
-\bottomrule
-\end{tabular}
-\caption{Optimal hyperparameters from Optuna search. T5/T7 = trial number of best configuration.}
-\label{tab:hyperparams_exp}
-\vspace{-4mm}
-\end{table}
-
-\vspace{-2mm}
-\subsection*{Training epochs}
-\label{sec:training_dynamics}
-
-We analyze key training curves across all alignment methods. Training accuracy metrics (reward accuracy for DPO/CITA, mean token accuracy for SFT) are provided in Appendix~\ref{sec:appendix_training_curves}, Figure~\ref{fig:training_accuracy_appendix}.
 
 
 
-% Training accuracy figure moved to Appendix (see Figure~\ref{fig:training_accuracy_appendix})
-% for detailed 1x2 subplot comparing DPO/CITA reward accuracy and SFT mean token accuracy
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.65\columnwidth]{figures/training/dpo_cita_margins.pdf}
-\caption{\textbf{Reward Margins}: CITA\_Instruct (7.5) $>$ CITA\_NoInstruct (7.2) $>$ DPO ($\sim$6.0). Higher margins indicate stronger preference learning.}
-\label{fig:training_margins}
-\vspace{-3mm}
-\end{figure}
-
-\textbf{Key Observation.} CITA achieves higher reward margins (7.5 vs. 6.0) than DPO despite similar accuracy, validating that mandatory KL regularization leads to stronger preference differentiation.
 

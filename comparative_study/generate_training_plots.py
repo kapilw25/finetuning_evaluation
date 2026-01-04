@@ -127,7 +127,7 @@ def plot_single_metric(
     title: str,
     output_path: Path,
     ylabel: str = None,
-    figsize: tuple = (8, 6),
+    figsize: tuple = (8, 6),  # Square-ish aspect ratio (scale in LaTeX with width=\columnwidth)
 ) -> list:
     """Generate a single publication-quality plot. Returns list of generated file paths."""
     fig, ax = plt.subplots(figsize=figsize, facecolor='white')

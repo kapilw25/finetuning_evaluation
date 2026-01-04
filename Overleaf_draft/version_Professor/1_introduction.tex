@@ -336,7 +336,7 @@ Figure~\ref{fig:teaser_safety} demonstrates the target behavior: for the \emph{s
     \item \textbf{CITA Algorithm:} We introduce an objective that combines SFT and contrastive preference learning with \textbf{mandatory KL regularization}.
     Unlike standard DPO where KL is often treated as optional, it is \textbf{structural} for \emph{switchability}.
 
-    \item \textbf{Comprehensive Evaluation:} On \textbf{Llama-3.1-8B}~\cite{dubey2024llama}, across five deterministic benchmarks, \textbf{CITA achieves \colorbox{bg-green}{95.6\%} instruction-alignment efficiency}---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, and PPO (54.4\%) by 41.2 pp. On TruthfulQA~\cite{lin2022truthfulqa}, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
+    \item \textbf{Comprehensive Evaluation:} On \textbf{Llama-3.1-8B}~\cite{dubey2024llama}, across five deterministic benchmarks, \textbf{CITA achieves \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}---outperforming DPO (56.1\%) by 30.6 pp, GRPO (36.1\%) by 50.6 pp, and PPO (20.4\%) by 66.3 pp. On TruthfulQA~\cite{lin2022truthfulqa}, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
 \end{enumerate}
 
 
@@ -348,7 +348,7 @@ and via \textbf{inference-/decoding-time} value or reward guidance~\cite{liu-eta
 learning an \emph{instruction-conditioned preference policy} with \textbf{reliable, bidirectional switching}
 (\emph{strict refusal} $\leftrightarrow$ \emph{permissive, harm-minimizing guidance}) \textbf{under a fixed user prompt}.
 To our knowledge, these prior methods do not provide a \emph{preference-optimized}, instruction-conditioned objective \textbf{explicitly engineered} for this switching regime,
-nor a controlled \emph{prompt-held-constant} benchmark (ISD) designed to \textbf{isolate the causal effect} of alignment instructions.
+nor a controlled \emph{prompt-held-constant} benchmark (ECLIPTICA) designed to \textbf{isolate the causal effect} of alignment instructions.
 We provide a detailed comparison and design-differences table in Appendix~\ref{sec:appendix_related}.
 
 

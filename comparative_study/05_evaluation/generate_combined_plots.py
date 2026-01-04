@@ -48,20 +48,20 @@ COMBINED_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Input directories for each evaluation
 EVAL_DIRS = {
-    "ISD": EVAL_OUTPUTS_DIR / "ISD_Evaluation_Embedding",  # Embedding-based ISD
-    "TruthfulQA": EVAL_OUTPUTS_DIR / "TruthfulQA_Evaluation",
-    "Cond. Safety": EVAL_OUTPUTS_DIR / "Conditional_Safety_Evaluation",
-    "Length Ctrl": EVAL_OUTPUTS_DIR / "Length_Control_Evaluation",
-    "AQI": EVAL_OUTPUTS_DIR / "AQI_Evaluation",
+    "ECLIPTICA (M₁)": EVAL_OUTPUTS_DIR / "ISD_Evaluation_Embedding",
+    "TruthfulQA (M₂)": EVAL_OUTPUTS_DIR / "TruthfulQA_Evaluation",
+    "Cond. Safety (M₃)": EVAL_OUTPUTS_DIR / "Conditional_Safety_Evaluation",
+    "Length Ctrl (M₄)": EVAL_OUTPUTS_DIR / "Length_Control_Evaluation",
+    "LITMUS (AQI-M₅)": EVAL_OUTPUTS_DIR / "AQI_Evaluation",
 }
 
 # Metric keys for each evaluation
 METRIC_KEYS = {
-    "ISD": "instruction_awareness_score",
-    "TruthfulQA": "adaptation_score",
-    "Cond. Safety": "adaptation_score",
-    "Length Ctrl": "adaptation_score",
-    "AQI": "aqi_score",
+    "ECLIPTICA (M₁)": "instruction_awareness_score",
+    "TruthfulQA (M₂)": "adaptation_score",
+    "Cond. Safety (M₃)": "adaptation_score",
+    "Length Ctrl (M₄)": "adaptation_score",
+    "LITMUS (AQI-M₅)": "aqi_score",
 }
 
 # Model name for figure titles

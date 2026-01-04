@@ -138,7 +138,7 @@ The target deployment primitive is a \textbf{single checkpoint} that internalize
 CITA is explicitly engineered for this switching regime by combining instruction-conditioned preference optimization with a \textbf{\emph{non-optional}} KL trust-region anchor to a frozen reference $\pi_0$, with the stated purpose of stabilizing a \textbf{switchable policy family} $\{\pi_\theta(\cdot\mid I,\cdot)\}$ rather than collapsing behavior into a single implicit regime.
 
 \noindent\textbf{Claim C3 (Empirical dominance on controlled-switching metrics).}
-On Llama-3.1-8B across five deterministic benchmarks, CITA achieves the \textbf{highest instruction-alignment efficiency} (\textbf{95.6\%}), with large margins over GRPO (67.3\%) and DPO (64.7\%). Moreover, the gains concentrate on probes that require \textbf{\emph{controlled switching}} beyond surface instruction awareness (e.g., \textbf{calibration-sensitive separation}, \textbf{explicit length control}, and \textbf{axiom-level structure}).
+On Llama-3.1-8B across five deterministic benchmarks, CITA achieves the \textbf{highest instruction-alignment efficiency} (\textbf{86.7\%}), with large margins over DPO (56.1\%) and GRPO (36.1\%). Moreover, the gains concentrate on probes that require \textbf{\emph{controlled switching}} beyond surface instruction awareness (e.g., \textbf{calibration-sensitive separation}, \textbf{explicit length control}, and \textbf{axiom-level structure}).
 
 \vspace{-0.4em}
 \begin{table*}[t]
@@ -194,13 +194,13 @@ The paper’s causal summary uses \textbf{instruction sensitivity}
 which isolates what changes when behavioral instructions are introduced, holding model capacity and evaluation protocol fixed. \textbf{This is the right unit of analysis for switching:} it factors out baseline capability and measures \emph{conditional controllability}.
 
 \noindent\textbf{A consistent profile: CITA dominates on calibration/structure-sensitive switching.}
-Table~9 shows that CITA has the strongest deltas on \textbf{TruthfulQA} ($+0.054$ vs.\ DPO $+0.001$), \textbf{Length Control} ($+0.164$ vs.\ $+0.130$), and \textbf{AQI} ($+26.4$ vs.\ $-6.2$), while DPO leads on \textbf{ISD} and \textbf{Conditional Safety}. \textbf{Interpretation:} this supports the paper’s core message that \textbf{Instruction-Alignment $\neq$ Instruction-Following.} DPO can score high on instruction awareness, yet CITA moves more consistently on probes that test \textbf{controlled switching} in \textbf{calibration}, \textbf{verbosity contracts}, and \textbf{axiom geometry}.
+Table~9 shows that CITA has the strongest deltas on \textbf{TruthfulQA} ($+0.054$ vs.\ DPO $+0.001$), \textbf{Length Control} ($+0.164$ vs.\ $+0.130$), and \textbf{AQI} ($+26.4$ vs.\ $-6.2$), while DPO leads on \textbf{ECLIPTICA} and \textbf{Conditional Safety}. \textbf{Interpretation:} this supports the paper’s core message that \textbf{Instruction-Alignment $\neq$ Instruction-Following.} DPO can score high on instruction awareness, yet CITA moves more consistently on probes that test \textbf{controlled switching} in \textbf{calibration}, \textbf{verbosity contracts}, and \textbf{axiom geometry}.
 
 \noindent\textbf{Why this profile is compatible with mandatory KL.}
 Two signals align with the “geometry” account: (i) CITA attains higher reward margins than DPO (7.5 vs.\ 6.0) at similar training accuracy ($\sim 89\%$), consistent with KL preventing margin collapse while maintaining stable updates; (ii) on TruthfulQA adaptation, CITA\_Instruct is clearly positive and larger than DPO\_Instruct, consistent with instruction-conditioning affecting \textbf{epistemic posture} rather than only surface style.
 
-\noindent\textbf{Trade-off diagnosis (why DPO can lead on ISD/Cond.\ Safety).}
-ISD rewards instruction awareness (fidelity $\times$ shift) and can be optimized by \textbf{large instruction-dependent shifts} that need not preserve neighborhood-stable regimes. Conditional Safety is a binary refusal-gap probe between \textsc{STRICT} and \textsc{PERMISSIVE}; it can favor methods that implement a \textbf{sharper discrete boundary} even if \textbf{continuous regime properties} (calibration, length, axiom clustering) are less stable. \textbf{Takeaway:} read the leaderboard as a \textbf{switching profile}---some probes measure \emph{does it move}, others measure \emph{does it move cleanly without collapsing structure}.
+\noindent\textbf{Trade-off diagnosis (why DPO can lead on ECLIPTICA/Cond.\ Safety).}
+ECLIPTICA rewards instruction awareness (fidelity $\times$ shift) and can be optimized by \textbf{large instruction-dependent shifts} that need not preserve neighborhood-stable regimes. Conditional Safety is a binary refusal-gap probe between \textsc{STRICT} and \textsc{PERMISSIVE}; it can favor methods that implement a \textbf{sharper discrete boundary} even if \textbf{continuous regime properties} (calibration, length, axiom clustering) are less stable. \textbf{Takeaway:} read the leaderboard as a \textbf{switching profile}---some probes measure \emph{does it move}, others measure \emph{does it move cleanly without collapsing structure}.
 
 \vspace{-0.4em}
 \begin{table*}[t]
@@ -211,7 +211,7 @@ ISD rewards instruction awareness (fidelity $\times$ shift) and can be optimized
 \toprule
 \textbf{Probe} & \textbf{What it rewards} & \textbf{Failure modes it surfaces (switching lens)} \\
 \midrule
-ISD & \textbf{Instruction awareness} (fidelity $\times$ shift). & High via large stylistic shifts; may not ensure \textbf{neighborhood-stable regimes}. \\
+ECLIPTICA & \textbf{Instruction awareness} (fidelity $\times$ shift). & High via large stylistic shifts; may not ensure \textbf{neighborhood-stable regimes}. \\
 TruthfulQA (HON--CONF) & \textbf{Calibration} separation under uncertainty. & Overconfident collapse; instruction-insensitive calibration. \\
 Cond.\ Safety (STRICT/PERMISSIVE) & \textbf{Binary} refusal-gap. & Sharp boundary without guaranteeing permissive-mode quality. \\
 Length Control (DETAIL/CONCISE) & \textbf{Explicit} verbosity contract. & Regime leakage; verbosity collapse under competing constraints. \\
@@ -314,7 +314,7 @@ Single dataset (PKU-SafeRLHF) & Test on diverse preference datasets \\
 
 \paragraph{Model Generalization.} We evaluate only Llama-3.1-8B~\cite{dubey2024llama}. Future work should validate CITA on diverse architectures~\cite{jiang2023mistral,zhang2022opt,openai2023gpt4} and scales (7B--70B) to establish generality across model families.
 
-\paragraph{Instruction Coverage.} The 10 instruction types in ISD cover common alignment dimensions but may not capture all real-world policy requirements. Domain-specific instructions (medical, legal, educational) require dedicated evaluation.
+\paragraph{Instruction Coverage.} The 10 instruction types in ECLIPTICA cover common alignment dimensions but may not capture all real-world policy requirements. Domain-specific instructions (medical, legal, educational) require dedicated evaluation.
 
 \paragraph{Multilingual Alignment.} All experiments are English-only. Instruction-conditioned alignment in multilingual settings raises questions about cross-lingual instruction transfer and cultural alignment differences.
 
@@ -430,7 +430,7 @@ Reference \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}} (Steps~1--4); 
 
 \textbf{D4 \icnChart\ \,Profile, not scalar} &
 Leaderboard is a \textbf{multi-axis switching profile}: some probes test “does it move,” others test “does structure persist.” &
-Over-reading a single metric (e.g., ISD or Cond.\ Safety) as “best alignment” misstates what is being certified. &
+Over-reading a single metric (e.g., ECLIPTICA or Cond.\ Safety) as "best alignment" misstates what is being certified. &
 Always pair \textbf{discrete} boundary probes with \textbf{continuous} regime probes (calibration, length, axiom structure); analyze cross-metric disagreements. \\
 
 \midrule

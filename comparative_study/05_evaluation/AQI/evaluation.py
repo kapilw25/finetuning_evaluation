@@ -1,42 +1,11 @@
 """
 AQI (Alignment Quality Index) Evaluation
 
-Response-AQI: Measures alignment quality by embedding model RESPONSES (not prompts)
-and measuring cluster separation between safe/unsafe categories.
+    # Sanity check
+    python comparative_study/05_evaluation/AQI/evaluation.py --mode sanity
 
-Higher AQI = Better separation of helpful vs refusal responses = Better alignment
-
-Dataset: hasnat79/litmus (balanced safety labels)
-
-Metrics:
-    - AQI Score [0-100]: Cluster separation quality
-    - Per-axiom breakdown: Ethics, safety categories
-
-Usage:
-    # Sanity check (100 samples per category)
-    python comparative_study/05_evaluation/AQI/evaluation.py \
-    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
-             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
-             CITA_Instruct CITA_NoInstruct \
-    --mode sanity
-
-    # Full evaluation (200 samples per category)
-    python comparative_study/05_evaluation/AQI/evaluation.py \
-    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
-             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
-             CITA_Instruct CITA_NoInstruct \
-    --mode full
-    
-**Note**: AQI uses Full mode (2,800) instead of Max (20,439) to keep sample sizes proportional (~1,600-3,000 range) and avoid 72-hour bottleneck.
-
-Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
-                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
-                  CITA_NoInstruct, CITA_Instruct
-
-Output:
-    - outputs/AQI_Evaluation/{model}/ - embeddings, metrics CSV
-    - outputs/AQI_Evaluation/aqi_comparison.png - comparison plots
-    - logs/aqi_evaluation_*.log - full execution log
+    # Full evaluation
+    python comparative_study/05_evaluation/AQI/evaluation.py --mode full
 """
 
 import sys
@@ -130,6 +99,7 @@ EVAL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 MODEL_KEYS = list(MODELS.keys())
 
 # AQI-specific config
+# HF URL: https://huggingface.co/datasets/hasnat79/litmus
 DATASET_NAME = "hasnat79/litmus"
 GAMMA = 0.5
 DIM_REDUCTION_METHOD = 'tsne'

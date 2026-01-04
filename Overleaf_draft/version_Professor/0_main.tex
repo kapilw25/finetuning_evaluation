@@ -283,7 +283,7 @@ We instantiate ECLIPTICA with \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstr
 $L_{\textsc{CITA}} = L_{\textsc{SFT}} + \lambda_1 L_{\textsc{DPO}} + \lambda_2 L_{\textsc{KL}}$.
 The KL term is not optional: it anchors the model to a reference policy to prevent mode collapse and enables stable \emph{instruction-conditioned} switching rather than shallow instruction compliance.
 
-\textls[0]{To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{Instruction Switch Dataset (ISD)}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ISD, TruthfulQA, Conditional Safety, Length Control, AQI) show that \textbf{CITA achieves \colorbox{bg-green}{95.6\%} instruction-alignment efficiency}---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, and PPO (54.4\%) by 41.2 pp. On TruthfulQA, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments. To foster further research in this domain, we make the \href{https://github.com/kapilw25/finetuning_evaluation}{code} and \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{dataset} publicly available.}
+\textls[0]{To measure \emph{instruction-alignment} (deep policy embodiment) versus mere instruction-following, we introduce the \textbf{ECLIPTICA benchmark}, a controlled benchmark of $3{,}000$ test cases ($300$ prompts $\times$ $10$ instruction types) where only the alignment instruction varies. Experiments on \textbf{Llama-3.1-8B} across five deterministic benchmarks (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS) show that \textbf{CITA achieves \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}---outperforming DPO (56.1\%) by 30.6 pp, GRPO (36.1\%) by 50.6 pp, and PPO (20.4\%) by 66.3 pp. On TruthfulQA, CITA shows \textbf{54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001). Overall, ECLIPTICA + CITA advance alignment from \emph{one-policy-per-checkpoint} toward \emph{switchable, instruction-governed} behavior suitable for modern agentic deployments. To foster further research in this domain, we make the \href{https://github.com/kapilw25/finetuning_evaluation}{code} and \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{dataset} publicly available.}
 \end{abstract}
 
 
@@ -323,11 +323,11 @@ Crucially, \textbf{KL is explicit \& mandatory}: it \textbf{prevents mode collap
 CITA is designed so the \textbf{same user prompt} can yield \textbf{meaningfully different behaviors} \emph{solely} due to the alignment instruction
 (e.g., safety-first vs.\ professional vs.\ creative), enabling \textbf{multi-tenant} and \textbf{role-aware} deployment.
 
-\item[\faVial] \textbf{\textit{New diagnostic (ISD)}}:
-We introduce the \textbf{Instruction Switch Dataset (ISD)} to isolate instruction effects:
+\item[\faVial] \textbf{\textit{New diagnostic (ECLIPTICA benchmark)}}:
+We introduce the \textbf{ECLIPTICA benchmark} to isolate instruction effects:
 \textbf{keep prompts constant}, vary \textbf{only} the alignment instruction.
-ISD is a \textbf{full-factorial} benchmark with
-\(\lvert\text{ISD}\rvert = 300 \times 10 = 3{,}000\) test cases, enabling direct, controlled comparisons.
+ECLIPTICA is a \textbf{full-factorial} benchmark with
+\(\lvert\text{ECLIPTICA}\rvert = 300 \times 10 = 3{,}000\) test cases, enabling direct, controlled comparisons.
 
 \item[\faBalanceScale] \textbf{\textit{Key distinction: following vs.\ alignment}}:
 We explicitly test whether models exhibit \textbf{instruction-following} (surface format compliance)
@@ -335,7 +335,7 @@ or \textbf{instruction-alignment} (internalized, robust policy embodiment consis
 
 \item[\faChartLine] \textbf{\textit{Results (switchability without judges)}}:
 On \textbf{Llama-3.1-8B}, across \textbf{five deterministic benchmarks},
-\textbf{CITA achieves \colorbox{bg-green}{95.6\%} instruction-alignment efficiency}---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, and PPO (54.4\%) by 41.2 pp.
+\textbf{CITA achieves \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}---outperforming DPO (56.1\%) by 30.6 pp, GRPO (36.1\%) by 50.6 pp, and PPO (20.4\%) by 66.3 pp.
 On TruthfulQA, \textbf{CITA shows 54$\times$ stronger adaptation} than DPO (+0.054 vs +0.001).
 
 \item[\faTools] \textbf{\textit{Practical upshot}}:
@@ -344,7 +344,7 @@ a single deployed model can be \textbf{re-scoped} by policy instructions for saf
 
 \item[\faCode] \textbf{\textit{Release}}:
 \textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation};
-\textbf{Dataset (ISD):} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
+\textbf{ECLIPTICA benchmark:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
 
 
 \end{itemize}

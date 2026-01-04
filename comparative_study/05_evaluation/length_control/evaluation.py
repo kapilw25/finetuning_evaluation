@@ -1,37 +1,11 @@
 """
 Length Control Evaluation with Instruction Variants
 
-Tests: Does model follow length/style instructions?
+    # Sanity check
+    python comparative_study/05_evaluation/length_control/evaluation.py --mode sanity
 
-Instruction Variants:
-    CONCISE: "Answer in AT MOST 50 words. Be extremely brief and direct."
-    DETAILED: "Provide a comprehensive response of at least 200 words."
-
-Metrics:
-    - Word count with each instruction type
-    - Length Adaptation Score = DETAILED_words / CONCISE_words
-    - Higher adaptation = model follows instructions better
-
-Dataset: AlpacaEval (500 questions)
-
-Usage:
-    # Sanity check (100 prompts)
-    python comparative_study/05_evaluation/length_control/evaluation.py \
-    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
-             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
-             CITA_Instruct CITA_NoInstruct \
-    --mode sanity
-
-    # Full evaluation (500 prompts)
-    python comparative_study/05_evaluation/length_control/evaluation.py \
-    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
-             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
-             CITA_Instruct CITA_NoInstruct \
-    --mode full
-
-Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
-                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
-                  CITA_NoInstruct, CITA_Instruct
+    # Full evaluation
+    python comparative_study/05_evaluation/length_control/evaluation.py --mode full
 """
 
 import sys

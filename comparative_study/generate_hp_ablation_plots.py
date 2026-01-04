@@ -1,6 +1,8 @@
 """
 Generate Hyperparameter Ablation Plots from Optuna Trial Configs
 
+Model: Llama-3.1-8B (meta-llama/Llama-3.1-8B)
+
 Generates ablation plots showing sensitivity to:
 - beta (DPO temperature)
 - lambda_kl (KL regularization strength)
@@ -20,6 +22,9 @@ Output:
     ├── hp_ablation_learning_rate.{pdf,png}
     ├── hp_ablation_combined.{pdf,png}  (2x2 grid)
 """
+
+# Model identifier for figure titles
+MODEL_NAME = "Llama-3.1-8B"
 
 import json
 from pathlib import Path
@@ -207,7 +212,7 @@ def plot_hp_vs_metric(
     # Hide the 4th subplot (empty in 2x2 grid with 3 metrics)
     axes[3].axis('off')
 
-    fig.suptitle(f'CITA Hyperparameter Sensitivity: {hp_label}', fontsize=28, fontweight='bold', y=0.98)
+    fig.suptitle(f'CITA Hyperparameter Sensitivity: {hp_label} ({MODEL_NAME})', fontsize=28, fontweight='bold', y=0.98)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.subplots_adjust(hspace=0.35, wspace=0.35)
 
@@ -305,7 +310,7 @@ def plot_combined_ablation(trials: list, output_path: Path, best_trial_num: int 
         if best_idx is not None:
             ax.legend(loc='best', fontsize=14)
 
-    fig.suptitle(f'CITA Hyperparameter Ablation Study\n(Metric: Reward Margin, Best = Trial {best_trial_num})',
+    fig.suptitle(f'CITA Hyperparameter Ablation Study ({MODEL_NAME})\n(Metric: Reward Margin, Best = Trial {best_trial_num})',
                 fontsize=26, fontweight='bold', y=0.99)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.subplots_adjust(hspace=0.35, wspace=0.35)
@@ -376,7 +381,7 @@ def plot_pareto_frontier(trials: list, output_path: Path, best_trial_num: int = 
 
     ax.set_xlabel('Reward Margin (↑ Higher is Better)', fontsize=36, fontweight='bold')
     ax.set_ylabel('Accuracy % (↑ Higher is Better)', fontsize=36, fontweight='bold')
-    ax.set_title('CITA Optuna Trials: Margin-Accuracy Trade-off', fontsize=40, fontweight='bold')
+    ax.set_title(f'CITA Optuna Trials: Margin-Accuracy Trade-off ({MODEL_NAME})', fontsize=40, fontweight='bold')
     ax.tick_params(axis='both', labelsize=28)
     ax.legend(loc='lower right', fontsize=28)
     ax.grid(True, alpha=0.3, linestyle='--')

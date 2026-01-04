@@ -130,6 +130,20 @@ The core obstacle in studying runtime alignment is \textbf{confounding}: when be
 ECLIPTICA resolves this with a causal, deployment-faithful design: it \textbf{holds the user prompt $X$ fixed} and varies \emph{only} the \textbf{alignment instruction $I$}.
 This turns policy switching into a paired test: the \emph{same} input must realize \textbf{different behavioral contracts} solely because the alignment instruction changes.
 
+
+
+
+
+
+
+
+
+\paragraph{Construction and scale.}
+ECLIPTICA is a factorial grid of \textbf{300 prompts} and \textbf{10 alignment instruction types}, yielding
+\(\mathbf{300 \times 10 = 3{,}000}\) \textbf{prompt-held-constant} test cases.
+Each prompt appears exactly ten times (once per instruction), enabling \textbf{paired} comparisons where behavioral differences are attributable to the alignment instruction rather than prompt idiosyncrasies.
+Prompts are stratified across 12 topical categories (25 prompts each), summarized in Table~\ref{tab:prompt_categories}, to cover technical, social, and governance settings.
+
 \vspace{-0.45em}
 \begin{tcolorbox}[
   colback=Teal!5!White,
@@ -149,27 +163,13 @@ This turns policy switching into a paired test: the \emph{same} input must reali
 \end{tcolorbox}
 %\vspace{2.5em}
 
-
-
-
-
-
-
-\paragraph{Construction and scale.}
-ECLIPTICA is a factorial grid of \textbf{300 prompts} and \textbf{10 alignment instruction types}, yielding
-\(\mathbf{300 \times 10 = 3{,}000}\) \textbf{prompt-held-constant} test cases.
-Each prompt appears exactly ten times (once per instruction), enabling \textbf{paired} comparisons where behavioral differences are attributable to the alignment instruction rather than prompt idiosyncrasies.
-Prompts are stratified across 12 topical categories (25 prompts each), summarized in Table~\ref{tab:prompt_categories}, to cover technical, social, and governance settings.
-
-
-
 \paragraph{Instruction set.}
 ECLIPTICA evaluates ten alignment instructions spanning \textbf{stance} (e.g., neutral vs.\ conservative vs.\ liberal),
 \textbf{constraint posture} (e.g., safety-first, regulatory), and \textbf{delivery style} (e.g., concise, professional, educational, creative).
 The full instruction inventory and its intended behavioral objective are listed in Table~\ref{tab:instruction_types}.
 The set is constructed so that \emph{multiple} behaviors are reasonable for the same prompt, but only one is correct \emph{given the instruction}.
 
-\vspace{-1em}
+%\vspace{-1em}
 \begin{table}[ht!]
 \centering
 \small
@@ -189,7 +189,7 @@ Social       & 25 & Governance  & 25 \\
 \end{tabular}
 \caption{\textbf{ECLIPTICA prompt distribution.} 12 categories, 300 prompts total.}
 \label{tab:prompt_categories}
-\vspace{-1em}
+\vspace{-1.5em}
 \end{table}
 
 \vspace{-0.25em}
@@ -430,7 +430,7 @@ Figure~\ref{fig:ecliptica_pipeline} summarizes the end-to-end pipeline.
 \subsection{Instruction-Following vs. Instruction-Alignment}
 \label{sec:following_vs_alignment}
 
-A critical distinction underlies the ISD evaluation:
+A critical distinction underlies the ECLIPTICA evaluation:
 \end{comment}
 
 
@@ -460,7 +460,7 @@ Goal & Format compliance & Policy embodiment \\
 \end{comment}
 
 
-%\textbf{ISD tests whether CITA achieves true instruction-alignment}---consistent behavioral shifts reflecting internalized policy goals---rather than superficial instruction-following that can be easily circumvented, building on recent work in self-play fine-tuning~\cite{chen2024self}.
+%\textbf{ECLIPTICA tests whether CITA achieves true instruction-alignment}---consistent behavioral shifts reflecting internalized policy goals---rather than superficial instruction-following that can be easily circumvented, building on recent work in self-play fine-tuning~\cite{chen2024self}.
 
 
 

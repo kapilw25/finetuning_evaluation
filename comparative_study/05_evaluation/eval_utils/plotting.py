@@ -878,8 +878,8 @@ def generate_radar_chart_area_based(
                 method_color = method_colors.get(method, '#808080')
                 angle_deg = np.degrees(angle) % 360
 
-                # ISD is at angle ~0 (rightmost) - place annotation far outside, below label
-                if angle_deg < 30 or angle_deg > 330:  # Right side (ISD)
+                # ECLIPTICA is at angle ~0 (rightmost) - place annotation far outside, below label
+                if angle_deg < 30 or angle_deg > 330:  # Right side (ECLIPTICA)
                     r = 1.30  # Far outside circle
                     ha, va = 'center', 'top'
                     offset_angle = angle - 0.15  # Shift down-left
@@ -994,18 +994,15 @@ def _shorten_model_labels(models: List[str]) -> List[str]:
 
 
 def _wrap_eval_labels(eval_names: List[str]) -> List[str]:
-    """Wrap long eval labels with line breaks for compact display."""
-    wrapped = []
-    for name in eval_names:
-        if name == 'TruthfulQA':
-            wrapped.append('Truthful\nQA')
-        elif name == 'Cond. Safety':
-            wrapped.append('Cond.\nSafety')
-        elif name == 'Length Ctrl':
-            wrapped.append('Length\nCtrl')
-        else:
-            wrapped.append(name)
-    return wrapped
+    """Map eval names to short metric labels for heatmap columns."""
+    metric_map = {
+        'ECLIPTICA (M₁)': 'M₁',
+        'TruthfulQA (M₂)': 'M₂',
+        'Cond. Safety (M₃)': 'M₃',
+        'Length Ctrl (M₄)': 'M₄',
+        'LITMUS (AQI-M₅)': 'AQI',
+    }
+    return [metric_map.get(name, name) for name in eval_names]
 
 
 def generate_combined_heatmap(

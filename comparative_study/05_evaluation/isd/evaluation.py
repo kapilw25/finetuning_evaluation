@@ -1,44 +1,11 @@
 """
 ISD (Instruction Switch Dataset) Evaluation
 
-Uses sentence transformer embeddings for fidelity scoring.
-
-Complete evaluation pipeline: Inference → Metrics → Comparison Plots
-Tests the core claim: "Instruction-Aware: DPO=No, CITA=Yes"
-
-Metrics:
-    1. Fidelity Score: Embedding similarity between response and instruction prototype
-    2. Semantic Shift: How much does response change across different instructions?
-    3. Instruction Awareness Score: Fidelity × Semantic Shift (combined metric)
-
-Dataset: https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset
-    - 500 prompts × 10 instruction types = 5,000 test cases
-    - Instruction types: Neutral, Conservative, Liberal, Regulatory, Empathetic,
-                         Safety, Educational, Concise, Professional, Creative
-
-Usage:
     # Sanity check
-    python comparative_study/05_evaluation/isd/evaluation.py \
-    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
-             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
-             CITA_Instruct CITA_NoInstruct \
-    --mode sanity
+    python comparative_study/05_evaluation/isd/evaluation.py --mode sanity
 
     # Full evaluation
-    python comparative_study/05_evaluation/isd/evaluation.py \
-    --models SFT_Instruct SFT_NoInstruct DPO_Instruct DPO_NoInstruct \
-             PPO_Instruct PPO_NoInstruct GRPO_Instruct GRPO_NoInstruct \
-             CITA_Instruct CITA_NoInstruct \
-    --mode full
-
-Available models: SFT_NoInstruct, SFT_Instruct, DPO_NoInstruct, DPO_Instruct,
-                  PPO_NoInstruct, PPO_Instruct, GRPO_NoInstruct, GRPO_Instruct,
-                  CITA_NoInstruct, CITA_Instruct
-
-Output:
-    - outputs/evaluation/ISD/{model}/ - responses CSV, metrics JSON
-    - outputs/evaluation/ISD/isd_comparison.png - comparison plots
-    - logs/ISD_evaluation_*.log - full execution log
+    python comparative_study/05_evaluation/isd/evaluation.py --mode full
 """
 
 import sys
@@ -436,7 +403,7 @@ def generate_isd_comparison_plots(all_metrics: Dict[str, ModelMetrics], output_d
         output_dir=output_dir,
         plot_filename="isd_comparison",
         ylabel="Instruction Awareness Score",
-        title="ISD: Instruction Awareness (Higher = Better)",
+        title="ECLIPTICA: Instruction Awareness (Higher = Better)",
         perfect_score=1.0,
         perfect_label="Perfect = 1.0",
         score_format=".3f",

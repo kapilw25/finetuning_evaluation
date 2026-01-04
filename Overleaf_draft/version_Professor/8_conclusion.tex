@@ -13,13 +13,13 @@ This paper introduces \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a
 \label{sec:key_findings}
 
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
-    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{95.6\%} efficiency---outperforming GRPO (67.3\%) by 28.3 pp, DPO (64.7\%) by 30.9 pp, and PPO (54.4\%) by 41.2 pp.
+    \item \textbf{CITA achieves highest instruction-alignment efficiency}: Using average normalized radar radius (\cref{eq:efficiency}), CITA achieves \textbf{86.7\%} efficiency---outperforming DPO (56.1\%) by 30.6 pp, GRPO (36.1\%) by 50.6 pp, and PPO (20.4\%) by 66.3 pp.
 
     \item \textbf{Correct directional adaptation}: On TruthfulQA, CITA improves by \textbf{+0.054} (adjusting uncertainty appropriately), while DPO shows minimal change (\textbf{+0.001}). This validates CITA's ability to internalize calibration instructions.
 
     \item \textbf{Mandatory KL is essential}: The KL term---optional in DPO---becomes mandatory in CITA to prevent mode collapse and enable stable instruction-conditioned behavioral switching.
 
-    \item \textbf{Instruction-alignment $\neq$ instruction-following}: Through the Instruction Switch Dataset, we demonstrate that CITA achieves \textit{deeper} instruction-alignment (internalized policies) rather than \textit{superficial} instruction-following (surface compliance).
+    \item \textbf{Instruction-alignment $\neq$ instruction-following}: Through the ECLIPTICA benchmark, we demonstrate that CITA achieves \textit{deeper} instruction-alignment (internalized policies) rather than \textit{superficial} instruction-following (surface compliance).
 \end{enumerate}
 
 \vspace{-2mm}
@@ -44,11 +44,11 @@ CITA enables a new paradigm of \textbf{interactive and adaptive AI systems} wher
 \subsection{Reproducibility}
 \label{sec:reproducibility}
 
-All code, trained models, and the Instruction Switch Dataset are publicly available:
+All code, trained models, and the ECLIPTICA benchmark are publicly available:
 
 \begin{itemize}[leftmargin=*,itemsep=1pt]
     \item \textbf{Code}: \url{https://github.com/kapilw25/finetuning_evaluation}
-    \item \textbf{Dataset}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+    \item \textbf{ECLIPTICA benchmark}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
 \end{itemize}
 
 
