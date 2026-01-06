@@ -301,9 +301,9 @@ We introduce \textbf{CITA} (\textbf{C}ontrastive \textbf{I}nstruction-\textbf{T}
 
 
 
-To separate \textbf{policy switching} from standard instruction following, we introduce the \textbf{ECLIPTICA benchmark}: $3{,}000$ controlled test cases ($300$ prompts $\times$ $10$ instruction types) in which the \emph{user request is held fixed} and only the alignment instruction varies. On \textbf{Llama-3.1-8B} across five suites (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS), \textbf{CITA attains \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}, exceeding DPO (56.1\%; +30.6 pp), GRPO (36.1\%; +50.6 pp), and PPO (20.4\%; +66.3 pp). Together, \textbf{ECLIPTICA + CITA} move alignment beyond \emph{one-policy-per-checkpoint} toward \textbf{switchable, instruction-governed behavior} aligned with modern deployment and agentic settings. \href{https://github.com/kapilw25/finetuning_evaluation}{Code} \& \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{Dataset}
+To separate \textbf{policy switching} from standard instruction following, we introduce the \textbf{ECLIPTICA benchmark}: $3{,}000$ controlled test cases ($300$ prompts $\times$ $10$ instruction types) in which the \emph{user request is held fixed} and only the alignment instruction varies. On \textbf{Llama-3.1-8B} across five suites (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS), \textbf{CITA attains \colorbox{bg-green}{86.7\%} instruction-alignment efficiency}, exceeding DPO (56.1\%; +30.6 pp), GRPO (36.1\%; +50.6 pp), and PPO (20.4\%; +66.3 pp). Together, \textbf{ECLIPTICA + CITA} move alignment beyond \emph{one-policy-per-checkpoint} toward \textbf{switchable, instruction-governed behavior} aligned with modern deployment and agentic settings. \href{https://anonymous.4open.science/r/CITA_Anonymous-AC02}{Code} \& \href{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}{Dataset}
 
-%To foster further research in this domain, we make the \href{https://github.com/kapilw25/finetuning_evaluation}{code} and \href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{dataset} publicly available.
+%To foster further research in this domain, we make the \href{https://anonymous.4open.science/r/CITA_Anonymous-AC02}{code} and \href{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}{dataset} publicly available.
 \end{abstract}
 
 
@@ -372,8 +372,8 @@ ECLIPTICA + CITA move from \textbf{one-policy-per-checkpoint} to \textbf{switcha
 a single deployed model can be \textbf{re-scoped} by policy instructions (safety, verbosity, tone, compliance emphasis, creativity) \textbf{without proliferating models}.
 
 %\item[\faCode] \textbf{\textit{Release}}:
-%\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation};
-%\textbf{ECLIPTICA benchmark:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}.
+%\textbf{Code:} \url{https://anonymous.4open.science/r/CITA_Anonymous-AC02};
+%\textbf{ECLIPTICA benchmark:} \url{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}.
 
 
 
@@ -382,8 +382,8 @@ a single deployed model can be \textbf{re-scoped} by policy instructions (safety
 \end{defin}
 
 
-%\noindent\textbf{Code:} \url{https://github.com/kapilw25/finetuning_evaluation}\\
-%\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}
+%\noindent\textbf{Code:} \url{https://anonymous.4open.science/r/CITA_Anonymous-AC02}\\
+%\noindent\textbf{Dataset:} \url{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}
 
 % % =============================================================================
 % MAIN CONTENT (Core paper - before references)
@@ -394,10 +394,6 @@ a single deployed model can be \textbf{re-scoped} by policy instructions (safety
 \input{6_experiments}
 \input{7_results}
 
-
-
-
-\vspace{-1mm}
 \section{Conclusion}
 \label{sec:conclusion}
 
@@ -437,6 +433,7 @@ To the best of our knowledge, we formalize \textbf{instruction-aware alignment} 
 %\input{8_conclusion}
 \input{10_faq}
 \input{11_appendix}
+\input{13_pipeline_diagrams}  % Training Pipeline Diagrams (SFT, DPO, PPO, GRPO, CITA)
 %\input{2_methodology}
 %\input{3_unified_loss}
 

@@ -1,4 +1,4 @@
-# CITA: Calibrated Instruction Tuning with Alignment
+# CITA : Contrastive Instruction-Tuned Alignment 
 
 Comparative study of SFT → DPO/PPO/GRPO → CITA training pipeline on Llama-3.1-8B.
 

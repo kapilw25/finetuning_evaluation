@@ -69,7 +69,9 @@
       "Bash(while read f)",
       "Bash(do if [ -f \"$f\" ])",
       "Bash(then echo \"✓ $f\")",
-      "Bash(else echo \"✗ $f MISSING\")"
+      "Bash(else echo \"✗ $f MISSING\")",
+      "WebFetch(domain:aclrollingreview.org)",
+      "WebFetch(domain:www.aclweb.org)"
     ],
     "deny": [],
     "ask": []

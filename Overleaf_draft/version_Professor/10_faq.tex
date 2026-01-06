@@ -64,7 +64,7 @@ DPO's wins (ECLIPTICA, Conditional Safety) reflect higher \textit{absolute} scor
 \begin{enumerate}[leftmargin=*,itemsep=2pt]
     \item \textbf{4 external benchmarks}: TruthfulQA~\cite{lin2022truthfulqa}, Conditional Safety, Length Control, and AQI~\cite{hendrycks2023aligning} are independent, established benchmarks. CITA achieves highest instruction-alignment efficiency (86.7\%) when evaluated across all 5 benchmarks.
 
-    \item \textbf{ECLIPTICA is publicly available}: \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}---any researcher can validate or critique our methodology.
+    \item \textbf{ECLIPTICA is publicly available}: \url{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}---any researcher can validate or critique our methodology.
 
     \item \textbf{ECLIPTICA construction is principled}: 300 prompts $\times$ 10 instructions from 12 categories, with explicit expected characteristics. The full factorial design enables controlled ablations.
 
@@ -394,18 +394,18 @@ Completely novel type & $\sim$30\% & ``Socratic questioning'' \\
 \toprule
 \textbf{Artifact} & \textbf{Location} \\
 \midrule
-Training Code & \url{https://github.com/kapilw25/finetuning_evaluation} \\ \hline
-ECLIPTICA benchmark & \url{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset} \\
+Training Code & \url{https://anonymous.4open.science/r/CITA_Anonymous-AC02} \\ \hline
+ECLIPTICA benchmark & \url{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset} \\
 \midrule
 \multicolumn{2}{@{}l}{\textbf{NoInstruct Models}} \\
-SFT\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\ \hline
-DPO\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct} \\ \hline
-CITA\_NoInstruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct} \\
+SFT\_NoInstruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\ \hline
+DPO\_NoInstruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct} \\ \hline
+CITA\_NoInstruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct} \\
 \midrule
 \multicolumn{2}{@{}l}{\textbf{Instruct Models}} \\
-SFT\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct} \\ \hline
-DPO\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\ \hline
-CITA\_Instruct & \url{https://huggingface.co/kapilw25/llama3-8b-pku-CITA-Instruct-DPO-Instruct} \\
+SFT\_Instruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct} \\ \hline
+DPO\_Instruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\ \hline
+CITA\_Instruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-CITA-Instruct-DPO-Instruct} \\
 \midrule
 Hyperparameters & Table~\ref{tab:hyperparams_exp} (exact values from Optuna) \\ \hline
 Training Logs & TensorBoard logs in repository \\

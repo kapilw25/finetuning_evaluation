@@ -44,7 +44,7 @@ LITMUS & 2{,}800 & 1 (generic) & ``Provide safe, helpful responses.'' & $M_5$ = 
 \vspace{-1mm}
 \caption{
 \textbf{Evaluation suite: benchmarks, instructions, and metrics.} %ECLIPTICA tests 10 behavioral modes; TruthfulQA, Cond.\ Safety, and Length Control use 2 opposing instructions;  AQI axioms: Civility, Duty, Empathy, Information, Justice, Well-being, Wisdom~\citep{borah-etal-2025-alignment,10.5555/3737916.3741544}. 
-\textbf{Datasets:} ECLIPTICA (\href{https://huggingface.co/datasets/kapilw25/ISD-Instruction-Switch-Dataset}{HF}), TruthfulQA (\href{https://huggingface.co/datasets/truthfulqa/truthful_qa}{HF}), Cond.\ Safety (\href{https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF}{HF}), Length Ctrl (\href{https://huggingface.co/datasets/tatsu-lab/alpaca_eval}{HF}), LITMUS (\href{https://huggingface.co/datasets/hasnat79/litmus}{HF}). All metrics are defined; higher is better.}
+\textbf{Datasets:} ECLIPTICA (\href{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}{HF}), TruthfulQA (\href{https://huggingface.co/datasets/truthfulqa/truthful_qa}{HF}), Cond.\ Safety (\href{https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF}{HF}), Length Ctrl (\href{https://huggingface.co/datasets/tatsu-lab/alpaca_eval}{HF}), LITMUS (\href{https://huggingface.co/datasets/hasnat79/litmus}{HF}). All metrics are defined; higher is better.}
 \label{tab:benchmarks}
 \vspace{-2em}
 \end{table*}
@@ -89,8 +89,8 @@ ECLIPTICA directly measures \textbf{multi-way instruction switching} across 10 b
 \vspace{-1em}
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=\columnwidth]{figures/evaluation/combined_plots/radar_area.pdf}
-\vspace{-2em}
+\includegraphics[width=0.85\columnwidth]{figures/evaluation/combined_plots/radar_area.pdf}
+\vspace{-1.2em}
 \caption{\textbf{Instruction-alignment efficiency.} \textsc{CITA} achieves \textbf{86.7\%}, outperforming \textsc{DPO} (56.1\%), \textsc{GRPO} (36.1\%), and \textsc{PPO} (20.4\%). }
 \label{fig:radar}
 \vspace{-1.5em}
@@ -102,18 +102,17 @@ ECLIPTICA directly measures \textbf{multi-way instruction switching} across 10 b
 \vspace{-2.3em}
 \caption{\textbf{Performance heatmap across 5 benchmarks.} Cells report scores with a column-normalization (green = best, red = worst per column). NI = NoInstruct, I = Instruct. \textsc{CITA}\_I achieves the highest AQI (55.0) while remaining competitive across switching metrics. See Appendix~\ref{sec:appendix_examples} for qualitative examples and per-benchmark error modes.}
 \label{fig:heatmap_results}
-\vspace{-1.5em}
+\vspace{-2.5em}
 \end{figure}
 
-\vspace{-2mm}
+\vspace{-5mm}
 \subsection*{Instruction sensitivity: \textsc{CITA} vs.\ baselines}
 \label{sec:improvement_comparison}
-
+\vspace{-2mm}
 \noindent\textbf{Reading Table~\ref{tab:improvement_comparison}.}
 \textsc{DPO} and \textsc{GRPO} are \textbf{alignment objectives applied in a supervised-style optimization loop} (offline preference-style updates vs.\ reward-shaped updates, respectively), whereas \textsc{PPO} is a \textbf{reinforcement-learning} baseline that follows the canonical \textbf{two-stage RLHF pipeline}---first learn (or specify) a reward signal, then perform on-policy policy-gradient updates \textbf{with KL regularization}. We therefore treat \textsc{PPO} primarily as an \textbf{online RL reference point} for instruction sensitivity; cross-method differences should be interpreted in light of its additional online sampling and reward-evaluation requirements.
 
-
-\vspace{-1em}
+\vspace{-1.5em}
 \begin{table}[H]
 \centering
 \footnotesize
@@ -133,9 +132,10 @@ AQI & $-$6.2 & +2.7 & +6.9 & \textbf{+26.4} \\
 \vspace{-0.5em}
 \caption{\textbf{Instruction sensitivity} (\(\Delta=\) Instruct $-$ NoInstruct). \textsc{CITA} shows the strongest gains on TruthfulQA, Length Control, and AQI, while \textsc{DPO} leads on ISD and Conditional Safety.}
 \label{tab:improvement_comparison}
-\vspace{-2.8mm}
+\vspace{-3mm}
 \end{table}
 
+\vspace{-2mm}
 \section*{Performance and Interpretations}
 \label{sec:overall_results}
 \Cref{fig:radar} summarizes aggregate performance, \cref{fig:heatmap_results} reports the metric-level breakdown, and \cref{tab:improvement_comparison} quantifies instruction sensitivity. \textsc{CITA} achieves \textbf{86.7\%} instruction-alignment efficiency, outperforming \textsc{DPO} (56.1\%; \textbf{+30.6 pp}), \textsc{GRPO} (36.1\%; \textbf{+50.6 pp}), and \textsc{PPO} (20.4\%; \textbf{+66.3 pp}). 

@@ -1,0 +1,73 @@
+% =============================================================================
+% TRAINING PIPELINE DIAGRAMS - Appendix Section
+% =============================================================================
+
+\section{Training Pipeline Diagrams}
+\label{sec:appendix_pipelines}
+
+This appendix provides \textbf{detailed internal architectures} for each training method. For the high-level overview showing method relationships (SFT $\rightarrow$ DPO/PPO/GRPO $\rightarrow$ CITA), see \textbf{Figure~\ref{fig:training_pipeline}} in the main text.
+
+% -----------------------------------------------------------------------------
+% SFT Pipeline
+% -----------------------------------------------------------------------------
+\subsection{SFT (Supervised Fine-Tuning) Pipeline}
+\label{sec:appendix_sft_pipeline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline/sft_pipeline.pdf}
+\caption{\textbf{SFT Training Pipeline.} Starting from Llama-3.1-8B (BF16) and PKU-SafeRLHF dataset (12,035 samples), the pipeline applies clear contrast filtering to extract safe responses ($Y^+$) and harm categories. For the \textbf{Instruct} variant, alignment instructions are synthesized from harm categories and formatted as \texttt{[sys, user, asst]}; for \textbf{NoInstruct}, the format is \texttt{[user, asst]}. LoRA adapters (r=16) target attention and MLP projections. Training uses cross-entropy loss with AdamW optimizer (lr=2e-4) and cosine LR schedule, producing two trained policies: $\pi_{\text{SFT\_NoInstruct}}(Y|X)$ and $\pi_{\text{SFT\_Instruct}}(Y|I,X)$.}
+\label{fig:sft_pipeline}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+% DPO Pipeline
+% -----------------------------------------------------------------------------
+\subsection{DPO (Direct Preference Optimization) Pipeline}
+\label{sec:appendix_dpo_pipeline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline/dpo_pipeline.pdf}
+\caption{\textbf{DPO Training Pipeline.} Starting from a \textbf{merged SFT checkpoint} (LoRA adapters merged into base weights), the pipeline creates two models: a trainable \textbf{Policy} $\pi_\theta$ with fresh LoRA adapters (r=16) and a \textbf{frozen Reference} $\pi_{\text{ref}}$ (exact copy of merged SFT). PKU-SafeRLHF data undergoes clear contrast filtering (\texttt{is\_response\_0\_safe} $\neq$ \texttt{is\_response\_1\_safe}) to extract preference pairs $(Y^+, Y^-)$ and harm categories. For the \textbf{Instruct} variant, alignment instructions are synthesized from harm categories and formatted as \texttt{[sys, user, chosen, rejected]}; for \textbf{NoInstruct}, the format is \texttt{[user, chosen, rejected]}. Training uses DPO loss: $\mathcal{L}_{\text{DPO}} = -\log \sigma(\beta \cdot \Delta)$ where $\Delta = \text{margin}_\pi - \text{margin}_{\text{ref}}$ and $\beta=0.1$. Output: two trained policies $\pi_{\text{DPO\_NoInstruct}}(Y|X)$ and $\pi_{\text{DPO\_Instruct}}(Y|I,X)$.}
+\label{fig:dpo_pipeline}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+% PPO Pipeline
+% -----------------------------------------------------------------------------
+\subsection{PPO (Proximal Policy Optimization) Pipeline}
+\label{sec:appendix_ppo_pipeline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline/ppo_pipeline.pdf}
+\caption{\textbf{PPO Training Pipeline.} Starting from a \textbf{merged SFT checkpoint}, PPO maintains \textbf{three models}: (1) trainable \textbf{Policy} $\pi_\theta$ with a value head for advantage estimation, (2) \textbf{frozen Reference} $\pi_{\text{ref}}$ for KL regularization, and (3) external \textbf{Reward Model} (OpenAssistant DeBERTa-v3-large). Unlike DPO, PPO only requires \textbf{queries} (prompts)---not preference pairs---from PKU-SafeRLHF. The \textbf{online RL loop} iterates: (i) generate responses $Y$ from policy, (ii) score with reward model $R(X,Y)$, (iii) compute GAE advantage ($\gamma=1.0$, $\lambda=0.95$), (iv) PPO update with clipped surrogate objective ($\epsilon=0.2$) and KL penalty (coef$=0.1$). Output: $\pi_{\text{PPO\_NoInstruct}}(Y|X)$ and $\pi_{\text{PPO\_Instruct}}(Y|I,X)$.}
+\label{fig:ppo_pipeline}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+% GRPO Pipeline
+% -----------------------------------------------------------------------------
+\subsection{GRPO (Group Relative Policy Optimization) Pipeline}
+\label{sec:appendix_grpo_pipeline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline/grpo_pipeline.pdf}
+\caption{\textbf{GRPO Training Pipeline.} Unlike PPO, GRPO requires \textbf{no reference model}---advantages are computed \textbf{group-relative} within each batch. Starting from a merged SFT checkpoint, the policy $\pi_\theta$ generates $K=6$ responses per prompt. \textbf{Reward functions} (heuristic): (i) \texttt{safety\_refusal} (+1.0 for refusing harmful requests), (ii) \texttt{helpfulness} (+1.0 for substantive responses), (iii) \texttt{format\_quality} (+0.5 for proper structure). The \textbf{group-relative advantage} normalizes rewards within the batch: $\hat{A}(y_i) = (R(y_i) - \mu_{\text{batch}}) / \sigma_{\text{batch}}$, enabling policy gradient updates without KL regularization. Output: $\pi_{\text{GRPO\_NoInstruct}}(Y|X)$ and $\pi_{\text{GRPO\_Instruct}}(Y|I,X)$.}
+\label{fig:grpo_pipeline}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+% CITA Pipeline
+% -----------------------------------------------------------------------------
+\subsection{CITA (Contrastive Instruction-Tuned Alignment) Pipeline}
+\label{sec:appendix_cita_pipeline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline/cita_pipeline.pdf}
+\caption{\textbf{CITA Training Pipeline.} CITA \textbf{stacks on DPO} (not SFT) and adds a \textbf{mandatory KL anchor} for stable multi-regime switching. \textbf{Unified loss}: $\mathcal{L}_{\text{CITA}} = \lambda_{\text{DPO}} \cdot \mathcal{L}_{\text{DPO}} + \lambda_{\text{KL}} \cdot \mathcal{L}_{\text{KL}}$, where $\mathcal{L}_{\text{KL}} = \frac{1}{2}[\text{mean}(\log \pi_\theta - \log \pi_{\text{ref}})_{\text{chosen}} + \text{mean}(\log \pi_\theta - \log \pi_{\text{ref}})_{\text{rejected}}]$. \textbf{NO $\mathcal{L}_{\text{SFT}}$}---adding SFT loss causes catastrophic interference on DPO-tuned models (margin collapse $2.95 \rightarrow 0.10$). \textbf{Hyperparameter tuning}: Optuna TPE sampler with Hyperband pruner optimizes $(\lambda_{\text{KL}}, \text{LR}, \beta, \text{weight\_decay}, \text{warmup\_ratio})$ via multi-objective optimization (maximize margin, accuracy; minimize eval\_loss). \textbf{Instruct} variant uses $\sim$50\% lower LR due to longer sequences (30--40\% more tokens). Final models use \textbf{Trial 5} HPs (NoInstruct: margin$=$6.95) and \textbf{Trial 7} HPs (Instruct: margin$=$7.52). Gradient clipping ($\|\nabla\| \leq 1.0$) prevents training explosion. Output: $\pi_{\text{CITA\_NoInstruct}}(Y|X)$ and $\pi_{\text{CITA\_Instruct}}(Y|I,X)$.}
+\label{fig:cita_pipeline}
+\end{figure}

@@ -59,24 +59,24 @@ Create table with all 10 instruction types:
 9. **Professional** - Formal tone
 10. **Creative** - Imaginative responses
 
-#### 1.3 Full Examples (Target: 8-10 complete examples)
-For each example, show:
+#### 1.3 Full Examples (✅ COMPLETED: 10 examples)
+Each example shows ALL 10 instruction variations per prompt:
 ```
 PROMPT: [User request - held constant]
 
-INSTRUCTION 1 (Safety):
-[System instruction text]
-→ Expected: [Characteristics]
+[concise] "Be brief and direct..."
+→ Expected: brief, direct, minimal_elaboration
 
-INSTRUCTION 2 (Creative):
-[System instruction text]
-→ Expected: [Characteristics]
+[conservative] "Prioritize conventional wisdom..."
+→ Expected: traditional, cautious, established_methods
 
-... (show 3-4 contrasting instructions per prompt)
+... (all 10 instructions shown per example)
 ```
 
-#### 1.4 Expected Characteristics Taxonomy
-Table showing what behavioral markers define each instruction type.
+**Sources covered:** economics, personal, technology, ethics, business, culture, education, governance, healthcare, science
+
+#### 1.4 Expected Characteristics Taxonomy (✅ COMPLETED)
+Table with 30 behavioral markers (3 per instruction type) added to appendix.
 
 ### LaTeX Target File
 `Overleaf_draft/version_Professor/11_appendix.tex` - Add new section `\section{ECLIPTICA Dataset Examples}`
@@ -97,35 +97,101 @@ Table showing what behavioral markers define each instruction type.
 - Learning rate: 2e-5
 - LoRA: r=16, alpha=16
 
+#### PKU-SafeRLHF Dataset Structure
+```python
+example = {
+    'prompt': "How can I hack into...",
+    'response_0': "I cannot help with...",
+    'response_1': "Here's how to hack...",
+    'is_response_0_safe': True,
+    'is_response_1_safe': False,
+    'response_0_harm_category': {},
+    'response_1_harm_category': {'hacking': True, 'illegal_activity': True}
+}
+```
+
+#### LoRA Target Modules (Llama-3.1 Architecture)
+```
+["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+```
+
 #### Mermaid Diagram
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph INPUT["📥 Input"]
-        BASE[("Llama-3.1-8B<br/>Base Model")]
-        PKU[("PKU-SafeRLHF<br/>Dataset")]
+        BASE[("Llama-3.1-8B<br/>BF16 + Flash Attn 2")]
+        PKU[("PKU-SafeRLHF<br/>12,035 samples")]
     end
 
-    subgraph PROCESS["⚙️ SFT Training"]
-        LORA["LoRA Adapters<br/>r=16, α=16"]
-        LOSS["CrossEntropy Loss<br/>L_SFT"]
-        OPT["AdamW Optimizer<br/>lr=2e-5, cosine"]
+    subgraph FILTER["🔍 Clear Contrast Filter"]
+        COND["is_response_0_safe<br/>≠ is_response_1_safe"]
     end
 
-    subgraph OUTPUT["📤 Output"]
-        SFT_NI["SFT_NoInstruct"]
-        SFT_I["SFT_Instruct"]
+    subgraph EXTRACT["📦 Response Extraction"]
+        BRANCH{"is_response_0_safe?"}
+        SAFE_0["Y⁺ = response_0<br/>harm_cat = response_1_harm_category"]
+        SAFE_1["Y⁺ = response_1<br/>harm_cat = response_0_harm_category"]
+        CATS["harmful_categories =<br/>[k for k,v in harm_cat if v=True]"]
     end
 
-    BASE --> LORA
-    PKU --> LOSS
-    LORA --> LOSS
+    subgraph INSTRUCTION["📝 Instruction Synthesis"]
+        SYNTH_IF{"harm_cats<br/>not empty?"}
+        INSTR_HARM["I = 'You must REFUSE requests<br/>involving {harm_list}...'"]
+        INSTR_SAFE["I = 'You are a helpful<br/>and safe AI assistant...'"]
+    end
+
+    subgraph FORMAT["📊 Message Templates"]
+        FMT_NI["NoInstruct:<br/>[{user: X}, {asst: Y⁺}]"]
+        FMT_I["Instruct:<br/>[{sys: I}, {user: X}, {asst: Y⁺}]"]
+    end
+
+    subgraph LORA["🔧 LoRA Adapters"]
+        MODULES["Target: q,k,v,o_proj<br/>gate,up,down_proj"]
+        CONFIG["r=16, α=16<br/>dropout=0"]
+    end
+
+    subgraph TRAIN["⚙️ SFT Training"]
+        TEMPLATE["Llama-3.1 Chat Template<br/>apply_chat_template()"]
+        LOSS["L_SFT = -Σ log P(y_t|y_{<t}, X)<br/>or -Σ log P(y_t|y_{<t}, I, X)"]
+        OPT["AdamW (lr=2e-4)<br/>Cosine LR, warmup=100"]
+    end
+
+    subgraph OUTPUT["📤 Trained Policies"]
+        SFT_NI["SFT_NoInstruct<br/>π_θ(Y|X)"]
+        SFT_I["SFT_Instruct<br/>π_θ(Y|I,X)"]
+    end
+
+    PKU --> FILTER
+    FILTER --> COND
+    COND --> BRANCH
+    BRANCH -->|Yes| SAFE_0
+    BRANCH -->|No| SAFE_1
+    SAFE_0 --> CATS
+    SAFE_1 --> CATS
+    CATS --> SYNTH_IF
+    SYNTH_IF -->|Yes| INSTR_HARM
+    SYNTH_IF -->|No| INSTR_SAFE
+    INSTR_HARM --> FMT_I
+    INSTR_SAFE --> FMT_I
+    CATS --> FMT_NI
+    BASE --> MODULES
+    MODULES --> CONFIG
+    CONFIG --> TEMPLATE
+    FMT_NI --> TEMPLATE
+    FMT_I --> TEMPLATE
+    TEMPLATE --> LOSS
     LOSS --> OPT
     OPT --> SFT_NI
     OPT --> SFT_I
 
     style INPUT fill:#e1f5fe
-    style PROCESS fill:#fff3e0
-    style OUTPUT fill:#e8f5e9
+    style FILTER fill:#fff9c4
+    style EXTRACT fill:#ffe0b2
+    style INSTRUCTION fill:#f3e5f5
+    style FORMAT fill:#e8f5e9
+    style LORA fill:#bbdefb
+    style TRAIN fill:#fff3e0
+    style OUTPUT fill:#c8e6c9
 ```
 
 ---
@@ -748,11 +814,13 @@ flowchart TB
 ## Execution Order
 
 1. ✅ Read current appendix structure
-2. ⬜ Fetch ECLIPTICA dataset examples from HuggingFace
+2. ✅ Fetch ECLIPTICA dataset examples from HuggingFace (10 examples, 10 sources)
 3. ⬜ Create Mermaid diagrams (convert to TikZ for LaTeX)
 4. ⬜ Write PPO & GRPO detailed sections
 5. ⬜ Write detailed results/plots analysis
-6. ⬜ Add ECLIPTICA examples (4 pages)
+6. ✅ Add ECLIPTICA examples (10 examples × 10 instructions = 100 instruction variations)
+   - Added Expected Characteristics Taxonomy table (30 behavioral markers)
+   - Sources covered: economics, personal, technology, ethics, business, culture, education, governance, healthcare, science
 7. ⬜ Final integration and compilation check
 
 ---
