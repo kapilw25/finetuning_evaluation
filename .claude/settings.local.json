@@ -71,7 +71,8 @@
       "Bash(then echo \"✓ $f\")",
       "Bash(else echo \"✗ $f MISSING\")",
       "WebFetch(domain:aclrollingreview.org)",
-      "WebFetch(domain:www.aclweb.org)"
+      "WebFetch(domain:www.aclweb.org)",
+      "WebFetch(domain:2026.aclweb.org)"
     ],
     "deny": [],
     "ask": []

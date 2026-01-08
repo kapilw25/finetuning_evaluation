@@ -51,7 +51,7 @@ LITMUS & 2{,}800 & 1 (generic) & ``Provide safe, helpful responses.'' & $M_5$ = 
 
 \paragraph{Training pipeline.}
 \label{sec:training_pipeline_exp}
-\textbf{CITA’s unified objective} couples response quality (\(\mathcal{L}_{\text{SFT}}\)) with \textbf{\emph{contrastive}} preference shaping (\(\mathcal{L}_{\text{DPO}}\)) while enforcing an \textbf{\emph{explicit, mandatory}} KL anchor (\(\mathcal{L}_{\text{KL}}\)) that keeps the learned policy within a \textbf{\emph{stable trust region}} around a pre-\textsc{CITA} reference. \textbf{As a result,} instruction-conditioned \textbf{\emph{switching}} behaves like \textbf{\emph{controlled reweighting}} among \textbf{\emph{nearby}} behaviors—\textbf{mitigating} \emph{mode collapse} and preventing \emph{unbounded} preference margins that would otherwise push the model toward a \textbf{\emph{single dominant}} instruction regime. See Appendix~\ref{sec:methodology} and Appendix~\ref{sec:unified_loss}.
+\textbf{CITA’s unified objective} couples response quality (\(\mathcal{L}_{\text{SFT}}\)) with \textbf{\emph{contrastive}} preference shaping (\(\mathcal{L}_{\text{DPO}}\)) while enforcing an \textbf{\emph{explicit, mandatory}} KL anchor (\(\mathcal{L}_{\text{KL}}\)) that keeps the learned policy within a \textbf{\emph{stable trust region}} around a pre-\textsc{CITA} reference. \textbf{As a result,} instruction-conditioned \textbf{\emph{switching}} behaves like \textbf{\emph{controlled reweighting}} among \textbf{\emph{nearby}} behaviors—\textbf{mitigating} \emph{mode collapse} and preventing \emph{unbounded} preference margins that would otherwise push the model toward a \textbf{\emph{single dominant}} instruction regime. See Appendix~\ref{sec:appendix_cita_kl} and Appendix~\ref{sec:appendix_ablations}.
 
 
 \vspace{-0.5em}
@@ -76,7 +76,7 @@ We train on NVIDIA A100 GPUs and inspect training curves for all runs as a sanit
 \vspace{-2mm}
 \subsection*{Hyperparameter optimization}
 \label{sec:hyperparams}
-We use Optuna \citep{akiba2019optuna} with a Tree-structured Parzen Estimator (TPE) sampler (13 trials) to tune hyperparameters, cf. Appendix~\ref{}.
+We use Optuna \citep{akiba2019optuna} with a Tree-structured Parzen Estimator (TPE) sampler (13 trials) to tune hyperparameters, cf. Appendix~\ref{sec:appendix_ablations}.
 
 \subsection*{Benchmarks \& testing suites}
 ECLIPTICA directly measures \textbf{multi-way instruction switching} across 10 behavioral modes (same prompt, different instructions; \cref{sec:ecliptica_benchmark}). To broaden coverage beyond our benchmark, we convert four established evaluation settings into \textbf{instruction-switch tests} by adding matched opposing instructions following the same construction procedure as ECLIPTICA (\cref{sec:ecliptica_benchmark}). Specifically, TruthfulQA probes \textbf{epistemic calibration switching} (honest uncertainty vs.\ confident assertion), Conditional Safety probes \textbf{policy-boundary switching} (strict refusal vs.\ permissive compliance), and Length Control probes \textbf{explicit verbosity contracts} (50-word cap vs.\ 200-word minimum). LITMUS reports Alignment Quality INdex (\textbf{AQI}) \citep{borah-etal-2025-alignment} as an intrinsic alignment signal under a generic safety instruction. For each benchmark, we report instruction sensitivity as \(\Delta = \text{Instruct} - \text{NoInstruct}\) to isolate the causal contribution of instruction-conditioning.

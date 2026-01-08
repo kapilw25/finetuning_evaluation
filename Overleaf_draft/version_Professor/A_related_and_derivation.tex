@@ -1,0 +1,339 @@
+% =============================================================================
+% APPENDIX - CITA Paper in ALKALI Format
+% =============================================================================
+
+\newpage
+\appendix
+
+\onecolumn
+
+\section{Appendix}
+\label{sec:appendix}
+
+The Appendix provides comprehensive elaboration on theoretical constructs, experimental details, mathematical derivations, and implementation specifications supporting the main paper. It is structured as follows:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{A. Related Works \& CITA Loss Derivation}: Full mathematical derivation and gradient analysis (cf.~\cref{sec:appendix_related}, \cref{sec:appendix_cita_kl})
+    \item \textbf{B. Training Pipeline Diagrams}: Detailed architectures for SFT, DPO, PPO, GRPO, CITA (cf.~\cref{sec:appendix_pipelines})
+    \item \textbf{C. Implementation Details}: Training infrastructure and hyperparameters (cf.~\cref{sec:appendix_implementation})
+    \item \textbf{D. Dataset Details}: Extended ECLIPTICA statistics and examples (cf.~\cref{sec:appendix_dataset})
+    \item \textbf{E. Ablation Studies \& Training Curves}: Component-wise analysis and dynamics (cf.~\cref{sec:appendix_ablations}, \cref{sec:appendix_training_curves})
+    \item \textbf{F. Experiments \& Extended Results}: Per-benchmark analysis and combined heatmap (cf.~\cref{sec:experiments}, \cref{sec:appendix_extended_results})
+    \item \textbf{G. Qualitative Examples}: Good and failure case examples (cf.~\cref{sec:appendix_benefits}, \cref{sec:appendix_examples})
+    \item \textbf{H. FAQ}: Frequently asked questions (cf.~\cref{sec:faq})
+\end{itemize}
+
+
+
+\vspace{-3mm}
+\section{Related Works}
+\label{sec:appendix_related}
+
+\paragraph{Instruction tuning and controllability.}
+Early instruction-tuning work such as FLAN~\cite{wei2022finetuned,chung2022scaling,longpre2023flan} and T0~\cite{sanh2022multitask} established that training on diverse instruction--task pairs improves zero-shot generalization, and subsequent efforts explored self-instruction and scaling of synthetic supervision~\cite{wang2023self,iyer2022opt,mishra2022cross}. Open instruction-tuned models (e.g., Alpaca~\cite{taori2023alpaca}, WizardLM~\cite{xu2023wizardlm}, LIMA~\cite{zhou2023lima}, Orca~\cite{mukherjee2023orca}, OpenChat~\cite{wang2023openchat}) further refined \emph{task} adherence, while surveys synthesize the space~\cite{peng2023instruction}. More broadly, prompt and instruction design for generative systems~\cite{yang2023prompt} shows that structured conditioning can steer style, format, and content. However, this line primarily targets \textbf{capability generalization} and \textbf{task intent} (``what to do''), not \textbf{alignment contracts} (``how to behave''). ECLIPTICA explicitly separates these by holding the user request fixed and varying only the \emph{alignment instruction}, so that measured changes reflect \textbf{policy switching} rather than generic instruction-following.
+
+\paragraph{Preference optimization and post-training alignment.}
+RLHF-style pipelines~\cite{ouyang2022training} popularized aligning helpfulness/safety via learned reward models and policy optimization. Proximal Policy Optimization (PPO)~\cite{schulman2017proximal} remains a canonical on-policy optimizer for RLHF, while more recent practice includes variants that reduce pipeline complexity or improve stability (e.g., GRPO-style reward-shaped updates). Direct Preference Optimization (DPO)~\cite{rafailov2023direct} eliminates explicit reward modeling by optimizing a contrastive objective over preference pairs, inspiring a growing family of offline methods such as KTO~\cite{ethayarajh2024kto}, ORPO~\cite{hong2024orpo}, SimPO~\cite{meng2024simpo}, and RRHF~\cite{yuan2023rrhf}. These methods deliver \textbf{strong static alignment}, but typically learn a \emph{single} behavior mode per checkpoint: preference signals are absorbed into weights and do not define a \textbf{runtime-selectable policy family}. Even comparisons between offline and online alignment (e.g., DPO vs.\ PPO)~\cite{xu2024dpo} do not address \textbf{instruction-conditioned switching}. CITA is positioned at this interface: it retains the \emph{contrastive preference} backbone, but treats alignment instructions as \textbf{first-class conditioning} and enforces stability via an explicit anchor so that multiple regimes remain simultaneously accessible.
+
+\paragraph{Safety alignment, robustness, and policy variability.}
+A large body of work focuses on making models safer under a \emph{single} normative policy, including Constitutional AI~\cite{bai2022constitutional}, PKU-SafeRLHF~\cite{ji2024pku}, and systematic red-teaming~\cite{perez2022red,ganguli2022red}. Parallel work documents how static alignment can fail under adversarial prompting and distribution shift, including universal and transfer jailbreaks~\cite{zou2023universal,wei2023jailbroken,liu2023jailbreaking} and the safety brittleness induced by fine-tuning and catastrophic forgetting~\cite{qi2023fine,huang2023catastrophic}. Recent analyses of context-dependent or policy-conditioned safety~\cite{bianchi2024safetytuned} highlight an important gap: deployments often require \textbf{different refusal boundaries} and \textbf{different epistemic postures} across roles, jurisdictions, and workflows. ECLIPTICA targets this gap directly by evaluating whether the same underlying model can \textbf{switch} between policy contracts in a controlled, paired manner rather than merely varying surface style. Work on behavioral consistency and detection~\cite{roy2025comprehensive} further motivates policy-switch diagnostics: if behavior changes are not deliberate and controllable, they can be mistaken for instability or exploited.
+
+\paragraph{Agentic AI systems and workflow governance.}
+LLM-based agents~\cite{wang2024survey,xi2023rise} increasingly coordinate tools, memory, and multi-step plans, and in practice they rely on \textbf{system prompts} and role messages to enforce workflow constraints. This creates an ``agentic reality'' where alignment requirements are \textbf{role-dependent} (customer support vs.\ internal analysis vs.\ compliance). While prompt routing is common, it is also brittle: small instruction perturbations can alter behavior unpredictably. CITA extends the agentic conditioning paradigm from ``task orchestration'' to \textbf{alignment orchestration}, aiming to make policy control \textbf{stable}, \textbf{measurable}, and \textbf{composable} with agent pipelines.
+
+\vspace{-2mm}
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Property} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Reward Model Required & No & No \\ \hline
+Instruction-Aware & No & \textbf{Yes} \\ \hline
+Behavioral Switching & No & \textbf{Yes} \\ \hline
+Explicit Stability Anchor & Optional & \textbf{Yes} \\ \hline
+Dynamic Policy Control & No & \textbf{Yes} \\ \hline
+Agent-Compatible & Limited & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of alignment methods. CITA enables instruction-conditioned behavioral switching intended to be compatible with agentic workflows.}
+\label{tab:method_comparison}
+\vspace{-4mm}
+\end{table}
+
+\noindent\textbf{Positioning.}
+CITA bridges instruction tuning and preference optimization by making \textbf{alignment} itself condition on natural-language instructions, and by training a \textbf{family of nearby policies} that remain simultaneously accessible at inference time. This yields a concrete paradigm of \textbf{interactive alignment}: policy updates can be expressed as instructions and validated via paired, prompt-held-constant switching, reducing reliance on spawning multiple checkpoints for every governance or role change.
+
+
+
+
+% =============================================================================
+% Appendix: CITA Loss Derivation (math-heavy, structured, no equation numbers)
+% =============================================================================
+
+\section{CITA Loss Derivation: Full Mathematical Derivation and Gradient Analysis}
+\label{sec:appendix_cita_kl}
+
+\vspace{-0.35em}
+\paragraph{Notation and training data.}
+Let $\pi_\theta(y\mid I,X)$ denote an autoregressive policy over a completion
+$y=(y_1,\ldots,y_T)$ conditioned on a \textbf{user request} $X$ and an \textbf{alignment instruction} $I$
+(the behavioral contract). We train on quadruples $(I,X,Y^+,Y^-)\sim\mathcal{D}$, where $Y^+$ is preferred to $Y^-$ \emph{under the instruction $I$}.
+Autoregressive factorization:
+\[
+\pi_\theta(Y\mid I,X)
+=
+\prod_{t=1}^{T}\pi_\theta(y_t\mid I,X,y_{<t}),
+\qquad
+\log \pi_\theta(Y\mid I,X)
+=
+\sum_{t=1}^{T}\log \pi_\theta(y_t\mid I,X,y_{<t}).
+\]
+Define the \textbf{instruction-conditioned log-likelihood gap}
+\[
+\Delta_\theta(I,X;Y^+,Y^-)
+=
+\log \pi_\theta(Y^+\mid I,X)-\log \pi_\theta(Y^-\mid I,X),
+\qquad
+\sigma(z)=\frac{1}{1+e^{-z}}.
+\]
+CITA combines a \textbf{conditional contrastive preference} term with a \textbf{mandatory trust-region anchor}:
+\[
+\mathcal{L}_{\textsc{CITA}}(\theta)
+=
+\mathcal{L}_{\textsc{pref}}(\theta)
++
+\lambda\,\mathcal{L}_{\textsc{KL}}(\theta),
+\qquad
+\lambda>0.
+\]
+
+\vspace{-0.35em}
+\paragraph{\textbf{A. Preference term: conditional logistic contrast.}}
+We model the event ``$Y^+\succ Y^-$ under $(I,X)$'' with a logistic likelihood on the gap $\Delta_\theta$:
+\[
+\mathcal{L}_{\textsc{pref}}(\theta)
+=
+\mathbb{E}_{(I,X,Y^+,Y^-)\sim\mathcal{D}}
+\Big[
+-\log \sigma\!\big(\beta\,\Delta_\theta(I,X;Y^+,Y^-)\big)
+\Big],
+\qquad
+\beta>0.
+\]
+Define the \textbf{pairwise preference probability}
+\[
+P^+(I,X;Y^+,Y^-)
+=
+\sigma\!\big(\beta\,\Delta_\theta(I,X;Y^+,Y^-)\big).
+\]
+Two scalar derivatives that drive the entire gradient story:
+\[
+\frac{\partial}{\partial \Delta}\big[-\log \sigma(\beta\Delta)\big]
+=
+-\beta\big(1-\sigma(\beta\Delta)\big)
+=
+-\beta(1-P^+),
+\]
+\[
+\frac{\partial^2}{\partial \Delta^2}\big[-\log \sigma(\beta\Delta)\big]
+=
+\beta^2\,\sigma(\beta\Delta)\big(1-\sigma(\beta\Delta)\big)
+=
+\beta^2\,P^+(1-P^+).
+\]
+\textbf{Key mechanism (self-quenching).} As soon as the model already separates the pair (large positive $\Delta_\theta$), we have $P^+\to 1$ and therefore $(1-P^+)\to 0$: the preference force \textbf{automatically turns off}. This makes switching stable: the model is pushed only where it is still ambiguous \emph{under that instruction}.
+
+\vspace{-0.35em}
+\paragraph{\textbf{B. Gradient of the preference term (exact, token-level).}}
+Start from the chain rule:
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+\mathbb{E}
+\Big[
+\frac{\partial}{\partial \Delta}\big(-\log \sigma(\beta\Delta_\theta)\big)\;
+\nabla_\theta \Delta_\theta
+\Big].
+\]
+Since $\nabla_\theta \Delta_\theta=\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)$, substitute the scalar derivative:
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,
+\mathbb{E}
+\Big[
+(1-P^+)\big(
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)
+\big)
+\Big].
+\]
+Now expand each completion gradient into token-wise score functions:
+\[
+\nabla_\theta\log\pi_\theta(Y\mid I,X)
+=
+\sum_{t=1}^{T}
+\nabla_\theta\log\pi_\theta(y_t\mid I,X,y_{<t}).
+\]
+Therefore, the preference term produces a \textbf{token-summed contrastive update}:
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,
+\mathbb{E}
+\Bigg[
+(1-P^+)\sum_{t=1}^{T}
+\Big(
+\nabla_\theta\log\pi_\theta(y^+_t\mid I,X,y^+_{<t})
+-
+\nabla_\theta\log\pi_\theta(y^-_t\mid I,X,y^-_{<t})
+\Big)
+\Bigg].
+\]
+\textbf{Interpretation.} For each $(I,X)$, CITA increases probability mass along the preferred trajectory and removes mass from the dispreferred one, but \textbf{only until the instruction-conditioned ordering is satisfied} (via $(1-P^+)$).
+
+\vspace{-0.35em}
+\paragraph{\textbf{C. ``Vector-field'' view: instruction-indexed gradients.}}
+Define the instruction-conditioned preference gradient contribution
+\[
+g_\theta(I,X;Y^+,Y^-)
+=
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X).
+\]
+Then the preference gradient is simply
+\[
+\nabla_\theta \mathcal{L}_{\textsc{pref}}
+=
+-\beta\,\mathbb{E}\big[(1-P^+)\,g_\theta(I,X;Y^+,Y^-)\big].
+\]
+Because $I$ is part of the conditioning, the induced parameter-space vector field is \textbf{indexed by instruction}.
+This is the mathematical core of switching: we are not learning one update direction, but a \textbf{family of compatible update directions} $\{g_\theta(\cdot\mid I)\}_{I\in\mathcal{I}}$.
+
+\vspace{-0.35em}
+\paragraph{\textbf{D. Mandatory anchor: conditional KL and its exact gradient.}}
+CITA’s anchor is a conditional KL to a frozen reference policy $\pi_0$:
+\[
+\mathcal{L}_{\textsc{KL}}(\theta)
+=
+\mathbb{E}_{(I,X)\sim\mathcal{D}}
+\Big[
+\mathrm{KL}\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+\Big].
+\]
+Write the conditional KL as an expectation under $\pi_\theta$:
+\[
+\mathrm{KL}\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+=
+\mathbb{E}_{Y\sim\pi_\theta(\cdot\mid I,X)}
+\Big[
+\log\pi_\theta(Y\mid I,X)-\log\pi_0(Y\mid I,X)
+\Big].
+\]
+Differentiate (score-function identity):
+\[
+\nabla_\theta\,\mathrm{KL}(\pi_\theta\|\pi_0)
+=
+\mathbb{E}_{Y\sim\pi_\theta}
+\Big[
+\nabla_\theta\log\pi_\theta(Y\mid I,X)\,
+\big(\log\pi_\theta(Y\mid I,X)-\log\pi_0(Y\mid I,X)+1\big)
+\Big].
+\]
+\textbf{Interpretation.} The KL term applies an explicit pressure to stay near $\pi_0$ \emph{for every context $(I,X)$}, preventing any single instruction from pulling the model far away and destroying the co-existence of regimes.
+
+\vspace{-0.35em}
+\paragraph{\textbf{E. Local geometry: KL induces a Riemannian trust region.}}
+Let $\theta=\theta_0+\delta\theta$ with $\theta_0$ the reference parameters.
+Under smoothness, the conditional KL admits a second-order expansion:
+\[
+\mathrm{KL}\big(\pi_{\theta_0+\delta\theta}(\cdot\mid I,X)\,\|\,\pi_{\theta_0}(\cdot\mid I,X)\big)
+=
+\frac{1}{2}\,\delta\theta^\top F_{\theta_0}(I,X)\,\delta\theta
+\;+\; o(\|\delta\theta\|^2),
+\]
+where $F_{\theta_0}(I,X)$ is the \textbf{conditional Fisher information} (the local metric tensor):
+\[
+F_{\theta_0}(I,X)
+=
+\mathbb{E}_{Y\sim\pi_{\theta_0}(\cdot\mid I,X)}
+\Big[
+\nabla_\theta\log\pi_{\theta_0}(Y\mid I,X)\;
+\nabla_\theta\log\pi_{\theta_0}(Y\mid I,X)^\top
+\Big].
+\]
+\textbf{Geometric consequence (stable chart).} The anchor therefore constrains updates in the quadratic form induced by $F_{\theta_0}$, i.e., it keeps learning within a \textbf{single stable Riemannian chart} of the policy manifold shared across instructions.
+
+\vspace{-0.35em}
+\paragraph{\textbf{F. Closed-form trust-region step (quadratic regime).}}
+Assume a local linear approximation for the preference objective:
+\[
+\mathcal{L}_{\textsc{pref}}(\theta_0+\delta\theta)
+\approx
+\mathcal{L}_{\textsc{pref}}(\theta_0)+g^\top\delta\theta,
+\qquad
+g=\nabla_\theta\mathcal{L}_{\textsc{pref}}(\theta_0).
+\]
+Plug the KL quadratic expansion into $\mathcal{L}_{\textsc{CITA}}$ and minimize over $\delta\theta$:
+\[
+\delta\theta^\star
+=
+-\frac{1}{\lambda}\,
+\Big(\mathbb{E}_{(I,X)}[F_{\theta_0}(I,X)]\Big)^{-1}g.
+\]
+\textbf{This is the punchline:} CITA implements a \textbf{natural-gradient} style step in the Fisher geometry induced by the reference policy. In other words, preference learning is performed in a \textbf{Riemannian trust region}, which is precisely what stabilizes instruction switching.
+
+\vspace{-0.35em}
+\paragraph{\textbf{G. Switching stability as ``bounded interference'' across instructions.}}
+For each instruction $I$, define the instruction-marginal preference gradient
+\[
+g_I(\theta)
+=
+-\beta\,
+\mathbb{E}_{(X,Y^+,Y^-)\sim\mathcal{D}(\cdot\mid I)}
+\Big[
+(1-P^+)\big(
+\nabla_\theta\log\pi_\theta(Y^+\mid I,X)-\nabla_\theta\log\pi_\theta(Y^-\mid I,X)
+\big)
+\Big].
+\]
+Static alignment tends to amplify whichever instructions dominate the dataset mixture, collapsing weaker regimes.
+CITA prevents this through two coupled mechanisms:
+\begin{itemize}
+\item \textbf{Self-quenching preference forces:} once $\Delta_\theta$ is large, $(1-P^+)$ becomes small, so no single instruction can grow its margin unboundedly.
+\item \textbf{Riemannian trust region:} the KL geometry penalizes leaving the shared chart, bounding how far any $g_I$ can drag the policy away from $\pi_0$.
+\end{itemize}
+Together, these yield \textbf{bounded cross-instruction interference}: regimes remain nearby, and switching remains reliable.
+
+\vspace{-0.35em}
+\paragraph{\textbf{H. Curvature structure: where the optimization concentrates.}}
+From the scalar second derivative,
+\[
+\ell''(\Delta)=\beta^2P^+(1-P^+),
+\]
+we see curvature peaks near $\Delta\approx 0$ (uncertain preference) and vanishes as $\Delta\to\pm\infty$ (saturated preference).
+Thus CITA’s optimization pressure concentrates near \textbf{decision boundaries}---exactly the regions that matter for \textbf{counterfactual instruction switches}---while naturally flattening away from them.
+This further stabilizes multi-regime coexistence because the objective does not keep pushing already-satisfied instructions.
+
+\vspace{-0.35em}
+\paragraph{\textbf{I. Full gradient of CITA (combined, multi-line).}}
+Combining the preference gradient and the anchored gradient yields
+\begin{align*}
+\nabla_\theta \mathcal{L}_{\textsc{CITA}}
+&= -\beta\,\mathbb{E}\Big[(1-P^+)\big(\nabla_\theta\log\pi_\theta(Y^+\mid I,X) \\
+&\qquad\qquad\qquad -\nabla_\theta\log\pi_\theta(Y^-\mid I,X)\big)\Big] \\
+&\quad +\lambda\,\mathbb{E}_{(I,X)}\Big[\nabla_\theta\,\mathrm{KL}\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)\Big].
+\end{align*}
+\textbf{Operational reading.} The first term is the \textbf{instruction-conditioned contrastive force}; the second term is the \textbf{global stabilizer} that keeps all instruction-conditioned policies inside a shared chart.
+CITA therefore learns a \textbf{switchable policy family} $\{\pi_\theta(\cdot\mid I,\cdot)\}_{I\in\mathcal{I}}$ without collapsing to a single implicit regime.
+
+\vspace{-0.35em}
+\paragraph{\textbf{J. Summary.}}
+CITA’s objective is not ``DPO + regularization'' in name only; it yields a concrete geometry:
+\begin{itemize}
+\item \textbf{Contrastive preference learning} creates instruction-indexed vector fields that separate $Y^+$ from $Y^-$ \emph{within each contract}.
+\item \textbf{Self-quenching updates} ensure preference forces diminish once separation is achieved, preventing runaway margins.
+\item \textbf{A mandatory Riemannian trust region} (KL $\approx \tfrac12\delta\theta^\top F\delta\theta$ locally) keeps all regimes co-located within a stable chart.
+\end{itemize}
+These ingredients jointly explain why CITA supports \textbf{runtime instruction-conditioned switching} as \textbf{policy-level control}, rather than superficial compliance.

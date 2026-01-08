@@ -11,7 +11,8 @@
 % =============================================================================
 % ACL STYLE
 % =============================================================================
-\usepackage[review]{acl2023}
+% \usepackage[review]{acl2023} # for ACL Anonymous review
+\usepackage{acl2023}
 
 % =============================================================================
 % STANDARD PACKAGES
@@ -259,9 +260,8 @@
 \title{\includegraphics[width=\textwidth]{figures/banner.pdf}}
 
 \author{
-Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vaibhaav Tiwari$^{3}$ \quad Vinija Jain$^{4}$ \quad Aman Chadha$^{5}$ \quad Amitava Das$^{6}$ \\[0.5em]
-{\small $^{1}$San Jos\'{e} State University \quad $^{2}$GITA, India \quad $^{3}$BML Munjal University, India}\\
-{\small $^{4}$Google AI \quad $^{5}$Apple GenAI \quad $^{6}$BITS Pilani, Goa} \\[0.3em]
+Kapil Wanaskar$^{1}$ \quad Gaytri Jena$^{2}$ \quad Vinija Jain$^{3}$ \quad Aman Chadha$^{4}$ \quad Amitava Das$^{5}$ \\[0.5em]
+{\small $^{1}$San Jos\'{e} State University \quad $^{2}$GITA, India \quad $^{3}$Google AI \quad $^{4}$Apple GenAI \quad $^{5}$BITS Pilani, Goa} \\[0.3em]
 {\small \texttt{kapilw25@gmail.com}}
 }
 
@@ -423,19 +423,27 @@ To the best of our knowledge, we formalize \textbf{instruction-aware alignment} 
 \bibliography{custom}
 
 % =============================================================================
-% APPENDIX (follows logical paper flow: methods → experiments → results)
+% APPENDIX (ACL-standard order: Theory → Methodology → Implementation → Data → Experiments → FAQ)
 % =============================================================================
 \clearpage
 \newpage
-\appendix
 
-\input{12_extended_results}  % Benchmark-Specific Analysis, Combined Analysis, Key Insights (moved from main)
-%\input{8_conclusion}
-\input{10_faq}
-\input{11_appendix}
-\input{13_pipeline_diagrams}  % Training Pipeline Diagrams (SFT, DPO, PPO, GRPO, CITA)
-%\input{2_methodology}
-%\input{3_unified_loss}
+%% --- NEW STRUCTURE (ACL-compliant order) ---
+\input{A_related_and_derivation}  % A. Related Works + CITA Loss Derivation (math first)
+\input{B_pipeline_diagrams}       % B. Training/Evaluation Pipeline Diagrams
+\input{C_implementation}          % C. Implementation Details (hardware, HPs, compute)
+\input{D_dataset_details}         % D. Dataset Details (PKU-SafeRLHF, ECLIPTICA examples)
+\input{E_ablations}               % E. Ablation Studies + Training Curves
+\input{F_extended_results}        % F. Experiments + Extended Results (per-benchmark)
+\input{G_qualitative_examples}    % G. Detailed Evaluation + Qualitative Examples
+\input{H_faq}                     % H. FAQ (last, reviewer-oriented)
+
+%% --- OLD STRUCTURE (fallback) ---
+%\appendix
+%\input{12_extended_results}  % Benchmark-Specific Analysis, Combined Analysis, Key Insights (moved from main)
+%\input{10_faq}
+%\input{11_appendix}
+%\input{13_pipeline_diagrams}  % Training Pipeline Diagrams (SFT, DPO, PPO, GRPO, CITA)
 
 
 \end{document}
