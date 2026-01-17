@@ -1,0 +1,54 @@
+🎯 Building an RL algorithm that outperforms DPO, PPO & GRPO—harder than we expected
+
+Anyone who's worked in Reinforcement Learning knows the pain: reward hacking, training instability, hyperparameter sensitivity, and the constant question—"Is my improvement real or just noise?"
+
+We spent months trying to build an alignment method that could beat established baselines. Here's what we learned:
+
+The brutal reality of RL research:
+• PPO requires 4 models in memory (policy, value, reference, reward)—our A100 40GB wasn't enough for the given batch size
+• GRPO's group-relative advantages are elegant on paper but incredibly sensitive to group size (K=6 worked, K=4 didn't)
+• DPO looks simple but the implicit reward model assumption breaks down when you need dynamic behavior
+
+What finally worked (after many failures):
+We kept asking: "Why can't the model just follow alignment instructions at inference time?"
+
+Turns out, existing methods learn a fixed policy—they ignore instructions because they were never trained to condition on them.
+
+Our solution (CITA) adds two things:
+1. Instruction-conditioned preference pairs (I, X, Y+, Y-)
+2. Mandatory KL anchor—not optional like vanilla DPO—keeps policies in a shared trust region
+
+Training insights that surprised us:
+• CITA achieves 25% higher reward margins than DPO (7.5 vs 6.0)—more "headroom" for policy switching
+• DPO's training curves with vs without instructions nearly overlap—it literally ignores them
+• We ran 13 Optuna trials to find the right KL weight, β, and learning rate—Trial 7 hit the Pareto frontier sweet spot (margin=7.52, accuracy=89%)
+
+The honest results:
+CITA: 86.7%
+DPO: 56.1%
+GRPO: 36.1%
+PPO: 20.4%
+
+We're not claiming CITA is universally better—PPO and GRPO still shine for online learning. But for instruction-switchable alignment, the gap surprised us.
+
+What we still don't understand:
+• Why does mandatory KL matter so much? (Our ablation shows λ=0 completely breaks switching)
+• Can this scale beyond 8B parameters?
+• How do we handle adversarial instructions?
+
+Seeking your expertise:
+1. What's missing in our evaluation?
+2. Are there RL tricks we should have tried?
+3. Where would runtime-switchable alignment actually be useful in production?
+
+Built ECLIPTICA benchmark (3K test cases) and open-sourced everything.
+
+📄 Paper: https://www.arxiv.org/abs/2601.06157
+💻 Code: https://github.com/kapilw25/finetuning_evaluation
+📊 Dataset: https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset
+
+Co-authors: Gaytri Jena, Vinija Jain, Aman Chadha, and Dr. Amitava Das
+
+If you've struggled with RL training stability or alignment research, I'd genuinely love to hear what worked for you.
+
+#ReinforcementLearning #RLHF #LLMAlignment #MachineLearning #AI #DeepLearning
