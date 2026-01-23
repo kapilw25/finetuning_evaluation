@@ -1,0 +1,517 @@
+
+
+% ------------------------------------------------------------
+% Figure*: Toolbox for the large equations (drop from main text)
+% ------------------------------------------------------------
+% (If not already in preamble)
+% \usepackage{tcolorbox}
+% \tcbuselibrary{skins,breakable}
+
+\begin{figure*}[ht!]
+\centering
+\begin{tcolorbox}[
+  colback=gray!3,
+  colframe=black!65,
+  boxrule=0.6pt,
+  sharp corners,
+  left=6pt,right=6pt,top=6pt,bottom=6pt,
+  enhanced,
+  breakable
+]
+{\small
+\noindent\textbf{Toolbox: CITA objective and Conditional Safety (step-by-step).}\par
+\vspace{0.35em}
+
+\noindent\textbf{Step 1 (Preference gap).}\;
+\[
+\Delta_\theta(I,X;Y^+,Y^-)
+=
+\log \pi_\theta(Y^+\mid I,X)
+-
+\log \pi_\theta(Y^-\mid I,X).
+\]
+
+\noindent\textbf{Step 2 (Instruction-conditioned preference loss).}\;
+\[
+\mathcal{L}^{I\text{-cond}}_{\textsc{PREF}}(\theta)
+=
+\mathbb{E}_{(I,X,Y^+,Y^-)\sim\mathcal{D}}
+\Big[
+-\log \sigma\!\big(\beta\,\Delta_\theta(I,X;Y^+,Y^-)\big)
+\Big].
+\]
+
+\noindent\textbf{Step 3 (Mandatory KL anchor).}\;
+\[
+\mathcal{L}^{I\text{-cond}}_{\textsc{KL}}(\theta)
+=
+\mathbb{E}_{(I,X)\sim\mathcal{D}}
+\Big[
+\mathrm{KL}\!\big(\pi_\theta(\cdot\mid I,X)\,\|\,\pi_0(\cdot\mid I,X)\big)
+\Big].
+\]
+
+\noindent\textbf{Step 4 (Full CITA--KL).}\;
+\[
+\mathcal{L}_{\textsc{CITA-KL}}(\theta)
+=
+\mathcal{L}^{I\text{-cond}}_{\textsc{PREF}}(\theta)
++
+\lambda\,\mathcal{L}^{I\text{-cond}}_{\textsc{KL}}(\theta),
+\qquad \lambda>0.
+\]
+
+\vspace{0.35em}
+\noindent\textbf{Step 5 (Conditional Safety as refusal-gap).}\;
+\[
+\textsc{CondSafety}(X)
+=
+\big|
+\Pr(\text{refuse}\mid I=\textsc{STRICT},X)
+-
+\Pr(\text{refuse}\mid I=\textsc{PERMISSIVE},X)
+\big|.
+\]
+
+\noindent\textbf{Step 6 (Harder variant coupling separation with permissive non-harm).}\;
+\[
+\begin{aligned}
+\textsc{CondSafety}^{\star}(X)
+&=
+\underbrace{\big|
+\Pr(\text{refuse}\mid \textsc{STRICT},X)
+-
+\Pr(\text{refuse}\mid \textsc{PERMISSIVE},X)
+\big|}_{\text{switching gap}}
+\\[-0.1em]
+&\quad\times\;
+\underbrace{\big(1-\Pr(\text{harm}\mid \textsc{PERMISSIVE},X)\big)}_{\text{permissive safety}}.
+\end{aligned}
+\]
+
+\noindent\textbf{Step 7 (Distributional separation; optional diagnostic).}\;
+\[
+\begin{aligned}
+D_{\textsc{sym}}(X)
+=
+\frac{1}{2}\Big(
+&
+\mathrm{KL}\big(\pi_\theta(\cdot\mid \textsc{STRICT},X)\,\|\,\pi_\theta(\cdot\mid \textsc{PERMISSIVE},X)\big)
+\\[-0.1em]
++
+&
+\mathrm{KL}\big(\pi_\theta(\cdot\mid \textsc{PERMISSIVE},X)\,\|\,\pi_\theta(\cdot\mid \textsc{STRICT},X)\big)
+\Big).
+\end{aligned}
+\]
+}
+\end{tcolorbox}
+\vspace{-0.55em}
+\caption{\textbf{Toolbox: large equations moved out of the two-column flow.} We present the CITA--KL objective and Conditional Safety diagnostics as short, column-safe steps. In the main text we reference this toolbox and keep the discussion narrative tight.}
+\label{fig:toolbox_cita_condsafety}
+\vspace{-1.0em}
+\end{figure*}
+
+
+
+% =========================
+% D  Discussion (3–4 pages)
+% =========================
+\section{Discussion}
+\label{sec:discussion}
+
+\vspace{-0.35em}
+\noindent\textbf{Prelude.}
+This section synthesizes \textbf{what ECLIPTICA is meant to certify} and \textbf{why CITA behaves the way it does} under the paper’s central deployment primitive: \textbf{\emph{one checkpoint, many instruction-conditioned regimes}}. We first restate the \textbf{core claims} in operational form (D.1), then explain why \textbf{\emph{mandatory}} KL anchoring is \textbf{structural}—providing the \textbf{geometry} that makes \emph{switching reliable} rather than merely inducing large instruction-dependent shifts (D.2; see \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}} for the stepwise objectives). We then interpret the empirical leaderboard as a \textbf{multi-axis switching profile}—distinguishing probes that reward ``\emph{does it move}'' from probes that test ``\emph{does it move cleanly without collapsing structure}'' (D.3). Finally, we clarify \textbf{Conditional Safety} as a \textbf{mode-separation diagnostic} (not a safety guarantee) and propose a \textbf{harder formulation} that couples separability with permissive-mode non-harm (D.4; Toolbox Steps~5--7). In short, our goal is to make the paper’s message \textbf{auditable}: \textbf{CITA optimizes an instruction-indexed family of nearby optima; KL supplies the geometry that makes switching reliable.}
+
+\vspace{-0.35em}
+\subsection{D.1 Establishing the core claims (0.5 page)}
+\vspace{-0.2em}
+
+\noindent\textbf{What ECLIPTICA isolates.}
+\textbf{ECLIPTICA is a \emph{causal} diagnostic for instruction-conditioned alignment:} the user prompt $X$ is held fixed and \emph{only} the alignment instruction $I$ changes, so systematic behavioral differences can be attributed to $I$ rather than prompt variation. Concretely, it instantiates a \textbf{factorial grid} of \textbf{$300$ prompts} and \textbf{$10$ instruction types}, yielding \textbf{$3{,}000$ prompt-held-constant} paired cases (each prompt appears once per instruction), enabling \textbf{strict paired comparisons} across regimes. The benchmark is explicitly framed as \textbf{\emph{one prompt, many policies}}: for the \emph{same} $X$, the model must produce \textbf{distinct behavioral contracts} across instructions and do so \textbf{\emph{reliably under switching}} (e.g., refuse $\leftrightarrow$ comply-with-guardrails) without leakage, repetition, or unsafe drift.
+
+\noindent\textbf{Claim C1 (Controlled switching under a shared backbone).}
+The target deployment primitive is a \textbf{single checkpoint} that internalizes alignment instructions as a \textbf{first-class control channel} and supports \textbf{bidirectional switching} (strict refusal $\leftrightarrow$ permissive, harm-minimizing guidance) under a fixed user prompt. \textbf{This is stronger than ``instruction following'':} it demands that switching behaves like a \textbf{stable control interface}, not a brittle prompt hack.
+
+\noindent\textbf{Claim C2 (Mandatory KL is structural for switchability).}
+CITA is explicitly engineered for this switching regime by combining instruction-conditioned preference optimization with a \textbf{\emph{non-optional}} KL trust-region anchor to a frozen reference $\pi_0$, with the stated purpose of stabilizing a \textbf{switchable policy family} $\{\pi_\theta(\cdot\mid I,\cdot)\}$ rather than collapsing behavior into a single implicit regime.
+
+\noindent\textbf{Claim C3 (Empirical dominance on controlled-switching metrics).}
+On Llama-3.1-8B across five deterministic benchmarks, CITA achieves the \textbf{highest instruction-alignment efficiency} (\textbf{86.7\%}), with large margins over DPO (56.1\%) and GRPO (36.1\%). Moreover, the gains concentrate on probes that require \textbf{\emph{controlled switching}} beyond surface instruction awareness (e.g., \textbf{calibration-sensitive separation}, \textbf{explicit length control}, and \textbf{axiom-level structure}).
+
+\vspace{-0.4em}
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{p{3.2cm}p{6.9cm}p{5.9cm}}
+\toprule
+\textbf{Discussion claim} & \textbf{Operational meaning (what must be true)} & \textbf{Primary substantiation in this paper} \\
+\midrule
+\textbf{C1: Switching as a control primitive} &
+\textbf{Same $X$} should yield \textbf{distinct behavioral contracts} under different $I$; switching must be \textbf{stable} (no leakage/oscillation/unsafe drift). &
+Prompt-held-constant isolation + reliability framing in ECLIPTICA; prompt-matched paired comparisons. \\
+\textbf{C2: Mandatory KL is structural} &
+Training must preserve a \textbf{family} $\{\pi_\theta(\cdot\mid I,\cdot)\}$ of \textbf{nearby instruction-indexed optima} rather than collapsing to an instruction-agnostic shortcut. &
+Mandatory KL as a trust-region anchor; geometric (locality/Fisher) rationale; objective summarized in Fig.~\ref{fig:toolbox_cita_condsafety} (Steps~1--4). \\
+\textbf{C3: Strong instruction sensitivity} &
+Adding $I$ should change behavior (relative to NoInstruct) on \textbf{controlled-switching probes}, not merely improve surface ``instruction awareness.'' &
+$\Delta=\textsc{Instruct}-\textsc{NoInstruct}$ protocol and the Table~9 sensitivity pattern across probes. \\
+\bottomrule
+\end{tabular}
+\vspace{-0.3em}
+\caption{\textbf{Discussion map.} Claims, their operational content, and where the paper substantiates them.}
+\label{tab:discussion_claims}
+\vspace{-0.9em}
+\end{table*}
+
+\vspace{-0.35em}
+\subsection{D.2 Why mandatory KL (0.75 page)}
+\vspace{-0.2em}
+
+\noindent\textbf{CITA as constrained multi-regime control.}
+CITA trains on quadruples $(I,X,Y^+,Y^-)$ where $I$ defines the preference relation $Y^+\succ Y^-$. The loss combines an instruction-conditioned preference term with a \textbf{\emph{mandatory}} KL trust-region anchor to a frozen reference policy $\pi_0$. To keep the main text \textbf{column-safe} and \textbf{visually scannable}, we move the full objective into \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}}: \textbf{Step~1} defines the preference gap $\Delta_\theta$, \textbf{Step~2} gives the instruction-conditioned preference loss, \textbf{Step~3} gives the KL anchor, and \textbf{Step~4} composes the full CITA--KL objective with $\lambda>0$. \textbf{Interpretation:} this is the \textbf{``one checkpoint, many regimes''} primitive---the preference term increases \textbf{instruction-specific separation}, while KL prevents the \textbf{instruction-indexed family} from collapsing into a single implicit behavior.
+
+\noindent\textbf{Switchability needs geometry, not only a preference vector.}
+Across many instructions, preference gradients can interfere, yielding \textbf{instruction-agnostic shortcuts} or \textbf{brittle oscillations}. The geometric point is that KL enforces \textbf{locality around $\pi_0$}, so switching corresponds to moving among \textbf{\emph{nearby}} optima rather than jumping between unstable modes. In the small-step regime, KL acts like a quadratic penalty shaped by a conditional Fisher metric (trust-region geometry), making updates \textbf{curvature-aware} and suppressing regime collapse.
+
+\noindent\textbf{Why \emph{mandatory} is not cosmetic (Lagrangian view).}
+Equivalently, CITA can be read as optimizing instruction-conditioned preferences \textbf{subject to a KL budget}. This changes the feasible set: if the KL constraint is removed, solutions that fit a subset of regimes by \textbf{collapsing others} become admissible, directly violating the intended \textbf{switchability under a shared backbone}.
+
+\noindent\textbf{Self-quenching reduces over-steering within each regime.}
+The preference term is \textbf{self-quenching}: as the model satisfies the preference ($P^+\to 1$), the preference force shrinks, limiting over-steering. Together with mandatory KL, this yields \textbf{local stabilization} (within an instruction) and \textbf{global stabilization} (across competing instructions), improving \textbf{switch reliability} in the prompt-held-constant setting.
+
+\vspace{-0.35em}
+\subsection{D.3 Benchmark pattern and trade-offs (0.75 page)}
+\vspace{-0.2em}
+
+\noindent\textbf{Instruction sensitivity as the controlled comparison.}
+The paper’s causal summary uses \textbf{instruction sensitivity}
+\[
+\Delta \;=\; \textsc{Instruct} \;-\; \textsc{NoInstruct},
+\]
+which isolates what changes when behavioral instructions are introduced, holding model capacity and evaluation protocol fixed. \textbf{This is the right unit of analysis for switching:} it factors out baseline capability and measures \emph{conditional controllability}.
+
+\noindent\textbf{A consistent profile: CITA dominates on calibration/structure-sensitive switching.}
+Table~9 shows that CITA has the strongest deltas on \textbf{TruthfulQA} ($+0.054$ vs.\ DPO $+0.001$), \textbf{Length Control} ($+0.164$ vs.\ $+0.130$), and \textbf{AQI} ($+26.4$ vs.\ $-6.2$), while DPO leads on \textbf{ECLIPTICA} and \textbf{Conditional Safety}. \textbf{Interpretation:} this supports the paper’s core message that \textbf{Instruction-Alignment $\neq$ Instruction-Following.} DPO can score high on instruction awareness, yet CITA moves more consistently on probes that test \textbf{controlled switching} in \textbf{calibration}, \textbf{verbosity contracts}, and \textbf{axiom geometry}.
+
+\noindent\textbf{Why this profile is compatible with mandatory KL.}
+Two signals align with the “geometry” account: (i) CITA attains higher reward margins than DPO (7.5 vs.\ 6.0) at similar training accuracy ($\sim 89\%$), consistent with KL preventing margin collapse while maintaining stable updates; (ii) on TruthfulQA adaptation, CITA\_Instruct is clearly positive and larger than DPO\_Instruct, consistent with instruction-conditioning affecting \textbf{epistemic posture} rather than only surface style.
+
+\noindent\textbf{Trade-off diagnosis (why DPO can lead on ECLIPTICA/Cond.\ Safety).}
+ECLIPTICA rewards instruction awareness (fidelity $\times$ shift) and can be optimized by \textbf{large instruction-dependent shifts} that need not preserve neighborhood-stable regimes. Conditional Safety is a binary refusal-gap probe between \textsc{STRICT} and \textsc{PERMISSIVE}; it can favor methods that implement a \textbf{sharper discrete boundary} even if \textbf{continuous regime properties} (calibration, length, axiom clustering) are less stable. \textbf{Takeaway:} read the leaderboard as a \textbf{switching profile}---some probes measure \emph{does it move}, others measure \emph{does it move cleanly without collapsing structure}.
+
+\vspace{-0.4em}
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{p{3.0cm}p{5.2cm}p{7.1cm}}
+\toprule
+\textbf{Probe} & \textbf{What it rewards} & \textbf{Failure modes it surfaces (switching lens)} \\
+\midrule
+ECLIPTICA & \textbf{Instruction awareness} (fidelity $\times$ shift). & High via large stylistic shifts; may not ensure \textbf{neighborhood-stable regimes}. \\
+TruthfulQA (HON--CONF) & \textbf{Calibration} separation under uncertainty. & Overconfident collapse; instruction-insensitive calibration. \\
+Cond.\ Safety (STRICT/PERMISSIVE) & \textbf{Binary} refusal-gap. & Sharp boundary without guaranteeing permissive-mode quality. \\
+Length Control (DETAIL/CONCISE) & \textbf{Explicit} verbosity contract. & Regime leakage; verbosity collapse under competing constraints. \\
+AQI & \textbf{Axiom-level} clustering structure. & Collapse into a single policy basin; incoherent axiom mixing. \\
+\bottomrule
+\end{tabular}
+\vspace{-0.3em}
+\caption{\textbf{Benchmark patterns as diagnostics.} Each probe emphasizes a distinct aspect of instruction-conditioned control; the observed method ordering is best read as a \textbf{multi-axis switching profile}, not a single scalar ``best.''}
+\label{tab:tradeoffs}
+\vspace{-0.9em}
+\end{table*}
+
+\vspace{-0.35em}
+\subsection{D.4 Conditional Safety: definition, nuance, and a harder formulation (0.4+ page)}
+\vspace{-0.2em}
+
+\noindent\textbf{Definition (as used here).}
+Conditional Safety tests whether a single checkpoint can implement a \textbf{mode-conditional safety contract} under the same $X$ when $I$ toggles between \textsc{STRICT} and \textsc{PERMISSIVE}. Operationally, it is a \textbf{refusal-gap} with ideal value $1.0$ (full definition in \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}, Step~5}). \textbf{Practical reading:} does $I$ \emph{toggle the boundary} under fixed $X$?
+
+\noindent\textbf{Nuance 1 (necessary $\neq$ sufficient).}
+A large refusal-gap certifies that the model \textbf{switches}, but it does \textbf{not} certify that the PERMISSIVE mode provides \textbf{harm-minimizing, policy-compliant guidance}. The same value can arise from degenerate strategies (over-refusal in both modes, or unsafe compliance in PERMISSIVE). \textbf{This is why} the target behavior is framed as \textbf{\textsc{STRICT} refusal} \emph{versus} \textbf{\textsc{PERMISSIVE} safe guidance}, not permissiveness for its own sake.
+
+\noindent\textbf{Nuance 2 (discrete boundary vs.\ continuous regime geometry).}
+Conditional Safety captures a \textbf{discrete} bifurcation (refuse vs.\ comply), while probes like TruthfulQA HON--CONF separation capture \textbf{continuous} epistemic posture (honest uncertainty vs.\ overconfident assertion). \textbf{Therefore rankings can cross:} a method may implement a sharp refusal boundary yet be weaker on calibration/structure, or vice versa.
+
+\noindent\textbf{A harder conditional-safety objective (recommended).}
+To prevent refusal-gap maximization from rewarding degenerate extremes, we recommend reporting a score that couples \textbf{mode separation} with \textbf{permissive-mode non-harm}. The proposed formulation is given in \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}, Step~6}. \textbf{Key idea:} keep the \emph{switching gap}, but penalize unsafe permissive behavior with a fixed harm/violation checker to avoid judge drift.
+
+\noindent\textbf{A distributional view (optional diagnostic).}
+Beyond a single scalar gap, one can measure \textbf{distributional separation} between strict and permissive completion distributions via a symmetric divergence (definition in \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}, Step~7}). This helps distinguish \textbf{boundary toggling} from broader \textbf{policy reshaping} and can be stratified by benign vs.\ harmful prompt subsets.
+
+\noindent\textbf{Takeaway.}
+\textbf{Conditional Safety is best interpreted as a \emph{mode-separation} diagnostic, not a standalone safety guarantee.}
+It verifies whether $I$ can toggle a refusal boundary under fixed $X$, but should be complemented by permissive-mode harm checks and continuous probes of calibration and regime geometry---exactly why ECLIPTICA evaluates switching across multiple axes rather than relying on a single score.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% =============================================================================
+% LIMITATIONS - CITA Paper in ALKALI Format
+% =============================================================================
+
+\vspace{-2mm}
+\section{Limitations}
+\label{sec:limitations}
+
+We acknowledge the current limitations of CITA and outline directions for future work.
+
+\vspace{-2mm}
+\subsection{Experimental Scope}
+\label{sec:experimental_scope}
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Limitation} & \textbf{Impact \& Mitigation Path} \\
+\midrule
+Single model (Llama-3.1-8B) & Validate on GPT, Mistral, Gemma; scale to 70B \\ \hline
+English-only evaluation & Extend to multilingual instruction transfer \\ \hline
+10 instruction types & Add domain-specific types (medical, legal) \\ \hline
+Single dataset (PKU-SafeRLHF) & Test on diverse preference datasets \\
+\bottomrule
+\end{tabularx}
+\caption{Current experimental limitations and mitigation paths.}
+\label{tab:limitations}
+\vspace{-4mm}
+\end{table}
+
+\paragraph{Model Generalization.} We evaluate only Llama-3.1-8B~\cite{dubey2024llama}. Future work should validate CITA on diverse architectures~\cite{jiang2023mistral,zhang2022opt,openai2023gpt4} and scales (7B--70B) to establish generality across model families.
+
+\paragraph{Instruction Coverage.} The 10 instruction types in ECLIPTICA cover common alignment dimensions but may not capture all real-world policy requirements. Domain-specific instructions (medical, legal, educational) require dedicated evaluation.
+
+\paragraph{Multilingual Alignment.} All experiments are English-only. Instruction-conditioned alignment in multilingual settings raises questions about cross-lingual instruction transfer and cultural alignment differences.
+
+\vspace{-2mm}
+\subsection{Deployment Considerations}
+\label{sec:deployment}
+
+\paragraph{Inference Overhead.} CITA requires alignment instructions in every prompt, increasing context length by 10--40 tokens. While minimal for modern LLMs, this may matter for latency-critical applications or extremely long contexts.
+
+\paragraph{Instruction Specification.} Deployers must carefully craft alignment instructions for each use case. Poorly specified instructions may lead to unexpected behaviors---instruction engineering becomes a new deployment concern.
+
+\vspace{-2mm}
+\subsection{Safety \& Ethical Considerations}
+\label{sec:safety_ethics}
+
+\paragraph{Dual-Use Risk.} Instruction-conditioned alignment could be misused to make models \textit{less} safe via adversarial instructions~\cite{zou2023universal,carlini2023aligned,pace2024west}. Mitigations include:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item Hierarchical instruction handling (system $>$ user)
+    \item Instruction validation/filtering at deployment
+    \item Constitutional constraints~\cite{bai2022constitutional} as non-negotiable baselines
+\end{itemize}
+
+\paragraph{Alignment Washing.} Organizations might claim ``aligned'' behavior while using permissive instructions. Transparency about instruction policies and third-party auditing are essential safeguards.
+
+\paragraph{Control Boundaries.} CITA enables user-influenced alignment, raising questions about who controls behavioral policy. We advocate for tiered systems: users adjust within deployer-set bounds, which operate within regulatory constraints.
+
+
+
+
+
+
+
+
+
+
+% ============================================================
+% Discussion at a glance (DESIGN PLAN + TABLE*)
+%   -- tailored to ECLIPTICA + CITA switching
+% ============================================================
+% Design goals (at-a-glance):
+%  1) 3 grouped bands: Discussion (D1–D4), Limitations (L1–L6), Roadmap (FW).
+%  2) Each row answers: (a) focus, (b) what to read out, (c) what can go wrong, (d) fix/check.
+%  3) Visually scannable: icons + short phrases + consistent grammar.
+%  4) Camera-ready friendly: table* + resizebox{\textwidth}{!}{...} + light row shading.
+%
+% Requires (preamble):
+% \usepackage{booktabs}
+% \usepackage{tabularx}
+% \usepackage{array}
+% \usepackage{xcolor}
+% \usepackage{multirow}
+% \usepackage{makecell}
+% \usepackage{fontawesome5}
+%
+% Optional:
+% \usepackage{colortbl}
+
+% --- column types (stable widths inside resizebox) ---
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% --- icon helpers ---
+\newcommand{\icnUse}{\faCompass}              % usage / how-to
+\newcommand{\icnScope}{\faBullseye}           % scope / what it captures
+\newcommand{\icnWarn}{\faExclamationTriangle} % caution / sensitivity
+\newcommand{\icnFix}{\faFlask}                % experiment / fix
+\newcommand{\icnDont}{\faBan}                 % do-not-use-as-gate
+\newcommand{\icnRel}{\faClipboardList}        % reproducibility checklist
+\newcommand{\icnRoad}{\faRoute}               % roadmap
+\newcommand{\icnTool}{\faToolbox}             % toolbox figure pointer
+\newcommand{\icnSwap}{\faExchange*} % works in more setups
+\newcommand{\icnGeom}{\faProjectDiagram}      % geometry / manifold
+\newcommand{\icnShield}{\faShieldAlt}         % safety boundary
+\newcommand{\icnChart}{\faChartLine}          % pattern / metrics
+
+% --- table styling knobs ---
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{4.2pt}
+
+\begin{table*}[ht!]
+\centering
+\resizebox{\textwidth}{!}{%
+\scriptsize
+\begin{tabular}{L{0.115\textwidth} L{0.23\textwidth} L{0.295\textwidth} L{0.30\textwidth}}
+\toprule
+\textbf{Block} &
+\textbf{\icnScope\ \,What it is for (read-out)} &
+\textbf{\icnWarn\ \,What to watch (failure / sensitivity)} &
+\textbf{\icnFix\ \,What fixes it (report / experiment)} \\
+\midrule
+
+% =========================
+% DISCUSSION BAND
+% =========================
+\rowcolor{gray!10}
+\multicolumn{4}{l}{\textbf{Discussion (how to read ECLIPTICA + \textsc{CITA})}}\\[-0.5mm]
+\rowcolor{gray!10}\multicolumn{4}{l}{\rule{0pt}{2.6ex}}\\[-2.2mm]
+
+\textbf{D1 \icnUse\ \,Causal isolation} &
+\textbf{Prompt-held-constant} switching: attribute changes to $I$ (not $X$); paired deltas are the unit of evidence. &
+Leakage via prompt artifacts or instruction templates: apparent “switching” could be superficial style drift. &
+Always report \textbf{paired} comparisons ($\Delta=\textsc{Instruct}-\textsc{NoInstruct}$); include template ablations / paraphrased $I$ sanity checks. \\
+
+\textbf{D2 \icnSwap\ \,Switching primitive} &
+\textbf{One checkpoint, many regimes}: distinct behavioral contracts for the same $X$ under different $I$; stable bidirectional toggling. &
+Mode interference: regimes collapse into a single implicit behavior; oscillation across instructions; “leaky” mixtures. &
+Use objective + diagnostics that preserve a \textbf{policy family} $\{\pi_\theta(\cdot\mid I,\cdot)\}$; emphasize stability checks under repeated toggles. \\
+
+\textbf{D3 \icnGeom\ \,Why mandatory KL} &
+KL provides \textbf{geometry}: encourages \textbf{nearby optima} so switching is local, controlled, and non-collapsing. &
+Without anchoring, preference gradients across many $I$ can produce instruction-agnostic shortcuts or brittle over-steering. &
+Reference \textbf{Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}} (Steps~1--4); report $\lambda$ sensitivity and regime-collapse indicators. \\
+
+\textbf{D4 \icnChart\ \,Profile, not scalar} &
+Leaderboard is a \textbf{multi-axis switching profile}: some probes test “does it move,” others test “does structure persist.” &
+Over-reading a single metric (e.g., ECLIPTICA or Cond.\ Safety) as "best alignment" misstates what is being certified. &
+Always pair \textbf{discrete} boundary probes with \textbf{continuous} regime probes (calibration, length, axiom structure); analyze cross-metric disagreements. \\
+
+\midrule
+
+% =========================
+% LIMITATIONS BAND
+% =========================
+\rowcolor{gray!10}
+\multicolumn{4}{l}{\textbf{Limitations (what can break and why it matters)}}\\[-0.5mm]
+\rowcolor{gray!10}\multicolumn{4}{l}{\rule{0pt}{2.6ex}}\\[-2.2mm]
+
+\textbf{L1 \icnWarn\ \,Instruction semantics} &
+Switching depends on $I$ being semantically separable and consistently interpreted by the model. &
+Paraphrase sensitivity: small changes in $I$ wording may change regime identity or induce partial mixing. &
+Report \textbf{instruction paraphrase} robustness; include a minimal “instruction invariance” panel (synonyms/format perturbations). \\
+
+\textbf{L2 \icnWarn\ \,Objective specificity} &
+Claims are tied to instruction-conditioned preference learning with \textbf{mandatory} KL anchoring. &
+Generalization to RLHF/constitutional or tool-augmented stacks may shift where and how regimes form. &
+Run matched comparisons across objectives (DPO/GRPO/RLHF variants) under the same ECLIPTICA grid; keep within-family deltas. \\
+
+\textbf{L3 \icnWarn\ \,Judge drift / measurement} &
+Metrics rely on fixed checkers and scoring conventions. &
+Binary refusal or harm checkers can drift; calibration probes can be sensitive to prompt framing and evaluator policy. &
+Version all judges; report stability across judge variants; add a small robustness appendix (prompt subsets, seed/decoder checks). \\
+
+\textbf{L4 \icnWarn\ \,Cond.\ Safety degeneracy} &
+Cond.\ Safety is a \textbf{mode-separation} diagnostic (STRICT vs PERMISSIVE). &
+High refusal-gap can be achieved by degenerate extremes (“refuse always” vs “comply always”) if permissive quality is unchecked. &
+Use the \textbf{harder} definition in Toolbox Fig.~\ref{fig:toolbox_cita_condsafety} (Step~6); add permissive-mode harm/quality checks. \\
+
+\textbf{L5 \icnWarn\ \,Distributional mismatch} &
+ECLIPTICA certifies controlled switching on its prompt-instruction grid. &
+Deployment prompts may differ (domain shift, adversarial phrasing); regimes may not transfer cleanly. &
+Stratify by prompt category; add out-of-grid evaluation (held-out domains, adversarial paraphrases, long-context variants). \\
+
+\textbf{L6 \icnDont\ \,Not a deployment gate} &
+Useful as \textbf{control-channel} evidence and switching diagnostics; complements behavioral suites. &
+A single score cannot certify safety or truthfulness under all conditions; disagreement cases are informative, not “noise.” &
+State explicitly: \textbf{not a pass/fail gate}; use disagreements to drive targeted eval and causal analysis. \\
+
+\midrule
+
+% =========================
+% ROADMAP BAND
+% =========================
+\rowcolor{gray!10}
+\multicolumn{4}{l}{\textbf{Roadmap (high-level, testable directions)}}\\[-0.5mm]
+\rowcolor{gray!10}\multicolumn{4}{l}{\rule{0pt}{2.6ex}}\\[-2.2mm]
+
+\textbf{FW \icnRoad\ \,Next steps} &
+Turn switching into an auditable standard: benchmark + objective + diagnostics for instruction-conditioned regimes. &
+Overcommitting speculation; roadmap should remain crisp, measurable, and reproducible. &
+(1) Extend ECLIPTICA across architectures/objectives; (2) add causal tests for regime locality; (3) publish standardized prompt+instruction packs + judge versioning + robustness panel. \\
+
+\bottomrule
+\end{tabular}%
+}
+\vspace{-1mm}
+\caption{\textbf{Discussion \& limitations at a glance.} A compact reading guide for ECLIPTICA and \textsc{CITA}: what the benchmark certifies (prompt-held-constant switching), where the method’s geometry enters (mandatory KL; see Toolbox Fig.~\ref{fig:toolbox_cita_condsafety}), what can break, and which checks/experiments address each risk.}
+\label{tab:ecliptica_discussion_limitations_glance}
+\vspace{-1.0em}
+\end{table*}
+% ============================================================
+
+
+
+
+
+\vspace{-2mm}
+\subsection{Future Work}
+\label{sec:future_work}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Hierarchical Instructions}: Multi-level handling where system policies override user preferences
+
+    \item \textbf{Instruction Compositionality}: Combining multiple instructions (``be concise AND professional'') meaningfully
+
+    \item \textbf{Instruction Robustness}: Resistance to instruction injection attacks
+
+    \item \textbf{Theoretical Analysis}: Convergence guarantees and sample complexity for instruction-conditioned learning
+
+    \item \textbf{Multi-Modal CITA}: Extension to vision-language models with cross-modal instructions
+\end{enumerate}
