@@ -1,9 +1,0 @@
-% =============================================================================
-% ABSTRACT
-% =============================================================================
-
-Traditional LLM alignment methods (RLHF, DPO) embed static objectives into model weights, lacking flexibility for dynamic policy changes. We introduce \textbf{CITA (Contrastive Instruction-Tuned Alignment)}, a framework enabling \textbf{instruction-driven alignment} at inference time. CITA combines supervised fine-tuning, contrastive preference optimization, and mandatory KL regularization to achieve instruction-conditioned behavior switching.
-
-To evaluate this capability, we contribute the \textbf{Instruction Switch Dataset (ISD)}---3,000 test cases (300 prompts $\times$ 10 instruction types) where only the alignment instruction varies while the user prompt remains constant.
-
-Experiments on Llama-3.1-8B across 5 benchmarks show CITA outperforms DPO in 3/5 metrics (TruthfulQA, Length Control, AQI). On TruthfulQA, CITA improves by +0.054 while DPO shows minimal change (+0.001). Our results demonstrate that CITA achieves deeper instruction-alignment rather than superficial instruction-following.
