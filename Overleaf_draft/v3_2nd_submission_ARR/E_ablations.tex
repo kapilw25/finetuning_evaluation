@@ -1,0 +1,501 @@
+\section{Ablation Studies}
+\label{sec:appendix_ablations}
+
+\vspace{-0.25em}
+\noindent
+This appendix isolates \textbf{which components actually matter} for \textsc{CITA} and \textbf{why}.
+Our central hypothesis is that \textsc{CITA} succeeds at \textbf{instruction-conditioned switching} only when the optimization remains within a \textbf{stable local neighborhood} of a reference policy while still learning \textbf{sharp, instruction-dependent preference gaps}.
+Accordingly, we ablate the two parameters that directly control this trade-off:
+\textbf{(i) the KL anchor weight} $\lambda_{\text{KL}}$, which governs \textbf{stability and regime co-existence}, and
+\textbf{(ii) the preference temperature} $\beta$, which governs \textbf{gap sharpness and switching sensitivity}.
+We report three outcome signals throughout:
+\textbf{reward margin} (training separation), \textbf{ECLIPTICA score} (switchability under controlled instruction flips), and \textbf{stability} (run-to-run and within-run behavior).
+
+% -----------------------------------------------------------------------------
+\subsection{Effect of KL Weight ($\lambda_{\text{KL}}$)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+\textbf{Why this ablation matters.}
+In \textsc{CITA}, the KL term is not a cosmetic regularizer: it is the mechanism that keeps \textbf{multiple instruction regimes co-located} so that switching remains \textbf{nearby and traversable} rather than collapsing into a single dominant posture.
+Too small $\lambda_{\text{KL}}$ permits \textbf{runaway preference margins} that overwrite neighboring regimes; too large $\lambda_{\text{KL}}$ imposes a \textbf{hard trust region} that prevents learning the instruction-conditioned separation needed for switching.
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{$\lambda_{\text{KL}}$} & \textbf{Reward Margin} & \textbf{ECLIPTICA Score} & \textbf{Stability} \\
+\midrule
+0 (no KL) & 3.8 & 0.22 & Unstable \\ \hline
+0.00005 & 5.1 & 0.28 & Marginal \\ \hline
+0.0001 & 6.2 & 0.33 & Stable \\ \hline
+0.00023 (best) & 7.5 & 0.37 & Stable \\ \hline
+0.0005 & 6.8 & 0.34 & Stable \\ \hline
+0.001 & 5.5 & 0.29 & Stable \\
+\bottomrule
+\end{tabular}%
+}
+\caption{\textbf{Effect of KL weight on stability and switchability.} Optimal performance occurs in a narrow band $\lambda_{\text{KL}}\approx 2\times 10^{-4}$--$3\times 10^{-4}$, where preference separation is strong while instruction regimes remain co-located.}
+\label{tab:kl_ablation}
+\end{table*}
+
+\vspace{-0.35em}
+\noindent\textbf{Reading Table~\ref{tab:kl_ablation}.}
+\textbf{(i) No anchor collapses switching.}
+At $\lambda_{\text{KL}}=0$, the model can increase margins by drifting far from the reference, which yields \textbf{highly variable training dynamics} and the lowest ECLIPTICA score (0.22).
+Empirically, this manifests as \textbf{regime interference}: one instruction posture dominates, and counterfactual instruction flips produce weaker policy changes.
+
+\vspace{-0.25em}
+\noindent
+\textbf{(ii) A ``Goldilocks'' KL band maximizes switchability.}
+As $\lambda_{\text{KL}}$ increases from $5\times 10^{-5}$ to $2.3\times 10^{-4}$, both reward margin and ECLIPTICA score improve monotonically, peaking at (7.5, 0.37).
+This is the regime where the anchor is strong enough to prevent \textbf{runaway drift}, yet weak enough to permit \textbf{instruction-conditional separation}.
+
+\vspace{-0.25em}
+\noindent
+\textbf{(iii) Over-anchoring suppresses learning.}
+Beyond the optimum, larger $\lambda_{\text{KL}}$ reduces reward margin and ECLIPTICA score (e.g., 0.001 $\rightarrow$ 0.29), consistent with an over-tight trust region that prevents the model from carving distinct instruction-conditioned behaviors.
+
+\vspace{-0.15em}
+\paragraph{\textbf{Finding.}}
+\textbf{Too low} $\lambda_{\text{KL}}$ yields \textbf{regime collapse / interference}; \textbf{too high} $\lambda_{\text{KL}}$ yields \textbf{over-constraint}.
+Switchability is maximized in a narrow band where the model learns \textbf{separation without drift}.
+
+% -----------------------------------------------------------------------------
+\subsection{Effect of Temperature ($\beta$)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+\textbf{Why this ablation matters.}
+The temperature $\beta$ controls the sharpness of the logistic contrast in the preference term.
+Larger $\beta$ amplifies gradients near ambiguous pairs and increases reward margin, but it can also create \textbf{over-confident separation} that makes the model less responsive to instruction flips---i.e., it learns a \textbf{hard-coded preference wall} rather than a \textbf{switchable contract}.
+Smaller $\beta$ produces smoother updates but may under-separate preferences and weaken instruction-conditioned discrimination.
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{$\beta$} & \textbf{Pref.\ Accuracy} & \textbf{Reward Margin} & \textbf{ECLIPTICA Score} \\
+\midrule
+0.05 & 85\% & 4.2 & 0.29 \\ \hline
+0.10 (best) & 89\% & 7.5 & 0.37 \\ \hline
+0.15 & 91\% & 8.1 & 0.35 \\ \hline
+0.20 & 92\% & 9.2 & 0.31 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{\textbf{Effect of temperature on preference learning and switchability.} Larger $\beta$ increases separation (margin, accuracy) but can reduce instruction-conditioned switching, revealing a margin--switchability trade-off.}
+\label{tab:beta_ablation}
+\end{table*}
+
+\vspace{-0.35em}
+\noindent\textbf{Reading Table~\ref{tab:beta_ablation}.}
+\textbf{(i) Separation increases with $\beta$.}
+Preference accuracy and reward margin grow steadily from $\beta=0.05$ to 0.20, as expected from sharper contrastive learning.
+
+\vspace{-0.25em}
+\noindent
+\textbf{(ii) Switching peaks at moderate sharpness.}
+ECLIPTICA score peaks at $\beta=0.10$ (0.37) and declines at larger $\beta$ despite higher margins.
+This is the critical signal: \textbf{maximizing preference separation is not equivalent to maximizing instruction-conditioned control}.
+Overly sharp objectives can encourage \textbf{rigid} preference boundaries that are less modulated by the instruction channel.
+
+\vspace{-0.15em}
+\paragraph{\textbf{Finding.}}
+\textbf{Higher $\beta$} strengthens margins but can reduce \textbf{instruction sensitivity}.
+The optimum occurs where preference learning is sharp enough to separate behaviors but smooth enough to preserve \textbf{counterfactual controllability}.
+
+% -----------------------------------------------------------------------------
+\subsection{Hyperparameter Sensitivity (Optuna/TPE)}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+We run 13 Optuna trials with TPE sampling for \textsc{CITA\_Instruct}.
+TPE proposes configurations by fitting densities over \textbf{good} vs.\ \textbf{bad} trials and sampling where expected improvement is highest.
+We optimize learning rate, weight decay, $\beta$, and $\lambda_{\text{KL}}$.
+Figure~\ref{fig:hp_ablation_combined} summarizes the sensitivity of reward margin to these hyperparameters, revealing a concentrated ``good'' region rather than a broad plateau.
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_combined.pdf}
+\caption{\textbf{Hyperparameter sensitivity across 13 Optuna trials.} Reward margin is most sensitive to learning rate and the $(\beta,\lambda_{\text{KL}})$ interaction. Trial 7 ($\star$) achieves the best trade-off, aligning with the ``Goldilocks'' band: $\beta\in[0.10,0.12]$, $\lambda_{\text{KL}}\approx 2\times 10^{-4}$, and LR $\approx 5\times 10^{-6}$.}
+\label{fig:hp_ablation_combined}
+\end{figure*}
+
+\paragraph{Reading the 4-panel ablation.}
+Figure~\ref{fig:hp_ablation_combined} presents reward margin (y-axis) against each of the four tuned hyperparameters (x-axis): $\beta$ (DPO temperature), $\lambda_{\text{KL}}$ (KL regularization coefficient), learning rate, and weight decay.
+Each blue point represents one of 13 Optuna trials, with Trial 7 ($\star$) highlighted as the best configuration.
+Dashed trend lines (polynomial fits) reveal the functional relationship between each hyperparameter and reward margin.
+The key observation is that reward margin is \textbf{not uniformly sensitive} to all hyperparameters: learning rate shows a strong positive correlation (higher LR $\rightarrow$ higher margin up to a point), while weight decay shows weaker sensitivity with high variance.
+
+\paragraph{Identifying the ``Goldilocks zone''.}
+Across all four panels, Trial 7 consistently appears near the peak of the trend curve, confirming that the selected configuration occupies the \textbf{intersection of optimal regions} across hyperparameters.
+The $\beta$ panel shows a peaked distribution with optimum around 0.10--0.12; the $\lambda_{\text{KL}}$ panel shows an inverted-U with optimum around $2$--$3 \times 10^{-4}$; the learning rate panel shows monotonic increase up to $\sim 5 \times 10^{-6}$; and the weight decay panel shows weak sensitivity.
+This multi-dimensional view explains why naive grid search would be inefficient: the optimal region is a narrow \textbf{tube} in 4D space, not a hyperrectangle.
+
+\paragraph{Why TPE sampling works.}
+The Tree-structured Parzen Estimator (TPE) efficiently navigates this complex landscape by modeling $P(\text{hyperparameters} | \text{good})$ vs.\ $P(\text{hyperparameters} | \text{bad})$.
+Trials 0--4 explore broadly; trials 5--12 concentrate near promising regions.
+The final distribution of points shows TPE's adaptive behavior: dense sampling near $\beta \approx 0.11$, $\lambda_{\text{KL}} \approx 2 \times 10^{-4}$, and LR $\approx 5 \times 10^{-6}$, with sparse exploration of poor regions (low LR, extreme $\beta$).
+
+\vspace{-0.25em}
+\noindent
+\textbf{Pareto structure.}
+Because reward margin and preference accuracy do not perfectly correlate with ECLIPTICA switchability, we additionally analyze margin--accuracy trade-offs.
+Figure~\ref{fig:hp_pareto} shows the Pareto frontier; the selected configuration lies on the frontier, indicating that further margin gains typically require accuracy/switchability trade-offs.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/appendix/hp_pareto_frontier.pdf}
+\caption{\textbf{Pareto frontier across trials.} Trial 7 lies on the frontier, achieving near-optimal balance (margin=7.52, accuracy=89\%) while maintaining strong instruction-conditioned switching.}
+\label{fig:hp_pareto}
+\end{figure}
+
+\paragraph{Interpreting the Pareto frontier.}
+Figure~\ref{fig:hp_pareto} plots the two primary training objectives---reward margin (x-axis, higher is better) and preference accuracy (y-axis, higher is better)---for all 13 Optuna trials.
+The red dashed line traces the \textbf{Pareto frontier}: configurations where no other trial dominates on both objectives.
+Trials below or left of this frontier are Pareto-dominated (another trial is better on at least one axis without being worse on the other).
+The frontier reveals a fundamental trade-off: achieving margin $>$9 (trials 0, 12) requires sacrificing accuracy to $\sim$85--87\%, while maintaining accuracy $>$89\% (trials 2, 8) limits margin to $\sim$7.
+
+\paragraph{Why Trial 7 is optimal for switching.}
+Trial 7 ($\star$) achieves margin 7.52 with accuracy 89\%, placing it \textbf{on the Pareto frontier} at the ``knee'' where both objectives are near-optimal.
+Crucially, downstream evaluation shows that Trial 7 produces the best ECLIPTICA switching scores, suggesting that the margin-accuracy balance at this point corresponds to \textbf{optimal instruction-conditioned behavior}.
+Trials 0 and 12 achieve higher margins (9.9, 10.1) but their lower accuracy (87\%, 86\%) correlates with degraded switching---the model over-specializes to one preference direction, losing the ability to traverse between instruction-conditioned regimes.
+
+\paragraph{Multi-objective optimization justification.}
+This Pareto analysis justifies our multi-objective Optuna formulation (maximize margin, maximize accuracy, minimize eval loss).
+Single-objective optimization on margin alone would select trials 0 or 12, which underperform on switching despite high margins.
+By optimizing for the Pareto frontier and selecting configurations at the knee, we ensure that \textsc{CITA} learns \textbf{balanced, traversable} preference geometry rather than collapsing to a single dominant regime.
+
+\vspace{-0.35em}
+\noindent\textbf{Trial 7 analysis (why it wins).}
+The best configuration ($\beta$=0.107, $\lambda_{\text{KL}}$=0.00023, LR=5.4e-6) occupies a narrow region where:
+\textbf{(i) $\beta$ is high enough} to separate instruction-conditioned preferences,
+\textbf{(ii) $\lambda_{\text{KL}}$ is strong enough} to prevent regime drift,
+and \textbf{(iii) LR is low enough} to avoid overshooting under longer instruction-augmented sequences.
+This ``alignment'' of the three levers yields high margins without sacrificing switchability.
+
+% -----------------------------------------------------------------------------
+\subsubsection{Individual Hyperparameter Analysis}
+% -----------------------------------------------------------------------------
+
+\vspace{-0.25em}
+\noindent
+Figures~\ref{fig:hp_beta}--\ref{fig:hp_lr} provide per-parameter sensitivity analyses, plotting reward margin, accuracy, and evaluation loss.
+Across plots, Trial 7 ($\star$) consistently appears near the optimal region, indicating that the final choice is not an outlier but a coherent solution across axes.
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_beta.pdf}
+\caption{\textbf{$\beta$ sensitivity.} Reward margin peaks at $\beta\approx 0.10$--$0.12$; accuracy is stable (88--90\%), while evaluation loss increases at higher $\beta$, consistent with over-sharpening. Trial 7 ($\star$) at $\beta$=0.107 achieves strong margins while preserving switchability.}
+\label{fig:hp_beta}
+\end{figure*}
+
+\paragraph{Understanding $\beta$ (DPO temperature).}
+Figure~\ref{fig:hp_beta} shows how the DPO temperature parameter $\beta$ affects three training metrics across 13 Optuna trials.
+$\beta$ controls the \textbf{sharpness of preference learning}: higher $\beta$ increases the penalty for ranking violations, pushing the model to more decisively separate chosen from rejected responses.
+The top-left panel (Reward Margin) reveals a clear \textbf{inverted-U relationship}: margin is low at extreme $\beta$ values and peaks in the 0.10--0.12 range.
+At $\beta < 0.10$, preference learning is too soft and the model fails to discriminate strongly; at $\beta > 0.14$, over-sharpening causes the model to collapse toward a single dominant response pattern, destroying multi-regime switching.
+
+\paragraph{$\beta$'s differential effects on metrics.}
+The top-right panel (Accuracy) shows remarkable \textbf{stability} across the $\beta$ range: accuracy varies only from 82\% to 89\%, with no clear trend.
+This indicates that $\beta$ primarily affects \textbf{separation magnitude} rather than \textbf{ranking correctness}---the model can correctly rank preferences at any $\beta$, but the confidence of that ranking varies.
+The bottom panel (Eval Loss) shows an upward trend: higher $\beta$ increases loss, consistent with the over-sharpening hypothesis.
+Trials 0 and 12 achieve very high margins (9.9, 10.1) but also high loss (0.51, 0.61), indicating unstable training.
+Trial 7 at $\beta$=0.107 achieves strong margin (7.5) with low loss (0.33), representing the optimal balance.
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_lambda_kl.pdf}
+\caption{\textbf{$\lambda_{\text{KL}}$ sensitivity.} Reward margin exhibits an inverted-U: too low produces instability and regime interference; too high suppresses learning. Accuracy is comparatively stable, indicating the dominant effect is on switching stability rather than raw preference fit. Trial 7 ($\star$) at $\lambda_{\text{KL}}$=0.00023 lies in the optimal band.}
+\label{fig:hp_lambda}
+\end{figure*}
+
+\paragraph{Understanding $\lambda_{\text{KL}}$ (KL regularization).}
+Figure~\ref{fig:hp_lambda} shows how the KL regularization coefficient $\lambda_{\text{KL}}$ affects training metrics.
+$\lambda_{\text{KL}}$ controls the \textbf{stability anchor} in \textsc{CITA}'s unified loss: it penalizes deviation from the reference policy (frozen DPO checkpoint), preventing the model from drifting too far during instruction-conditioned training.
+The top-left panel (Reward Margin) shows a pronounced \textbf{inverted-U relationship}: margin peaks around $\lambda_{\text{KL}} \approx 2$--$4 \times 10^{-4}$ and drops sharply at both extremes.
+At $\lambda_{\text{KL}} < 1.5 \times 10^{-4}$, the anchor is too weak to prevent regime interference, causing unstable training and low margins; at $\lambda_{\text{KL}} > 5 \times 10^{-4}$, the anchor is too strong and suppresses preference learning entirely.
+
+\paragraph{$\lambda_{\text{KL}}$'s effect on accuracy and loss.}
+The top-right panel (Accuracy) shows a \textbf{downward trend}: higher $\lambda_{\text{KL}}$ reduces accuracy from $\sim$89\% to $\sim$82\%.
+This is intuitive: stronger KL regularization constrains the policy closer to the reference, limiting its ability to learn new preference patterns and thus reducing ranking accuracy.
+The bottom panel (Eval Loss) shows an \textbf{upward trend}: higher $\lambda_{\text{KL}}$ increases loss, reflecting the added KL penalty term in the unified loss.
+Trial 7 at $\lambda_{\text{KL}}$=0.00023 achieves the optimal trade-off: strong enough regularization to maintain stability (low loss 0.33) while preserving learning capacity (high accuracy 89\%, margin 7.5).
+
+\paragraph{Why the KL anchor is mandatory for \textsc{CITA}.}
+The sharp margin drop at low $\lambda_{\text{KL}}$ (trials 1, 3, 4) demonstrates that the KL anchor is \textbf{not optional}.
+Without sufficient regularization, \textsc{CITA} training becomes unstable because the model can drift arbitrarily from the DPO-pretrained policy, losing the preference structure that enables multi-regime switching.
+This finding validates a core design choice: \textsc{CITA} requires explicit anchoring to prevent the instruction-conditioning optimization from destroying the base preference geometry.
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_learning_rate.pdf}
+\caption{\textbf{Learning-rate sensitivity.} Reward margin is highly sensitive to LR, with an optimum near $5\times 10^{-6}$. Higher LR reduces accuracy and increases loss, especially for instruction-augmented sequences. \textbf{Key insight:} \textsc{CITA\_Instruct} requires $\sim$50\% lower LR than standard DPO due to longer contexts and higher gradient variance.}
+\label{fig:hp_lr}
+\end{figure*}
+
+\paragraph{Learning rate is the dominant sensitivity axis.}
+Figure~\ref{fig:hp_lr} reveals that learning rate has the \textbf{strongest effect} on reward margin of any hyperparameter.
+The top-left panel shows a clear \textbf{monotonic positive relationship}: margin increases from $\sim$3.5 at LR=$2.5 \times 10^{-6}$ to $\sim$10 at LR=$5.4 \times 10^{-6}$.
+This strong correlation (dashed trend line has high $R^2$) indicates that LR directly controls the ``aggressiveness'' of preference learning.
+However, the highest-margin trials (0, 12 at LR$\approx$5.2--5.4$\times 10^{-6}$) also exhibit degraded switching on ECLIPTICA, suggesting that very high LR causes over-fitting to preference pairs at the expense of multi-regime flexibility.
+
+\paragraph{LR's effect on accuracy and loss.}
+The top-right panel (Accuracy) shows a \textbf{positive correlation}: higher LR improves accuracy from $\sim$82\% to $\sim$89\%.
+Unlike $\beta$ and $\lambda_{\text{KL}}$ (where accuracy was relatively stable), LR directly affects how well the model learns to rank preferences correctly.
+The bottom panel (Eval Loss) shows a \textbf{U-shaped relationship}: loss is minimized around LR=$4.5$--$5.2 \times 10^{-6}$, increasing at both lower LR (underfitting) and higher LR (overfitting/instability).
+Trial 7 at LR=$5.4 \times 10^{-6}$ sits at the edge of the optimal region---slightly higher would risk instability.
+
+\paragraph{Why \textsc{CITA\_Instruct} requires lower LR than standard DPO.}
+A key insight from this ablation is that instruction-augmented training requires $\sim$50\% lower LR than NoInstruct variants.
+The reason is sequence length: Instruct samples include system prompts, adding 30--40\% more tokens per sequence.
+Longer sequences produce larger gradient magnitudes (more terms in the loss sum), which can cause overshooting if LR is not reduced proportionally.
+Our Optuna search space accounts for this by using a conditional upper bound: \texttt{if variant == "Instruct": lr\_max = 0.5 $\times$ lr\_max\_NoInstruct}.
+This constraint ensures that Trial 7's LR of $5.4 \times 10^{-6}$ is appropriate for the longer Instruct sequences.
+
+\vspace{-0.25em}
+\noindent
+\textbf{Overall takeaway.}
+Switchability emerges only when \textbf{separation} (controlled by $\beta$) and \textbf{stability} (controlled by $\lambda_{\text{KL}}$ and LR) are jointly satisfied.
+The ablations show that maximizing reward margin alone is insufficient; the best instruction-driven alignment requires the \textbf{Goldilocks zone} where regimes remain \textbf{distinct yet co-located}, enabling reliable counterfactual switching under a fixed user prompt.
+
+
+
+
+
+%% =============================================================================
+%% EVALUATION BENEFITS
+%% =============================================================================
+% =============================================================================
+% Appendix: Detailed Evaluation of CITA (NeurIPS spotlight; expanded)
+% =============================================================================
+
+\section{Detailed Evaluation of \textsc{CITA}}
+\label{sec:appendix_benefits}
+
+\vspace{-0.25em}
+\noindent
+This appendix expands the evaluation beyond aggregate scores, clarifying \textbf{what kind of capability} \textsc{CITA} adds and \textbf{how to interpret} improvements in the ECLIPTICA setting.
+Our thesis is that instruction-driven alignment should be assessed as \textbf{counterfactual policy control}:
+holding the \textbf{user request} fixed while changing only the \textbf{alignment instruction contract}.
+Accordingly, we organize the evaluation into four operational properties that matter in deployment:
+\textbf{generalization}, \textbf{robustness}, \textbf{over-refusal calibration}, and \textbf{policy switching}.
+For each, we state (i) what we measure, (ii) what success looks like, and (iii) what failure modes look like.
+
+\vspace{-0.25em}
+\subsection*{Generalization: instruction-conditioned policy transfer}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} \textsc{CITA} learns an instruction-conditioned policy family that \textbf{transfers} to prompts and topics not observed during training.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+We evaluate whether an alignment instruction $I$ induces the intended behavioral posture on \textbf{novel prompts}:
+(i) unseen domains (e.g., finance $\rightarrow$ health advice posture, crypto $\rightarrow$ workplace communication),
+(ii) different surface forms (question, imperative, multi-part),
+(iii) distributional shifts in topic and framing.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A generalized policy does \textbf{not} memorize prompt templates.
+Instead, it applies \textbf{contract-consistent content selection}:
+a \texttt{safety\_first} instruction should reliably increase warnings and guardrails,
+a \texttt{concise} instruction should reliably compress while preserving key decision variables,
+and a \texttt{professional} instruction should produce consistent structure and hedging behavior.
+Importantly, this should hold even when the prompt is phrased adversarially or indirectly.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+We observe three typical generalization failures in instruction-conditioned systems:
+\textbf{(i) template lock-in} (works on familiar formats, fails on paraphrases),
+\textbf{(ii) topic leakage} (instruction affects only some domains),
+\textbf{(iii) shallow style compliance} (tone changes but policy does not).
+ECLIPTICA’s fixed-prompt counterfactual design is explicitly meant to detect (iii).
+
+\vspace{-0.25em}
+\subsection*{Robustness: resisting adversarial instruction and prompt attacks}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} A switchable alignment mechanism must remain stable under \textbf{jailbreak-like perturbations} and \textbf{adversarial rephrasings}.
+
+\vspace{-0.15em}
+\noindent
+\textbf{Threat model (high-level).}
+We consider attacks that attempt to:
+\textbf{(i) override} the alignment instruction (e.g., ``ignore previous policy''-style attempts),
+\textbf{(ii) blur} the user intent to bypass refusal boundaries,
+\textbf{(iii) induce} instruction collisions (conflicting constraints),
+or \textbf{(iv) smuggle} policy changes via the user prompt.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+Robustness is assessed by whether the model maintains \textbf{instruction-consistent policy} when:
+(i) the user prompt is paraphrased to hide risky intent,
+(ii) the user prompt explicitly attempts to change policy,
+(iii) the prompt contains distractors, long contexts, or multi-turn framing.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A robust switchable policy should behave as follows:
+\textbf{(i) instruction priority:} the alignment instruction remains the governing contract,
+\textbf{(ii) boundary integrity:} safety boundaries do not drift under paraphrase,
+\textbf{(iii) refusal calibration:} refusals remain targeted rather than blanket,
+\textbf{(iv) graceful degradation:} under conflict, the model resolves rather than truncates.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+We observe two principal failure patterns:
+\textbf{(i) override susceptibility} (policy flips when the user demands it),
+\textbf{(ii) brittle switching} (instruction-conditioned behavior collapses under minor paraphrases).
+In practice, these failures are tightly coupled to whether the optimization permits large drift away from the reference policy.
+
+\vspace{-0.25em}
+\subsection*{Over-refusal calibration: avoiding unnecessary refusals}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} Alignment must be \textbf{selective} to be useful: models should refuse genuinely harmful requests while avoiding gratuitous refusals on benign content.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+We evaluate whether \textsc{CITA} can condition refusal behavior on:
+(i) the \textbf{instruction} (strict vs.\ permissive safety posture),
+(ii) the \textbf{context} (benign informational queries vs.\ actionable harm),
+(iii) the \textbf{degree of risk} (low-risk educational vs.\ high-risk operational).
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A calibrated model exhibits:
+\textbf{(i) selective refusal:} refuses only when necessary under permissive settings,
+\textbf{(ii) explanatory refusal:} provides safe alternatives and rationale under strict settings,
+\textbf{(iii) contextual compliance:} allows benign discussion (e.g., safety education) while refusing harmful operational detail.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+Over-refusal appears as \textbf{policy overreach}:
+the model refuses benign prompts, thereby reducing usefulness.
+Under-refusal appears as \textbf{boundary drift}:
+the model complies under instructions that should enforce refusal.
+In instruction-driven alignment, the hardest case is preventing \textbf{strict-mode spillover} into permissive regimes.
+
+\vspace{-0.25em}
+\subsection*{Policy switching: counterfactual control under a shared backbone}
+\vspace{-0.15em}
+
+\noindent
+\textbf{Claim.} \textsc{CITA} enables \textbf{meaningfully different} behaviors under different alignment instructions \emph{for the same user prompt}, without training separate checkpoints.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What we measure.}
+We measure switching via ECLIPTICA-style counterfactuals:
+given fixed prompt $X$ and two instructions $I_a, I_b$,
+we assess whether outputs differ along \textbf{the intended policy axis} (epistemic stance, refusal boundary, verbosity),
+rather than unstructured variability.
+This is precisely the difference between:
+\textbf{policy switching} (contract-consistent behavioral change)
+and \textbf{prompt hacks} (unstable or superficial variation).
+
+\vspace{-0.15em}
+\noindent
+\textbf{What success looks like.}
+A strong switch is:
+\textbf{(i) directional:} changes align with the instruction contract,
+\textbf{(ii) consistent:} repeats across paraphrases and domains,
+\textbf{(iii) bounded:} remains within a stable neighborhood of the reference (no runaway drift),
+\textbf{(iv) non-degenerate:} does not collapse into trivial acknowledgements or truncated replies.
+
+\vspace{-0.15em}
+\noindent
+\textbf{What failure looks like.}
+We observe three failure types:
+\textbf{(i) mode collapse} (one regime dominates regardless of instruction),
+\textbf{(ii) regime interference} (switching works but bleeds constraints across regimes),
+\textbf{(iii) brittle conjunction} (multi-instruction composition produces incomplete outputs).
+The failure case in Appendix~\ref{sec:appendix_examples} illustrates (iii).
+
+\vspace{-0.15em}
+\paragraph{\textbf{Practical summary.}}
+Across these dimensions, \textsc{CITA} is best understood as providing a \textbf{deployable control interface}:
+alignment becomes a \textbf{runtime instruction channel} that modulates policy with bounded, repeatable counterfactual effects,
+rather than a one-shot, training-time imprint of a single behavior.
+
+% =============================================================================
+% TRAINING CURVES (SUPPLEMENTARY)
+% =============================================================================
+\section{Training Curves}
+\label{sec:appendix_training_curves}
+
+\vspace{-0.25em}
+\noindent
+This section reports supplementary training dynamics that contextualize the main results in Section~\ref{sec:training_dynamics}.
+We emphasize one operational point: \textbf{loss scale is not comparable across methods}.
+Offline preference objectives (DPO/\textsc{CITA}) and online RL objectives (GRPO) produce different loss magnitudes and noise characteristics.
+Accordingly, we interpret curves through \textbf{convergence shape}, \textbf{stability}, and \textbf{relative trends} (Instruct vs.\ NoInstruct), rather than absolute loss values.
+
+\subsection{DPO/\textsc{CITA} Eval Loss}
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/training/combined_eval_loss.pdf}
+\caption{\textbf{Evaluation loss across policy optimization methods.}
+We plot evaluation loss for DPO, \textsc{CITA}, and GRPO using independent y-axes due to non-comparable loss scales.
+\textbf{DPO (left):} loss $\sim$0.21--0.28 with smooth convergence; the Instruct variant is slightly lower, consistent with stronger preference fit under the instruction-augmented setup.
+\textbf{\textsc{CITA} (center):} loss $\sim$0.27--0.40; the NoInstruct curve converges lower, while \textsc{CITA\_Instruct} attains larger reward margins, reflecting a separation--stability trade-off induced by the mandatory anchoring term.
+\textbf{GRPO (right):} loss oscillates near zero ($\pm$0.001), characteristic of online RL training where the objective is dominated by on-policy sampling variance.
+\textbf{Note:} PPO tensorboard logs were empty due to a TRL logging issue, so we do not include PPO curves here.}
+\label{fig:training_loss}
+\vspace{-3mm}
+\end{figure*}
+
+\vspace{-0.35em}
+\noindent\textbf{Key takeaways from Figure~\ref{fig:training_loss}.}
+\textbf{First,} DPO exhibits the most stable and smooth offline convergence, serving as a strong baseline for preference fitting.
+\textbf{Second,} \textsc{CITA} exhibits slightly higher eval loss but achieves higher reward margins, consistent with learning a \textbf{switchable policy family} rather than optimizing a single preference boundary.
+\textbf{Third,} GRPO's oscillatory loss highlights the cost of online methods: additional variance and sensitivity to sampling, even when downstream performance can be competitive.
+
+\paragraph{DPO loss dynamics (left panel).}
+DPO's evaluation loss decreases monotonically from $\sim$0.28 to $\sim$0.21 over 1,400 training steps, exhibiting textbook offline optimization behavior.
+The Instruct variant achieves slightly lower final loss (0.21) compared to NoInstruct (0.22), indicating that instruction-augmented training provides marginally stronger preference signal.
+This smooth convergence reflects DPO's core design: by reformulating RLHF as supervised learning on preference pairs, DPO avoids the sampling variance inherent to online methods.
+The monotonic decrease also suggests that the learning rate ($1 \times 10^{-5}$) and LoRA configuration (r=16) are well-calibrated for this task.
+
+\paragraph{\textsc{CITA} loss dynamics (center panel).}
+\textsc{CITA} exhibits a different pattern: loss decreases from $\sim$0.40 to $\sim$0.27 (NoInstruct) or $\sim$0.34 (Instruct).
+The higher absolute loss compared to DPO is expected because \textsc{CITA}'s unified loss includes both the DPO term and the KL anchor: $\mathcal{L}_{\text{CITA}} = \mathcal{L}_{\text{DPO}} + \lambda_{\text{KL}} \cdot \mathcal{L}_{\text{KL}}$.
+The KL term penalizes deviation from the reference policy, which necessarily increases total loss while providing stability benefits.
+Notably, \textsc{CITA}\_NoInstruct converges to lower loss than \textsc{CITA}\_Instruct---the opposite of DPO's pattern---because longer Instruct sequences incur proportionally larger KL penalties.
+
+\paragraph{GRPO loss dynamics (right panel).}
+GRPO's loss oscillates near zero ($\pm$0.001), which is characteristic of online RL rather than a sign of instability.
+Unlike offline methods that compute loss on a fixed preference dataset, GRPO generates fresh responses at each step and computes group-relative advantages within each batch.
+This on-policy sampling introduces inherent variance: different batches of generated responses produce different advantage distributions.
+The oscillation around zero reflects that GRPO's loss is a policy gradient objective (expected advantage-weighted log-probability) rather than a supervised loss, making direct magnitude comparisons with DPO/\textsc{CITA} inappropriate.
+GRPO also runs for fewer steps ($\sim$500) due to the computational overhead of online generation.
+
+\paragraph{Why PPO curves are absent.}
+PPO tensorboard logs were empty due to a known TRL logging issue where the PPOTrainer's internal metrics are not properly exported to tensorboard in certain configurations.
+Despite the missing training curves, PPO evaluation results (Section~\ref{sec:overall_results}) confirm that PPO training completed successfully and produced competitive models, particularly on the AQI benchmark where PPO's online optimization shapes global reward-aligned behavior.
+
+

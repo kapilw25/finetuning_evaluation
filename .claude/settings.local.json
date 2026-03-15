@@ -73,7 +73,16 @@
       "WebFetch(domain:aclrollingreview.org)",
       "WebFetch(domain:www.aclweb.org)",
       "WebFetch(domain:2026.aclweb.org)",
-      "Bash(pdflatex:*)"
+      "Bash(pdflatex:*)",
+      "Bash(pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -2 && bibtex 0_main 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -2 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -2)",
+      "Bash(pdflatex -interaction=nonstopmode 0_main.tex && bibtex 0_main && pdflatex -interaction=nonstopmode 0_main.tex && pdflatex -interaction=nonstopmode 0_main.tex)",
+      "WebFetch(domain:acl-org.github.io)",
+      "Bash(bibtex 0_main 2>&1 | tail -5 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3)",
+      "Bash(pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && bibtex 0_main 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3)",
+      "Bash(bibtex 0_main 2>&1)",
+      "WebFetch(domain:2025.emnlp.org)",
+      "WebFetch(domain:www.semanticscholar.org)",
+      "Bash(pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && bibtex 0_main 2>&1 | tail -5 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3)"
     ],
     "deny": [],
     "ask": []

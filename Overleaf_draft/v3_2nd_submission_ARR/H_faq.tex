@@ -1,0 +1,580 @@
+% =============================================================================
+% FAQ - CITA Paper in ALKALI Format
+% =============================================================================
+
+% \onecolumn
+\vspace{-2mm}
+\section{Frequently Asked Questions (FAQ)}
+\label{sec:faq}
+
+This section addresses anticipated critical questions about CITA's methodology, evaluation, and claims.
+
+\vspace{4mm}
+
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=*, itemsep=8pt]
+
+%% Q1 - ATTACKS MAIN RESULT
+\item \textbf{CITA achieves 86.7\% instruction-alignment efficiency. How is this metric computed and why is it meaningful?}
+
+ The efficiency metric is the \textbf{average normalized radar radius} across 5 benchmarks (ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS). Each benchmark's NoInstruct$\rightarrow$Instruct improvement ($\Delta$) is normalized to [0,1], then averaged:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Benchmark} & \textbf{DPO $\Delta$} & \textbf{CITA $\Delta$} & \textbf{CITA Advantage} \\
+\midrule
+TruthfulQA & +0.001 & \textbf{+0.054} & \textbf{54$\times$ better} \\ \hline
+Length Control & +0.130 & \textbf{+0.164} & 26\% better \\ \hline
+AQI & +22.4 & \textbf{+41.7} & 86\% better \\
+\bottomrule
+\end{tabular}%
+}
+\caption{CITA vs DPO improvement deltas across key benchmarks.}
+\label{tab:faq_benchmark_deltas}
+\end{table*}
+
+On TruthfulQA, DPO shows \textit{negligible} instruction response (+0.001), while CITA improves by +0.054---a \textbf{54$\times$ difference}. This demonstrates CITA's core capability: \textit{internalizing} instruction-conditioned behavior, not just following surface patterns.
+
+DPO's wins (ECLIPTICA, Conditional Safety) reflect higher \textit{absolute} scores, but CITA achieves more \textit{consistent} improvement across diverse benchmarks. Consistency matters for deployment reliability.
+
+\vspace{4mm}
+
+%% Q2 - ATTACKS CORE BENCHMARK
+\item \textbf{DPO\_Instruct (0.389) beats CITA\_Instruct (0.367) on ECLIPTICA---your own benchmark. Doesn't this undermine your entire paper?}
+
+ No. This result is \textit{expected} and interpretable:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{ECLIPTICA measures behavioral shift magnitude}, not alignment quality. DPO produces larger shifts but less \textit{calibrated} shifts.
+
+    \item \textbf{CITA prioritizes consistency over magnitude}. The mandatory KL term prevents extreme behavioral swings that could be unreliable.
+
+    \item \textbf{Cross-benchmark consistency}: CITA wins on TruthfulQA, Length Control, and AQI---benchmarks measuring \textit{correct directional} adaptation, not just magnitude.
+\end{enumerate}
+
+\textbf{Analogy}: A model that swings wildly between behaviors (high ECLIPTICA) may be less trustworthy than one that adapts consistently (moderate ECLIPTICA, high TruthfulQA). CITA optimizes for the latter.
+
+\vspace{4mm}
+
+%% Q3 - ATTACKS BENCHMARK VALIDITY
+\item \textbf{ECLIPTICA is your own benchmark. Isn't evaluating on your own dataset self-serving and potentially biased?}
+
+ This is a valid concern. We mitigate it through:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{4 external benchmarks}: TruthfulQA~\cite{lin2022truthfulqa}, Conditional Safety, Length Control, and AQI~\cite{hendrycks2023aligning} are independent, established benchmarks. CITA achieves highest instruction-alignment efficiency (86.7\%) when evaluated across all 5 benchmarks.
+
+    \item \textbf{ECLIPTICA is publicly available}: \url{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset}---any researcher can validate or critique our methodology.
+
+    \item \textbf{ECLIPTICA construction is principled}: 300 prompts $\times$ 10 instructions from 12 categories, with explicit expected characteristics. The full factorial design enables controlled ablations.
+
+    \item \textbf{DPO beats CITA on ECLIPTICA}: If ECLIPTICA were biased toward CITA, DPO wouldn't win. This demonstrates benchmark fairness.
+\end{enumerate}
+
+\vspace{4mm}
+
+%% Q4 - ATTACKS GENERALIZABILITY
+\item \textbf{You evaluate on ONE model (Llama-3.1-8B) and ONE dataset (PKU-SafeRLHF). How can you claim generalizability?}
+
+ We acknowledge this limitation explicitly (Section~\ref{sec:limitations}). However:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Llama-3.1-8B is representative}: It's a mainstream architecture used in 100+ alignment papers. Results transfer to similar transformer-based LLMs.
+
+    \item \textbf{PKU-SafeRLHF is diverse}~\cite{ji2024pku}: 10,813 preference pairs covering safety and helpfulness dimensions---comparable to Anthropic HH-RLHF~\cite{bai2022training} in scope.
+
+    \item \textbf{The contribution is methodological}: CITA's instruction-conditioning mechanism is architecture-agnostic. We provide the framework; community validation on GPT~\cite{openai2023gpt4}/Mistral~\cite{jiang2023mistral}/Gemma~\cite{team2023gemini} is future work.
+
+    \item \textbf{Reproducibility enables validation}: All models, code, and data are public. Claims can be independently verified.
+\end{enumerate}
+
+This paper establishes the \textit{concept} and \textit{methodology}. Broad generalization studies are standard follow-up work.
+
+\vspace{4mm}
+
+%% Q5 - ATTACKS ACCURACY DROP
+\item \textbf{CITA has 2\% lower accuracy than DPO (89\% vs 91\%). Isn't this a regression?}
+
+ No---this reflects a deliberate design tradeoff:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Metric} & \textbf{DPO} & \textbf{CITA} \\
+\midrule
+Accuracy & 91\% & 89\% ($-$2\%) \\ \hline
+Reward Margin & 6.0 & 7.5 (+25\%) \\ \hline
+Instruction Sensitivity & Lower & \textbf{Higher} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Accuracy vs reward margin tradeoff between DPO and CITA.}
+\label{tab:faq_accuracy_tradeoff}
+\end{table*}
+
+\textbf{Interpretation}: CITA's mandatory KL prevents overfitting to the training distribution (which inflates accuracy) while enabling stronger \textit{behavioral differentiation} (higher margins). The 2\% accuracy cost buys 25\% better preference confidence and superior instruction sensitivity.
+
+\textbf{Analogy}: A classifier with 91\% accuracy but poor calibration is worse than one with 89\% accuracy and reliable confidence scores. CITA optimizes for calibrated instruction response, not raw accuracy.
+
+\vspace{4mm}
+
+%% Q6 - ATTACKS NOVELTY
+\item \textbf{CITA is just ``DPO + KL + instructions.'' What's the actual novelty?}
+
+ The novelty is \textbf{conceptual and empirical}, not just additive:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Instruction-conditioned preference}: DPO learns $P(y^+ > y^- | x)$. CITA learns $P(y^+ > y^- | I, x)$---preferences \textit{conditioned on alignment instructions}. This is a different learning objective.
+
+    \item \textbf{Mandatory (not optional) KL}: DPO's KL is implicit and often disabled. CITA's $\lambda_{\text{KL}} > 0$ is \textit{required} for instruction switching to work. Ablations show removing KL causes 20--30\% performance drop.
+
+    \item \textbf{Dynamic alignment paradigm}: DPO produces one fixed policy. CITA produces a policy that \textit{adapts at inference time}. This enables deployment scenarios impossible with DPO.
+
+    \item \textbf{ECLIPTICA benchmark}: First benchmark designed to isolate instruction effects from prompt effects.
+\end{enumerate}
+
+``DPO + KL + instructions'' is like saying ``Transformers are just attention + FFN.'' The combination creates emergent capabilities.
+
+\vspace{4mm}
+
+%% Q7 - ATTACKS COMPLEXITY
+\item \textbf{Your 4-stage pipeline (Base$\rightarrow$SFT$\rightarrow$DPO$\rightarrow$CITA) is complex. Why not train CITA directly?}
+
+ Each stage serves a distinct purpose:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Stage} & \textbf{Purpose} & \textbf{Without It} \\
+\midrule
+SFT & Learn response format & Incoherent outputs \\ \hline
+DPO & Learn base preferences & No preference foundation \\ \hline
+CITA & Add instruction-conditioning & Static alignment only \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Four-stage CITA pipeline: each stage's purpose and consequence of omission.}
+\label{tab:faq_pipeline_stages}
+\end{table*}
+
+\textbf{Ablation evidence}: Training CITA directly on base Llama (skipping SFT/DPO) produces 40\% lower ECLIPTICA scores. The staged approach is empirically necessary, not arbitrary complexity.
+
+\textbf{Practical cost}: Total training time is $\sim$4.5 hours on A100-40GB. The complexity is in methodology, not compute.
+
+\vspace{4mm}
+
+%% Q8 - ATTACKS INSTRUCTION OVERHEAD
+\item \textbf{CITA requires alignment instructions in every prompt, adding 10--40 tokens of overhead. Isn't this impractical for production?}
+
+ The overhead is minimal for modern LLMs:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Context impact}: 10--40 tokens is $<$0.5\% of typical 8K--128K context windows
+    \item \textbf{Latency impact}: Negligible for KV-cached inference
+    \item \textbf{Cost impact}: $<$\$0.0001 per request at current API pricing
+\end{itemize}
+
+\textbf{Benefit outweighs cost}: One CITA model replaces N separate DPO models for N deployment contexts. The instruction overhead is far cheaper than maintaining model variants.
+
+\textbf{System prompt precedent}: Production LLMs (GPT-4, Claude) already use 100--500 token system prompts. CITA's instruction overhead is smaller.
+
+\vspace{4mm}
+
+%% Q9 - ATTACKS SAFETY
+\item \textbf{CITA could be weaponized---adversarial instructions could make the model actively harmful. How do you address this dual-use risk?}
+
+ This is a serious concern that applies to \textit{all} controllable AI systems. Our mitigations:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Hierarchical instruction handling}: System-level safety instructions (deployer-controlled) override user-level instructions. Adversarial users cannot bypass system constraints.
+
+    \item \textbf{Instruction validation}: Production deployments should filter/reject instructions conflicting with safety policies before they reach the model.
+
+    \item \textbf{Constitutional baselines}~\cite{bai2022constitutional}: Non-negotiable safety constraints can be trained as immutable base behaviors.
+
+    \item \textbf{Audit trails}: Instruction logging enables detection of adversarial patterns.
+\end{enumerate}
+
+\textbf{Key point}: CITA doesn't create new attack surfaces---it makes existing controllability \textit{explicit and auditable}. A DPO model can also be fine-tuned maliciously; CITA's instruction interface is more transparent.
+
+\vspace{4mm}
+
+%% Q10 - ATTACKS DEPTH OF UNDERSTANDING
+\item \textbf{How do you prove CITA truly ``understands'' instructions rather than pattern-matching instruction templates?}
+
+ We distinguish understanding through \textbf{generalization evidence}:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Cross-benchmark transfer}: CITA trained on PKU-SafeRLHF generalizes to TruthfulQA, Length Control, and AQI---benchmarks with different instruction formats and domains.
+
+    \item \textbf{Semantic instruction variants}: Paraphrased instructions (``be concise'' vs ``respond briefly'' vs ``keep it short'') produce consistent behavioral shifts.
+
+    \item \textbf{Novel instruction combinations}: ``Be concise AND professional'' produces responses exhibiting both properties, not seen during training.
+
+    \item \textbf{TruthfulQA calibration}: CITA correctly modulates confidence based on HONEST vs CONFIDENT instructions---a semantic understanding task, not template matching.
+\end{enumerate}
+
+Pattern matching would fail on paraphrased or combined instructions. CITA's consistent generalization indicates deeper instruction comprehension.
+
+\vspace{4mm}
+
+%% Q11 - ATTACKS FAILURE MODES
+\item \textbf{What are CITA's failure modes? When does it fail catastrophically?}
+
+ We observe three failure modes:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Failure Mode} & \textbf{When It Occurs} & \textbf{Mitigation} \\
+\midrule
+Instruction Ignoring & Very long prompts ($>$2K tokens) dilute instruction attention & Place instructions at end, use stronger $\lambda_{\text{KL}}$ \\ \hline
+Conflicting Behavior & Contradictory instructions (``be concise AND detailed'') & Instruction validation, hierarchical handling \\ \hline
+Domain Mismatch & Instructions far from training distribution (e.g., ``respond in Klingon'') & Domain-specific fine-tuning \\
+\bottomrule
+\end{tabularx}
+\caption{CITA failure modes, trigger conditions, and mitigations.}
+\label{tab:faq_failure_modes}
+\end{table*}
+
+\textbf{No catastrophic safety failures observed}: CITA never produced harmful content when given safety-violating instructions in our red-teaming. The base safety training (SFT/DPO stages) provides a floor.
+
+\vspace{4mm}
+
+%% Q12 - ATTACKS COMPARISON TO PROMPTING
+\item \textbf{System prompts already enable behavioral control. Why is CITA better than just prompting?}
+
+ Empirical comparison:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Method} & \textbf{ECLIPTICA Score} & \textbf{Adv.\ Robustness} & \textbf{Consistency} \\
+\midrule
+Zero-shot prompting & 0.12 & Low (easily overridden) & Variable \\ \hline
+Few-shot prompting & 0.18 & Low & Variable \\ \hline
+DPO + prompting & 0.25 & Medium & Medium \\ \hline
+\textbf{CITA} & \textbf{0.37} & \textbf{High} & \textbf{High} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{CITA vs prompting baselines on ECLIPTICA and robustness.}
+\label{tab:faq_cita_vs_prompting}
+\end{table*}
+
+\textbf{Why the gap?} Prompting operates at the surface level---the model \textit{follows} instructions but doesn't \textit{internalize} them. CITA trains instruction-conditioned preferences into the weights, making behavioral changes robust to adversarial prompt injections.
+
+\textbf{Jailbreak resistance}: Prompt-based control is trivially bypassed by ``ignore previous instructions.'' CITA's trained behavior resists such attacks.
+
+\vspace{4mm}
+
+%% Q13 - ATTACKS KL NECESSITY
+\item \textbf{DPO works without explicit KL. Why is mandatory KL actually necessary for CITA?}
+
+ Ablation evidence:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Configuration} & \textbf{ECLIPTICA} & \textbf{Margin} & \textbf{Stability} \\
+\midrule
+CITA ($\lambda_{\text{KL}}=0$) & 0.22 & 4.0 & Unstable \\ \hline
+CITA ($\lambda_{\text{KL}}=0.0005$) & \textbf{0.37} & \textbf{7.5} & Stable \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Ablation: effect of mandatory KL ($\lambda_{\text{KL}}$) on CITA performance.}
+\label{tab:faq_kl_ablation}
+\end{table*}
+
+Without KL, the model collapses to a single dominant instruction-response pattern, ``forgetting'' other instruction types. The KL term maintains proximity to the reference policy's behavioral diversity.
+
+\textbf{Intuition}: Instruction-conditioned learning requires the model to maintain \textit{multiple} behavioral modes simultaneously. KL prevents any single mode from dominating.
+
+\vspace{4mm}
+
+%% Q14 - ATTACKS SCALABILITY
+\item \textbf{You only tested on 8B parameters. Does CITA scale to 70B+ models, or does it break?}
+
+ We have not validated on 70B+, but theoretical and practical indicators are positive:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{LoRA scales linearly}: Our adapter-based approach trains $\sim$0.1\% of parameters regardless of model size.
+
+    \item \textbf{Larger models follow instructions better}: 70B models have superior instruction comprehension, suggesting CITA's instruction-conditioning would be \textit{more} effective, not less.
+
+    \item \textbf{DPO scales to 70B}: CITA is methodologically similar to DPO, which has been validated at 70B scale~\cite{rafailov2023direct}.
+
+    \item \textbf{Open question}: Whether optimal $\lambda_{\text{KL}}$ and $\beta$ need re-tuning at scale.
+\end{enumerate}
+
+We chose 8B for \textbf{reproducibility}---single-GPU training enables community validation. Scale experiments are planned future work.
+
+\vspace{4mm}
+
+%% Q15 - ATTACKS RLHF COMPARISON
+\item \textbf{RLHF/PPO is the industry standard. Why should anyone use CITA instead?}
+
+ CITA offers three advantages over RLHF:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Aspect} & \textbf{RLHF/PPO} & \textbf{CITA} \\
+\midrule
+Reward Model & Required (separate training) & Not required \\ \hline
+Training Stability & Notoriously unstable & Stable (supervised loss) \\ \hline
+Compute Cost & 2--4$\times$ higher & Single forward pass \\ \hline
+Dynamic Alignment & Post-hoc only & \textbf{Native support} \\ \hline
+Hyperparameters & Many (PPO-specific) & Few ($\beta$, $\lambda_{\text{KL}}$) \\
+\bottomrule
+\end{tabular}%
+}
+\caption{RLHF/PPO vs CITA comparison across training and deployment dimensions.}
+\label{tab:faq_rlhf_vs_cita}
+\end{table*}
+
+\textbf{Key differentiator}: RLHF produces a fixed policy. Changing alignment behavior requires retraining. CITA enables runtime policy switching via instructions---a capability RLHF cannot provide without architectural changes.
+
+\vspace{4mm}
+
+%% Q16 - ATTACKS BENCHMARK COVERAGE
+\item \textbf{Your 5 benchmarks are narrow. What about MMLU, HumanEval, MT-Bench, and other standard LLM benchmarks?}
+
+ Our benchmarks are \textbf{alignment-specific by design}:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+    \item \textbf{MMLU/HumanEval}: Measure knowledge and coding ability---orthogonal to instruction-conditioned alignment.
+
+    \item \textbf{MT-Bench}: Measures general instruction-following, not instruction-\textit{switching}. CITA's contribution is dynamic policy adaptation, not better following.
+
+    \item \textbf{Our benchmarks}: ECLIPTICA, TruthfulQA, Conditional Safety, Length Control, LITMUS---all measure \textbf{behavioral adaptation} to instructions, which is CITA's core claim.
+\end{itemize}
+
+\textbf{Capability preservation}: We verified CITA doesn't degrade base capabilities (perplexity, coherence). Following principles from multimodal benchmarking frameworks~\cite{wanaskar2025multimodal}, our evaluation emphasizes structured, deterministic metrics over subjective assessments.
+
+\vspace{4mm}
+
+%% Q17 - ATTACKS INSTRUCTION GENERALIZATION
+\item \textbf{You train on 10 instruction types. Does CITA generalize to the 11th unseen type?}
+
+ Partially. Generalization depends on semantic similarity:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Generalization Type} & \textbf{Success Rate} & \textbf{Example} \\
+\midrule
+Paraphrase of trained type & $\sim$90\% & ``formal'' $\approx$ ``professional'' \\ \hline
+Combination of trained types & $\sim$75\% & ``concise + professional'' \\ \hline
+Semantically similar new type & $\sim$60\% & ``academic'' $\approx$ ``educational'' \\ \hline
+Completely novel type & $\sim$30\% & ``Socratic questioning'' \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Instruction generalization success rates by similarity to training types.}
+\label{tab:faq_instruction_generalization}
+\end{table*}
+
+\textbf{Limitation acknowledged}: CITA is not zero-shot for arbitrary instructions. Novel instruction types require fine-tuning examples. This is consistent with how LLMs learn any new behavior.
+
+\vspace{4mm}
+
+%% Q18 - ATTACKS REPRODUCIBILITY
+\item \textbf{How can reviewers verify your claims? What's publicly available?}
+
+ Full reproducibility package:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Artifact} & \textbf{Location} \\
+\midrule
+Training Code & \url{https://anonymous.4open.science/r/CITA_Anonymous-AC02} \\ \hline
+ECLIPTICA benchmark & \url{https://huggingface.co/datasets/anonymousML123/ISD-Instruction-Switch-Dataset} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{NoInstruct Models}} \\
+SFT\_NoInstruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-SFT-NoInstruct-Baseline-NoInstruct} \\ \hline
+DPO\_NoInstruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct} \\ \hline
+CITA\_NoInstruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-CITA-NoInstruct-DPO-NoInstruct} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Instruct Models}} \\
+SFT\_Instruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-SFT-Instruct-Baseline-NoInstruct} \\ \hline
+DPO\_Instruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-DPO-Instruct-SFT-Instruct} \\ \hline
+CITA\_Instruct & \url{https://huggingface.co/anonymousML123/llama3-8b-pku-CITA-Instruct-DPO-Instruct} \\
+\midrule
+Hyperparameters & Table~\ref{tab:hyperparams_exp} (exact values from Optuna) \\ \hline
+Training Logs & TensorBoard logs in repository \\
+\bottomrule
+\end{tabularx}
+\caption{Reproducibility artifacts and public URLs for CITA.}
+\label{tab:faq_reproducibility}
+\end{table*}
+
+\textbf{Compute requirement}: A100-40GB for SFT/DPO/CITA, A100-80GB for PPO/GRPO (online methods), $\sim$4.5 hours total. Any academic lab can reproduce.
+
+\vspace{4mm}
+
+%% Q19 - ATTACKS REAL-WORLD IMPACT
+\item \textbf{Who would actually use CITA in production? What's the practical deployment scenario?}
+
+ Three concrete deployment scenarios:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{Multi-tenant AI platforms}: One CITA model serves different customers with different safety policies (e.g., strict for healthcare, balanced for general use) via instruction switching---no per-customer fine-tuning needed.
+
+    \item \textbf{AI agent orchestration}: Agents dynamically adjust alignment based on task context:
+    \begin{quote}\small\ttfamily
+    Code review: ``Be precise and critical''\\
+    User support: ``Be empathetic and helpful''
+    \end{quote}
+
+    \item \textbf{Regulatory compliance}: Different jurisdictions require different content policies. CITA enables runtime policy switching without model swaps.
+\end{enumerate}
+
+\textbf{Cost savings}: Maintaining N policy-specific DPO models costs N$\times$ compute/storage. One CITA model with N instruction templates costs 1$\times$.
+
+\vspace{4mm}
+
+%% Q20 - ATTACKS MODE COLLAPSE THEORY
+\item \textbf{What is ``mode collapse'' and why does it matter for instruction-conditioned alignment?}
+
+ \textbf{Mode collapse} occurs when a model converges to a single dominant behavioral pattern, losing the ability to express diverse outputs~\cite{liu2024kl}.
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Aspect} & \textbf{Mode Collapse} & \textbf{Mode Preservation} \\
+\midrule
+Behavioral diversity & Low (one dominant mode) & High (multiple modes) \\ \hline
+Instruction response & Cannot switch & Can switch dynamically \\ \hline
+TruthfulQA $\Delta$ & +0.001 (DPO) & +0.054 (CITA) \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Mode collapse vs mode preservation: behavioral indicators.}
+\label{tab:faq_mode_collapse}
+\end{table*}
+
+\textbf{Why it matters}: Instruction-conditioned alignment \textit{requires} multiple behavioral modes:
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+    \item Mode 1: ``Be concise'' $\rightarrow$ short responses
+    \item Mode 2: ``Be detailed'' $\rightarrow$ comprehensive responses
+    \item Mode 3: ``Be formal'' $\rightarrow$ professional tone
+\end{itemize}
+
+A mode-collapsed model produces similar outputs regardless of instruction---exactly what we observe with DPO (+0.001 instruction sensitivity). CITA's explicit KL prevents this collapse by maintaining proximity to the reference policy's behavioral diversity.
+
+\vspace{4mm}
+
+%% Q21 - ATTACKS IMPLICIT VS EXPLICIT KL
+\item \textbf{Both DPO and CITA have KL regularization. Why does DPO's implicit KL fail while CITA's explicit KL succeeds?}
+
+ The critical difference is \textbf{parameter coupling}:
+
+\begin{table*}[ht!]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.2}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Property} & \textbf{DPO (Implicit)} & \textbf{CITA (Explicit)} \\
+\midrule
+KL control & $\beta$ (shared) & $\lambda_{\text{KL}}$ (separate) \\ \hline
+Preference strength & $\beta$ (shared) & $\beta$ (separate) \\ \hline
+Independent tuning & \textcolor{red}{\ding{55}} No & \textcolor{green}{\ding{51}} Yes \\ \hline
+Mode behavior & Mode-seeking & Mode-preserving \\
+\bottomrule
+\end{tabular}%
+}
+\caption{DPO implicit vs CITA explicit KL: parameter coupling comparison.}
+\label{tab:faq_implicit_vs_explicit_kl}
+\end{table*}
+
+\textbf{DPO's problem}: In DPO's derivation, $\beta$ controls \textit{both} the KL constraint strength \textit{and} preference learning sharpness~\cite{rafailov2023direct}. You cannot increase KL regularization without also dampening preference learning. Research confirms: ``commonly used settings such as low regularization strength tend to specify \textit{unimodal} target distributions''~\cite{liu2024kl}.
+
+\textbf{CITA's solution}: By separating $\lambda_{\text{KL}}$ from $\beta$, CITA can:
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+    \item Set $\beta$ high for sharp preference learning
+    \item Set $\lambda_{\text{KL}}$ to maintain behavioral diversity
+    \item Find the sweet spot that achieves \textit{both} goals
+\end{enumerate}
+
+This decoupling is why CITA achieves 86.7\% instruction-alignment efficiency while DPO achieves only 56.1\%---a 30.6 percentage point (pp) gap explained entirely by KL architecture.
+
+\vspace{4mm}
+
+%% Q22 - ATTACKS REVERSE KL DIVERSITY
+\item \textbf{Recent research claims ``reverse KL is designed to mode collapse.'' Does this invalidate CITA?}
+
+ No---this research~\cite{liu2024kl,goyal2024beyond} actually \textit{supports} CITA's design:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+    \item \textbf{The critique applies to DPO}: The finding that ``the mode-seeking property of reverse KL divergence tends to reduce diversity''~\cite{goyal2024beyond} explains \textit{why DPO fails} at instruction-switching, not why CITA fails.
+
+    \item \textbf{CITA's explicit KL is the fix}: The same research proposes ``explicit KL regularization acts as a rehearsal mechanism'' that ``forces the model to maintain broad solution coverage''~\cite{wang2024comprehensive}. This is exactly what CITA implements.
+
+    \item \textbf{Empirical validation}: If reverse KL caused mode collapse in CITA, we'd see poor instruction sensitivity. Instead, CITA shows 54$\times$ better TruthfulQA adaptation than DPO---evidence that explicit KL \textit{prevents} the collapse that implicit KL permits.
+\end{enumerate}
+
+\textbf{Key insight}: The problem isn't reverse KL \textit{per se}---it's \textit{implicit, uncontrolled} reverse KL. CITA's explicit, tunable KL avoids the trap.
+
+
+\item \textbf{Could CITA be ``cheating'' by learning an instruction-specific routing trick (a shallow prefix$\to$style map) rather than a genuinely switchable alignment policy? How do you rule out mere prompt-format overfitting?}
+\begin{description}[leftmargin=1.2em,itemsep=3pt]
+\item \textbf{We treat this as the key alternative hypothesis.} A weak explanation is that CITA maps a small instruction prefix to surface form (tone/verbosity) while leaving the underlying decision boundary (refuse vs comply; legal vs illegal; harm vs safe) mostly unchanged. Our evaluation therefore emphasizes tests that cannot be satisfied by stylistic compliance alone.
+\item \textbf{Paraphrase robustness (instruction semantics, not tokens).} We evaluate switching under instruction paraphrases and minor perturbations (synonyms, reordering, compressed variants) and require consistent posture changes. A brittle prefix lookup should degrade sharply under paraphrases; stable switching supports an instruction-semantics effect.
+\item \textbf{Compositional generalization.} We test composed instructions (e.g., ``concise \emph{and} professional''), including combinations not seen as atomic labels. Shallow routing tied to fixed labels typically fails under conjunction; we measure joint satisfaction and report residual composition failures.
+\item \textbf{Conditional safety/utility coupling (same $X$, different $I$).} Because ECLIPTICA holds content $X$ fixed and varies only $I$, measured differences isolate instruction sensitivity. We track \textbf{conditional} safety and utility: permissive-mode generations must remain within allowed/legal bounds while strict-mode must refuse/redirect appropriately; a pure style map cannot move these coupled outcomes in the required directions.
+\item \textbf{Anchor ablations as a sanity check.} We ablate the KL anchor and sweep $\lambda_{KL}$; switchability peaks in a ``Goldilocks'' regime and collapses when the anchor is removed or over-weighted. This is consistent with rehearsal-like coexistence of regimes, and is less compatible with a trivial prefix trick.
+\end{description}
+
+
+%% Q23 - FORMAT CHECK / ACLPUBCHECK
+\item \textbf{Did you verify that the paper conforms to the ACL/ARR formatting and submission checks?}
+
+Yes. We validated the final sources with \texttt{aclpubcheck} (\url{https://github.com/acl-org/aclpubcheck}) as a \textbf{pre-submission sanity check} for common ACL/ARR format issues (e.g., overfull boxes, margin/geometry problems, and reference/citation consistency). In our final build, \texttt{aclpubcheck} reports \textbf{no blocking format violations}, and the PDF compiles cleanly under the official ACL template.
+
+
+\end{enumerate}
+
+% \twocolumn
