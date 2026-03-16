@@ -1,77 +1,37 @@
-# MINIMAL REQUIREMENTS - For CITA Training
+# CPU REQUIREMENTS - For local development, evaluation scripts, plotting, HF push
 #
-# TESTED: Python 3.12, PyTorch 2.5.1+cu124, Flash-Attn 2.8.3, A100-80GB
+# INSTALLATION:
+#   python3 -m venv venv_CITA && source venv_CITA/bin/activate
+#   pip install -r requirements.txt
 #
-# INSTALLATION: Run ./setup_env.sh (recommended, ~2 min)
-#
-# MANUAL INSTALLATION:
-# 1. python3.12 -m venv venv_CITA && source venv_CITA/bin/activate
-# 2. pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
-# 3. pip install -r requirements.txt
-# 4. Install flash-attn (choose one):
-#    - Pre-built wheel (~30s): See setup_env.sh for curl command
-#    - Build from source (~30-40 min): MAX_JOBS=4 pip install flash-attn --no-build-isolation
+# For GPU training, ALSO install: pip install -r requirements_gpu.txt
 
-# PyTorch (CUDA 12.4) - Install FIRST
-# NOTE: Must install with --index-url https://download.pytorch.org/whl/cu124
-# pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
-torch==2.5.1  # Downgraded for flash-attn ABI compatibility (pre-built wheels available)
-torchvision==0.20.1
-
-# Build dependencies (needed before flash-attn)
-packaging>=20.0
-setuptools>=49.0.0
-wheel
-ninja
-
-# Core dependencies - PINNED for reproducibility
-numpy>=1.26.0  # 1.26+ required for Python 3.12
+# Core dependencies
+numpy>=1.26.0
 pandas==2.3.3
 networkx
 matplotlib
 seaborn
 scikit-learn
-adjustText  # Auto-adjust text positions to avoid overlap in plots
-Pillow>=10.0.0  # Image processing
-requests  # HTTP requests for mermaid.ink API
-cairosvg  # SVG to PDF conversion
-
-# Flash-attention - INSTALL SEPARATELY (see instructions at top)
-# DO NOT include here - causes pip dependency resolution issues
-
-# Core fine-tuning packages - PINNED
-transformers==4.51.0  # 4.57+ requires torch>=2.6 (CVE-2025-32434), but flash-attn needs torch 2.5.x
-trl==0.11.4  # Pinned for stable PPO API (0.24+ has breaking changes)
-rich  # Required by TRL 0.11.4
-# tf-keras - NOT USED (removed to avoid protobuf conflict: TF 2.20 needs protobuf>=5.28, wandb needs <7)
-
-peft==0.17.1
-accelerate==1.11.0  # Pin to stop backtracking
-protobuf==3.20.3  # 3.x for wandb+ray+tensorboardX compatibility
-# bitsandbytes  # Not needed - using adamw_torch instead of adamw_8bit
-datasets==4.2.0  # Pin to stop backtracking
-fsspec==2025.9.0  # Pin to match datasets requirement
-# unsloth
-# jinja2>=3.1.0  # SKIP - system provides via dependencies
+adjustText
+Pillow>=10.0.0
+requests
+cairosvg
 
 # Jupyter kernel support
 ipykernel
 debugpy
 
-# board - Pin to stop pip backtracking
-wandb==0.22.2
-
-# Population-Based Training (PBT) - Pin tensorboardX to avoid backtracking
-ray[tune]==2.50.1
-tensorboardX==2.6.4  # Pin to stop pip backtracking hell
-
-# Hyperparameter optimization (alternative to PBT)
-optuna==4.1.0  # Adaptive search with TPE + Hyperband
-
-# authentication
+# Authentication
 python-dotenv
 huggingface_hub
 
 # LLM-as-judge evaluation (Fireworks API)
 litellm
 sentence-transformers
+
+# Hyperparameter optimization
+optuna==4.1.0
+
+# Logging
+wandb==0.22.2

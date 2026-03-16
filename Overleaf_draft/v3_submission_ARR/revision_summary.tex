@@ -1,0 +1,47 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\title{Explanation of Revisions\\{\large ECLIPTICA -- ARR March 2026 Resubmission}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\section*{Previous Submission}
+ARR January 2026, Submission \#4229. Desk-rejected on Feb 13, 2026.
+
+\section*{Desk Rejection Reasons}
+\begin{enumerate}
+    \item Paper exceeds maximum length (8 pages for long papers).
+    \item Single-column appendix (violation of double-column format requirement).
+\end{enumerate}
+
+\section*{Revisions}
+
+\subsection*{Reason 1: Page Limit Exceeded}
+\begin{itemize}[leftmargin=*]
+    \item Moved Discussion section from main body to \textbf{Appendix A}.
+    \item Conclusion now ends on \textbf{page 8}. Limitations follows immediately after (does not count toward limit per ARR CFP).
+\end{itemize}
+
+\subsection*{Reason 2: Single-Column Appendix}
+\begin{itemize}[leftmargin=*]
+    \item Removed all \texttt{\textbackslash onecolumn} / \texttt{\textbackslash twocolumn} commands.
+    \item Wide content wrapped in \texttt{figure*[p]} (two-column compliant).
+    \item All appendix pages now render in double-column format.
+\end{itemize}
+
+\subsection*{Additional Changes}
+\begin{itemize}[leftmargin=*]
+    \item Switched to official \texttt{acl.sty} (from \texttt{acl2023.sty}).
+    \item Corrected 7 bibliographic entries with incorrect arXiv IDs or fabricated authors.
+    \item Added Acknowledgements section for AI writing disclosure (per ARR policy).
+    \item Added ECLIPTICA dataset license (CC-BY-4.0) in Appendix D.
+\end{itemize}
+
+\end{document}

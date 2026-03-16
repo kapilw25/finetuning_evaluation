@@ -124,9 +124,9 @@ TPE proposes configurations by fitting densities over \textbf{good} vs.\ \textbf
 We optimize learning rate, weight decay, $\beta$, and $\lambda_{\text{KL}}$.
 Figure~\ref{fig:hp_ablation_combined} summarizes the sensitivity of reward margin to these hyperparameters, revealing a concentrated ``good'' region rather than a broad plateau.
 
-\begin{figure*}[ht!]
+\begin{figure*}[p]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_combined.pdf}
+\includegraphics[width=0.85\textwidth]{figures/appendix/hp_ablation_combined.pdf}
 \caption{\textbf{Hyperparameter sensitivity across 13 Optuna trials.} Reward margin is most sensitive to learning rate and the $(\beta,\lambda_{\text{KL}})$ interaction. Trial 7 ($\star$) achieves the best trade-off, aligning with the ``Goldilocks'' band: $\beta\in[0.10,0.12]$, $\lambda_{\text{KL}}\approx 2\times 10^{-4}$, and LR $\approx 5\times 10^{-6}$.}
 \label{fig:hp_ablation_combined}
 \end{figure*}
@@ -193,9 +193,9 @@ This ``alignment'' of the three levers yields high margins without sacrificing s
 Figures~\ref{fig:hp_beta}--\ref{fig:hp_lr} provide per-parameter sensitivity analyses, plotting reward margin, accuracy, and evaluation loss.
 Across plots, Trial 7 ($\star$) consistently appears near the optimal region, indicating that the final choice is not an outlier but a coherent solution across axes.
 
-\begin{figure*}[ht!]
+\begin{figure*}[p]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_beta.pdf}
+\includegraphics[width=0.85\textwidth]{figures/appendix/hp_ablation_beta.pdf}
 \caption{\textbf{$\beta$ sensitivity.} Reward margin peaks at $\beta\approx 0.10$--$0.12$; accuracy is stable (88--90\%), while evaluation loss increases at higher $\beta$, consistent with over-sharpening. Trial 7 ($\star$) at $\beta$=0.107 achieves strong margins while preserving switchability.}
 \label{fig:hp_beta}
 \end{figure*}
@@ -213,9 +213,9 @@ The bottom panel (Eval Loss) shows an upward trend: higher $\beta$ increases los
 Trials 0 and 12 achieve very high margins (9.9, 10.1) but also high loss (0.51, 0.61), indicating unstable training.
 Trial 7 at $\beta$=0.107 achieves strong margin (7.5) with low loss (0.33), representing the optimal balance.
 
-\begin{figure*}[ht!]
+\begin{figure*}[p]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/appendix/hp_ablation_lambda_kl.pdf}
+\includegraphics[width=0.85\textwidth]{figures/appendix/hp_ablation_lambda_kl.pdf}
 \caption{\textbf{$\lambda_{\text{KL}}$ sensitivity.} Reward margin exhibits an inverted-U: too low produces instability and regime interference; too high suppresses learning. Accuracy is comparatively stable, indicating the dominant effect is on switching stability rather than raw preference fit. Trial 7 ($\star$) at $\lambda_{\text{KL}}$=0.00023 lies in the optimal band.}
 \label{fig:hp_lambda}
 \end{figure*}

@@ -1,0 +1,48 @@
+# =============================================================================
+# GPU Requirements - CITA/DPO/PPO/GRPO training on NVIDIA GPUs
+# =============================================================================
+# TESTED: Python 3.12, PyTorch 2.5.1+cu124, Flash-Attn 2.8.3, A100-80GB
+#
+# Install: pip install -r requirements_gpu.txt
+#
+# Prerequisites:
+#   - Linux (Ubuntu 20.04+)
+#   - Nvidia GPU (A100-40GB+ recommended)
+#   - CUDA 12.4
+#   - PyTorch 2.5.1+cu124 (install separately via setup_env_uv.sh --gpu)
+# =============================================================================
+
+# Base requirements (includes numpy, pandas, matplotlib, wandb, etc.)
+-r requirements.txt
+
+# =============================================================================
+# Build dependencies (needed before flash-attn)
+# =============================================================================
+packaging>=20.0
+setuptools>=49.0.0
+wheel
+ninja
+
+# =============================================================================
+# Core fine-tuning packages - PINNED
+# =============================================================================
+transformers==4.51.0  # 4.57+ requires torch>=2.6 (CVE-2025-32434), but flash-attn needs torch 2.5.x
+trl==0.11.4           # Pinned for stable PPO API (0.24+ has breaking changes)
+rich                   # Required by TRL 0.11.4
+peft==0.17.1
+accelerate==1.11.0
+protobuf==3.20.3      # 3.x for wandb+ray+tensorboardX compatibility
+datasets==4.2.0
+fsspec==2025.9.0      # Pin to match datasets requirement
+
+# =============================================================================
+# Population-Based Training (PBT)
+# =============================================================================
+ray[tune]==2.50.1
+tensorboardX==2.6.4
+
+# =============================================================================
+# Flash-Attention - INSTALL SEPARATELY (see setup_env_uv.sh)
+# =============================================================================
+# DO NOT include here - causes pip dependency resolution issues
+# Pre-built wheel (~30s) or build from source (~30-40 min)
