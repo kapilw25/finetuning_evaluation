@@ -82,7 +82,9 @@
       "Bash(bibtex 0_main 2>&1)",
       "WebFetch(domain:2025.emnlp.org)",
       "WebFetch(domain:www.semanticscholar.org)",
-      "Bash(pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && bibtex 0_main 2>&1 | tail -5 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3)"
+      "Bash(pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && bibtex 0_main 2>&1 | tail -5 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3)",
+      "Bash(mkdir -p src)",
+      "Bash(git mv *)"
     ],
     "deny": [],
     "ask": []

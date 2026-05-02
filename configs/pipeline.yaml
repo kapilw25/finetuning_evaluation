@@ -1,0 +1,77 @@
+# ============================================================================
+# Pipeline-wide configuration (CLAUDE.md §15: no hardcoded magic numbers)
+# ============================================================================
+# Loaded via: from src.utils.config import load_pipeline_config
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Modes (--mode flag on every script): sanity (small smoke test), full (real run)
+# ----------------------------------------------------------------------------
+modes:
+  sanity:
+    seed: 42
+    description: "Smoke test — validates model loading, inference, JSON parsing"
+  full:
+    seed: 42
+    description: "Full run — production checkpoints + complete evaluation"
+
+# ----------------------------------------------------------------------------
+# Eval sample limits (per benchmark, sanity vs full)
+# ----------------------------------------------------------------------------
+eval:
+  sanity:
+    aqi: 10
+    conditional_safety: 10
+    isd: 10
+    length_control: 10
+    truthfulqa: 10
+  full:
+    aqi: 100         # 100 prompts × ~9 axiom categories
+    conditional_safety: 300
+    isd: 3000        # 10 instructions × 12 categories × 25 prompts
+    length_control: 300
+    truthfulqa: 817  # full TruthfulQA val split
+
+# ----------------------------------------------------------------------------
+# Bootstrap CI (CLAUDE.md §7.4: 95% BCa, 10K iterations on every metric)
+# ----------------------------------------------------------------------------
+bootstrap:
+  n_iterations: 10000
+  confidence_level: 0.95
+  method: BCa  # bias-corrected accelerated
+
+# ----------------------------------------------------------------------------
+# Methods (must match outputs/training/ subdir names — DO NOT change literals)
+# ----------------------------------------------------------------------------
+methods:
+  - SFT_Instruct
+  - SFT_NoInstruct
+  - DPO_Instruct
+  - DPO_NoInstruct
+  - PPO_Instruct
+  - PPO_NoInstruct
+  - GRPO_Instruct
+  - GRPO_NoInstruct
+  - CITA_Instruct
+  - CITA_NoInstruct
+
+# ----------------------------------------------------------------------------
+# Output paths (relative to repo root)
+# ----------------------------------------------------------------------------
+paths:
+  outputs_root: outputs
+  training_dir: outputs/training
+  evaluation_dir: outputs/evaluation
+  centralized_db: outputs/centralized.db   # CLAUDE.md "single datasource"
+  logs_dir: logs
+  tensorboard_dir: tensorboard_logs
+  checkpoints_dir: checkpoints
+
+# ----------------------------------------------------------------------------
+# Base model
+# ----------------------------------------------------------------------------
+base_model:
+  name: meta-llama/Llama-3.1-8B
+  short_name: Llama-3.1-8B
+  context_length: 4096
+  dtype: bfloat16

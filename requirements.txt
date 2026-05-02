@@ -35,3 +35,6 @@ optuna==4.1.0
 
 # Logging
 wandb==0.22.2
+
+# Linting / static analysis (per CLAUDE.md §6.1: py_compile + AST + ruff)
+ruff==0.7.4

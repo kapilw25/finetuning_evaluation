@@ -1,0 +1,5 @@
+- [User Profile](user_kapil.md) — ML researcher, first author on ECLIPTICA/CITA paper, works with Aman Chadha (Apple) as research guide
+- [Project Status](project_ecliptica_arr.md) — ARR March 2026 submission, scores 2/3.5/2, rebuttal + revision sprint underway
+- [Feedback: Communication Style](feedback_style.md) — Prefers brutal honesty, tables over lists, no yes-man behavior, websearch for claims
+- [Reference: Rebuttal Files](reference_rebuttal_files.md) — Location of reviewer files, rebuttal drafts, experiment plans
+- [Project: Experiment Plan](project_rebuttal_experiments.md) — 10 experiments ranked by ROI, Tier 1 is inference-only, targeting shuX as movable reviewer
