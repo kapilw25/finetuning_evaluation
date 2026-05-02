@@ -1,15 +1,9 @@
-"""
-Generate Combined Evaluation Plots
+"""Cross-benchmark combined plots (radar + heatmap) from eval JSONs. CPU-only.
 
-Focused on EVALUATION visualization only:
-- Radar chart: Mean normalized radius for instruction alignment efficiency
-- Heatmap: Absolute scores across all models and evaluations
+    python -u src/eval/combined_plots.py 2>&1 | tee logs/combined_plots.log
 
 NOTE: HP ablation plots (hyperparameter sensitivity) are generated separately by:
-    python comparative_study/generate_hp_ablation_plots.py
-
-Usage:
-    python comparative_study/05_evaluation/generate_combined_plots.py
+    python -u src/eval/hp_ablation_plots.py 2>&1 | tee logs/hp_ablation_plots.log
 
 Output:
     outputs/evaluation/combined_plots/
@@ -504,7 +498,7 @@ def main():
         print("  - radar_area.{pdf,png}")
 
     print("\nNote: HP ablation plots are generated separately by:")
-    print("  python comparative_study/generate_hp_ablation_plots.py")
+    print("  python src/eval/hp_ablation_plots.py")
 
 
 if __name__ == "__main__":

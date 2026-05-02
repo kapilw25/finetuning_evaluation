@@ -2,43 +2,35 @@
 # F821 silenced: ruff doesn't fully track try/except scope. `model`/`trainer` are
 # bound at lines 148/282 before the try block at 316, so references in the except
 # blocks are runtime-safe. Pre-existing legacy code, not introduced by migration.
-"""
-Adaptive CITA Training Script (Optuna-based) - Updated for 1354-step FULL training
-Truly adaptive hyperparameter search using Optuna TPE + Hyperband
+"""Adaptive CITA HP search via Optuna TPE + Hyperband (multi-objective: margin, accuracy, -eval_loss). GPU-only.
 
 Features:
 - Conditional HP spaces: CITA_Instruct uses 50-70% lower LR than CITA_NoInstruct
 - Prevents gradient explosions from longer instruction sequences
-- Multi-objective optimization: [margin, accuracy, -eval_loss]
 
 Time Estimates (10 trials × 1354 steps, with pruning):
 - CITA_NoInstruct: ~20-24 hours
 - CITA_Instruct: ~20-24 hours
 
 Usage:
-    # CITA_NoInstruct - Full search (10 trials × 1354 steps, ~20-24 hours)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode full \
-        --use-instruction false --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct
-
-    # CITA_Instruct - Full search (conservative HP space for longer sequences)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py \
-        --mode full \
-        --use-instruction true \
-        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct
 
     # MVP (5 trials × 100 steps, ~1.5 hours) - VALIDATES OPTUNA + EARLY STOPPING
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode mvp \
-        --use-instruction false
+    python -u src/train/cita_optuna.py --mode mvp --use-instruction false 2>&1 | tee logs/cita_optuna_mvp_NI.log
 
     # Sanity check (27 trials × 200 steps, ~15.5 hours)
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16_adaptive_Optuna.py --mode sanity \
-        --use-instruction true
+    python -u src/train/cita_optuna.py --mode sanity --use-instruction true 2>&1 | tee logs/cita_optuna_sanity_I.log
+
+    # FULL search (10 trials × 1354 steps, ~20-24 hours each)
+    python -u src/train/cita_optuna.py --mode full --use-instruction false \\
+        --base_model kapilw25/llama3-8b-pku-DPO-NoInstruct-SFT-NoInstruct 2>&1 | tee logs/cita_optuna_full_NI.log
+    python -u src/train/cita_optuna.py --mode full --use-instruction true  \\
+        --base_model kapilw25/llama3-8b-pku-DPO-Instruct-SFT-Instruct 2>&1 | tee logs/cita_optuna_full_I.log
 
 Outputs:
-    - Optuna study database: ./outputs/training/optuna_cita_noinstruct.db or ./outputs/training/optuna_cita_instruct.db
+    - Optuna study database: ./outputs/training/optuna_cita_{noinstruct,instruct}.db
     - Best hyperparameters: ./outputs/training/CITA_*_Adaptive/CITA_*_Adaptive_best_config.json
     - Best model checkpoint: ./outputs/training/CITA_*_Adaptive/best_trial/
-    - Training log: ./logs/CITA_NoInstruct_Adaptive_training_<timestamp>.log or ./logs/CITA_Instruct_Adaptive_training_<timestamp>.log
+    - Training log: ./logs/CITA_{NoInstruct,Instruct}_Adaptive_training_<timestamp>.log
 """
 
 import sys

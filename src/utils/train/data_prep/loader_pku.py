@@ -1,9 +1,4 @@
-"""
-PKU-SafeRLHF Dataset Loader
-
-Loads and filters PKU-Alignment/PKU-SafeRLHF dataset for safety alignment training.
-Filters for clear safety contrast (one safe, one unsafe response).
-"""
+"""PKU-SafeRLHF dataset loader + safe/unsafe response splitter + system-instruction synthesis."""
 
 from datasets import load_dataset, concatenate_datasets
 from typing import Dict, Optional

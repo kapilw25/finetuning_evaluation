@@ -1,8 +1,4 @@
-"""
-Dataset Formatters for SFT, DPO, and CITA Training
-
-Formats PKU-SafeRLHF dataset to match the exact format expected by working notebooks.
-"""
+"""Dataset formatters for SFT/DPO/CITA × {Instruct, NoInstruct}."""
 
 from typing import Dict
 from .loader_pku import get_safe_unsafe_responses, synthesize_system_instruction

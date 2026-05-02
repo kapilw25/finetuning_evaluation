@@ -1,13 +1,4 @@
-"""
-Shared model loading utilities for evaluation scripts
-
-Usage:
-    from eval_utils import MODELS, load_model_for_eval, unload_model
-
-    model, tokenizer = load_model_for_eval("CITA_Instruct")
-    # ... run evaluation ...
-    unload_model(model)
-"""
+"""Llama-3.1-8B + LoRA adapter loader (10-method MODELS dict, FA2 + BF16)."""
 
 import gc
 import time

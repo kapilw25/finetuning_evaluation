@@ -1,11 +1,10 @@
-"""
-Conditional Safety Evaluation with Instruction Variants
+"""Conditional Safety evaluation with instruction variants. GPU-only.
 
-    # Sanity check
-    python comparative_study/05_evaluation/conditional_safety/evaluation.py --mode sanity
+    # Sanity (smoke test, no push)
+    python -u src/eval/conditional_safety.py --mode sanity 2>&1 | tee logs/eval_conditional_safety_sanity.log
 
     # Full evaluation
-    python comparative_study/05_evaluation/conditional_safety/evaluation.py --mode full
+    python -u src/eval/conditional_safety.py --mode full 2>&1 | tee logs/eval_conditional_safety_full.log
 """
 
 import sys

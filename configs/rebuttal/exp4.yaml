@@ -1,0 +1,61 @@
+# ============================================================================
+# EXP 4 — System-Prompt Baseline (CITA vs vanilla Llama-Instruct + sys prompt)
+# Targets KpHA W1 ("murky distinction from prompting") + gMno + shuX (novelty)
+# ============================================================================
+# Variants:
+#   zero_shot_prompt : meta-llama/Llama-3.1-8B-Instruct + system prompt = instruction (untrained)
+#   few_shot_prompt  : same + 3 in-context examples per instruction
+#   DPO_Instruct     : trained DPO LoRA (kapilw25/...)
+#   CITA_Instruct    : trained CITA LoRA (kapilw25/...)
+#
+# IMPORTANT: meta-llama/Llama-3.1-8B-Instruct is a SEPARATE gated repo from base.
+#   Accept license once at https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+#   before running this experiment.
+# ============================================================================
+
+# Sanity (24 GB validation): ECLIPTICA only, 10 prompts, 2 variants → ~5 min
+# Substitute zero_shot_prompt with the BASE model (no chat tune) for sanity to
+# avoid needing a separate gated license — the comparison still validates code.
+sanity:
+  variants:
+    - zero_shot_prompt_base  # uses meta-llama/Llama-3.1-8B (already authorized)
+    - CITA_Instruct
+  benchmarks: ["ecliptica"]
+  n_prompts: 10
+  n_instructions: 10
+  batch_size: 2
+
+# Full (96 GB production): all 4 variants × all 5 benchmarks → ~7h
+# Requires Llama-3.1-8B-Instruct license accepted before running.
+full:
+  variants:
+    - zero_shot_prompt        # uses meta-llama/Llama-3.1-8B-Instruct
+    - few_shot_prompt
+    - DPO_Instruct
+    - CITA_Instruct
+  benchmarks: ["ecliptica", "truthfulqa", "conditional_safety", "length_control", "aqi"]
+  n_prompts: 300
+  n_instructions: 10
+  batch_size: 16
+
+# Cached input (for ECLIPTICA prompts)
+existing_responses_csv: outputs/evaluation/ISD_Evaluation_Embedding/CITA_Instruct/CITA_Instruct_isd_responses.csv
+
+# Outputs
+output_dir: outputs/rebuttal/exp4_system_prompt
+
+# Generation
+max_new_tokens: 256
+temperature: 0.7
+top_p: 0.9
+do_sample: true
+
+# Models
+llama_instruct_repo: meta-llama/Llama-3.1-8B-Instruct
+llama_base_repo: meta-llama/Llama-3.1-8B   # sanity substitute
+seed: 42
+
+# Embedding (re-score fidelity, same as Exp 1)
+embedding_model: all-MiniLM-L6-v2
+n_bootstrap: 10000
+confidence_level: 0.95

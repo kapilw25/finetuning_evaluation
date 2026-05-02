@@ -1,0 +1,41 @@
+# ============================================================================
+# EXP 3 — Capability Preservation (MMLU / GSM8K / HumanEval via lm-eval-harness)
+# Targets shuX W2 ("missing capability evaluation") + gMno (generalizability)
+# ============================================================================
+# Goal: prove LoRA alignment doesn't degrade base capabilities.
+# Result expected: |CITA_Instruct − base| ≤ 1 point on each benchmark.
+# ============================================================================
+
+# Sanity (24 GB validation): MMLU only, 50 items, 2 methods → ~10 min
+sanity:
+  tasks: ["mmlu"]
+  num_fewshot: 0          # zero-shot for speed (full will use 5)
+  limit: 50               # 50 of 14K MMLU items
+  methods:
+    - base                # Llama-3.1-8B (no adapter)
+    - CITA_Instruct
+  batch_size: 4
+
+# Full (96 GB production): all 3 tasks × 11 methods → ~10h
+full:
+  tasks: ["mmlu", "gsm8k", "humaneval"]
+  num_fewshot: 5          # standard 5-shot
+  limit: null             # all items (MMLU 14K, GSM8K 1.3K, HumanEval 164)
+  methods:
+    - base
+    - SFT_NoInstruct
+    - SFT_Instruct
+    - DPO_NoInstruct
+    - DPO_Instruct
+    - PPO_NoInstruct
+    - PPO_Instruct
+    - GRPO_NoInstruct
+    - GRPO_Instruct
+    - CITA_NoInstruct
+    - CITA_Instruct
+  batch_size: 16
+
+# Common
+output_dir: outputs/rebuttal/exp3_capability
+base_model: meta-llama/Llama-3.1-8B
+seed: 42

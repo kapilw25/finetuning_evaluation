@@ -1,13 +1,4 @@
-"""
-Dataset Info Utilities - Dynamically fetch max available samples from datasets
-
-This module provides functions to query datasets and return max available
-sample counts for each evaluation benchmark.
-
-Each function returns a tuple with 'source' field indicating:
-- 'fetched': Data was loaded live from HuggingFace/URL
-- 'fallback': Used hardcoded fallback (network error, dataset unavailable)
-"""
+"""Dynamically fetch max available samples from each evaluation dataset."""
 
 from typing import Dict, Tuple
 import requests

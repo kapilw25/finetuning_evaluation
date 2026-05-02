@@ -1,16 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-De-alignment Check with AQI Metric
-
-This script analyzes the separation between safe and unsafe responses
-across different axioms using multiple cluster quality metrics:
-- Davies-Bouldin Score (DBS)
-- Dunn Index (DI)
-- Alignment Quality Index (AQI) - A composite metric
-
-The script processes embeddings from a dataset containing axioms and safety labels
-and visualizes the cluster separation in 3D space.
-"""
+"""De-alignment AQI metric (silhouette + Davies-Bouldin)."""
 
 import torch
 import pandas as pd

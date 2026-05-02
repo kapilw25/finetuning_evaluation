@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""
-Comprehensive AQI Evaluation for 4 Baseline Models
-Evaluates: Baseline (Unaligned), SFT, DPO, CITA
+"""Comprehensive AQI evaluation looping all 10 trained checkpoints + base. GPU-only.
+
+    python -u src/eval/aqi_full.py 2>&1 | tee logs/eval_aqi_full.log
+
+Evaluates: Baseline (Unaligned), SFT_{I,NI}, DPO_{I,NI}, PPO_{I,NI}, GRPO_{I,NI}, CITA_{I,NI}.
 """
 
 import os

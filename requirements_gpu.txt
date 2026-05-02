@@ -46,3 +46,5 @@ tensorboardX==2.6.4
 # =============================================================================
 # DO NOT include here - causes pip dependency resolution issues
 # Pre-built wheel (~30s) or build from source (~30-40 min)
+lm_eval==0.4.5
+sentence-transformers==3.3.1

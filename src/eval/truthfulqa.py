@@ -1,11 +1,10 @@
-"""
-TruthfulQA Evaluation with Instruction Variants
+"""TruthfulQA evaluation with instruction variants. GPU-only.
 
-    # Sanity check
-    python comparative_study/05_evaluation/truthfulqa/evaluation.py --mode sanity
+    # Sanity (smoke test, no push)
+    python -u src/eval/truthfulqa.py --mode sanity 2>&1 | tee logs/eval_truthfulqa_sanity.log
 
     # Full evaluation
-    python comparative_study/05_evaluation/truthfulqa/evaluation.py --mode full
+    python -u src/eval/truthfulqa.py --mode full 2>&1 | tee logs/eval_truthfulqa_full.log
 """
 
 import sys

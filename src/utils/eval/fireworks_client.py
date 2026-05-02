@@ -1,21 +1,4 @@
-"""
-Fireworks AI API wrapper for LLM-as-judge using GPT-OSS-120B
-Uses litellm for unified API access
-
-Installation:
-    pip install litellm>=1.40.0 fireworks-ai>=0.15.0
-
-API Key:
-    Get your key from: https://fireworks.ai/api-keys
-    Add to .env: FIREWORKS_API_KEY=your_key_here
-
-Usage:
-    from fireworks_client import FireworksJudge
-
-    judge = FireworksJudge()
-    result = judge.judge_single(evaluation_prompt)
-    results = judge.judge_batch([prompt1, prompt2, ...])
-"""
+"""Fireworks AI LLM-as-judge wrapper (GPT-OSS-120B via litellm)."""
 
 import os
 import json

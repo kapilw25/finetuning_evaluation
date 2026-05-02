@@ -1,11 +1,4 @@
-"""
-ISD Metrics Calculator
-
-Calculates:
-1. Fidelity Score: Does response match expected characteristics?
-2. Semantic Shift: How much does response change across instructions?
-3. Instruction Awareness Score: Combined metric
-"""
+"""ISD fidelity / semantic-shift / instruction-awareness metric calculator."""
 
 import json
 import numpy as np

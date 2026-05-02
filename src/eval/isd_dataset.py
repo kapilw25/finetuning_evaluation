@@ -1,13 +1,10 @@
-"""
-Instruction Switch Dataset (ISD) Generator
+"""ECLIPTICA / ISD dataset generator (500 prompts × 10 instructions = 5,000 test cases). CPU-only.
 
-From Proposal Section 7.6:
-- 500 prompts × 10 instructions = 5,000 test cases
-- Tests: Does model change behavior under different alignment instructions?
-- Metrics: Fidelity scores, semantic shift measures, robustness
+    python -u src/eval/isd_dataset.py 2>&1 | tee logs/isd_dataset.log
 
-This directly tests the paper's core claim:
-"Instruction-Aware: DPO=No, CITA=Yes"
+From Proposal Section 7.6. Metrics: fidelity, semantic shift, robustness.
+Directly tests the paper's core claim: "Instruction-Aware: DPO=No, CITA=Yes".
+Exports: ISD_INSTRUCTIONS dict + dataset JSON.
 """
 
 import json

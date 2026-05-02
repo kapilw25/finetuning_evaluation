@@ -1,9 +1,4 @@
-"""
-Shared Checkpoint System for All Evaluations
-
-Saves/loads inference results to avoid re-running expensive model generation.
-Supports: ISD, TruthfulQA, Conditional Safety, Length Control
-"""
+"""Per-model checkpoint resume system for evaluation scripts."""
 
 import json
 from pathlib import Path

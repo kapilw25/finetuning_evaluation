@@ -1,14 +1,10 @@
-"""
-Generate Publication-Quality Training Plots from TensorBoard Logs
+"""Publication-quality training plots from TensorBoard logs (loss/accuracy/margins). CPU-only.
 
-Model: Llama-3.1-8B (meta-llama/Llama-3.1-8B)
+    python -u src/eval/training_plots.py 2>&1 | tee logs/training_plots.log
 
-Generates dual versions:
-- Primary (no SFT): Policy optimization methods only (DPO, CITA, GRPO, PPO)
+Model: Llama-3.1-8B. Generates dual versions:
+- Primary (no SFT): Policy-optimization methods only (DPO, CITA, GRPO, PPO)
 - Secondary (_withSFT): Includes SFT for completeness
-
-Usage:
-    python comparative_study/generate_training_plots.py
 
 Output:
     Overleaf_draft/figures/training/

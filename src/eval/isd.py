@@ -1,11 +1,10 @@
-"""
-ISD (Instruction Switch Dataset) Evaluation
+"""ISD (Instruction Switch Dataset / ECLIPTICA) evaluation. GPU-only.
 
-    # Sanity check
-    python comparative_study/05_evaluation/isd/evaluation.py --mode sanity
+    # Sanity (smoke test, no push)
+    python -u src/eval/isd.py --mode sanity 2>&1 | tee logs/eval_isd_sanity.log
 
     # Full evaluation
-    python comparative_study/05_evaluation/isd/evaluation.py --mode full
+    python -u src/eval/isd.py --mode full 2>&1 | tee logs/eval_isd_full.log
 """
 
 import sys

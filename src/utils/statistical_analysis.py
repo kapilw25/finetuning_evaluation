@@ -1,21 +1,4 @@
-"""
-Statistical analysis and visualization for dual-metric evaluation
-Includes: Pareto frontier plot, bootstrap CI, paired t-tests, per-category breakdown
-
-Usage:
-    from statistical_analysis import run_statistical_analysis
-
-    results = {
-        "SFT_Baseline": {
-            "harmlessness_df": pd.DataFrame(...),
-            "helpfulness_df": pd.DataFrame(...),
-            "summary": {"harmlessness_mean": 7.0, "helpfulness_mean": 8.0, ...}
-        },
-        ...
-    }
-
-    run_statistical_analysis(results, output_dir=Path("./results"))
-"""
+"""Statistical analysis: bootstrap CI, paired t-tests, per-category breakdown, Pareto plots."""
 
 import pandas as pd
 import numpy as np

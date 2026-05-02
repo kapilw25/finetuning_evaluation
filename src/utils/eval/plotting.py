@@ -1,9 +1,4 @@
-"""
-Plotting Utilities for Evaluation Scripts
-
-Shared color mapping and legend elements for consistent plots.
-Includes improvement ratio visualization for NoInstruct → Instruct comparison.
-"""
+"""Shared plotting helpers (model colors, dual PNG/PDF save, comparison plots)."""
 
 import numpy as np
 import pandas as pd

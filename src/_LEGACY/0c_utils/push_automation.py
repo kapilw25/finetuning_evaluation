@@ -950,10 +950,6 @@ This push REPLACES the previous model version (performance improved).
 
 Timestamp: {timestamp}
 Auto-commit: Includes training logs, configs, and outputs
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 """
 
             # Commit changes
@@ -1321,10 +1317,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 Method: {method} | Epochs: {num_epochs} | Model: Llama-3.1-8B
 Timestamp: {timestamp}
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 """
 
         # Step 9: Push to HF + GitHub

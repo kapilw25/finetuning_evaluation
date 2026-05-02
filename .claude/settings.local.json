@@ -84,7 +84,8 @@
       "WebFetch(domain:www.semanticscholar.org)",
       "Bash(pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && bibtex 0_main 2>&1 | tail -5 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3 && pdflatex -interaction=nonstopmode 0_main.tex 2>&1 | tail -3)",
       "Bash(mkdir -p src)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(xargs -I{} sh -c 'echo \"=== {} ===\" && head -5 {} | head -3')"
     ],
     "deny": [],
     "ask": []

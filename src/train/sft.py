@@ -1,13 +1,14 @@
-"""
+"""SFT training on PKU-SafeRLHF (Llama-3.1-8B + LoRA, BF16, FA2). GPU-only.
+
 Usage (4 commands = 2 modes × 2 instruction settings):
 
-    # SANITY: 0.3 epochs (~13 min) - validate checkpoints/HF push
-    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
-    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
+    # SANITY: 0.3 epochs (~13 min) - validate checkpoints, --no-push for safe local-only test
+    python -u src/train/sft.py --mode sanity --use-instruction false --no-push 2>&1 | tee logs/sft_sanity_NI.log
+    python -u src/train/sft.py --mode sanity --use-instruction true  --no-push 2>&1 | tee logs/sft_sanity_I.log
 
     # FULL: 1.0 epoch (~43 min) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
-    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full --use-instruction false
-    python comparative_study/01a_SFT_Baseline/Llama3_BF16.py --mode full --use-instruction true
+    python -u src/train/sft.py --mode full --use-instruction false 2>&1 | tee logs/sft_full_NI.log
+    python -u src/train/sft.py --mode full --use-instruction true  2>&1 | tee logs/sft_full_I.log
 
   Projections:
   | Mode                | Steps | ETA      |
@@ -458,6 +459,12 @@ Examples:
         help="HuggingFace model ID to load LoRA adapters from (for stacking SFT→DPO→CITA)"
     )
 
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Skip HF + GitHub push after training (saves locally only)"
+    )
+
     args = parser.parse_args()
 
     # ===================================================================
@@ -598,7 +605,8 @@ Examples:
             run_name=RUN_NAME,
             metric_names=["eval_loss"],
             metric_mode="min",
-            project_root=project_root
+            project_root=project_root,
+            no_push=args.no_push,
         )
 
     except Exception as e:

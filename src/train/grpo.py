@@ -1,20 +1,21 @@
-"""
+"""GRPO training on PKU-SafeRLHF (group-relative PPO, requires TRL 0.22.2). GPU-only.
+
 Usage (6 commands = 3 modes × 2 instruction settings):
 
     ### 2c. GRPO (venv_GRPO - requires TRL 0.22.2)
     source venv_GRPO/bin/activate
 
     # MICRO: 0.05 epochs (~35 min)
-    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction false
-    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode micro --use-instruction true
+    TMUX >> python -u src/train/grpo.py --mode micro --use-instruction false --no-push 2>&1 | tee logs/grpo_micro_NI.log
+    TMUX >> python -u src/train/grpo.py --mode micro --use-instruction true  --no-push 2>&1 | tee logs/grpo_micro_I.log
 
-    # SANITY: 0.3 epochs (~4 hours)
-    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
-    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
+    # SANITY: 0.3 epochs (~4 hours) - --no-push for safe local-only test
+    TMUX >> python -u src/train/grpo.py --mode sanity --use-instruction false --no-push 2>&1 | tee logs/grpo_sanity_NI.log
+    TMUX >> python -u src/train/grpo.py --mode sanity --use-instruction true  --no-push 2>&1 | tee logs/grpo_sanity_I.log
 
     # FULL: 1.0 epoch (~12 hours) - use TMUX
-    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
-    TMUX >> python comparative_study/02c_GRPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
+    TMUX >> python -u src/train/grpo.py --mode full --use-instruction false 2>&1 | tee logs/grpo_full_NI.log
+    TMUX >> python -u src/train/grpo.py --mode full --use-instruction true  2>&1 | tee logs/grpo_full_I.log
 
   Projections (batch_size=12, grad_accum=2, effective_batch=24):
   | Mode                | Steps | ETA        |
@@ -676,6 +677,12 @@ Examples:
         help="Override base model (auto-derived from BASE_MODEL_MAP if not provided)"
     )
 
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Skip HF + GitHub push after training (saves locally only)"
+    )
+
     args = parser.parse_args()
 
     # ===================================================================
@@ -843,7 +850,8 @@ Examples:
             run_name=RUN_NAME,
             metric_names=["reward", "rewards/mean"],
             metric_mode="max",
-            project_root=project_root
+            project_root=project_root,
+            no_push=args.no_push,
         )
 
     except Exception as e:

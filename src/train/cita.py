@@ -1,17 +1,18 @@
-"""
+"""CITA training on PKU-SafeRLHF (DPO + KL anchor, init from DPO LoRA). GPU-only.
+
 Hyperparameters:
 - CITA_NoInstruct: Trial 5 HPs (eval_loss=0.279, margin=6.95)
 - CITA_Instruct: Trial 7 HPs (eval_loss=0.326, margin=7.52)
 
 Usage (4 commands = 2 modes × 2 instruction settings):
 
-    # SANITY: 0.3 epochs (~36 min) - validate checkpoints/HF push
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
+    # SANITY: 0.3 epochs (~36 min) - validate checkpoints, --no-push for safe local-only test
+    python -u src/train/cita.py --mode sanity --use-instruction false --no-push 2>&1 | tee logs/cita_sanity_NI.log
+    python -u src/train/cita.py --mode sanity --use-instruction true  --no-push 2>&1 | tee logs/cita_sanity_I.log
 
     # FULL: 1.0 epoch (~120 min) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full --use-instruction false
-    python comparative_study/03a_CITA_Baseline/Llama3_BF16.py --mode full --use-instruction true
+    python -u src/train/cita.py --mode full --use-instruction false 2>&1 | tee logs/cita_full_NI.log
+    python -u src/train/cita.py --mode full --use-instruction true  2>&1 | tee logs/cita_full_I.log
 
   Note: --base_model auto-derived from BASE_MODEL_MAP based on --use-instruction
 
@@ -447,6 +448,12 @@ Examples:
         help="HuggingFace model ID to load LoRA adapters from (e.g., DPO model)"
     )
 
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Skip HF + GitHub push after training (saves locally only)"
+    )
+
     args = parser.parse_args()
 
     # ===================================================================
@@ -594,7 +601,8 @@ Examples:
             run_name=RUN_NAME,
             metric_names=["eval_rewards/margins", "rewards/margins"],
             metric_mode="max",
-            project_root=project_root
+            project_root=project_root,
+            no_push=args.no_push,
         )
 
         print("\n" + "="*80)

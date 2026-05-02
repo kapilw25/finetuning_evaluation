@@ -1,0 +1,8 @@
+{
+  "metric": "awareness",
+  "ref": "CITA_Instruct",
+  "challenger": "DPO_Instruct",
+  "wins": 0,
+  "total": 10,
+  "msg": "CITA_Instruct beats DPO_Instruct on 0/10 instructions (awareness)"
+}

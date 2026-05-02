@@ -1,25 +1,4 @@
-"""
-Shared utilities for SFT, DPO, and CITA training scripts
-Extracted from Llama3_BF16_PBT.py to avoid code duplication
-
-Functions:
-1. load_hf_token() - HuggingFace authentication
-2. load_model_bf16() - Model loading (BF16 + Flash Attention 2)
-3. setup_lora() - LoRA adapter configuration
-4. apply_torch_compile() - torch.compile() optimization
-5. load_training_dataset() - Dataset loading wrapper
-6. get_test_prompts() - Standard test prompts
-7. get_latest_checkpoint() - Find most recent checkpoint (SFT/DPO)
-8. is_training_complete() - Check if training finished (SFT/DPO)
-9. get_model_repo_name() - HuggingFace repo mapping
-
-Usage:
-    from model_utils import load_model_bf16, setup_lora, apply_torch_compile
-
-    model, tokenizer = load_model_bf16()
-    model = setup_lora(model)
-    model = apply_torch_compile(model)
-"""
+"""Shared training utilities: model loading, LoRA setup, checkpoint helpers, HF auth."""
 
 import os
 import torch

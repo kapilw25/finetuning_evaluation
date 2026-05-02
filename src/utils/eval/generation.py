@@ -1,11 +1,4 @@
-"""
-Shared Generation Utilities for All Evaluations
-
-Provides:
-- batch_generate(): Batch generation with configurable batch_size (~8x speedup)
-- cleanup_gpu(): Proper GPU memory cleanup (gc.collect + cache clear)
-- format_chat_messages(): Format messages using chat template
-"""
+"""Shared GPU batch generation + chat-template formatting + memory cleanup."""
 
 import gc
 import torch

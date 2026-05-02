@@ -1,15 +1,4 @@
-"""
-CITA Trainer - Contrastive Instruction-Tuned Alignment (Stacked Training Edition)
-Based on Ecliptica paper (Legacy_code/2025_Ecliptica.pdf pages 5-7)
-
-ORIGINAL CITA: L_unified = L_SFT + λ_DPO·L_DPO + λ_KL·L_KL
-STACKED TRAINING (Base→SFT→DPO→CITA): L_unified = λ_DPO·L_DPO + λ_KL·L_KL
-
-Changes for Stacked Training:
-- Removed L_SFT (causes catastrophic interference on DPO-tuned models)
-- Uses DPOTrainer.dpo_loss() for apple-to-apple comparison with DPO baseline
-- Adds explicit L_KL regularization on top of DPO
-"""
+"""CITA Trainer: DPO + KL anchor + self-quenching gradient (Ecliptica paper §5-7)."""
 
 import torch
 from trl import DPOTrainer

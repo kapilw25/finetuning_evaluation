@@ -1,16 +1,4 @@
-"""
-Bootstrap Confidence Interval Utilities
-
-Computes 95% confidence intervals using bootstrap resampling.
-Used for statistical significance in evaluation plots.
-
-Usage:
-    from eval_utils.bootstrap import compute_bootstrap_ci, BootstrapResult
-
-    result = compute_bootstrap_ci(per_sample_scores, n_bootstrap=1000)
-    print(f"Mean: {result.mean:.3f} +/- {result.ci_half_width:.3f}")
-    print(f"95% CI: [{result.ci_lower:.3f}, {result.ci_upper:.3f}]")
-"""
+"""Bootstrap CI helpers (BCa, used by every metric per CLAUDE.md §7.4)."""
 
 import numpy as np
 from dataclasses import dataclass

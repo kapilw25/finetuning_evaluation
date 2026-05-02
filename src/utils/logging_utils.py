@@ -1,25 +1,4 @@
-"""
-Advanced Logging System - Captures ALL terminal output to log files
-Extracted from CITA PBT script for reuse across all training scripts
-
-Usage:
-    from logging_utils import setup_training_logger, restore_logging
-
-    # At start of script
-    log_file = setup_training_logger(run_name="SFT_Baseline", project_root=Path(__file__).parent.parent.parent)
-
-    # ... your training code here ...
-
-    # At end of script (in finally block)
-    restore_logging(log_file)
-
-Features:
-- Tee class: Writes to both terminal AND log file simultaneously
-- Captures stdout + stderr (all print statements, errors, warnings)
-- Line buffering: Immediate writes (no buffering delays)
-- Works like Unix 'tee' command
-- Compatible with any training framework
-"""
+"""Tee-style logger capturing ALL terminal output to logs/<run_name>_<ts>.log."""
 
 import sys
 from pathlib import Path

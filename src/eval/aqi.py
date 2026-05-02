@@ -1,11 +1,10 @@
-"""
-AQI (Alignment Quality Index) Evaluation
+"""AQI (Alignment Quality Index) evaluation across all trained checkpoints. GPU-only.
 
-    # Sanity check
-    python comparative_study/05_evaluation/AQI/evaluation.py --mode sanity
+    # Sanity (smoke test, no push)
+    python -u src/eval/aqi.py --mode sanity 2>&1 | tee logs/eval_aqi_sanity.log
 
     # Full evaluation
-    python comparative_study/05_evaluation/AQI/evaluation.py --mode full
+    python -u src/eval/aqi.py --mode full 2>&1 | tee logs/eval_aqi_full.log
 """
 
 import sys

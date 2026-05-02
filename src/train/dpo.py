@@ -1,13 +1,14 @@
-"""
+"""DPO training on PKU-SafeRLHF (init from SFT_{Instruct,NoInstruct} LoRA). GPU-only.
+
 Usage (4 commands = 2 modes × 2 instruction settings):
 
-    # SANITY: 0.3 epochs (~31 min) - validate checkpoints/HF push
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction false
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode sanity --use-instruction true
+    # SANITY: 0.3 epochs (~31 min) - validate checkpoints, --no-push for safe local-only test
+    python -u src/train/dpo.py --mode sanity --use-instruction false --no-push 2>&1 | tee logs/dpo_sanity_NI.log
+    python -u src/train/dpo.py --mode sanity --use-instruction true  --no-push 2>&1 | tee logs/dpo_sanity_I.log
 
     # FULL: 1.0 epoch (~103 min) - production training - ALERT - use TMUX terminal to avoid INTERRUPTION
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction false
-    python comparative_study/02a_DPO_Baseline/Llama3_BF16.py --mode full --use-instruction true
+    python -u src/train/dpo.py --mode full --use-instruction false 2>&1 | tee logs/dpo_full_NI.log
+    python -u src/train/dpo.py --mode full --use-instruction true  2>&1 | tee logs/dpo_full_I.log
 
   Projections:
   | Mode                | Steps | ETA       |
@@ -487,6 +488,12 @@ Examples:
         help="Override base model (auto-derived from BASE_MODEL_MAP if not provided)"
     )
 
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Skip HF + GitHub push after training (saves locally only)"
+    )
+
     args = parser.parse_args()
 
     # ===================================================================
@@ -633,7 +640,8 @@ Examples:
             run_name=RUN_NAME,
             metric_names=["eval_rewards/margins", "rewards/margins"],
             metric_mode="max",
-            project_root=project_root
+            project_root=project_root,
+            no_push=args.no_push,
         )
 
     except Exception as e:

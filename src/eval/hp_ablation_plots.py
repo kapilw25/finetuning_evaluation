@@ -1,19 +1,8 @@
-"""
-Generate Hyperparameter Ablation Plots from Optuna Trial Configs
+"""HP ablation plots from Optuna trial configs (beta, lambda_kl, lr, wd, warmup). CPU-only.
 
-Model: Llama-3.1-8B (meta-llama/Llama-3.1-8B)
+    python -u src/eval/hp_ablation_plots.py 2>&1 | tee logs/hp_ablation_plots.log
 
-Generates ablation plots showing sensitivity to:
-- beta (DPO temperature)
-- lambda_kl (KL regularization strength)
-- learning_rate
-- weight_decay
-- warmup_ratio
-
-Similar to ALKALI paper's hyperparameter ablation figures.
-
-Usage:
-    python comparative_study/generate_hp_ablation_plots.py
+Model: Llama-3.1-8B (meta-llama/Llama-3.1-8B). Similar to ALKALI paper figures.
 
 Output:
     Overleaf_draft/figures/appendix/

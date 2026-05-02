@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Fixed inference script that properly handles the tokenizer size mismatch.
-"""
+"""SafeLoRA inference script with tokenizer size-mismatch fix."""
 
 import os
 import torch

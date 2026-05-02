@@ -1,0 +1,44 @@
+# ============================================================================
+# EXP 1 — Per-Instruction Performance Breakdown
+# Targets shuX point 4 (instruction distribution bias) + point 5 (multi-regime stability)
+# ============================================================================
+
+# All 10 trained methods × {Instruct, NoInstruct}
+methods:
+  - SFT_NoInstruct
+  - SFT_Instruct
+  - DPO_NoInstruct
+  - DPO_Instruct
+  - PPO_NoInstruct
+  - PPO_Instruct
+  - GRPO_NoInstruct
+  - GRPO_Instruct
+  - CITA_NoInstruct
+  - CITA_Instruct
+
+# Methods to render in the headline plot (Instruct family — direct comparison)
+plot_methods:
+  - SFT_Instruct
+  - DPO_Instruct
+  - PPO_Instruct
+  - GRPO_Instruct
+  - CITA_Instruct
+
+# Inputs (existing eval artifacts produced by src/eval/isd.py --mode full)
+data_dir: outputs/evaluation/ISD_Evaluation_Embedding
+responses_filename_pattern: "{method}_isd_responses.csv"
+
+# Outputs
+output_dir: outputs/rebuttal/exp1_per_instruction
+
+# Embedding model (CPU, small) — must match what isd_metrics.py uses
+embedding_model: all-MiniLM-L6-v2
+
+# Bootstrap CI (CLAUDE.md §7.4: BCa, 10K iterations, on every metric)
+n_bootstrap: 10000
+confidence_level: 0.95
+seed: 42
+
+# Pivot which method becomes the "winner" reference (uniformity check)
+reference_method: CITA_Instruct
+challenger_method: DPO_Instruct

@@ -1,11 +1,10 @@
-"""
-Length Control Evaluation with Instruction Variants
+"""Length Control evaluation with instruction variants. GPU-only.
 
-    # Sanity check
-    python comparative_study/05_evaluation/length_control/evaluation.py --mode sanity
+    # Sanity (smoke test, no push)
+    python -u src/eval/length_control.py --mode sanity 2>&1 | tee logs/eval_length_control_sanity.log
 
     # Full evaluation
-    python comparative_study/05_evaluation/length_control/evaluation.py --mode full
+    python -u src/eval/length_control.py --mode full 2>&1 | tee logs/eval_length_control_full.log
 """
 
 import sys

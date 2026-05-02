@@ -1,14 +1,4 @@
-"""
-Safety Monitoring Callback for CITA Training (Alpaca Format)
-Monitors training outputs and stops if mode collapse or unsafe behavior detected
-
-Key Features:
-- ✅ use_alpaca_format=True: Uses Alpaca format for monitoring (not chat template)
-- ✅ Detects gibberish: Repetition, low diversity, patterns like "however###"
-- ✅ Detects unsafe behavior: Negative margin (model prefers rejected/unsafe responses)
-- ✅ Optuna integration: Reports metrics for pruning
-- ✅ Saves last good checkpoint: Tracks last_good_step
-"""
+"""Trainer callbacks: mode-collapse detection + PPO/DPO/CITA summary printing."""
 
 import torch
 import re

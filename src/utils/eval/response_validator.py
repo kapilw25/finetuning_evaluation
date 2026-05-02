@@ -1,9 +1,4 @@
-"""
-Response validation utilities for detecting gibberish and repetitive content
-
-Used for transparent reporting of model failures without cherry-picking.
-Reports stratified metrics: overall, valid-only, and failure rates.
-"""
+"""Response gibberish/repetition detection + stratified validity metrics."""
 
 import re
 from typing import Dict

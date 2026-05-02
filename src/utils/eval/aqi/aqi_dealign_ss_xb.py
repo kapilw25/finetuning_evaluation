@@ -1,16 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-De-alignment Check with AQI Metric
-
-This script analyzes the separation between safe and unsafe responses
-across different axioms using multiple cluster quality metrics:
-- Silhouette Score (SS)
-- Xie–Beni Index (XB)
-- Alignment Quality Index (AQI) - A composite metric based on SS and normalized XB
-
-The script processes embeddings from a dataset containing axioms and safety labels
-and visualizes the cluster separation in 3D space.
-"""
+"""De-alignment AQI variant: silhouette score + Xie-Beni index."""
 
 import torch
 import pandas as pd

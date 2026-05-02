@@ -1,14 +1,4 @@
-"""
-Appendix Visualizations Module
-
-Generates additional visualizations for the paper appendix:
-1. ISD Embedding t-SNE/PCA - Response embeddings by instruction type
-2. AQI 3D Scatterplot - Safe vs unsafe response clusters
-3. ISD Fidelity Heatmap - Instruction type × model matrix
-4. Length Control Distribution - Word count violin plots
-
-All functions are designed to be imported and called from generate_combined_plots.py
-"""
+"""Appendix-figure generators (ISD embeddings, AQI 3D, fidelity heatmap, radar)."""
 
 import json
 import numpy as np

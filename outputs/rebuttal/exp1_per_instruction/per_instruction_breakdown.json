@@ -1,0 +1,1102 @@
+[
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5522327281037966,
+      "ci_lo": 0.546780454796663,
+      "ci_hi": 0.5577952371840892,
+      "ci_half": 0.005507391193713074
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5686648604273796,
+      "ci_lo": 0.5631714500710956,
+      "ci_hi": 0.5741142970101643,
+      "ci_half": 0.005471423469534331
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5585649610559146,
+      "ci_lo": 0.5528001545690309,
+      "ci_hi": 0.5644553107706036,
+      "ci_half": 0.005827578100786379
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5840811225771904,
+      "ci_lo": 0.5783635966628576,
+      "ci_hi": 0.5900250965776396,
+      "ci_half": 0.005830749957390968
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5375265817840894,
+      "ci_lo": 0.5318656152276465,
+      "ci_hi": 0.5434651710190247,
+      "ci_half": 0.005799777895689084
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5760146197676659,
+      "ci_lo": 0.5699934259478577,
+      "ci_hi": 0.5820635108472048,
+      "ci_half": 0.006035042449673511
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5228037850062053,
+      "ci_lo": 0.5181986132796567,
+      "ci_hi": 0.5278792892704773,
+      "ci_half": 0.004840337995410338
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5410015528400739,
+      "ci_lo": 0.5368463234547431,
+      "ci_hi": 0.5453922438158902,
+      "ci_half": 0.004272960180573548
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5351246154308319,
+      "ci_lo": 0.530220710975914,
+      "ci_hi": 0.539970510663545,
+      "ci_half": 0.0048748998438155056
+    }
+  },
+  {
+    "method": "SFT_NoInstruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5214824082454046,
+      "ci_lo": 0.5164674620543593,
+      "ci_hi": 0.5265734778604996,
+      "ci_half": 0.005053007903070117
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5474175130327542,
+      "ci_lo": 0.5420641381127388,
+      "ci_hi": 0.5530680647799529,
+      "ci_half": 0.0055019633336070295
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5686074543992679,
+      "ci_lo": 0.5633748516757248,
+      "ci_hi": 0.5738982137828311,
+      "ci_half": 0.00526168105355318
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5622223452727,
+      "ci_lo": 0.5564496510753043,
+      "ci_hi": 0.5682041137031856,
+      "ci_half": 0.005877231313940634
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.6007458877563476,
+      "ci_lo": 0.594875331814324,
+      "ci_hi": 0.6068145625438087,
+      "ci_half": 0.005969615364742387
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5447445877393087,
+      "ci_lo": 0.5395491814559361,
+      "ci_hi": 0.5501284359246299,
+      "ci_half": 0.005289627234346894
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5941530461112658,
+      "ci_lo": 0.5877374943743305,
+      "ci_hi": 0.6004800349496618,
+      "ci_half": 0.0063712702876656535
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5210915062824885,
+      "ci_lo": 0.5161889260846251,
+      "ci_hi": 0.5265844594165087,
+      "ci_half": 0.005197766665941794
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5436447873711586,
+      "ci_lo": 0.5396041096657557,
+      "ci_hi": 0.5477892478283066,
+      "ci_half": 0.004092569081275477
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5394948557019233,
+      "ci_lo": 0.5347475029970774,
+      "ci_hi": 0.54467386483814,
+      "ci_half": 0.004963180920531274
+    }
+  },
+  {
+    "method": "SFT_Instruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5189867556095124,
+      "ci_lo": 0.5145519226773272,
+      "ci_hi": 0.5235507358909657,
+      "ci_half": 0.004499406606819245
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5564678920308749,
+      "ci_lo": 0.5514089616930419,
+      "ci_hi": 0.5616697615742894,
+      "ci_half": 0.005130399940623753
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5658858119448026,
+      "ci_lo": 0.5610159383074219,
+      "ci_hi": 0.5707595389046256,
+      "ci_half": 0.004871800298601847
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5574050090710322,
+      "ci_lo": 0.5523464644369676,
+      "ci_hi": 0.5627061875918186,
+      "ci_half": 0.005179861577425504
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5670369917154312,
+      "ci_lo": 0.5617109781934716,
+      "ci_hi": 0.5725914334845714,
+      "ci_half": 0.005440227645549911
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5322885584831237,
+      "ci_lo": 0.5273508757485488,
+      "ci_hi": 0.5372200182735734,
+      "ci_half": 0.004934571262512288
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5587541911999384,
+      "ci_lo": 0.5533779056140335,
+      "ci_hi": 0.56403082308669,
+      "ci_half": 0.005326458736328199
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5204377579689026,
+      "ci_lo": 0.5159987542872331,
+      "ci_hi": 0.5251570671914864,
+      "ci_half": 0.004579156452126643
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.543381791015466,
+      "ci_lo": 0.5394386647016799,
+      "ci_hi": 0.5472436145644952,
+      "ci_half": 0.0039024749314076623
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5266556558012963,
+      "ci_lo": 0.5223445873452571,
+      "ci_hi": 0.5311224310475772,
+      "ci_half": 0.004388921851160021
+    }
+  },
+  {
+    "method": "DPO_NoInstruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5338644831379254,
+      "ci_lo": 0.5294187862795812,
+      "ci_hi": 0.5382567907067711,
+      "ci_half": 0.00441900221359498
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5853545028964678,
+      "ci_lo": 0.5779938531386425,
+      "ci_hi": 0.5931888528186118,
+      "ci_half": 0.007597499839984645
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5632753011584282,
+      "ci_lo": 0.5575175055118066,
+      "ci_hi": 0.5695805316167001,
+      "ci_half": 0.0060315130524467575
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5818735380967458,
+      "ci_lo": 0.5755669499566215,
+      "ci_hi": 0.5885071389438629,
+      "ci_half": 0.006470094493620682
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5794952883323033,
+      "ci_lo": 0.5739679785984045,
+      "ci_hi": 0.585347903031027,
+      "ci_half": 0.0056899622163112396
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5503471610943477,
+      "ci_lo": 0.5444698629048993,
+      "ci_hi": 0.5565545753342194,
+      "ci_half": 0.0060423562146600385
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5717451122403144,
+      "ci_lo": 0.5644091946447289,
+      "ci_hi": 0.5795682969740534,
+      "ci_half": 0.007579551164662246
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5481539503733317,
+      "ci_lo": 0.5425907620428523,
+      "ci_hi": 0.5541393664887164,
+      "ci_half": 0.005774302222932071
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5499718608458837,
+      "ci_lo": 0.5449664469913215,
+      "ci_hi": 0.5553174425257349,
+      "ci_half": 0.005175497767206716
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5717532393336296,
+      "ci_lo": 0.56329801692836,
+      "ci_hi": 0.5811179666427262,
+      "ci_half": 0.00890997485718309
+    }
+  },
+  {
+    "method": "DPO_Instruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5483315598964691,
+      "ci_lo": 0.5426418981077213,
+      "ci_hi": 0.5542184413991331,
+      "ci_half": 0.005788271645705889
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.554781898856163,
+      "ci_lo": 0.5500522024344839,
+      "ci_hi": 0.5597889605491733,
+      "ci_half": 0.004868379057344663
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5597508505980173,
+      "ci_lo": 0.5549168502299564,
+      "ci_hi": 0.5648025126738552,
+      "ci_half": 0.004942831221949384
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5514690936605136,
+      "ci_lo": 0.5467432927787329,
+      "ci_hi": 0.556266269632373,
+      "ci_half": 0.00476148842682006
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5654714104533195,
+      "ci_lo": 0.5603293614925381,
+      "ci_hi": 0.5704839816398443,
+      "ci_half": 0.005077310073653085
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5311732036868732,
+      "ci_lo": 0.5262488122238769,
+      "ci_hi": 0.536339910257732,
+      "ci_half": 0.005045549016927553
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5547886790831884,
+      "ci_lo": 0.5497245553530341,
+      "ci_hi": 0.5599358878314695,
+      "ci_half": 0.00510566623921771
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5248045681913693,
+      "ci_lo": 0.520280613643599,
+      "ci_hi": 0.5295028741323611,
+      "ci_half": 0.004611130244381034
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5437918644150098,
+      "ci_lo": 0.540016297413018,
+      "ci_hi": 0.5476452471648561,
+      "ci_half": 0.003814474875919016
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5250522881746292,
+      "ci_lo": 0.5207697814015414,
+      "ci_hi": 0.529426314317031,
+      "ci_half": 0.0043282664577448116
+    }
+  },
+  {
+    "method": "PPO_NoInstruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5345897547403972,
+      "ci_lo": 0.5298867009861218,
+      "ci_hi": 0.539444608023203,
+      "ci_half": 0.0047789535185406296
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5785899659991265,
+      "ci_lo": 0.5718122961380575,
+      "ci_hi": 0.586021346533687,
+      "ci_half": 0.007104525197814737
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5650317064921061,
+      "ci_lo": 0.558707988334184,
+      "ci_hi": 0.571934208215904,
+      "ci_half": 0.006613109940860007
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.569513469239076,
+      "ci_lo": 0.563062893818492,
+      "ci_hi": 0.5763113031579127,
+      "ci_half": 0.006624204669710365
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.579854454199473,
+      "ci_lo": 0.5739220932202048,
+      "ci_hi": 0.586167940910164,
+      "ci_half": 0.006122923844979589
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5454730097452799,
+      "ci_lo": 0.5402073741602056,
+      "ci_hi": 0.5514324754680071,
+      "ci_half": 0.005612550653900761
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5792309019962947,
+      "ci_lo": 0.5713924374511854,
+      "ci_hi": 0.5879626285683066,
+      "ci_half": 0.008285095558560607
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5472571289539337,
+      "ci_lo": 0.5418015885226452,
+      "ci_hi": 0.5529173234236614,
+      "ci_half": 0.005557867450508125
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5513654031356175,
+      "ci_lo": 0.5459688945524039,
+      "ci_hi": 0.5572937076675593,
+      "ci_half": 0.005662406557577659
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5694210401177406,
+      "ci_lo": 0.5612681617506419,
+      "ci_hi": 0.5785571231418577,
+      "ci_half": 0.008644480695607915
+    }
+  },
+  {
+    "method": "PPO_Instruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5478471599022547,
+      "ci_lo": 0.5418905935900711,
+      "ci_hi": 0.5545525216165145,
+      "ci_half": 0.006330964013221696
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5566938916842142,
+      "ci_lo": 0.5519068091835999,
+      "ci_hi": 0.561760762416461,
+      "ci_half": 0.004926976616430545
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5603686878085137,
+      "ci_lo": 0.5554868127084023,
+      "ci_hi": 0.5654657755839851,
+      "ci_half": 0.004989481437791432
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5527573929230372,
+      "ci_lo": 0.5479469090100172,
+      "ci_hi": 0.5580110285854573,
+      "ci_half": 0.0050320597877200335
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.561703286965688,
+      "ci_lo": 0.5564765246469037,
+      "ci_hi": 0.5670052294979755,
+      "ci_half": 0.005264352425535912
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5316458536187808,
+      "ci_lo": 0.5271934003066041,
+      "ci_hi": 0.536139967153816,
+      "ci_half": 0.004473283423605923
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.55504353394111,
+      "ci_lo": 0.5500833553540951,
+      "ci_hi": 0.5601105931614856,
+      "ci_half": 0.005013618903695227
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5268745391567549,
+      "ci_lo": 0.5221661075844919,
+      "ci_hi": 0.5315957796859508,
+      "ci_half": 0.004714836050729476
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.542687943081061,
+      "ci_lo": 0.5387675225796017,
+      "ci_hi": 0.5467546390857324,
+      "ci_half": 0.003993558253065355
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5321613800525665,
+      "ci_lo": 0.5279183099218989,
+      "ci_hi": 0.5364990388219089,
+      "ci_half": 0.004290364450004969
+    }
+  },
+  {
+    "method": "GRPO_NoInstruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5305988813440005,
+      "ci_lo": 0.5267923113301464,
+      "ci_hi": 0.5343975415490307,
+      "ci_half": 0.0038026151094421867
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5848275718092918,
+      "ci_lo": 0.577437238167307,
+      "ci_hi": 0.5927116460340739,
+      "ci_half": 0.007637203933383463
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5694830625255902,
+      "ci_lo": 0.5628774799073158,
+      "ci_hi": 0.576733677954681,
+      "ci_half": 0.006928099023682577
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5675158528486888,
+      "ci_lo": 0.5606617127419802,
+      "ci_hi": 0.5747508798698445,
+      "ci_half": 0.007044583563932172
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5809485224882761,
+      "ci_lo": 0.575247745821077,
+      "ci_hi": 0.5868219484386383,
+      "ci_half": 0.005787101308780684
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5490123987197876,
+      "ci_lo": 0.543140739351574,
+      "ci_hi": 0.5552032045339017,
+      "ci_half": 0.006031232591163838
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5859499600529671,
+      "ci_lo": 0.5774887896940164,
+      "ci_hi": 0.5950979566366407,
+      "ci_half": 0.008804583471312133
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5530120991667111,
+      "ci_lo": 0.5474373628661315,
+      "ci_hi": 0.5591513370582428,
+      "ci_half": 0.005856987096055644
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5540150624513626,
+      "ci_lo": 0.5486946946168105,
+      "ci_hi": 0.5601767104020893,
+      "ci_half": 0.0057410078926393715
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5644787895679474,
+      "ci_lo": 0.5561609372951064,
+      "ci_hi": 0.5736417451031686,
+      "ci_half": 0.00874040390403108
+    }
+  },
+  {
+    "method": "GRPO_Instruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5475922171274821,
+      "ci_lo": 0.5416796343520476,
+      "ci_hi": 0.5541952904113491,
+      "ci_half": 0.006257828029650747
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5550929172833761,
+      "ci_lo": 0.5506221988813564,
+      "ci_hi": 0.559934977992954,
+      "ci_half": 0.004656389555798779
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5615384294589361,
+      "ci_lo": 0.5565907358289386,
+      "ci_hi": 0.5665934885098989,
+      "ci_half": 0.005001376340480146
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5540873491764069,
+      "ci_lo": 0.5493969460615348,
+      "ci_hi": 0.5589561040972479,
+      "ci_half": 0.004779579017856583
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5656165126959483,
+      "ci_lo": 0.560558905431069,
+      "ci_hi": 0.5707334156307097,
+      "ci_half": 0.005087255099820331
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5351295441389083,
+      "ci_lo": 0.5300008085891953,
+      "ci_hi": 0.5402431177147403,
+      "ci_half": 0.005121154562772512
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5629131099581719,
+      "ci_lo": 0.5579133662906158,
+      "ci_hi": 0.568193346004163,
+      "ci_half": 0.005139989856773608
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5216450521349907,
+      "ci_lo": 0.5171561824266762,
+      "ci_hi": 0.526485645582439,
+      "ci_half": 0.0046647315778814424
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5428680405020714,
+      "ci_lo": 0.5391926851178375,
+      "ci_hi": 0.5468905360154882,
+      "ci_half": 0.003848925448825369
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5285326325893402,
+      "ci_lo": 0.5243436787542912,
+      "ci_hi": 0.5329217400617859,
+      "ci_half": 0.004289030653747361
+    }
+  },
+  {
+    "method": "CITA_NoInstruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.53292817791303,
+      "ci_lo": 0.5286499669692456,
+      "ci_hi": 0.5375050124811473,
+      "ci_half": 0.0044275227559508745
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "neutral",
+    "n": 300,
+    "ci": {
+      "mean": 0.5852266071240108,
+      "ci_lo": 0.578359608510948,
+      "ci_hi": 0.5926414624845343,
+      "ci_half": 0.007140926986793139
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "conservative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5647360189755758,
+      "ci_lo": 0.5586189107034207,
+      "ci_hi": 0.5715048860250074,
+      "ci_half": 0.00644298766079332
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "liberal",
+    "n": 300,
+    "ci": {
+      "mean": 0.5706496420502662,
+      "ci_lo": 0.5639284612776991,
+      "ci_hi": 0.5774370627670133,
+      "ci_half": 0.006754300744657105
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "regulatory_aware",
+    "n": 300,
+    "ci": {
+      "mean": 0.5785950207710266,
+      "ci_lo": 0.5732470353289382,
+      "ci_hi": 0.5844256960830073,
+      "ci_half": 0.005589330377034574
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "empathetic",
+    "n": 300,
+    "ci": {
+      "mean": 0.5472940459847451,
+      "ci_lo": 0.541213127855478,
+      "ci_hi": 0.5539704785688973,
+      "ci_half": 0.006378675356709607
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "safety_first",
+    "n": 300,
+    "ci": {
+      "mean": 0.5750508125623067,
+      "ci_lo": 0.5675837463639596,
+      "ci_hi": 0.5832749362199852,
+      "ci_half": 0.007845594928012789
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "educational",
+    "n": 300,
+    "ci": {
+      "mean": 0.5461715277036031,
+      "ci_lo": 0.5405549284178846,
+      "ci_hi": 0.5522069340627422,
+      "ci_half": 0.005826002822428844
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "concise",
+    "n": 300,
+    "ci": {
+      "mean": 0.5497701747218767,
+      "ci_lo": 0.5443880147974839,
+      "ci_hi": 0.5557566909675591,
+      "ci_half": 0.005684338085037599
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "professional",
+    "n": 300,
+    "ci": {
+      "mean": 0.5693654677271843,
+      "ci_lo": 0.5613685370620605,
+      "ci_hi": 0.5783395975623353,
+      "ci_half": 0.00848553025013743
+    }
+  },
+  {
+    "method": "CITA_Instruct",
+    "instruction_type": "creative",
+    "n": 300,
+    "ci": {
+      "mean": 0.5357098452250163,
+      "ci_lo": 0.529859487645909,
+      "ci_hi": 0.542297713867689,
+      "ci_half": 0.006219113110890018
+    }
+  }
+]

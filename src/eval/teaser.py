@@ -1,10 +1,9 @@
-"""
-Extract teaser example for a single prompt (idx=287) from all 5 trainers.
-Outputs CSV with:
-- harm_categories and harm_list
-- STRICT & PERMISSIVE instructions (truncated for display)
-- STRICT & PERMISSIVE responses
-- Takeaway columns with emojis
+"""Extract teaser example (single prompt idx=287) across all 5 Instruct trainers. CPU-only.
+
+    python -u src/eval/teaser.py 2>&1 | tee logs/teaser.log
+
+Outputs CSV with: harm_categories/harm_list, STRICT & PERMISSIVE instructions (truncated),
+STRICT & PERMISSIVE responses, takeaway columns with emojis.
 """
 
 import ast

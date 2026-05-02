@@ -1,8 +1,4 @@
-"""
-CLI Menu Utilities for Evaluation Scripts
-
-Shared interactive menus for cached data options and mode selection.
-"""
+"""Interactive CLI menus (cached-data, mode select, checkpoint resume, model filter)."""
 
 import shutil
 from pathlib import Path

@@ -1,31 +1,4 @@
-"""
-Push Automation Module for CITA PBT Training
-Handles automatic pushing to HuggingFace and GitHub after training completes
-
-Features:
-- Push weights to HuggingFace (overwrites previous regardless of performance)
-- Push codebase to GitHub ALWAYS (especially logs/)
-- Handle large log files (>100MB): Split into chunks or use Git LFS
-- GitHub credentials: email=kapilw25@gmail.com, username=kapilw25
-- Integrates with auto-shutdown (runs before shutdown)
-
-Usage:
-    from push_automation import PushAutomation
-
-    pusher = PushAutomation(
-        hf_token="hf_xxx",
-        github_email="kapilw25@gmail.com",
-        github_username="kapilw25"
-    )
-
-    # After training completes
-    pusher.push_all(
-        best_trial=best_trial,
-        best_checkpoint=best_checkpoint,
-        hf_repo="kapilw25/llama3-8b-pku-cita-baseline-bf16",
-        config_path="./outputs/training/CITA_Baseline/CITA_Baseline_config.json"
-    )
-"""
+"""Post-training auto-push to HuggingFace + GitHub (no_push=True opt-out for safe local testing)."""
 
 import os
 import json
@@ -293,6 +266,19 @@ class PushAutomation:
                 adapter_path = str(checkpoint_path / "checkpoint")
             else:
                 adapter_path = best_checkpoint
+
+            # Pre-flight: PEFT silently falls through to HF-Hub mode (cryptic
+            # HFValidationError) when adapter_model weights are missing locally.
+            # Fail loudly here with a useful message instead.
+            adapter_dir = Path(adapter_path)
+            weight_files = ("adapter_model.safetensors", "adapter_model.bin")
+            if not any((adapter_dir / w).exists() for w in weight_files):
+                raise FileNotFoundError(
+                    f"No LoRA weights found in {adapter_dir}. Expected one of {weight_files}. "
+                    f"Found: {sorted(p.name for p in adapter_dir.glob('*'))[:10]}. "
+                    "Either training did not complete or weights were not saved. "
+                    "Re-run training without --no-push, or pass --no-push to skip this push."
+                )
 
             model_with_adapter = PeftModel.from_pretrained(
                 base_model,
@@ -612,6 +598,19 @@ Llama 3.1 Community License (same as base model)
                 adapter_path = str(checkpoint_path / "checkpoint")
             else:
                 adapter_path = best_checkpoint
+
+            # Pre-flight: PEFT silently falls through to HF-Hub mode (cryptic
+            # HFValidationError) when adapter_model weights are missing locally.
+            # Fail loudly here with a useful message instead.
+            adapter_dir = Path(adapter_path)
+            weight_files = ("adapter_model.safetensors", "adapter_model.bin")
+            if not any((adapter_dir / w).exists() for w in weight_files):
+                raise FileNotFoundError(
+                    f"No LoRA weights found in {adapter_dir}. Expected one of {weight_files}. "
+                    f"Found: {sorted(p.name for p in adapter_dir.glob('*'))[:10]}. "
+                    "Either training did not complete or weights were not saved. "
+                    "Re-run training without --no-push, or pass --no-push to skip this push."
+                )
 
             model_with_adapter = PeftModel.from_pretrained(
                 base_model,
@@ -950,10 +949,6 @@ This push REPLACES the previous model version (performance improved).
 
 Timestamp: {timestamp}
 Auto-commit: Includes training logs, configs, and outputs
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 """
 
             # Commit changes
@@ -1175,7 +1170,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         metric_mode: str = "max",
         project_root: Optional[Path] = None,
         github_email: str = "kapilw25@gmail.com",
-        github_username: str = "kapilw25"
+        github_username: str = "kapilw25",
+        no_push: bool = False,
     ):
         """
         Unified post-training workflow for SFT/DPO/CITA baselines
@@ -1226,7 +1222,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         from pathlib import Path
         from types import SimpleNamespace
         import json
-        import sys
 
         # Add parent directory to path to import model_utils
         if project_root is None:
@@ -1234,7 +1229,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>
         else:
             project_root = Path(project_root)
 
-        sys.path.insert(0, str(project_root / "comparative_study" / "0c_utils"))
         from .model_utils import get_latest_checkpoint
 
         print(f"\n{'='*80}")
@@ -1321,13 +1315,29 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 Method: {method} | Epochs: {num_epochs} | Model: Llama-3.1-8B
 Timestamp: {timestamp}
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 """
 
-        # Step 9: Push to HF + GitHub
+        # Step 9: Push to HF + GitHub (or skip)
+        if no_push:
+            print(f"\n{'='*80}")
+            print("⏭️  Skipping HF + GitHub push (--no-push flag set)")
+            print(f"{'='*80}")
+            print(f"  Local checkpoint: {lora_checkpoint}")
+            print(f"  Config saved:     {config_path}")
+            print(f"{'='*80}\n")
+            return
+
+        if training_skipped:
+            print(f"\n{'='*80}")
+            print("⏭️  Skipping HF push (inference-only mode — nothing new to upload)")
+            print(f"{'='*80}")
+            print(f"  HF model already at: {hf_repo} (unchanged)")
+            print(f"  Local config saved:  {config_path}")
+            print(f"{'='*80}\n")
+            # Still push GitHub (logs/code) — that's useful even in inference-only mode
+            pusher.push_to_github(commit_message=commit_message, run_name=run_name)
+            return
+
         print(f"\n{'='*80}")
         print("📤 Executing Push")
         print(f"{'='*80}\n")
@@ -1344,7 +1354,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             skip_local_backup=training_skipped
         )
 
-        # Step 9: Summary
+        # Step 10: Summary
         print(f"\n{'='*80}")
         print("✅ All results saved!")
         print(f"{'='*80}")
