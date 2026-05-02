@@ -67,6 +67,8 @@ model/*.pt
 model/*.pth
 *.bin
 *.safetensors
+*.npy
+*.npz
 
 # Outputs
 output/*/
